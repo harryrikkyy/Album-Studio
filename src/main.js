@@ -1633,93 +1633,16 @@ if (chkLivePreview) {
     });
 }
 
-// ── Per-photo adjustments (MVP editing) ────────────────────────
-// Non-destructive exposure/contrast/saturation/warmth on the selected
-// green-box photo(s), stored in projectData.imageAdjustments[id] (persisted
-// with the project) and applied live through the same libvips pipeline as the
-// final composite. Turn on the 🪄 Live preview to see edits composited.
-const _adjPanel = document.getElementById('adjustPanel');
-const _adjCount = document.getElementById('adjustCount');
-const _adjFields = ['Exposure', 'Contrast', 'Saturation', 'Warmth'];
-const _adjInputs = {};
-_adjFields.forEach(f => {
-    _adjInputs[f] = {
-        slider: document.getElementById('adj' + f),
-        val: document.getElementById('adj' + f + 'Val'),
-        key: f.toLowerCase(),
-    };
-});
-
-function _selectedGreenIds() {
-    return Array.from(greenBox.querySelectorAll('.img-container.selected'))
-        .map(c => c.dataset.photoId).filter(Boolean);
-}
-
-function updateAdjustPanel() {
-    if (!_adjPanel) return;
-    const ids = _selectedGreenIds();
-    const has = ids.length > 0;
-    // Panel stays visible always (discoverable); inputs enable on selection.
-    _adjFields.forEach(f => { if (_adjInputs[f].slider) _adjInputs[f].slider.disabled = !has; });
-    if (_btnAdjustReset) _btnAdjustReset.disabled = !has;
-    if (!has) {
-        _adjCount.textContent = '— select a photo';
-        _adjFields.forEach(f => { _adjInputs[f].slider.value = 0; _adjInputs[f].val.textContent = '0'; });
-        return;
-    }
-    _adjCount.textContent = ids.length > 1 ? `· ${ids.length} photos` : '';
-    // Reflect the first selected photo's current values.
-    const adj = projectData.imageAdjustments?.[ids[0]] || {};
-    _adjFields.forEach(f => {
-        const v = adj[_adjInputs[f].key] || 0;
-        _adjInputs[f].slider.value = v;
-        _adjInputs[f].val.textContent = v;
-    });
-}
-
-let _adjSaveTimer = null;
-function _applyAdjustToSelection(key, value) {
-    const ids = _selectedGreenIds();
-    if (ids.length === 0) return;
-    if (!projectData.imageAdjustments) projectData.imageAdjustments = {};
-    ids.forEach(id => {
-        const cur = projectData.imageAdjustments[id] || {};
-        cur[key] = value;
-        // Drop all-zero objects so they don't bloat the project / trigger work.
-        if (!cur.exposure && !cur.contrast && !cur.saturation && !cur.warmth) {
-            delete projectData.imageAdjustments[id];
-        } else {
-            projectData.imageAdjustments[id] = cur;
-        }
-    });
-    scheduleLivePreview();
-    clearTimeout(_adjSaveTimer);
-    _adjSaveTimer = setTimeout(() => { try { saveStateToStorage(); } catch (_) {} }, 600);
-}
-
-_adjFields.forEach(f => {
-    const { slider, val, key } = _adjInputs[f];
-    if (!slider) return;
-    slider.addEventListener('input', () => {
-        const v = parseInt(slider.value, 10) || 0;
-        val.textContent = v;
-        _applyAdjustToSelection(key, v);
-    });
-});
-
-const _btnAdjustReset = document.getElementById('btnAdjustReset');
-if (_btnAdjustReset) {
-    _btnAdjustReset.addEventListener('click', () => {
-        const ids = _selectedGreenIds();
-        ids.forEach(id => { if (projectData.imageAdjustments) delete projectData.imageAdjustments[id]; });
-        _adjFields.forEach(f => { _adjInputs[f].slider.value = 0; _adjInputs[f].val.textContent = '0'; });
-        scheduleLivePreview();
-        clearTimeout(_adjSaveTimer);
-        _adjSaveTimer = setTimeout(() => { try { saveStateToStorage(); } catch (_) {} }, 300);
-    });
-}
-// Initialise the panel to its disabled "select a photo" state on load.
+// ── Per-photo adjustments ──────────────────────────────────────
+// The inline Pages adjust panel (H1) was removed — per-photo colour grading
+// now lives solely in the Spread Editor. `updateAdjustPanel` is kept as a
+// no-op so existing call sites stay valid. The adjustment *data model*
+// (projectData.imageAdjustments) is unchanged and still drives the preview,
+// the export, and the editor.
+function updateAdjustPanel() { /* no-op: adjust UI moved to the Spread Editor */ }
+// Initialise (no-op).
 updateAdjustPanel();
+
 
 // ── Spread Editor bridge ───────────────────────────────────────
 // Builds the payload the editor window needs (frame geometry + photo proxies
@@ -1827,9 +1750,14 @@ require('electron').ipcRenderer.on('editor-swap', (_e, msg) => {
     const ib = page.photos.findIndex(p => p.id === msg.bId);
     if (ia === -1 || ib === -1 || ia === ib) return;
     mutate('Swap photos', () => {
-        const tmp = page.photos[ia];
-        page.photos[ia] = page.photos[ib];
-        page.photos[ib] = tmp;
+        const a = page.photos[ia];
+        const b = page.photos[ib];
+        // Swap orientation too so cross-shape swaps re-derive the right frame
+        // assignment (frames are assigned by orientation + order). For
+        // same-orientation swaps this is a no-op and only the positions matter.
+        const ao = a.orient; a.orient = b.orient; b.orient = ao;
+        page.photos[ia] = b;
+        page.photos[ib] = a;
     });
     if (msg.pageNum === currentPage) {
         if (typeof renderGreenBox === 'function') renderGreenBox();
@@ -4574,41 +4502,123 @@ if (btnRenderFinalAlbum) {
 // Legacy single-file .json projects still load through the same handler.
 let currentProjectPath = null;
 
+// Build the serialisable project payload (shared by Save / Save As / New).
+function buildProjectPayload() {
+    const safeAlbumPages = JSON.parse(JSON.stringify(albumPages, (key, value) => {
+        if (key === 'file') return undefined;
+        return value;
+    }));
+    return {
+        workspace: projectData,
+        albumPages: safeAlbumPages,
+        totalActivePages: totalActivePages,
+        renderHashes: _renderHashes
+    };
+}
+
+// Save the project. forceNewPath=true always prompts (Save As); otherwise
+// re-saves in place once a path is known.
+async function saveProject(forceNewPath) {
+    try {
+        const payload = buildProjectPayload();
+        const ipc = require('electron').ipcRenderer;
+        let target = forceNewPath ? null : currentProjectPath;
+        if (!target) {
+            const suggested = (Object.keys(albumPages).length > 0)
+                ? `Album-${new Date().toISOString().slice(0, 10)}`
+                : 'New Album Project';
+            target = await ipc.invoke('project-pick-save', suggested);
+            if (!target) return false;
+        }
+        const result = await ipc.invoke('project-write', target, payload);
+        if (!result || !result.ok) throw new Error('project write failed');
+        currentProjectPath = result.path;
+        notify(`Project saved · ${result.path.split('/').pop()}`, "success");
+        return true;
+    } catch (e) {
+        toast("Save error: " + e.message, "error");
+        console.error("Save error full:", e);
+        return false;
+    }
+}
+
+// New Project: keep the reusable library (templates/wallpapers/assets/output +
+// settings); clear the project-specific source photos, Photos tab, and album
+// layout; then save to a freshly named/created file. Confirmed first so it's
+// never a silent data loss.
+async function newProject() {
+    const ok = confirm(
+        'Start a new project?\n\n' +
+        'Your loaded source photos, the Photos tab, and the current album layout will be cleared. ' +
+        'Loaded templates, wallpapers, other assets, the output folder, and settings stay. ' +
+        'Save your current project first if you need it.'
+    );
+    if (!ok) return;
+    const ipc = require('electron').ipcRenderer;
+    const target = await ipc.invoke('project-pick-save', 'New Album Project');
+    if (!target) return;
+    try {
+        // Clear source images + Photos tab.
+        photoCache = {};
+        activeImageFolders.clear();
+        projectData.imageTokens = [];
+        if (projectData.highResTokens) projectData.highResTokens = [];
+        redBox.innerHTML = `<div class="empty-state">
+            <div class="empty-state__icon">🖼️</div>
+            <div class="empty-state__title">No photos loaded</div>
+            <div class="empty-state__hint">Load a folder of photos to build your source pool, then drag or auto-fill them onto pages.</div>
+            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
+        </div>`;
+        if (photosGrid) photosGrid.innerHTML = "";
+        tab6Rendered = false;
+        const rfp = document.getElementById('redFolderPanel'); if (rfp) rfp.innerHTML = getPanelHeaderHTML('images');
+        const pfp = document.getElementById('photosFolderPanel'); if (pfp) pfp.innerHTML = getPanelHeaderHTML('images');
+        // Reset the album to a single blank page + per-photo edit maps.
+        albumPages = { 1: { photos: [], template: null } };
+        totalActivePages = 1; currentPage = 1;
+        Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]);
+        projectData.imageRotations = {};
+        projectData.imageAdjustments = {};
+        projectData.imagePlacements = {};
+        try { _renderHashes = {}; _saveRenderHashes(); } catch (_) {}
+        if (typeof _proofPaths === 'object') {
+            Object.keys(_proofPaths).forEach(k => delete _proofPaths[k]);
+            Object.keys(_proofHashes).forEach(k => delete _proofHashes[k]);
+        }
+        syncViewToState();
+        updatePageDropdowns();
+        renderGreenBox();
+        changePage(1);
+    } catch (e) {
+        console.error('New Project clear failed:', e);
+        toast('New Project: clearing failed — ' + e.message, 'error');
+        return;
+    }
+    currentProjectPath = target;
+    await saveProject(false);
+}
+
 const btnSaveWorkspace = document.getElementById("btnSaveWorkspace");
 if (btnSaveWorkspace) {
-    btnSaveWorkspace.addEventListener("click", async () => {
-        try {
-            const safeAlbumPages = JSON.parse(JSON.stringify(albumPages, (key, value) => {
-                if (key === 'file') return undefined;
-                return value;
-            }));
-            const payload = {
-                workspace: projectData,
-                albumPages: safeAlbumPages,
-                totalActivePages: totalActivePages,
-                renderHashes: _renderHashes
-            };
+    btnSaveWorkspace.addEventListener("click", () => { saveProject(false); });
+}
 
-            const ipc = require('electron').ipcRenderer;
-            // Re-save in place if we already opened/saved this project.
-            let target = currentProjectPath;
-            if (!target) {
-                const suggested = (Object.keys(albumPages).length > 0)
-                    ? `Album-${new Date().toISOString().slice(0, 10)}`
-                    : 'New Album Project';
-                target = await ipc.invoke('project-pick-save', suggested);
-                if (!target) return;
-            }
-
-            const result = await ipc.invoke('project-write', target, payload);
-            if (!result || !result.ok) throw new Error('project write failed');
-            currentProjectPath = result.path;
-            notify(`Project saved · ${result.path.split('/').pop()}`, "success");
-        } catch (e) {
-            toast("Save error: " + e.message, "error");
-            console.error("Save error full:", e);
-        }
+// Save split-button menu (Save As / New Project).
+const btnSaveMenuBtn = document.getElementById("btnSaveMenuBtn");
+const saveMenu = document.getElementById("saveMenu");
+if (btnSaveMenuBtn && saveMenu) {
+    const closeSaveMenu = () => { saveMenu.classList.remove('open'); btnSaveMenuBtn.setAttribute('aria-expanded', 'false'); };
+    btnSaveMenuBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const open = saveMenu.classList.toggle('open');
+        btnSaveMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
+    document.addEventListener('click', (e) => { if (!e.target.closest('.save-split')) closeSaveMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaveMenu(); });
+    const btnSaveAs = document.getElementById("btnSaveAs");
+    if (btnSaveAs) btnSaveAs.addEventListener("click", () => { closeSaveMenu(); saveProject(true); });
+    const btnNewProject = document.getElementById("btnNewProject");
+    if (btnNewProject) btnNewProject.addEventListener("click", () => { closeSaveMenu(); newProject(); });
 }
 
 async function restoreWorkspace(data) {

@@ -13,6 +13,10 @@
   .ed-header__title { margin: 0; font-size: 18px; font-weight: 700; }
   .ed-header__sub { margin: 2px 0 0; font-size: var(--fs-sm); color: var(--txt-secondary); }
   #edSwap.armed { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .ed-ctx { position: fixed; z-index: 1000; min-width: 180px; background: var(--bg-card); border: 1px solid var(--border-main); border-radius: var(--radius-lg); box-shadow: 0 8px 30px rgba(0,0,0,0.5); padding: 4px; }
+  .ed-ctx__item { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--txt-primary); font-size: var(--fs-sm); padding: 8px 12px; border-radius: var(--radius-md); cursor: pointer; }
+  .ed-ctx__item:hover:not(:disabled) { background: var(--accent-dim); color: var(--accent); }
+  .ed-ctx__item:disabled { color: var(--txt-muted); cursor: default; }
   .ed-body { display: flex; flex: 1; overflow: hidden; gap: var(--space-3); padding: 0 16px 14px; }
 
   /* Left: spread thumbs */
@@ -84,9 +88,8 @@
     <div class="ed-header__bar">
       <div>
         <h1 class="ed-header__title">Spread Editor</h1>
-        <p class="ed-header__sub" id="edHint">Click a photo on the page · drag to reposition · scroll to zoom.</p>
+        <p class="ed-header__sub" id="edHint">Click to select · ⌘/Shift-click for multiple · drag to reposition · scroll to zoom · right-click to swap.</p>
       </div>
-      <button id="edSwap" class="btn btn--ghost btn--sm" title="Swap two photos of the same shape">⇄ Swap photos</button>
     </div>
   </header>
   <div class="ed-body">

@@ -3208,3 +3208,97 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
 #tab-album.layout-stage.stage-center-preview #greenWrapper,
 #tab-album.layout-stage.stage-center-preview #stageResizerSplit { display: none; }
 #tab-album.layout-stage.stage-center-preview #yellowWrapper { grid-row: 2 / 5; }
+
+/* ── G1 Collapsible folder panels (chevron injected by ui_folders.js) ──
+   Collapses the folder list to a thin strip; for boxed rails the grid keeps
+   the reclaimed space, for side rails the whole rail narrows. */
+.folder-rail__collapse {
+    background: transparent;
+    border: none;
+    color: var(--txt-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 4px;
+    margin-right: 4px;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s, background-color 0.15s;
+}
+.folder-rail__collapse:hover { color: var(--accent); background: var(--accent-dim); }
+.folder-rail__collapse:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.folder-rail__panel { transition: width 0.18s var(--ease-ui); }
+.folder-rail--side  { transition: width 0.18s var(--ease-ui); }
+
+.folder-rail.is-folders-collapsed .folder-rail__panel { width: 26px; padding: 5px 2px; overflow: hidden; }
+.folder-rail--side.is-folders-collapsed { width: 26px; }
+.folder-rail.is-folders-collapsed .folder-rail__header { justify-content: center; margin-bottom: 0; }
+.folder-rail.is-folders-collapsed .folder-rail__header > span,
+.folder-rail.is-folders-collapsed .folder-rail__actions,
+.folder-rail.is-folders-collapsed .folder-rail__row { display: none; }
+.folder-rail.is-folders-collapsed .rail__resizer { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .folder-rail__panel, .folder-rail--side { transition: none; }
+}
+
+/* ── E1 Save split-button + menu (Save / Save As / New Project) ──── */
+.save-split { position: relative; display: inline-flex; }
+.save-split #btnSaveWorkspace { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.save-split__caret {
+    border-top-left-radius: 0; border-bottom-left-radius: 0;
+    padding: 0 var(--space-2); margin-left: 1px;
+}
+.save-menu {
+    position: absolute; top: calc(100% + 4px); right: 0;
+    min-width: 168px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover);
+    padding: var(--space-1);
+    display: none;
+    z-index: 10000;
+}
+.save-menu.open { display: block; }
+.save-menu__item {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: none; color: var(--txt-primary);
+    font-size: var(--fs-sm); padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md); cursor: pointer;
+    transition: background-color 0.12s;
+}
+.save-menu__item:hover { background: var(--accent-dim); color: var(--accent); }
+.save-menu__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ── D1 Album Automation mode ──────────────────────────────────
+   ON (default) = full workspace (cmd bar + pages + preview + source +
+   templates). OFF = streamlined Source | Templates–only view. The bar
+   shows only in OFF mode; the "⚡ Automation" button (beside Stage view)
+   enters OFF from the full workspace. */
+.automation-bar {
+    display: none;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-5);
+    background: var(--bg-nav);
+    border-bottom: 1px solid var(--border-main);
+    flex-shrink: 0;
+}
+.automation-bar__label { font-weight: 700; letter-spacing: 0.06em; color: var(--accent); font-size: var(--fs-md); }
+.automation-bar__hint { color: var(--txt-secondary); font-size: var(--fs-xs); }
+.automation-bar #btnAutomationExit { margin-left: auto; }
+
+/* OFF mode: simple flex column showing only the bar + the Source|Templates
+   row. Scoped to .active so a hidden tab stays hidden. Placed after the stage
+   block so it wins when both classes are present; JS also drops .layout-stage
+   on entering automation, so the two layouts never fight. */
+#tab-album.automation-off.active { display: flex; flex-direction: column; }
+#tab-album.automation-off > .automation-bar { display: flex; }
+#tab-album.automation-off > .cmd-bar,
+#tab-album.automation-off > #topRow,
+#tab-album.automation-off > #resizerHorizontal,
+#tab-album.automation-off > .stage-resizer { display: none; }
+#tab-album.automation-off > #bottomRow { display: flex; flex: 1; min-height: 0; }
+
+#btnAutomationEnter.is-active { color: var(--accent); border-color: var(--accent); }

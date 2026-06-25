@@ -195,6 +195,33 @@
     })
   }
 
+  // ── Album Automation mode (D1) ─────────────────────────────
+  // OFF = streamlined Source|Templates view; ON = full workspace.
+  const AUTO_KEY = 'adt_automation_off'
+
+  function applyAutomation(off) {
+    const tab = tabEl()
+    if (!tab) return
+    // Automation and Stage view are mutually exclusive; entering automation
+    // drops stage so the two layouts never fight.
+    if (off && tab.classList.contains('layout-stage')) apply(false)
+    tab.classList.toggle('automation-off', off)
+    const enter = document.getElementById('btnAutomationEnter')
+    if (enter) enter.classList.toggle('is-active', off)
+    try { localStorage.setItem(AUTO_KEY, off ? '1' : '0') } catch (_) {}
+    requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
+  }
+
+  function wireAutomation() {
+    let off = false
+    try { off = localStorage.getItem(AUTO_KEY) === '1' } catch (_) {}
+    applyAutomation(off)
+    const enter = document.getElementById('btnAutomationEnter')
+    if (enter) enter.addEventListener('click', () => applyAutomation(true))
+    const exit = document.getElementById('btnAutomationExit')
+    if (exit) exit.addEventListener('click', () => applyAutomation(false))
+  }
+
   function init() {
     restoreSizes()
 
@@ -208,6 +235,7 @@
     RESIZERS.forEach(wireResizer)
     wireRails()
     wireCenter()
+    wireAutomation()
   }
 
   if (document.readyState === 'loading') {

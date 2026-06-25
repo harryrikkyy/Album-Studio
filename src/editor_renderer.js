@@ -23,14 +23,12 @@ const emptyEl = el('edEmpty')
 const toastEl = el('edToast')
 const hintEl = el('edHint')
 
-const DEFAULT_HINT = 'Click a photo on the page · drag to reposition · scroll to zoom.'
+const DEFAULT_HINT_FULL = 'Click to select · ⌘/Shift-click for multiple · drag to reposition · scroll to zoom · right-click to swap.'
 
 let spread = null          // { pageNum, canvasW, canvasH, backdropUrl, items[], spreads[] }
 let items = []             // working copy; each gets .placement, .adjust, ._nat, ._el, ._img
-let selectedId = null
+let selectedIds = []       // multi-select (ordered by selection)
 let displayScale = 1
-let swapArmed = false      // arm-then-click-two-photos swap gesture
-let swapFirstId = null
 
 const CADJ = ['Exposure', 'Contrast', 'Saturation', 'Warmth']
 
@@ -158,20 +156,30 @@ function cssFilter(adj) {
   return f
 }
 
-// ── Selection + interaction ────────────────────────────────────
-function selectItem(id) {
-  selectedId = id
-  items.forEach((it) => it._el && it._el.classList.toggle('selected', it.id === id))
+// ── Selection (multi) + interaction ────────────────────────────
+function refreshSelectionUI() {
+  items.forEach((it) => it._el && it._el.classList.toggle('selected', selectedIds.includes(it.id)))
   updatePanel()
 }
+function setSelection(id) { selectedIds = id ? [id] : []; refreshSelectionUI() }
+function toggleSelection(id) {
+  const i = selectedIds.indexOf(id)
+  if (i === -1) selectedIds.push(id); else selectedIds.splice(i, 1)
+  refreshSelectionUI()
+}
+function isSelected(id) { return selectedIds.includes(id) }
+function selectedItems() { return selectedIds.map((id) => items.find((it) => it.id === id)).filter(Boolean) }
 
 function wireFrame(item) {
   const f = item._el
   // Drag = pan within the frame.
   let dragging = false, sx = 0, sy = 0, startOx = 0, startOy = 0
   f.addEventListener('pointerdown', (e) => {
-    if (swapArmed) { e.preventDefault(); handleSwapClick(item); return }
-    selectItem(item.id)
+    if (e.button !== 0) return // left button only; right opens the context menu
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      e.preventDefault(); toggleSelection(item.id); return // additive select, no pan
+    }
+    if (!isSelected(item.id)) setSelection(item.id)
     if (!item._over) return
     dragging = true
     f.classList.add('dragging')
@@ -198,25 +206,37 @@ function wireFrame(item) {
   }
   f.addEventListener('pointerup', end)
   f.addEventListener('pointercancel', end)
-  // Wheel = zoom.
+  // Right-click → context menu (Swap when two are selected).
+  f.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    if (!isSelected(item.id)) setSelection(item.id)
+    showContextMenu(e.clientX, e.clientY, item)
+  })
+  // Wheel = zoom (applies to all selected if multiple).
   f.addEventListener('wheel', (e) => {
     e.preventDefault()
-    selectItem(item.id)
+    if (!isSelected(item.id)) setSelection(item.id)
     const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08
-    item.placement.scale = Math.max(1, Math.min(4, (item.placement.scale || 1) * factor))
-    layoutItem(item)
+    const targets = selectedItems().length ? selectedItems() : [item]
+    targets.forEach((t) => {
+      t.placement.scale = Math.max(1, Math.min(4, (t.placement.scale || 1) * factor))
+      layoutItem(t)
+    })
     updatePanel()
     scheduleApply()
   }, { passive: false })
 }
 
 // ── Right panel ────────────────────────────────────────────────
-function curItem() { return items.find((it) => it.id === selectedId) || null }
+function curItem() { return selectedItems()[0] || null }
 
 function updatePanel() {
-  const it = curItem()
+  const sel = selectedItems()
+  const it = sel[0] || null
   el('edNoSel').style.display = it ? 'none' : 'block'
   el('edControls').style.display = it ? 'flex' : 'none'
+  // Reflect a multi-select count in the hint.
+  if (hintEl) hintEl.textContent = sel.length > 1 ? `${sel.length} photos selected — edits apply to all.` : DEFAULT_HINT_FULL
   if (!it) return
   const z = Math.round((it.placement.scale || 1) * 100)
   el('edZoom').value = z
@@ -229,27 +249,33 @@ function updatePanel() {
 }
 
 el('edZoom').addEventListener('input', () => {
-  const it = curItem(); if (!it) return
-  it.placement.scale = Math.max(1, Math.min(4, (parseInt(el('edZoom').value, 10) || 100) / 100))
-  el('edZoomVal').textContent = (it.placement.scale).toFixed(1) + '×'
-  layoutItem(it); scheduleApply()
+  const sel = selectedItems(); if (!sel.length) return
+  const scale = Math.max(1, Math.min(4, (parseInt(el('edZoom').value, 10) || 100) / 100))
+  el('edZoomVal').textContent = scale.toFixed(1) + '×'
+  sel.forEach((it) => { it.placement.scale = scale; layoutItem(it) })
+  scheduleApply()
 })
 CADJ.forEach((k) => {
   el('ed' + k).addEventListener('input', () => {
-    const it = curItem(); if (!it) return
+    const sel = selectedItems(); if (!sel.length) return
     const v = parseInt(el('ed' + k).value, 10) || 0
     el('ed' + k + 'Val').textContent = v
-    it.adjust[k.toLowerCase()] = v
-    if (it._img) it._img.style.filter = cssFilter(it.adjust)
+    sel.forEach((it) => {
+      it.adjust[k.toLowerCase()] = v
+      if (it._img) it._img.style.filter = cssFilter(it.adjust)
+    })
     scheduleApply()
   })
 })
 el('edResetPhoto').addEventListener('click', () => {
-  const it = curItem(); if (!it) return
-  it.placement = { scale: 1, ox: 0, oy: 0 }
-  it.adjust = {}
-  if (it._img) it._img.style.filter = 'none'
-  layoutItem(it); updatePanel(); scheduleApply()
+  const sel = selectedItems(); if (!sel.length) return
+  sel.forEach((it) => {
+    it.placement = { scale: 1, ox: 0, oy: 0 }
+    it.adjust = {}
+    if (it._img) it._img.style.filter = 'none'
+    layoutItem(it)
+  })
+  updatePanel(); scheduleApply()
 })
 
 // ── Left rail: spread thumbnails + navigation ──────────────────
@@ -279,65 +305,65 @@ function buildRail() {
 
 function gotoSpread(pageNum) {
   if (pageNum === spread.pageNum) return
-  if (swapArmed) setSwapArmed(false)
+  hideContextMenu()
   // Flush any pending (debounced) edits before the payload is replaced.
   clearTimeout(_applyTimer)
   applyNow()
-  selectedId = null
+  selectedIds = []
   // Main rebuilds the payload for this page and pushes it back via
   // `editor-spread-updated`, which re-runs load().
   ipcRenderer.invoke('editor-goto', { pageNum }).catch(() => {})
 }
 
-// ── Swap (arm-then-click two same-shape photos) ────────────────
-function setSwapArmed(on) {
-  swapArmed = on
-  swapFirstId = null
-  items.forEach((it) => it._el && it._el.classList.remove('swap-target'))
-  el('edSwap').classList.toggle('armed', on)
-  hintEl.textContent = on
-    ? 'Swap mode: click two photos of the same shape to swap them (Esc to cancel).'
-    : DEFAULT_HINT
+// ── Context menu (right-click) ─────────────────────────────────
+let _ctxEl = null
+function hideContextMenu() { if (_ctxEl) { _ctxEl.remove(); _ctxEl = null } }
+function showContextMenu(x, y, item) {
+  hideContextMenu()
+  const menu = document.createElement('div')
+  menu.className = 'ed-ctx'
+  const canSwap = selectedIds.length === 2
+  const addItem = (label, enabled, fn) => {
+    const b = document.createElement('button')
+    b.className = 'ed-ctx__item'
+    b.textContent = label
+    b.disabled = !enabled
+    if (enabled) b.addEventListener('click', () => { hideContextMenu(); fn() })
+    menu.appendChild(b)
+  }
+  addItem(canSwap ? 'Swap the 2 selected photos' : 'Swap (select 2 photos first)', canSwap, () => {
+    const [a, b] = selectedItems()
+    if (a && b) { performSwap(a, b); toast('Swapped') }
+  })
+  addItem('Reset this photo', true, () => {
+    item.placement = { scale: 1, ox: 0, oy: 0 }; item.adjust = {}
+    if (item._img) item._img.style.filter = 'none'
+    layoutItem(item); updatePanel(); scheduleApply()
+  })
+  document.body.appendChild(menu)
+  // Keep the menu on-screen.
+  const r = menu.getBoundingClientRect()
+  menu.style.left = Math.min(x, window.innerWidth - r.width - 8) + 'px'
+  menu.style.top = Math.min(y, window.innerHeight - r.height - 8) + 'px'
+  _ctxEl = menu
 }
+document.addEventListener('click', hideContextMenu)
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideContextMenu() })
 
-function handleSwapClick(item) {
-  if (!swapFirstId) {
-    swapFirstId = item.id
-    item._el.classList.add('swap-target')
-    hintEl.textContent = 'Now click another ' + (item.orient === 'v' ? 'portrait' : 'landscape') + ' photo to swap with (Esc to cancel).'
-    return
-  }
-  if (item.id === swapFirstId) { // clicked the same photo → unselect
-    setSwapArmed(true) // re-arm cleanly (clears highlight + hint)
-    return
-  }
-  const a = items.find((it) => it.id === swapFirstId)
-  if (!a) { setSwapArmed(true); return }
-  if ((a.orient || '') !== (item.orient || '')) {
-    toast('Photos must be the same shape to swap')
-    return
-  }
-  performSwap(a, item)
-  setSwapArmed(false)
-  toast('Swapped')
-}
-
-// Swap photo identity between two frames; the frame boxes (._el) stay put, so
-// each frame keeps its slot while the photos (and their per-id placement +
-// colour) trade places. Mirrors the main-app reorder of albumPages[].photos.
+// Swap photo identity (incl. orientation) between two frames. The frame boxes
+// (._el) stay put; the photos — with their per-id placement + colour — trade
+// places and cover-fit into the new frame, so cross-shape swaps "scale to fit".
+// Orientation travels with the photo so main.js can re-derive frame assignment.
 function performSwap(a, b) {
-  const FIELDS = ['id', 'url', 'rotation', 'placement', 'adjust', '_nat']
+  const FIELDS = ['id', 'url', 'orient', 'rotation', 'placement', 'adjust', '_nat']
   for (const k of FIELDS) { const t = a[k]; a[k] = b[k]; b[k] = t }
   a._el.dataset.id = a.id; b._el.dataset.id = b.id
   a._img.src = a.url; b._img.src = b.url
   a._img.style.filter = cssFilter(a.adjust); b._img.style.filter = cssFilter(b.adjust)
   layoutItem(a); layoutItem(b)
-  selectItem(null)
+  setSelection(null)
   ipcRenderer.invoke('editor-swap', { pageNum: spread.pageNum, aId: a.id, bId: b.id }).catch(() => {})
 }
-
-el('edSwap').addEventListener('click', () => setSwapArmed(!swapArmed))
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && swapArmed) setSwapArmed(false) })
 
 // ── Apply back ─────────────────────────────────────────────────
 let _applyTimer = null
@@ -367,6 +393,6 @@ function applyNow() {
 el('edDone').addEventListener('click', () => { applyNow(); toast('Saved'); setTimeout(() => window.close(), 250) })
 
 window.addEventListener('resize', computeStageScale)
-document.addEventListener('click', (e) => { if (e.target === stageWrap) selectItem(null) })
+document.addEventListener('click', (e) => { if (e.target === stageWrap) setSelection(null) })
 
 load()

@@ -32,7 +32,14 @@
             </div>
 
             <button id="btnLoadWorkspace" class="btn btn--primary">📂 LOAD</button>
-            <button id="btnSaveWorkspace" class="btn btn--secondary">💾 SAVE</button>
+            <div class="save-split">
+                <button id="btnSaveWorkspace" class="btn btn--secondary">💾 SAVE</button>
+                <button id="btnSaveMenuBtn" class="btn btn--secondary save-split__caret" aria-haspopup="true" aria-expanded="false" aria-label="More save options" title="Save options">▾</button>
+                <div id="saveMenu" class="save-menu" role="menu">
+                    <button id="btnSaveAs" class="save-menu__item" role="menuitem">Save As…</button>
+                    <button id="btnNewProject" class="save-menu__item" role="menuitem">New Project…</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -40,6 +47,11 @@
          TAB 1 — ALBUM CREATION
     ═══════════════════════════════════════════════ -->
     <div id="tab-album" class="tab-pane active" role="tabpanel" aria-labelledby="tab-album-trigger">
+        <div id="automationBar" class="automation-bar">
+            <span class="automation-bar__label">⚡ ALBUM AUTOMATION</span>
+            <span class="automation-bar__hint">Pick photos and a template to build pages fast.</span>
+            <button id="btnAutomationExit" class="btn btn--secondary btn--sm">Open full workspace ›</button>
+        </div>
         <div class="row cmd-bar">
             <div class="cmd-group" role="group" aria-label="Generate">
                 <button id="btnAutoAll" class="btn btn--secondary">AUTO FILL (ALL PAGES)</button>
@@ -73,6 +85,7 @@
             <div class="cmd-spacer"></div>
 
             <div class="cmd-group" role="group" aria-label="View">
+                <button id="btnAutomationEnter" class="btn btn--ghost btn--sm" title="Switch to Album Automation — a streamlined Source + Templates view for fast building.">⚡ Automation</button>
                 <button id="btnLayoutToggle" class="btn btn--ghost btn--sm" aria-pressed="false" title="Toggle Stage layout — Source and Templates become side rails with the page as the centre stage. Your 2×2 layout stays available.">
                     <span aria-hidden="true">⊞</span> <span class="lt-label">Stage view</span>
                 </button>
@@ -108,14 +121,6 @@
                     </div>
                 </div>
                 <div class="box green-box" id="greenBox"></div>
-                <div id="adjustPanel" class="adjust-panel">
-                    <span class="adjust-panel__title">🎚 Adjust <span id="adjustCount" class="adjust-panel__count">— select a photo</span></span>
-                    <label class="adjust-ctl"><span>Exposure</span><input type="range" id="adjExposure" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjExposureVal">0</span></label>
-                    <label class="adjust-ctl"><span>Contrast</span><input type="range" id="adjContrast" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjContrastVal">0</span></label>
-                    <label class="adjust-ctl"><span>Saturation</span><input type="range" id="adjSaturation" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjSaturationVal">0</span></label>
-                    <label class="adjust-ctl"><span>Warmth</span><input type="range" id="adjWarmth" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjWarmthVal">0</span></label>
-                    <button id="btnAdjustReset" class="btn btn--ghost btn--sm" disabled>Reset</button>
-                </div>
             </div>
             <div class="resizer" id="topResizer"></div>
             <div class="box-wrapper box-wrapper--fill" id="yellowWrapper">
@@ -609,6 +614,7 @@
     <script src="main.js"></script>
     <script src="ui_tilt.js"></script>
     <script src="ui_layout.js"></script>
+    <script src="ui_folders.js"></script>
 
     <script>
   // ── LICENSE BADGE ──────────────────────────────────────────
