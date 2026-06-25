@@ -122,3 +122,39 @@ and applied in `proof_renderer.buildPhotoLayer` (libvips) + the build JSX (Photo
   colour are keyed per photo id, so they travel with the photo into its new slot.
 - Final colormatch PS round-trip not yet run with a live Photoshop build (math
   parity verified statically; harness ready).
+
+
+---
+
+## Engagement + Automation epic (overnight session)
+
+Full plan + decisions in `docs/ideas/automation-epic.md`. Commits:
+`3640666` (engagement pass), `a9b5e7e` (automation slice 1+2).
+
+**Done & static-verified (typecheck + lint + diagnostics green; NOT yet run in
+`npm start`):**
+- Engagement: pointer-tilt + sheen, button hover/press ladder, tile press,
+  live-preview pulse. Stage+Rails layout (E.1–E.3): toggle, resizable rails,
+  collapse, Both/Compose/Preview focus. (`ui_tilt.js`, `ui_layout.js`)
+- **G1** collapsible folder panels everywhere (`ui_folders.js`).
+- **H1** removed the Pages adjust panel (now Editor-only; `updateAdjustPanel` no-op).
+- **E1** Save / Save As / New Project split-button.
+- **D1** Album Automation toggle (OFF = Source|Templates only; ON = full workspace).
+- **I1/I2** Editor: ⌘/Shift multi-select, group colour/zoom/reset, right-click
+  Swap with cross-shape support (main.js swaps orientation too).
+
+**MUST verify in the morning (`npm start`):**
+- Everything above is unverified visually. Especially: Save/Save As/New Project
+  (New Project clears source+photos+album, keeps libraries — confirm that's wanted);
+  Album Automation toggle layout; **cross-shape swap persisting through a real
+  Photoshop build** (the riskiest — orientation-swap may interact with frame
+  assignment / rotation in ways I couldn't test).
+
+**Remaining — Photoshop-dependent, deliberately NOT done blind (need PS + eyes):**
+- **A2** open template in PS · **B1** open/place image in PS (clipped) ·
+  **F1** PSD resizer (12in/300ppi) · **thumbnail `_thumbnails` cache** ·
+  **A1/B2** sync toggle + match · **C1** double-click build · **J1** render as
+  editable adjustment layers. These touch `photoshop.js` / JSX builders and must
+  be validated with `colormatch.js` and a live Photoshop session.
+
+**NOT ready for publishing yet** — pending the above verification + the PS slices.
