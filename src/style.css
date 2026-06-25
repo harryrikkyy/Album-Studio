@@ -1430,7 +1430,7 @@ body {
     cursor: pointer;
     border: 2px solid transparent;
     box-sizing: border-box;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, transform 0.12s var(--ease-ui);
 }
 .thumb-red:hover:not(.used) { border-color: var(--accent); }
 /* Unified selection language (A.2 tokens): accent ring + soft glow, theme-
@@ -2105,7 +2105,7 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    transition: opacity 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s;
+    transition: opacity 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s, transform var(--dur-ui) var(--ease-ui);
     white-space: nowrap;
 }
 .btn:hover,
@@ -2960,3 +2960,251 @@ dialog {
     width:300px;
 }
 dialog::backdrop { background: rgba(0,0,0,0.6); }
+
+/* ══════════════════════════════════════════════════════════════
+   INTERACTIVE DEPTH (Tier-1 "3D") — theme-agnostic
+   Tactile press on buttons + pointer-reactive tilt/sheen driven by
+   ui_tilt.js. GPU-only transforms; fully suppressed under
+   prefers-reduced-motion (the JS also bails early in that case).
+══════════════════════════════════════════════════════════════ */
+
+/* Button press-depth — a small, satisfying "give" on click. */
+.btn:active:not(:disabled),
+.btn-blue:active, .btn-yellow:active, .btn-red:active,
+.btn-load-ws:active, .btn-save-ws:active {
+    transform: translateY(1px) scale(0.975);
+}
+
+/* Button hover-lift — completes the rest/hover/active elevation ladder so
+   buttons feel responsive on every theme (the glass themes already define a
+   more-specific hover and keep their own treatment). */
+.btn:hover:not(:disabled),
+.btn-blue:hover, .btn-yellow:hover, .btn-red:hover,
+.btn-load-ws:hover, .btn-save-ws:hover {
+    transform: var(--lift-hover);
+    box-shadow: var(--elev-hover);
+}
+
+/* Pointer-tilt: while ui_tilt.js tracks the cursor it adds .is-tilting
+   and writes an inline transform (overriding any per-theme hover tilt).
+   On leave the inline transform is cleared and this transition animates
+   the card back to rest. */
+.thumb-card, .wp-card, .sb-page-card, .tools-card {
+    transition: transform 0.32s var(--ease-ui), box-shadow 0.32s ease, border-color 0.2s;
+}
+.thumb-card.is-tilting, .wp-card.is-tilting,
+.sb-page-card.is-tilting, .tools-card.is-tilting,
+#yellowPreviewArea.is-tilting {
+    transition: none; /* 1:1 tracking while the pointer is inside */
+}
+
+/* Hero Page preview: tactile tilt + a soft specular sheen that follows
+   the cursor. The sheen only appears while hovering (.has-sheen). */
+#yellowPreviewArea {
+    transform-style: preserve-3d;
+    transition: transform 0.32s var(--ease-ui);
+    position: relative;
+}
+#yellowPreviewArea.has-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+        circle at var(--tilt-mx, 50%) var(--tilt-my, 50%),
+        rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04) 35%, transparent 60%);
+    opacity: 1;
+    transition: opacity 0.25s ease;
+    z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn:active:not(:disabled),
+    .btn-blue:active, .btn-yellow:active, .btn-red:active,
+    .btn-load-ws:active, .btn-save-ws:active { transform: none; }
+    .btn:hover:not(:disabled),
+    .btn-blue:hover, .btn-yellow:hover, .btn-red:hover,
+    .btn-load-ws:hover, .btn-save-ws:hover { transform: none; box-shadow: none; }
+    #yellowPreviewArea.has-sheen::after { display: none; }
+}
+
+/* Tile press — a tactile scale-down when a photo tile is clicked. (Tilt
+   cards carry an inline transform while hovered, so this targets the
+   non-tilt clickable tiles: source pool, compose grid, storyboard.) */
+.thumb-red:not(.used):active,
+.img-container:active,
+.sb-photo-item:active {
+    transform: scale(0.96);
+}
+
+/* Live-preview refresh pulse — a one-shot accent ring flashed by
+   ui_tilt.js (.preview-refresh) when the composite updates. Uses ::before
+   so it never collides with the cursor sheen (::after). */
+#yellowPreviewArea.preview-refresh::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 0 0 2px var(--accent), 0 0 20px 4px var(--accent-glow);
+    animation: preview-pulse 0.65s var(--ease-ui);
+}
+@keyframes preview-pulse {
+    0%   { opacity: 0; }
+    25%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .thumb-red:not(.used):active,
+    .img-container:active,
+    .sb-photo-item:active { transform: none; }
+    #yellowPreviewArea.preview-refresh::before { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   E.1 — STAGE + RAILS LAYOUT (opt-in via #btnLayoutToggle)
+   Reflows Tab 1 into rails: Source (left) + Templates (right) as
+   full-height rails, with page Compose + the hero Preview stacked in
+   the centre stage. Pure CSS over the existing DOM (display:contents
+   hoists the panels into this grid) — no restructuring, reversible,
+   and the classic 2×2 remains the default.
+
+   `display:grid` is scoped to `.active` so a hidden tab (which relies
+   on `.tab-pane{display:none}`) can't be force-shown by this higher-
+   specificity rule.
+══════════════════════════════════════════════════════════════ */
+#tab-album.layout-stage.active {
+    display: grid;
+    grid-template-columns:
+        var(--stage-left, 200px) 6px minmax(0, 1fr) 6px var(--stage-right, 220px);
+    grid-template-rows:
+        auto var(--stage-compose, 230px) 6px minmax(0, 1fr) auto;
+    grid-template-areas:
+        "cmd    cmd  cmd      cmd  cmd"
+        "source rzl  compose  rzr  tpl"
+        "source rzl  hsplit   rzr  tpl"
+        "source rzl  preview  rzr  tpl"
+        "foot   foot foot     foot foot";
+    column-gap: var(--space-2);
+    row-gap: var(--space-2);
+    padding: var(--space-2);
+}
+
+/* Full-width chrome rows. */
+#tab-album.layout-stage > .cmd-bar { grid-area: cmd; }
+#tab-album.layout-stage > .footer  { grid-area: foot; }
+
+/* Hoist the panels out of the two .box-row containers into this grid,
+   and drop the now-meaningless 2×2 resizers. */
+#tab-album.layout-stage > #topRow,
+#tab-album.layout-stage > #bottomRow { display: contents; }
+#tab-album.layout-stage > #resizerHorizontal,
+#tab-album.layout-stage #topResizer,
+#tab-album.layout-stage #bottomResizer { display: none; }
+
+/* Neutralise any inline drag-sizing the resizers left on the wrappers,
+   then place each panel. */
+#tab-album.layout-stage #redWrapper,
+#tab-album.layout-stage #greenWrapper,
+#tab-album.layout-stage #yellowWrapper,
+#tab-album.layout-stage #whiteWrapper {
+    width: auto !important;
+    height: auto !important;
+    flex: initial !important;
+    min-width: 0;
+    min-height: 0;
+}
+#tab-album.layout-stage #redWrapper    { grid-area: source; }
+#tab-album.layout-stage #greenWrapper  { grid-area: compose; }
+#tab-album.layout-stage #yellowWrapper { grid-area: preview; }
+#tab-album.layout-stage #whiteWrapper  { grid-area: tpl; }
+
+/* Draggable dividers — only present in stage mode. */
+.stage-resizer { display: none; }
+#tab-album.layout-stage.active .stage-resizer {
+    display: block;
+    position: relative;
+    background: var(--resizer-bg, transparent);
+    border-radius: 3px;
+    transition: background-color 0.15s;
+    z-index: 6;
+}
+#tab-album.layout-stage.active #stageResizerLeft  { grid-area: rzl; cursor: col-resize; }
+#tab-album.layout-stage.active #stageResizerRight { grid-area: rzr; cursor: col-resize; }
+#tab-album.layout-stage.active #stageResizerSplit { grid-area: hsplit; cursor: row-resize; }
+.stage-resizer:hover,
+.stage-resizer.is-dragging,
+.stage-resizer:focus-visible {
+    background: var(--resizer-hover, var(--accent));
+    outline: none;
+}
+/* Grip affordance. */
+.stage-resizer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    background: currentColor;
+    opacity: 0.35;
+    border-radius: 2px;
+}
+.stage-resizer--col::after { width: 2px; height: 28px; }
+.stage-resizer--row::after { height: 2px; width: 28px; }
+
+/* Active-toggle styling for the View button. */
+#btnLayoutToggle.is-active {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+}
+
+/* ── E.2 Rail collapse-to-strip ────────────────────────────────
+   Collapse buttons only exist in stage mode. When a rail is collapsed
+   (#tab-album gets .rail-collapsed-left/right and ui_layout.js sets the
+   track var to a thin strip), hide the rail's content + divider and
+   show just the expand chevron. */
+.rail-collapse-btn { display: none; padding: 0 var(--space-2); }
+#tab-album.layout-stage.active .rail-collapse-btn { display: inline-flex; }
+
+#tab-album.rail-collapsed-left #redWrapper .toolbar > *:not(.rail-collapse-btn),
+#tab-album.rail-collapsed-right #whiteWrapper .toolbar > *:not(.rail-collapse-btn) {
+    display: none;
+}
+#tab-album.rail-collapsed-left #redWrapper .folder-rail,
+#tab-album.rail-collapsed-left #redWrapper .box,
+#tab-album.rail-collapsed-right #whiteWrapper .folder-rail,
+#tab-album.rail-collapsed-right #whiteWrapper .box {
+    display: none !important;
+}
+#tab-album.rail-collapsed-left  #stageResizerLeft,
+#tab-album.rail-collapsed-right #stageResizerRight { display: none; }
+#tab-album.rail-collapsed-left #redWrapper .toolbar,
+#tab-album.rail-collapsed-right #whiteWrapper .toolbar {
+    justify-content: center;
+    padding: var(--space-2) 0;
+}
+
+/* ── E.3 Center focus modes (Both / Compose / Preview) ─────────
+   The segmented control only shows in stage mode. The mode classes on
+   #tab-album let one panel take the whole centre column so the page can
+   be the hero. */
+.stage-only { display: none; }
+#tab-album.layout-stage.active .stage-only { display: inline-flex; }
+.seg-group { gap: 0; }
+.seg-group .seg { border-radius: 0; }
+.seg-group .seg:first-child { border-top-left-radius: var(--radius-md); border-bottom-left-radius: var(--radius-md); }
+.seg-group .seg:last-child  { border-top-right-radius: var(--radius-md); border-bottom-right-radius: var(--radius-md); }
+.seg.is-active { color: var(--accent); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-glow); }
+
+/* Compose-only: preview + split hidden, compose spans the centre rows. */
+#tab-album.layout-stage.stage-center-compose #yellowWrapper,
+#tab-album.layout-stage.stage-center-compose #stageResizerSplit { display: none; }
+#tab-album.layout-stage.stage-center-compose #greenWrapper { grid-row: 2 / 5; }
+
+/* Preview-only: compose + split hidden, preview spans the centre rows. */
+#tab-album.layout-stage.stage-center-preview #greenWrapper,
+#tab-album.layout-stage.stage-center-preview #stageResizerSplit { display: none; }
+#tab-album.layout-stage.stage-center-preview #yellowWrapper { grid-row: 2 / 5; }

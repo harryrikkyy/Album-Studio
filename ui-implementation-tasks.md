@@ -31,13 +31,34 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⏱ effort · ⚠ risk
 
 - [ ] **D.1** Unify **selection visuals** across source thumbs / green tiles / storyboard tiles using the `--select-*` tokens + optional ✓ corner badge. 🟧 ⏱M ⚠med — *(2.2)*
 - [ ] **D.2** Make **drag the universal verb**: enable real pointer-drag from the Source pool onto the current Page / storyboard, keeping double-click as a documented shortcut. Unify the drop indicator visual. 🟥 ⏱L ⚠high — *(2.1)* — do AFTER D.1.
-- [ ] **D.3** Standardize **hover elevation** (rest/hover/active ladder from A.2) on all interactive elements incl. plain buttons. 🟦 ⏱S ⚠low — *(4.2)*
+- [x] **D.3** Standardize **hover elevation** (rest/hover/active ladder from A.2) on all interactive elements incl. plain buttons. 🟦 ⏱S ⚠low — *(4.2)* — **DONE:** `.btn` now has a token-driven hover-lift (`--lift-hover` + `--elev-hover`) + press-depth `:active`; glass themes keep their own more-specific treatment. Reduced-motion guarded.
+
+### Tier-1 "3D" interactive depth (engagement pass) — DONE
+Pointer-reactive tilt + specular sheen, theme-agnostic. New isolated module
+`src/ui_tilt.js` (document-delegated, rAF-batched, no edits to the virtualized
+render functions). Targets the hero Page preview (`#yellowPreviewArea`, with a
+cursor-following sheen) and the card grids (`.thumb-card/.wp-card/.sb-page-card/
+.tools-card`), upgrading the per-theme static hover tilt to cursor-tracking.
+Fully disabled under `prefers-reduced-motion` (JS bails on init + CSS `@media`
+guard). Green-box compose tiles (`.img-container`) deliberately excluded so tilt
+can't fight drag-reorder. The precision surfaces (Spread Editor frames) are kept
+planar on purpose — moving the artifact in Z would break WYSIWYG placement.
+Added `ui_tilt.js` to the `typecheck` script.
+
+**Core-loop feedback (engagement pass 2) — DONE:**
+- **Button ladder:** token-driven hover-lift + press-depth `:active` (glass keeps its own).
+- **Tile press:** tactile `scale(0.96)` on click for source pool / compose grid / storyboard tiles.
+- **Live-preview refresh pulse:** isolated MutationObserver in `ui_tilt.js` flashes an
+  accent ring (`.preview-refresh::before`) whenever `#yellowPreviewArea`'s composite
+  swaps in — the edit→see loop now visibly "lands". No render-path edits.
+- All reduced-motion guarded. Storyboard tile selection has no dedicated CSS rule yet;
+  left untouched (D.1 selection unification still pending there).
 
 ## Phase E — The big relayout (highest impact, highest risk — staged)
 
-- [ ] **E.1** Introduce the **Stage + Rails** structure for Tab 1 behind a view toggle (new layout opt-in, old 2×2 as fallback). Collapsible Source rail (left) + Templates rail (right) + center Page stage. 🟥 ⏱XL ⚠high — *(1.1)*
-- [ ] **E.2** Rail **collapse-to-icon-strip** behavior + remembered widths (persist in projectData/localStorage). 🟧 ⏱M ⚠med — *(1.1)*
-- [ ] **E.3** Page stage: switchable **Compose ↔ Preview** (or side-by-side on wide windows) so the page is the hero. 🟥 ⏱L ⚠high — *(1.1)*
+- [~] **E.1** Introduce the **Stage + Rails** structure for Tab 1 behind a view toggle (new layout opt-in, old 2×2 as fallback). Collapsible Source rail (left) + Templates rail (right) + center Page stage. 🟥 ⏱XL ⚠high — *(1.1)* — **IMPLEMENTED (opt-in, needs visual QA):** `#btnLayoutToggle` in the cmd-bar toggles `.layout-stage` on `#tab-album`, persisted (`adt_layout_stage`). New module `src/ui_layout.js`. Layout is pure CSS: a 4-row / 3-col grid (`cmd / [source compose tpl] / [source preview tpl] / foot`) with `display:contents` hoisting the existing panels — **no DOM restructuring**, 2×2 stays default. Hero Preview gets the larger center row. `display:grid` scoped to `.active` so hidden tabs stay hidden; inline drag-sizes neutralised with `!important`. Resizers hidden in stage mode. Dispatches `resize` on toggle so virtualized grids recompute. ⚠ **Not visually verified across the 5 themes — needs `npm start`.**
+- [~] **E.2** Rail **collapse-to-icon-strip** behavior + remembered widths (persist in projectData/localStorage). 🟧 ⏱M ⚠med — *(1.1)* — **PARTIAL:** all stage panels are now **resizable** via three draggable dividers (`#stageResizerLeft/Right/Split`) that drag the grid tracks (`--stage-left/--stage-right/--stage-compose`); sizes are **persisted** (`adt_stage_*`) and keyboard-nudgeable (role="separator", arrow keys). Remaining: collapse-to-icon-strip. ⚠ needs `npm start` visual QA.
+- [~] **E.3** Page stage: switchable **Compose ↔ Preview** (or side-by-side on wide windows) so the page is the hero. 🟥 ⏱L ⚠high — *(1.1)* — **PARTIAL:** segmented **Both / Compose / Preview** control (`.seg-group`, stage-only) in the View cluster sets a `stage-center-*` class so one panel can take the whole centre column (page-as-hero); persisted (`adt_stage_center`). Side-by-side deferred (grid-complex, lower value). ⚠ needs `npm start` visual QA.
 - [ ] **E.4** Once validated, make Stage+Rails the default and retire the 2×2 fallback. 🟧 ⏱S ⚠med — *(1.1)*
 
 ## Phase F — Information architecture (tab consolidation)

@@ -72,6 +72,17 @@
 
             <div class="cmd-spacer"></div>
 
+            <div class="cmd-group" role="group" aria-label="View">
+                <button id="btnLayoutToggle" class="btn btn--ghost btn--sm" aria-pressed="false" title="Toggle Stage layout — Source and Templates become side rails with the page as the centre stage. Your 2×2 layout stays available.">
+                    <span aria-hidden="true">⊞</span> <span class="lt-label">Stage view</span>
+                </button>
+                <div class="cmd-group stage-only seg-group" role="group" aria-label="Stage focus">
+                    <button id="btnCenterBoth"    class="btn btn--ghost btn--sm seg is-active" data-center="both"    title="Show both the compose page and the preview">Both</button>
+                    <button id="btnCenterCompose" class="btn btn--ghost btn--sm seg"           data-center="compose" title="Focus the compose page full-height">Compose</button>
+                    <button id="btnCenterPreview" class="btn btn--ghost btn--sm seg"           data-center="preview" title="Focus the preview full-height (page as hero)">Preview</button>
+                </div>
+            </div>
+
             <!-- Overflow: destructive / rare actions kept away from Auto Fill -->
             <div class="cmd-overflow">
                 <button id="btnCmdOverflow" class="btn btn--ghost btn--sm" aria-label="More actions" aria-haspopup="true" aria-expanded="false" title="More actions">⋯</button>
@@ -127,6 +138,7 @@
         <div class="box-row" id="bottomRow">
             <div class="box-wrapper box-wrapper--half" id="redWrapper">
                 <div class="toolbar">
+                    <button id="btnCollapseLeft" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Source rail" aria-label="Collapse source rail" aria-pressed="false">‹</button>
                     <span>Source Pool</span>
                     <button id="btnLoadPhotos" class="btn btn--primary btn--sm">📂 LOAD PHOTOS</button>
                     <input type="range" id="redSlider" class="slider--md" min="40" max="250" value="70" aria-label="Source pool thumbnail size">
@@ -157,6 +169,7 @@
 
             <div class="box-wrapper box-wrapper--fill" id="whiteWrapper">
                 <div class="toolbar">
+                    <button id="btnCollapseRight" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Templates rail" aria-label="Collapse templates rail" aria-pressed="false">›</button>
                     <span>Templates</span>
                     <button id="btnLPT" class="btn btn--primary btn--sm">📂 LOAD TEMPLATES</button>
                     <input type="range" id="whiteSlider" class="slider--md" min="40" max="250" value="100" aria-label="Template thumbnail size">
@@ -188,6 +201,11 @@
             <span id="statusText">Ready</span>
             <span id="templateMatchText" class="u-text-accent">Matches: 0</span>
         </div>
+
+        <!-- Stage-layout resizers (only visible in .layout-stage; placed by grid-area). -->
+        <div class="stage-resizer stage-resizer--col" id="stageResizerLeft"  role="separator" aria-orientation="vertical"   aria-label="Resize source rail"        tabindex="0"></div>
+        <div class="stage-resizer stage-resizer--col" id="stageResizerRight" role="separator" aria-orientation="vertical"   aria-label="Resize templates rail"     tabindex="0"></div>
+        <div class="stage-resizer stage-resizer--row" id="stageResizerSplit" role="separator" aria-orientation="horizontal" aria-label="Resize compose / preview"  tabindex="0"></div>
     </div>
 
     <!-- ═══════════════════════════════════════════════
@@ -589,6 +607,8 @@
     <!-- theme.js MUST load before main.js -->
     <script src="theme.js"></script>
     <script src="main.js"></script>
+    <script src="ui_tilt.js"></script>
+    <script src="ui_layout.js"></script>
 
     <script>
   // ── LICENSE BADGE ──────────────────────────────────────────
