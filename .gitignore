@@ -1,0 +1,22 @@
+# ── Secrets — never commit ────────────────────────────────
+.env
+.env.*
+!.env.example
+client_secret_*.json
+*.credentials.json
+.ch_toolkit_license
+
+# ── Node / build ──────────────────────────────────────────
+node_modules/
+dist/
+*.log
+
+# ── OS / editor cruft ─────────────────────────────────────
+.DS_Store
+*.swp
+.vscode/
+.claude/
+
+# ── Python cache (from steering skill scripts) ────────────
+__pycache__/
+*.pyc

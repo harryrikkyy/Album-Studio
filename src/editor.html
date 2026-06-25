@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spread Editor — Album Toolkit</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  html, body { height: 100%; margin: 0; background: var(--bg-base); color: var(--txt-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+  .ed-app { display: flex; flex-direction: column; height: 100vh; }
+  .ed-header { padding: 10px 16px 8px; flex-shrink: 0; }
+  .ed-header__bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .ed-header__title { margin: 0; font-size: 18px; font-weight: 700; }
+  .ed-header__sub { margin: 2px 0 0; font-size: var(--fs-sm); color: var(--txt-secondary); }
+  #edSwap.armed { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .ed-body { display: flex; flex: 1; overflow: hidden; gap: var(--space-3); padding: 0 16px 14px; }
+
+  /* Left: spread thumbs */
+  .ed-rail {
+    width: 150px; flex-shrink: 0; overflow-y: auto;
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    padding: 10px; display: flex; flex-direction: column; gap: 8px;
+  }
+  .ed-rail__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-muted); font-weight: 700; }
+  .ed-thumb { border: 2px solid var(--border-main); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-inset); }
+  .ed-thumb.active { border-color: var(--accent); }
+  .ed-thumb img { width: 100%; display: block; }
+  .ed-thumb__cap { font-size: 10px; color: var(--txt-secondary); text-align: center; padding: 2px; }
+
+  /* Center: workspace */
+  .ed-stage-wrap {
+    flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    background: var(--bg-inset);
+    background-image: repeating-conic-gradient(rgba(128,128,128,0.10) 0% 25%, transparent 0% 50%);
+    background-size: 24px 24px;
+    position: relative;
+  }
+  .ed-stage { position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+  .ed-stage__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+  .ed-frame { position: absolute; overflow: hidden; cursor: pointer; outline: 1px solid rgba(255,255,255,0.12); }
+  .ed-frame img { position: absolute; transform-origin: center center; will-change: left, top, width, height; }
+  .ed-frame.selected { outline: 2px solid var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); z-index: 5; }
+  .ed-frame.swap-target { outline: 2px dashed var(--accent); }
+  .ed-frame.dragging { cursor: grabbing; }
+  .ed-empty { color: var(--txt-muted); font-size: var(--fs-md); }
+
+  /* Right: controls */
+  .ed-panel {
+    width: 240px; flex-shrink: 0; overflow-y: auto;
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    padding: 12px; display: flex; flex-direction: column; gap: 12px;
+  }
+  .ed-panel__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-muted); font-weight: 700; }
+  .ed-panel__hint { font-size: var(--fs-xs); color: var(--txt-secondary); line-height: 1.5; }
+  .ed-ctl { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--txt-secondary); }
+  .ed-ctl > span:first-child { width: 64px; flex-shrink: 0; }
+  .ed-ctl input[type="range"] { flex: 1; }
+  .ed-ctl .ed-val { width: 30px; text-align: right; font-variant-numeric: tabular-nums; color: var(--txt-primary); }
+  .ed-sep { height: 1px; background: var(--border-main); margin: 2px 0; }
+  .ed-actions { display: flex; gap: 8px; margin-top: auto; }
+  .ed-actions .btn { flex: 1; }
+
+  .ed-toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-card); border: 1px solid var(--border-main); color: var(--txt-primary);
+    padding: 8px 16px; border-radius: var(--radius-lg); box-shadow: var(--elev-hover);
+    font-size: var(--fs-sm); opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100;
+  }
+  .ed-toast.show { opacity: 1; }
+
+  /* Standalone-window theme fixes (this window is not transparent). */
+  body::before, body::after { display: none !important; content: none !important; }
+  [data-theme="glass"] { --bg-base:#EDF1F8; --bg-card:#FFF; --bg-elevated:#FFF; --bg-inset:#EEF2F8; --bg-surface:#E6ECF5; }
+  [data-theme="glass-dark"] { --bg-base:#0F1117; --bg-card:#171A22; --bg-elevated:#1E222B; --bg-inset:#0B0D12; --bg-surface:#242833; }
+  [data-theme="glass"] .btn, [data-theme="glass-dark"] .btn { -webkit-backdrop-filter:none; backdrop-filter:none; }
+</style>
+</head>
+<body>
+<div class="ed-app">
+  <header class="ed-header">
+    <div class="ed-header__bar">
+      <div>
+        <h1 class="ed-header__title">Spread Editor</h1>
+        <p class="ed-header__sub" id="edHint">Click a photo on the page · drag to reposition · scroll to zoom.</p>
+      </div>
+      <button id="edSwap" class="btn btn--ghost btn--sm" title="Swap two photos of the same shape">⇄ Swap photos</button>
+    </div>
+  </header>
+  <div class="ed-body">
+    <aside class="ed-rail">
+      <div class="ed-rail__title">Spread</div>
+      <div id="edThumbs"></div>
+    </aside>
+
+    <div class="ed-stage-wrap" id="edStageWrap">
+      <div class="ed-stage" id="edStage"></div>
+      <div class="ed-empty" id="edEmpty" style="display:none;">No spread loaded.</div>
+    </div>
+
+    <aside class="ed-panel">
+      <div class="ed-panel__title">Adjust selected photo</div>
+      <div id="edNoSel" class="ed-panel__hint">Select a photo on the page to edit it.</div>
+      <div id="edControls" style="display:none; flex-direction:column; gap:10px;">
+        <div class="ed-ctl"><span>Zoom</span><input type="range" id="edZoom" min="100" max="400" value="100"><span class="ed-val" id="edZoomVal">1.0×</span></div>
+        <div class="ed-sep"></div>
+        <div class="ed-ctl"><span>Exposure</span><input type="range" id="edExposure" min="-100" max="100" value="0"><span class="ed-val" id="edExposureVal">0</span></div>
+        <div class="ed-ctl"><span>Contrast</span><input type="range" id="edContrast" min="-100" max="100" value="0"><span class="ed-val" id="edContrastVal">0</span></div>
+        <div class="ed-ctl"><span>Saturation</span><input type="range" id="edSaturation" min="-100" max="100" value="0"><span class="ed-val" id="edSaturationVal">0</span></div>
+        <div class="ed-ctl"><span>Warmth</span><input type="range" id="edWarmth" min="-100" max="100" value="0"><span class="ed-val" id="edWarmthVal">0</span></div>
+        <button id="edResetPhoto" class="btn btn--ghost btn--sm">Reset this photo</button>
+      </div>
+      <div class="ed-actions">
+        <button id="edDone" class="btn btn--render btn--sm">Done</button>
+      </div>
+    </aside>
+  </div>
+</div>
+<div class="ed-toast" id="edToast"></div>
+<script src="editor_renderer.js"></script>
+</body>
+</html>

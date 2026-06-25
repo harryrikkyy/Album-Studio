@@ -1,0 +1,364 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Renamer — Album Toolkit</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Renamer-specific layout. Colours come from the shared theme variables
+     defined in style.css (:root / [data-theme="…"]). */
+  html, body {
+    height: 100%; margin: 0;
+    background: var(--bg-base);
+    color: var(--txt-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+  }
+  .rn-app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* Page header */
+  .rn-header {
+    padding: var(--space-4) var(--space-5) var(--space-3);
+    flex-shrink: 0;
+  }
+  .rn-header__title { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .rn-header__sub { margin: 4px 0 0; font-size: var(--fs-md); color: var(--txt-secondary); }
+
+  /* Toolbar */
+  .rn-toolbar {
+    display: flex; align-items: center; gap: var(--space-2);
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border-main);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  .rn-subbar {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+    padding: 6px var(--space-3);
+    flex-shrink: 0;
+  }
+  .rn-folder-name { color: var(--accent); font-weight: 600; font-size: var(--fs-sm); }
+  .rn-hint { font-size: var(--fs-xs); color: var(--txt-muted); }
+  .rn-spacer { flex: 1 1 auto; }
+  .rn-sep { width: 1px; align-self: stretch; min-height: 22px; background: var(--border-main); margin: 0 var(--space-1); }
+  .rn-mode__state { font-weight: 600; color: var(--txt-primary); font-size: var(--fs-sm); min-width: 92px; }
+
+  /* Visible toggle switch (native checkboxes render invisibly in this
+     window across themes, so we draw our own from the checkbox). */
+  .rn-switch { position: relative; display: inline-flex; cursor: pointer; }
+  .rn-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .rn-switch__track {
+    width: 40px; height: 22px; border-radius: 999px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    transition: background 0.15s ease, border-color 0.15s ease;
+    display: inline-flex; align-items: center; padding: 2px;
+  }
+  .rn-switch__thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--txt-secondary);
+    transition: transform 0.15s ease, background 0.15s ease;
+    transform: translateX(0);
+  }
+  .rn-switch input:checked + .rn-switch__track {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .rn-switch input:checked + .rn-switch__track .rn-switch__thumb {
+    transform: translateX(18px); background: #fff;
+  }
+  .rn-switch input:focus-visible + .rn-switch__track {
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  .rn-custom-input {
+    width: 150px; height: 28px; padding: 0 10px;
+    background: var(--bg-inset); color: var(--txt-primary);
+    border: 1px solid var(--accent); border-radius: var(--radius-md);
+    font: inherit; font-size: var(--fs-sm);
+  }
+  .rn-custom-input::placeholder { color: var(--txt-muted); }
+  .rn-custom-input:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-glow); }
+  .rn-custom-input:disabled { opacity: 0.4; border-color: var(--border-main); cursor: not-allowed; }
+
+  /* Body: folder tree + workspace */
+  .rn-body { display: flex; flex: 1; overflow: hidden; padding: 0 var(--space-5) var(--space-4); gap: var(--space-4); }
+  .rn-side {
+    width: 250px; flex-shrink: 0;
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-card);
+    background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .rn-side__head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; border-bottom: 1px solid var(--border-main);
+    flex-shrink: 0;
+  }
+  .rn-side__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-muted); font-weight: 700; }
+  .rn-side__actions { display: flex; gap: 4px; }
+  .rn-iconbtn {
+    background: transparent; border: none; color: var(--txt-secondary);
+    cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: var(--radius-md);
+  }
+  .rn-iconbtn:hover { background: var(--bg-surface); color: var(--txt-primary); }
+
+  /* Folder tree */
+  .rn-tree { flex: 1; overflow-y: auto; padding: 6px; }
+  .rn-tree__empty { padding: 16px 12px; font-size: var(--fs-xs); color: var(--txt-muted); }
+  .rn-node__row {
+    display: flex; align-items: center; gap: 4px; width: 100%;
+    padding: 5px 6px; border: 1px solid transparent; background: transparent;
+    color: var(--txt-primary); font: inherit; font-size: var(--fs-sm);
+    text-align: left; border-radius: var(--radius-md); cursor: pointer;
+  }
+  .rn-node__row:hover { background: var(--bg-surface); }
+  .rn-node__row.active {
+    background: var(--accent-dim); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+  .rn-node__arrow {
+    width: 16px; flex-shrink: 0; text-align: center; color: var(--txt-muted);
+    font-size: 10px; transition: transform 0.12s ease; user-select: none;
+  }
+  .rn-node__arrow.open { transform: rotate(90deg); }
+  .rn-node__arrow.leaf { visibility: hidden; }
+  .rn-node__icon { flex-shrink: 0; }
+  .rn-node__name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rn-node__check { flex-shrink: 0; color: var(--accent); font-size: 12px; }
+  .rn-node__children { /* indentation handled inline per depth */ }
+
+  /* Workspace column */
+  .rn-main {
+    flex: 1; display: flex; flex-direction: column; overflow: hidden;
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    background-color: var(--bg-card);
+    background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+  }
+  .rn-chip {
+    display: inline-flex; align-items: center; padding: 1px 7px;
+    border-radius: 999px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  }
+  .rn-chip--first { background: #2563eb33; color: #93c5fd; border: 1px solid #2563eb66; }
+  .rn-chip--last  { background: #7c3aed33; color: #c4b5fd; border: 1px solid #7c3aed66; }
+  .rn-chip--cover { background: #ca8a0433; color: #fcd34d; border: 1px solid #ca8a0466; }
+
+  .rn-chip--effect{ background: #db277733; color: #f9a8d4; border: 1px solid #db277766; }
+
+  .rn-grid-wrap { flex: 1; overflow-y: auto; padding: var(--space-3); }
+  .rn-grid {
+    display: grid; gap: var(--space-3);
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  }
+  .rn-empty { color: var(--txt-muted); text-align: center; margin-top: 80px; font-size: var(--fs-md); }
+
+  /* Tile */
+  .rn-tile {
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg);
+    overflow: hidden; cursor: grab; position: relative;
+    transition: border-color 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+    display: flex; flex-direction: column;
+  }
+  .rn-tile:hover { border-color: var(--accent); }
+  .rn-tile.dragging { opacity: 0.4; }
+  .rn-tile.drop-target { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
+  .rn-tile.armed-hover { box-shadow: inset 0 0 0 2px var(--accent); }
+  .rn-tile__thumb {
+    width: 100%; height: 130px; background: var(--bg-inset);
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .rn-tile__thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .rn-tile__placeholder { color: var(--txt-muted); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; }
+  .rn-tile__body { padding: 8px 10px; }
+  .rn-tile__newname {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: var(--txt-primary); font-weight: 600;
+    word-break: break-all; line-height: 1.35;
+  }
+  .rn-tile__newname--none { color: var(--txt-muted); font-style: italic; font-weight: 400; }
+  .rn-tile__oldname { margin-top: 4px; font-size: 11px; color: var(--txt-muted); word-break: break-all; }
+  .rn-tile__badges { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; flex-wrap: wrap; }
+  .rn-tile__dim { position: absolute; top: 6px; right: 6px; font-size: 10px; color: var(--txt-secondary); background: rgba(0,0,0,0.55); padding: 1px 6px; border-radius: 999px; }
+
+  /* Context menu */
+  .rn-menu {
+    position: fixed; z-index: 1000; min-width: 160px;
+    background: var(--bg-card);
+    background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover); padding: 4px; display: none;
+  }
+  .rn-menu.open { display: block; }
+  .rn-menu__item {
+    display: block; width: 100%; text-align: left; background: transparent;
+    border: none; color: var(--txt-primary); font: inherit; font-size: var(--fs-sm);
+    padding: 7px 12px; border-radius: var(--radius-md); cursor: pointer;
+  }
+  .rn-menu__item:hover { background: var(--bg-surface); }
+  .rn-menu__sep { height: 1px; background: var(--border-main); margin: 4px 0; }
+
+  /* Dialog */
+  .rn-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: none; align-items: center; justify-content: center; z-index: 900;
+  }
+  .rn-overlay.open { display: flex; }
+  .rn-dialog {
+    width: 420px; max-width: calc(100vw - 40px);
+    background: var(--bg-card);
+    background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover); padding: var(--space-4);
+  }
+  .rn-dialog h2 { margin: 0 0 var(--space-3); font-size: var(--fs-lg); }
+  .rn-field { margin-bottom: var(--space-3); }
+  .rn-field > label { display: block; font-size: var(--fs-xs); color: var(--txt-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .rn-radios { display: flex; flex-wrap: wrap; gap: 6px; }
+  .rn-radio {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px;
+    border: 1px solid var(--border-main); border-radius: var(--radius-md);
+    font-size: var(--fs-sm); cursor: pointer; background: var(--bg-inset);
+  }
+  .rn-radio input { accent-color: var(--accent); }
+  .rn-select {
+    width: 100%; height: 32px; padding: 0 8px;
+    background: var(--bg-inset); color: var(--txt-primary);
+    border: 1px solid var(--border-main); border-radius: var(--radius-md);
+    font: inherit; font-size: var(--fs-sm);
+  }
+  .rn-preview {
+    margin-top: var(--space-2); padding: 10px 12px;
+    background: var(--bg-inset); border: 1px dashed var(--border-main);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px; color: var(--accent); word-break: break-all;
+  }
+  .rn-dialog__actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-4); }
+
+  /* Toast */
+  .rn-toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-card); border: 1px solid var(--border-main);
+    color: var(--txt-primary); padding: 10px 18px; border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover); font-size: var(--fs-sm); opacity: 0;
+    transition: opacity 0.2s ease; pointer-events: none; z-index: 1100; max-width: 70vw;
+  }
+  .rn-toast.show { opacity: 1; }
+  .rn-toast--error { border-color: var(--btn-red-bg); }
+
+  /* ── Standalone-window theme fixes ──────────────────────────
+     This window is NOT transparent like the main app window, so the Glass
+     themes' translucent panels + animated wallpaper render as "empty" here.
+     Kill the decorative backdrops and force the background variables to
+     opaque values for the glass themes so the structure is always visible.
+     Dark non-glass themes already use opaque hex, so they're untouched. */
+  body::before, body::after { display: none !important; content: none !important; }
+  [data-theme="glass"] {
+    --bg-base:    #EDF1F8;
+    --bg-nav:     #FFFFFF;
+    --bg-card:    #FFFFFF;
+    --bg-elevated:#FFFFFF;
+    --bg-inset:   #EEF2F8;
+    --bg-surface: #E6ECF5;
+  }
+  [data-theme="glass-dark"] {
+    --bg-base:    #0F1117;
+    --bg-nav:     #191C24;
+    --bg-card:    #171A22;
+    --bg-elevated:#1E222B;
+    --bg-inset:   #0B0D12;
+    --bg-surface: #242833;
+  }
+  /* Glass button/control styles rely on backdrop-filter over a transparent
+     window; here they sit on opaque cards, so give them a plain surface. */
+  [data-theme="glass"] .btn, [data-theme="glass-dark"] .btn,
+  [data-theme="glass"] .rn-custom-input, [data-theme="glass-dark"] .rn-custom-input,
+  [data-theme="glass"] .rn-select, [data-theme="glass-dark"] .rn-select {
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
+</style>
+</head>
+<body>
+<div class="rn-app">
+  <!-- Page header -->
+  <header class="rn-header">
+    <h1 class="rn-header__title">Renamer</h1>
+    <p class="rn-header__sub">Rename all sheets to the print naming convention using a visual image workspace.</p>
+  </header>
+
+  <!-- Body: folder tree + workspace -->
+  <div class="rn-body">
+    <aside class="rn-side">
+      <div class="rn-side__head">
+        <span class="rn-side__title">Folders</span>
+        <div class="rn-side__actions">
+          <button id="btnPickFolder" class="rn-iconbtn" title="Choose a root folder">📂</button>
+          <button id="rnRefresh" class="rn-iconbtn" title="Refresh tree">↻</button>
+        </div>
+      </div>
+      <div id="rnTree" class="rn-tree"></div>
+      <div id="rnTreeEmpty" class="rn-tree__empty">Click 📂 to choose a root folder.</div>
+    </aside>
+
+    <main class="rn-main">
+      <div class="rn-toolbar">
+        <button id="btnSelFirst" class="btn btn--ghost btn--sm" data-mode="first">Select First</button>
+        <button id="btnSelLast"  class="btn btn--ghost btn--sm" data-mode="last">Select Last</button>
+        <button id="btnSelCover" class="btn btn--ghost btn--sm" data-mode="cover">Select Cover Pad</button>
+        <div class="rn-sep"></div>
+        <label class="rn-switch" title="ON = folder-name numbering like '256 (01)'. OFF = custom prefix like 'page_001'.">
+          <input type="checkbox" id="chkFolderMode" checked>
+          <span class="rn-switch__track"><span class="rn-switch__thumb"></span></span>
+        </label>
+        <span id="modeLabel" class="rn-mode__state">Folder name</span>
+        <input type="text" id="customName" class="rn-custom-input" placeholder="e.g. page" disabled>
+        <div class="rn-spacer"></div>
+        <button id="btnRenameAll" class="btn btn--render btn--sm" disabled>Rename All</button>
+      </div>
+      <div class="rn-subbar">
+        <span id="folderLabel" class="rn-folder-name">No folder selected</span>
+        <span class="rn-hint">Drag to reorder · right-click a page sheet for effects</span>
+      </div>
+
+      <div class="rn-grid-wrap">
+        <div id="rnGrid" class="rn-grid"></div>
+        <div id="rnEmpty" class="rn-empty">Pick a folder from the tree to begin.</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Right-click effect menu -->
+<div id="rnMenu" class="rn-menu" role="menu"></div>
+
+<!-- Cover pad dialog -->
+<div id="rnOverlay" class="rn-overlay">
+  <div class="rn-dialog">
+    <h2>Cover pad</h2>
+    <div class="rn-field">
+      <label>Lamination</label>
+      <div id="covLam" class="rn-radios"></div>
+    </div>
+    <div class="rn-field">
+      <label>Size</label>
+      <select id="covSize" class="rn-select"></select>
+    </div>
+    <div class="rn-field">
+      <label>Preview</label>
+      <div id="covPreview" class="rn-preview">—</div>
+    </div>
+    <div class="rn-dialog__actions">
+      <button id="covCancel" class="btn btn--ghost btn--sm">Cancel</button>
+      <button id="covApply" class="btn btn--render btn--sm">Apply cover</button>
+    </div>
+  </div>
+</div>
+
+<div id="rnToast" class="rn-toast"></div>
+
+<script src="renamer_renderer.js"></script>
+</body>
+</html>

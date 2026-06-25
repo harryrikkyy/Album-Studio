@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Creative Hubb — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #e31c1c;
+    --red-dark: #a81212;
+    --red-glow: rgba(227,28,28,0.2);
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #1e1e1e;
+    --text: #f0f0f0;
+    --muted: #555555;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  /* background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  /* red corner accents */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle at top left, var(--red-glow), transparent 70%);
+    pointer-events: none;
+  }
+
+  .card {
+    position: relative;
+    width: 420px;
+    padding: 56px 48px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    -webkit-app-region: no-drag;
+    z-index: 1;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), transparent);
+  }
+
+  .card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--red), transparent);
+  }
+
+  .logo-wrap {
+    margin-bottom: 8px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    color: var(--red);
+    letter-spacing: 5px;
+    line-height: 1;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 32px 0;
+    position: relative;
+  }
+
+  .divider::after {
+    content: 'SIGN IN TO CONTINUE';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--surface);
+    padding: 0 12px;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 3px;
+    white-space: nowrap;
+  }
+
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px;
+    background: var(--red);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-google::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-google:hover {
+    background: var(--red-dark);
+    box-shadow: 0 8px 32px var(--red-glow);
+    transform: translateY(-1px);
+  }
+
+  .btn-google:hover::before { opacity: 1; }
+  .btn-google:active { transform: translateY(0); }
+
+  .btn-google:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .status {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    min-height: 20px;
+    letter-spacing: 1px;
+  }
+
+  .status.error { color: var(--red); }
+  .status.checking { color: #f59e0b; }
+
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .footer {
+    margin-top: 40px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-text {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .version {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Subscription expired screen */
+  #expiredScreen {
+    display: none;
+    text-align: center;
+  }
+
+  .expired-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .expired-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--red);
+    letter-spacing: 3px;
+    margin-bottom: 8px;
+  }
+
+  .expired-msg {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 24px;
+  }
+
+  .days-badge {
+    display: inline-block;
+    background: var(--red-glow);
+    border: 1px solid rgba(227,28,28,0.3);
+    color: var(--red);
+    padding: 8px 20px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+  }
+
+  .btn-contact {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .btn-contact:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-switch {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 1px;
+    margin-top: 8px;
+    text-decoration: underline;
+  }
+
+  .btn-switch:hover { color: var(--text); }
+
+  /* Quit button for the frameless login window (R7) — always lets the user
+     close the app even when sign-in is impossible (no internet on first run). */
+  #btnQuit {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    -webkit-app-region: no-drag;
+    transition: all 0.2s;
+    z-index: 2;
+  }
+  #btnQuit:hover { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <button id="btnQuit" onclick="quitApp()" title="Quit" aria-label="Quit application">✕</button>
+  <!-- LOGIN VIEW -->
+  <div id="loginView">
+    <div class="logo-wrap">
+      <div class="logo">CREATIVE HUBB</div>
+      <div class="logo-sub">Album Toolkit Pro</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-google" id="btnGoogle" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48">
+        <path fill="#FFF" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/>
+      </svg>
+      Sign in with Google
+    </button>
+
+    <div class="status" id="statusMsg"></div>
+
+    <div class="footer">
+      <div class="footer-text">© 2025 CREATIVE HUBB</div>
+      <div class="version">v1.0</div>
+    </div>
+  </div>
+
+  <!-- EXPIRED / NOT ACTIVATED VIEW -->
+  <div id="expiredScreen">
+    <div class="expired-icon">🔒</div>
+    <div class="expired-title">ACCESS RESTRICTED</div>
+    <div class="expired-msg" id="expiredMsg">
+      Your subscription has expired or has not been activated yet.
+      Please contact Creative Hubb to renew your access.
+    </div>
+    <div class="days-badge" id="daysBadge"></div>
+    <button class="btn-contact" id="btnRetry" onclick="retryActivation()">↻ I've been activated — Retry</button>
+    <button class="btn-contact" onclick="openWhatsApp()">Contact Creative Hubb to Activate</button>
+    <br>
+    <button class="btn-switch" onclick="switchAccount()">Sign in with a different account</button>
+  </div>
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+
+// Remember the last successfully-authenticated email so "Retry" can re-run
+// the license check after the owner activates the account — without forcing
+// a full re-sign-in (the rough edge users hit).
+let lastSignedInEmail = null;
+
+function setStatus(msg, type = '') {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status ' + type;
+}
+
+function setLoading(loading, label) {
+  const btn = document.getElementById('btnGoogle');
+  btn.disabled = loading;
+  if (loading) {
+    btn.innerHTML = '<span class="spinner"></span> ' + (label || 'Signing in...');
+  } else {
+    btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFF" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></svg> Sign in with Google`;
+  }
+}
+
+// Shared post-auth path: run the license check for an email and either launch
+// the app or show the appropriate restricted screen.
+async function checkAndProceed(email, name) {
+  setStatus('Checking subscription...', 'checking');
+  document.getElementById('statusMsg').innerHTML = '<span class="spinner"></span> Checking subscription...';
+  const licenseResult = await ipcRenderer.invoke('check-license', email);
+  if (licenseResult.allowed) {
+    setStatus('✓ Access granted! Loading app...', '');
+    const launch = await ipcRenderer.invoke('launch-app', {
+      daysLeft: licenseResult.daysLeft,
+      email,
+      name: name || '',
+      offline: licenseResult.offline || false
+    });
+    // R4: launch-app re-verifies the saved license. If that fails, don't
+    // leave the user staring at a "Loading app..." that never arrives.
+    if (launch && launch.ok === false) {
+      showExpiredScreen({ reason: launch.reason || 'error' }, email);
+      return false;
+    }
+    return true;
+  }
+  showExpiredScreen(licenseResult, email);
+  return false;
+}
+
+async function signInWithGoogle() {
+  setLoading(true);
+  setStatus('Opening Google sign in...', 'checking');
+  try {
+    const result = await ipcRenderer.invoke('google-sign-in');
+    if (result.error) {
+      setStatus(result.error, 'error');
+      setLoading(false);
+      return;
+    }
+    lastSignedInEmail = result.email;
+    await checkAndProceed(result.email, result.name);
+    // M4: whatever the outcome, the button must not stay stuck spinning.
+    setLoading(false);
+  } catch(e) {
+    setStatus('Something went wrong. Please try again.', 'error');
+    setLoading(false);
+  }
+}
+
+// M5: re-check the license for the already-authenticated account. Lets a user
+// who was just activated get in WITHOUT re-doing the whole Google sign-in.
+async function retryActivation() {
+  if (!lastSignedInEmail) { switchAccount(); return; }
+  const btn = document.getElementById('btnRetry');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+  try {
+    const ok = await checkAndProceed(lastSignedInEmail, null);
+    if (!ok) {
+      // Still not allowed — bounce back to the restricted screen (already shown).
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+}
+
+function showExpiredScreen(licenseResult, email) {
+  document.getElementById('loginView').style.display = 'none'
+  document.getElementById('expiredScreen').style.display = 'block'
+  const badge = document.getElementById('daysBadge')
+  const retryBtn = document.getElementById('btnRetry')
+
+  // The Retry button only makes sense when activation is the pending issue.
+  const showRetry = licenseResult.reason === 'not_activated';
+  if (retryBtn) retryBtn.style.display = showRetry ? 'block' : 'none';
+
+  if (licenseResult.reason === 'not_activated') {
+    document.getElementById('expiredMsg').textContent = 'Your account isn\u2019t activated yet. Once Creative Hubb activates it, tap “I\u2019ve been activated — Retry”.'
+    badge.style.display = 'none'
+  } else if (licenseResult.reason === 'expired') {
+    document.getElementById('expiredMsg').textContent = 'Your subscription has expired. Please contact Creative Hubb to renew.'
+    badge.textContent = 'SUBSCRIPTION EXPIRED'
+    badge.style.display = 'inline-block'
+  } else if (licenseResult.reason === 'wrong_machine') {
+    const where = licenseResult.registeredMachineName ? (' (registered to “' + licenseResult.registeredMachineName + '”)') : '';
+    document.getElementById('expiredMsg').textContent = 'This license is already in use on another device' + where + '. Contact Creative Hubb to move it to this machine.'
+    badge.textContent = 'DEVICE NOT AUTHORIZED'
+    badge.style.display = 'inline-block'
+  } else if (licenseResult.reason === 'wrong_account') {
+    document.getElementById('expiredMsg').textContent = 'Your saved offline license belongs to a different account. Connect to the internet to sign in with this account.'
+    badge.style.display = 'none'
+  } else if (licenseResult.reason === 'no_internet') {
+    document.getElementById('expiredMsg').textContent = 'No internet connection and no saved license on this device. Please connect to the internet to sign in.'
+    badge.textContent = 'NO CONNECTION'
+    badge.style.display = 'inline-block'
+  } else {
+    document.getElementById('expiredMsg').textContent = 'No subscription found for ' + email + '. Please contact Creative Hubb.'
+    badge.style.display = 'none'
+  }
+}
+
+function openWhatsApp() {
+  require('electron').shell.openExternal('https://wa.me/8885640573?text=Hi, I need to activate Creative Hubb Album Toolkit Pro');
+}
+
+// M1: switching account from the login screen just resets the view in place.
+// The main process sign-out handler is now singleton-safe, so this no longer
+// spawns a second login window.
+function switchAccount() {
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('expiredScreen').style.display = 'none';
+  const retryBtn = document.getElementById('btnRetry');
+  if (retryBtn) { retryBtn.disabled = false; retryBtn.textContent = '↻ I\u2019ve been activated — Retry'; }
+  lastSignedInEmail = null;
+  setLoading(false);
+  setStatus('');
+  ipcRenderer.invoke('sign-out');
+}
+
+// R7: the login window is frameless, so give the user an explicit way to quit
+// the app — essential when sign-in is impossible (e.g. no internet on first run).
+function quitApp() {
+  ipcRenderer.invoke('quit-app');
+}
+</script>
+</body>
+</html>

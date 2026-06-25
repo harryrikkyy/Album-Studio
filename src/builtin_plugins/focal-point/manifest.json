@@ -1,0 +1,7 @@
+{
+  "name": "focal-point",
+  "version": "1.0.0",
+  "description": "Built-in focal-point detector. Combines skin-tone density (YCbCr), edge density (Sobel proxy), and sharp's attention strategy to find the visual subject of a photo. Smart-crops bias toward this point so brides' heads stop getting cropped out of vertical frames.",
+  "hooks": ["focalPoint"],
+  "priority": 100
+}

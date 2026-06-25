@@ -1,0 +1,63 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Firestore Security Rules — Creative Hubb Album Toolkit Pro
+//
+// Deploy via: Firebase Console → Firestore Database → Rules → Publish
+// (or `firebase deploy --only firestore:rules` if you use the Firebase CLI).
+//
+// HOW THE APP AUTHENTICATES
+//   The desktop app does NOT sign in to Firebase. It uses Google OAuth only to
+//   read the user's email, then calls the Firestore REST API with the public
+//   API key. So for every request the app makes, `request.auth` is NULL.
+//   That is why read/create/update are gated on data shape rather than auth.
+//
+//   The OWNER's activation tool MUST authenticate as creativehubb2@gmail.com
+//   (Firebase Auth) or use the Admin SDK (which bypasses these rules entirely)
+//   in order to set `activated` / `expiresOn`.
+//
+// THE APP PERFORMS EXACTLY THREE WRITES (all verified against these rules):
+//   1. New-user first login : email, name, photoURL, lastLogin, activated:false
+//   2. Returning-user login : email, name, photoURL, lastLogin
+//   3. Machine lock         : machineId, machineName  (only when unbound)
+//
+// KNOWN, ACCEPTED TRADEOFF
+//   `read: if true` exposes user docs (email, machineName, photoURL) to anyone
+//   holding the API key. This is inherent to the app not using Firebase Auth.
+//   Closing it would require real per-user authentication — a much larger
+//   change. Documented here so it is a conscious decision, not an oversight.
+// ─────────────────────────────────────────────────────────────────────────────
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+
+      // 1. Anyone (the app) can read their license status.
+      allow read: if true;
+
+      // 2. Owner gets full write access — change days, expiry, move machine,
+      //    delete docs, etc. This is the ONLY way activated/expiresOn change.
+      allow write: if request.auth != null
+                   && request.auth.token.email == "creativehubb2@gmail.com";
+
+      // 3. New-user creation, but NEVER pre-activated and NEVER with an expiry.
+      //    Closes the self-activation bypass (otherwise anyone could create a
+      //    doc with activated:true and skip payment).
+      allow create: if request.resource.data.activated == false
+                    && !("expiresOn" in request.resource.data);
+
+      // 4. The app may update login/machine details, but:
+      //    - cannot touch activated / expiresOn  (payment integrity)
+      //    - cannot change the account's email   (identity)
+      //    - cannot overwrite a machineId that is already bound (license theft);
+      //      it may only set machineId when it is currently empty. The owner
+      //      can still re-assign the machine via rule #2.
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys()
+                         .hasAny(['activated', 'expiresOn', 'email'])
+                    && (
+                         resource.data.machineId == null
+                      || resource.data.machineId == ''
+                      || request.resource.data.machineId == resource.data.machineId
+                    );
+    }
+  }
+}

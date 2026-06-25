@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ═══════════════════════════════════════════════
+         TOP NAVIGATION
+    ═══════════════════════════════════════════════ -->
+    <div class="top-nav">
+        <div role="tablist" aria-label="Workflow tabs" class="tablist">
+            <button class="tab-btn active" role="tab" aria-selected="true"  data-target="tab-album">1. Album Creation</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-wallpapers">2. Wallpapers</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-png">3. PNG Frames</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-masked">4. Masked Frames</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-tools">5. Tools</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-photos">6. Photos</button>
+            <button class="tab-btn u-text-export" role="tab" aria-selected="false" data-target="tab-export">7. Export Studio</button>
+        </div>
+
+        <div class="nav-actions">
+            <!-- Theme picker -->
+            <div id="themeContainer">
+                <button id="themeBtn" aria-label="Switch theme">
+                    <span class="theme-dot classic"></span>
+                    <span class="theme-btn-label">Classic Dark</span>
+                </button>
+                <div id="themeDropdown" role="menu">
+                    <!-- injected by theme.js -->
+                </div>
+            </div>
+
+            <button id="btnLoadWorkspace" class="btn btn--primary">📂 LOAD</button>
+            <button id="btnSaveWorkspace" class="btn btn--secondary">💾 SAVE</button>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 1 — ALBUM CREATION
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-album" class="tab-pane active" role="tabpanel" aria-labelledby="tab-album-trigger">
+        <div class="row cmd-bar">
+            <div class="cmd-group" role="group" aria-label="Generate">
+                <button id="btnAutoAll" class="btn btn--secondary">AUTO FILL (ALL PAGES)</button>
+                <button id="btnAutoThis" class="btn btn--ghost">AUTO FILL THIS PAGE</button>
+                <div class="input-group">
+                    <span>Min</span><input type="number" value="4" id="minImgs" aria-label="Minimum photos per page">
+                    <span>Max</span><input type="number" value="6" id="maxImgs" aria-label="Maximum photos per page">
+                </div>
+                <label class="u-row u-row--gap-2 u-fs-xs u-text-secondary" title="Distribute all photos across exactly this many sheets. Min/Max are ignored when this is on.">
+                    <input type="checkbox" id="chkDesiredSheets">
+                    <span>Desired sheets</span>
+                    <input type="number" value="40" id="desiredSheetsCount" min="1" aria-label="Number of desired sheets" disabled>
+                </label>
+                <label class="u-row u-row--gap-2 u-fs-xs u-text-secondary" title="Sort photos by capture time (EXIF) before allocating to pages">
+                    <input type="checkbox" id="chkExifOrder" checked>
+                    <span>Chronological</span>
+                </label>
+            </div>
+
+            <div class="cmd-divider" aria-hidden="true"></div>
+
+            <div class="cmd-group page-controls" role="group" aria-label="Page navigation">
+                <button id="btnPrev" class="btn btn--ghost btn--sm">PREV PAGE</button>
+                <select id="pageSelect" aria-label="Current page"></select>
+                <button id="btnNext" class="btn btn--ghost btn--sm">NEXT PAGE</button>
+                <button id="btnAddPage" class="btn btn--primary btn--sm">➕ ADD PAGE</button>
+                <button id="btnRemovePage" class="btn btn--destructive btn--sm">➖ DEL PAGE</button>
+                <span id="pageTrackerText" class="page-tracker">Total: 1</span>
+            </div>
+
+            <div class="cmd-spacer"></div>
+
+            <!-- Overflow: destructive / rare actions kept away from Auto Fill -->
+            <div class="cmd-overflow">
+                <button id="btnCmdOverflow" class="btn btn--ghost btn--sm" aria-label="More actions" aria-haspopup="true" aria-expanded="false" title="More actions">⋯</button>
+                <div id="cmdOverflowMenu" class="cmd-overflow__menu" role="menu">
+                    <button id="btnClearAlbum" class="cmd-overflow__item cmd-overflow__item--danger" role="menuitem" title="Clear every page's template and photos so you can start over. Undoable with Cmd+Z.">🧹 Clear album</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="box-row" id="topRow">
+            <div class="box-wrapper box-wrapper--half" id="greenWrapper">
+                <div class="toolbar">
+                    <span id="greenBoxTitle" class="greenbox-title">Page 001</span>
+                    <span id="pageMatchChip" class="chip chip--accent" title="Photo orientation signature on this page and how many templates match it">0H 0V</span>
+                    <div class="u-row u-row--gap-1">
+                        <button id="btnPull" class="btn btn--primary btn--sm">⬆️ PULL</button>
+                        <button id="btnEditSpread" class="btn btn--render btn--sm" title="Open the Spread Editor — reposition, zoom, and colour-grade photos directly on the page.">🎨 EDIT SPREAD</button>
+                        <button id="btnSortPage" class="btn btn--secondary btn--sm" title="Sort this page's photos chronologically by capture time (EXIF). Cmd+Z to undo.">🔁 SORT</button>
+                        <button id="btnRemoveSelected" class="btn btn--destructive btn--sm">❌ REMOVE</button>
+                        <select id="teleportTargetPage" class="select--sm" aria-label="Teleport target page"></select>
+                        <button id="btnTeleportGlobal" class="btn btn--warning btn--sm">🚀 TELEPORT</button>
+                        <input type="range" id="greenSlider" class="slider--sm" min="40" max="250" value="70" aria-label="Green box thumbnail size">
+                    </div>
+                </div>
+                <div class="box green-box" id="greenBox"></div>
+                <div id="adjustPanel" class="adjust-panel">
+                    <span class="adjust-panel__title">🎚 Adjust <span id="adjustCount" class="adjust-panel__count">— select a photo</span></span>
+                    <label class="adjust-ctl"><span>Exposure</span><input type="range" id="adjExposure" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjExposureVal">0</span></label>
+                    <label class="adjust-ctl"><span>Contrast</span><input type="range" id="adjContrast" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjContrastVal">0</span></label>
+                    <label class="adjust-ctl"><span>Saturation</span><input type="range" id="adjSaturation" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjSaturationVal">0</span></label>
+                    <label class="adjust-ctl"><span>Warmth</span><input type="range" id="adjWarmth" min="-100" max="100" value="0" disabled><span class="adjust-val" id="adjWarmthVal">0</span></label>
+                    <button id="btnAdjustReset" class="btn btn--ghost btn--sm" disabled>Reset</button>
+                </div>
+            </div>
+            <div class="resizer" id="topResizer"></div>
+            <div class="box-wrapper box-wrapper--fill" id="yellowWrapper">
+                <div class="toolbar">
+                    <span>Preview</span>
+                    <label class="u-row u-row--gap-1 u-fs-xs u-text-secondary" title="Show a live composited preview of the current page (photos placed in the template), rendered with the same engine as the final export. Off = show the bare template.">
+                        <input type="checkbox" id="chkLivePreview">
+                        <span>🪄 Live</span>
+                    </label>
+                    <input type="range" id="yellowSlider" class="slider--sm" min="100" max="600" value="250" aria-label="Preview size">
+                </div>
+                <div class="box yellow-box" id="templateContainer">
+                    <div id="yellowPreviewArea"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="resizer-h" id="resizerHorizontal"></div>
+
+        <div class="box-row" id="bottomRow">
+            <div class="box-wrapper box-wrapper--half" id="redWrapper">
+                <div class="toolbar">
+                    <span>Source Pool</span>
+                    <button id="btnLoadPhotos" class="btn btn--primary btn--sm">📂 LOAD PHOTOS</button>
+                    <input type="range" id="redSlider" class="slider--md" min="40" max="250" value="70" aria-label="Source pool thumbnail size">
+                </div>
+                <div id="redFolderContainer" class="folder-rail folder-rail--boxed folder-rail--accent-images">
+                    <div id="redFolderPanel" class="folder-rail__panel">
+                        <div class="folder-rail__header">
+                            <span>Folders:</span>
+                            <div class="folder-rail__actions">
+                                <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh image folders" tabindex="0">🔄</span>
+                                <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove image folders" tabindex="0">🗑️</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="redFolderResizer" class="rail__resizer"></div>
+                    <div class="box red-box box--seamless" id="redBox">
+                        <div class="empty-state">
+                            <div class="empty-state__icon">🖼️</div>
+                            <div class="empty-state__title">No photos loaded</div>
+                            <div class="empty-state__hint">Load a folder of photos to build your source pool, then drag or auto-fill them onto pages.</div>
+                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="resizer" id="bottomResizer"></div>
+
+            <div class="box-wrapper box-wrapper--fill" id="whiteWrapper">
+                <div class="toolbar">
+                    <span>Templates</span>
+                    <button id="btnLPT" class="btn btn--primary btn--sm">📂 LOAD TEMPLATES</button>
+                    <input type="range" id="whiteSlider" class="slider--md" min="40" max="250" value="100" aria-label="Template thumbnail size">
+                </div>
+                <div id="whiteFolderContainer" class="folder-rail folder-rail--boxed folder-rail--accent-templates">
+                    <div id="whiteFolderPanel" class="folder-rail__panel">
+                        <div class="folder-rail__header">
+                            <span>Folders:</span>
+                            <div class="folder-rail__actions">
+                                <span class="btn-reload-fld folder-rail__action" data-type="templates" title="Refresh Folders" role="button" aria-label="Refresh template folders" tabindex="0">🔄</span>
+                                <span class="btn-remove-fld folder-rail__action" data-type="templates" title="Remove Folders" role="button" aria-label="Remove template folders" tabindex="0">🗑️</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="whiteFolderResizer" class="rail__resizer"></div>
+                    <div class="box white-box box--seamless" id="whiteBox">
+                        <div class="empty-state">
+                            <div class="empty-state__icon">🗂️</div>
+                            <div class="empty-state__title">No templates loaded</div>
+                            <div class="empty-state__hint">Load a folder of PSD templates to match against each page's photo orientation.</div>
+                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLPT">📂 Load templates</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <span id="statusText">Ready</span>
+            <span id="templateMatchText" class="u-text-accent">Matches: 0</span>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 2 — WALLPAPERS
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-wallpapers" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between">
+            <button id="btnLoadWallpapers" class="btn btn--primary">📂 LOAD WALLPAPERS FOLDER</button>
+            <div class="u-row u-row--gap-3">
+                <span class="u-fs-md u-text-secondary">Zoom:</span>
+                <input type="range" id="wallpaperSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Wallpaper grid zoom">
+            </div>
+        </div>
+        <div class="box-row" id="wpRow">
+            <div id="wpFolderContainer" class="folder-rail folder-rail--side">
+                <div id="wpFolderPanel" class="folder-rail__panel">
+                    <div class="folder-rail__header">
+                        <span>Folders:</span>
+                        <div class="folder-rail__actions">
+                            <span class="btn-reload-fld folder-rail__action" data-type="wallpapers" title="Refresh Folders" role="button" aria-label="Refresh wallpaper folders" tabindex="0">🔄</span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="wallpapers" title="Remove Folders" role="button" aria-label="Remove wallpaper folders" tabindex="0">🗑️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resizer" id="wpResizer"></div>
+            <div class="box-wrapper box-wrapper--fill">
+                <div class="box grid-box" id="wallpaperGrid">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">🖼️</div>
+                        <div class="empty-state__title">No wallpapers loaded</div>
+                        <div class="empty-state__hint">Load a folder of wallpaper images to browse and place them onto your pages.</div>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadWallpapers">📂 Load wallpapers</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 3 — PNG FRAMES
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-png" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between">
+            <button id="btnLoadPng" class="btn btn--primary">📂 LOAD PNG FRAMES FOLDER</button>
+            <div class="u-row u-row--gap-3">
+                <span class="u-fs-md u-text-secondary">Zoom:</span>
+                <input type="range" id="pngSlider" class="slider--lg" min="50" max="400" value="150" aria-label="PNG grid zoom">
+            </div>
+        </div>
+        <div class="box-row" id="pngRow">
+            <div id="pngFolderContainer" class="folder-rail folder-rail--side">
+                <div id="pngFolderPanel" class="folder-rail__panel">
+                    <div class="folder-rail__header">
+                        <span>Folders:</span>
+                        <div class="folder-rail__actions">
+                            <span class="btn-reload-fld folder-rail__action" data-type="pngs" title="Refresh Folders" role="button" aria-label="Refresh PNG folders" tabindex="0">🔄</span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="pngs" title="Remove Folders" role="button" aria-label="Remove PNG folders" tabindex="0">🗑️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resizer" id="pngResizer"></div>
+            <div class="box-wrapper box-wrapper--fill">
+                <div class="box grid-box" id="pngGrid">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">🪟</div>
+                        <div class="empty-state__title">No PNG frames loaded</div>
+                        <div class="empty-state__hint">Load a folder of transparent PNG frames to overlay onto your album pages.</div>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPng">📂 Load PNG frames</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 4 — MASKED FRAMES
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-masked" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between">
+            <button id="btnLoadMasked" class="btn btn--primary">📂 LOAD MASKED FRAMES FOLDER</button>
+            <div class="u-row u-row--gap-3">
+                <span class="u-fs-md u-text-secondary">Zoom:</span>
+                <input type="range" id="maskedSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Masked frames zoom">
+            </div>
+        </div>
+        <div class="box-row" id="maskedRow">
+            <div id="maskedFolderContainer" class="folder-rail folder-rail--side">
+                <div id="maskedFolderPanel" class="folder-rail__panel">
+                    <div class="folder-rail__header">
+                        <span>Folders:</span>
+                        <div class="folder-rail__actions">
+                            <span class="btn-reload-fld folder-rail__action" data-type="masks" title="Refresh Folders" role="button" aria-label="Refresh mask folders" tabindex="0">🔄</span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="masks" title="Remove Folders" role="button" aria-label="Remove mask folders" tabindex="0">🗑️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resizer" id="maskedResizer"></div>
+            <div class="box-wrapper box-wrapper--fill">
+                <div class="box grid-box" id="maskedGrid">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">🎭</div>
+                        <div class="empty-state__title">No masked frames loaded</div>
+                        <div class="empty-state__hint">Load a folder of masked frame assets to clip photos into custom shapes.</div>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadMasked">📂 Load masked frames</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 5 — TOOLS
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-tools" class="tab-pane" role="tabpanel">
+        <div class="tools-hero">
+            <div class="tools-hero__copy">
+                <h2 class="tools-hero__title">Tools & Workflow</h2>
+                <p class="tools-hero__subtitle">Curation, generative layouts, library, plugins, and the floating Tools Bar that docks to Photoshop.</p>
+            </div>
+            <div class="tools-hero__actions">
+                <button id="btnOpenToolsBar" class="btn btn--render" title="Open the floating Tools Bar — a thin dock that sits under Photoshop and follows it around.">🪄 OPEN TOOLS BAR</button>
+            </div>
+        </div>
+
+        <div class="tools-grid">
+
+            <!-- ─── CARD: UTILITIES ───────────────────────────── -->
+            <section class="tools-card">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">🛠️</span>
+                    <div>
+                        <div class="tools-card__title">Utilities</div>
+                        <div class="tools-card__hint">One-click batch helpers and the Photoshop floating dock.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <button id="btnGenerateThumbs" class="btn btn--primary tools-card__cta">⚡ Batch generate thumbnails</button>
+                    <p class="tools-card__detail">
+                        Pick a folder of high-res images. They get downscaled and saved into a
+                        new <code>_Thumbnails</code> subfolder. Use the proxies in the Red Box for
+                        lightning-fast UI performance.
+                    </p>
+
+                    <div class="tools-card__divider"></div>
+
+                    <button id="btnJpegExport" class="btn btn--secondary tools-card__cta">📸 JPEG Export</button>
+                    <p class="tools-card__detail">
+                        Pick a folder of PSDs. Every file gets exported twice — once at
+                        quality&nbsp;12 into <code>JPEG-High-Res/</code> and once at
+                        quality&nbsp;1 into <code>JPEG-Low-Res/</code>, both created as
+                        siblings of the source folder.
+                    </p>
+                    <div id="jpegExportStatus" class="tools-card__detail tools-card__detail--mono"></div>
+                    <div class="jpeg-progress" id="jpegProgress" style="display:none;">
+                        <div class="jpeg-progress__bar"><div class="jpeg-progress__fill" id="jpegProgressFill"></div></div>
+                        <div class="jpeg-progress__text" id="jpegProgressText">0 / 0</div>
+                    </div>
+
+                    <div class="tools-card__divider"></div>
+                    <div class="tools-card__row">
+                        <span class="tools-card__row-label">Editing dock</span>
+                        <span id="toolsBarStatus" class="tools-card__pill tools-card__pill--neutral">Closed</span>
+                    </div>
+                    <p class="tools-card__detail">
+                        The floating Tools Bar attaches to Photoshop, follows its window, and
+                        hides when Photoshop minimizes. Drop quick-access tools into it.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ─── CARD: RENAMER ───────────────────────────── -->
+            <section class="tools-card">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">🏷️</span>
+                    <div>
+                        <div class="tools-card__title">Renamer</div>
+                        <div class="tools-card__hint">Rename an order folder to the print naming convention.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <button id="btnOpenRenamer" class="btn btn--primary tools-card__cta">🏷️ Open Renamer</button>
+                    <p class="tools-card__detail">
+                        A drag-and-drop workspace for an order folder. Pick the first
+                        (<code>00</code>), last (<code>zz</code>), and cover sheets by clicking;
+                        the rest auto-number as <code>&lt;folder&gt; (01)</code>. Drag to reorder,
+                        right-click a page for a lamination effect, then <b>Rename All</b> writes
+                        to disk collision-safe. Supports JPEG, PNG, and PSD/PSB.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ─── CARD: GENERATIVE TEMPLATES ───────────────── -->
+            <section class="tools-card">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">⚙️</span>
+                    <div>
+                        <div class="tools-card__title">Generative Templates</div>
+                        <div class="tools-card__hint">14 procedural layouts. No PSD authoring.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <label class="tools-card__toggle">
+                        <input type="checkbox" id="chkGenerativeTemplates">
+                        <span>Enable generative templates</span>
+                    </label>
+                    <div id="generativeStatus" class="tools-card__detail tools-card__detail--mono"></div>
+                    <p class="tools-card__detail">
+                        Strips, pairs, grids, and hero layouts render through libvips at full
+                        quality with no Photoshop in the loop. Mix freely with your PSD templates.
+                    </p>
+                </div>
+            </section>
+
+            <!-- ─── CARD: CURATION ──────────────────────────── -->
+            <section class="tools-card tools-card--wide">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">✨</span>
+                    <div>
+                        <div class="tools-card__title">Photo Curation</div>
+                        <div class="tools-card__hint">Trim a 2,000-photo shoot to 250 keepers.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="tools-card__row">
+                        <button id="btnCurateAnalyze" class="btn btn--primary">📂 Analyze folder</button>
+                        <span id="curateStatus" class="tools-card__detail tools-card__detail--mono"></span>
+                    </div>
+
+                    <div id="curateControls" class="curate-controls" style="display:none;">
+                        <div class="curate-control">
+                            <label for="curateSharpness">Min sharpness</label>
+                            <div class="curate-control__row">
+                                <input type="range" id="curateSharpness" min="0" max="400" value="80" step="5">
+                                <span id="curateSharpnessVal" class="curate-control__val">80</span>
+                            </div>
+                        </div>
+                        <div class="curate-control">
+                            <label for="curateExposure">Min exposure</label>
+                            <div class="curate-control__row">
+                                <input type="range" id="curateExposure" min="0" max="100" value="25" step="1">
+                                <span id="curateExposureVal" class="curate-control__val">0.25</span>
+                            </div>
+                        </div>
+                        <div class="curate-control">
+                            <label for="curateDup">Dup threshold</label>
+                            <div class="curate-control__row">
+                                <input type="range" id="curateDup" min="0" max="20" value="8" step="1">
+                                <span id="curateDupVal" class="curate-control__val">8</span>
+                            </div>
+                        </div>
+                        <div class="curate-control curate-control--narrow">
+                            <label for="curateTargetH">Max H</label>
+                            <input type="number" id="curateTargetH" min="0" placeholder="any">
+                        </div>
+                        <div class="curate-control curate-control--narrow">
+                            <label for="curateTargetV">Max V</label>
+                            <input type="number" id="curateTargetV" min="0" placeholder="any">
+                        </div>
+                        <div class="curate-control__actions">
+                            <button id="btnCurateApply" class="btn btn--secondary">Apply</button>
+                            <button id="btnCurateExport" class="btn btn--render" disabled>Export _Selected/</button>
+                        </div>
+                    </div>
+                    <div id="curateSummary" class="tools-card__detail" style="display:none;"></div>
+                </div>
+            </section>
+
+            <!-- ─── CARD: LIBRARY ──────────────────────────── -->
+            <section class="tools-card tools-card--wide">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">📚</span>
+                    <div>
+                        <div class="tools-card__title">Library</div>
+                        <div class="tools-card__hint">Per-user catalog of templates and saved layouts.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="tools-card__row tools-card__row--wrap">
+                        <button id="btnLibraryRefresh" class="btn btn--secondary btn--sm">🔄 Refresh</button>
+                        <button id="btnLibraryAddTemplates" class="btn btn--ghost btn--sm">+ Templates</button>
+                        <button id="btnLibraryAddWallpapers" class="btn btn--ghost btn--sm">+ Wallpapers</button>
+                        <button id="btnLibraryAddPngs" class="btn btn--ghost btn--sm">+ PNG Frames</button>
+                        <button id="btnLibraryAddMasks" class="btn btn--ghost btn--sm">+ Masks</button>
+                        <button id="btnSaveLayout" class="btn btn--ghost btn--sm">💾 Save current layout</button>
+                        <button id="btnOpenLibraryFolder" class="btn btn--ghost btn--sm">Open folder</button>
+                    </div>
+                    <div id="libraryView" class="tools-card__view"></div>
+                </div>
+            </section>
+
+            <!-- ─── CARD: PLUGINS ──────────────────────────── -->
+            <section class="tools-card tools-card--wide">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">🧩</span>
+                    <div>
+                        <div class="tools-card__title">Plugins</div>
+                        <div class="tools-card__hint">Built-in extensions plus anything you drop in your plugins folder.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="tools-card__row">
+                        <button id="btnPluginsRefresh" class="btn btn--secondary btn--sm">🔄 Refresh</button>
+                        <button id="btnOpenPluginsFolder" class="btn btn--ghost btn--sm">Open plugins folder</button>
+                    </div>
+                    <div id="pluginsView" class="tools-card__view"></div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 6 — PHOTOS (lazy rendered)
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-photos" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between">
+            <button id="btnLoadPhotosTab" class="btn btn--primary">📂 LOAD PHOTOS FOLDER</button>
+            <div class="u-row u-row--gap-3">
+                <span class="u-fs-md u-text-secondary">Zoom:</span>
+                <input type="range" id="photosSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Photos grid zoom">
+            </div>
+        </div>
+        <div class="box-row" id="photosRow">
+            <div id="photosFolderContainer" class="folder-rail folder-rail--side">
+                <div id="photosFolderPanel" class="folder-rail__panel">
+                    <div class="folder-rail__header">
+                        <span>Folders:</span>
+                        <div class="folder-rail__actions">
+                            <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh photo folders" tabindex="0">🔄</span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove photo folders" tabindex="0">🗑️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="resizer" id="photosResizer"></div>
+            <div class="box-wrapper box-wrapper--fill">
+                <div class="box grid-box" id="photosGrid">
+                    <div class="empty-state">
+                        <div class="empty-state__icon">📷</div>
+                        <div class="empty-state__title">No photos loaded</div>
+                        <div class="empty-state__hint">Load a photos folder to browse your full library and inject shots into open Photoshop layers.</div>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotosTab">📂 Load photos folder</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 7 — EXPORT STUDIO
+    ═══════════════════════════════════════════════ -->
+    <div id="tab-export" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between export-toolbar">
+            <div class="u-row u-row--gap-3">
+                <button id="btnSetFinalOutput" class="btn btn--primary">📂 SET OUTPUT FOLDER</button>
+                <span id="finalOutputText" class="export-path">No folder selected...</span>
+            </div>
+            <div class="u-row u-row--gap-3">
+                <button id="btnRefreshStoryboard" class="btn btn--ghost">🔄 REFRESH STORYBOARD</button>
+                <button id="btnGenerateProofs" class="btn btn--ghost" title="Render fast composite previews using sharp/libvips (no Photoshop)">⚡ GENERATE PROOFS</button>
+                <button id="btnExportGallery" class="btn btn--ghost" title="Export a self-contained HTML gallery for client review">🌐 CLIENT GALLERY</button>
+                <span class="u-fs-md u-text-secondary">Zoom:</span>
+                <input type="range" id="storyboardSlider" class="slider--md" min="40" max="120" value="56" aria-label="Storyboard photo size">
+                <button id="btnRenderFinalAlbum" class="btn btn--render">🚀 RENDER FINAL HIGH-RES ALBUM</button>
+            </div>
+        </div>
+        <div class="export-hint">
+            Drag photos between pages to reorder. When the layout is perfect, hit Render.
+        </div>
+        <div class="storyboard-canvas">
+            <div id="storyboardGrid" class="storyboard-grid">
+                <div class="empty-state">
+                    <div class="empty-state__icon">🎞️</div>
+                    <div class="empty-state__title">Storyboard is empty</div>
+                    <div class="empty-state__hint">Run Auto-Fill in the Album tab, then refresh the storyboard to review your spread before rendering.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         REMOVE FOLDER DIALOG
+    ═══════════════════════════════════════════════ -->
+    <dialog id="removeFolderDialog" aria-labelledby="removeDialogTitle">
+        <div class="dialog-body">
+            <h3 id="removeDialogTitle" class="dialog-title">Remove Loaded Folders</h3>
+            <div id="removeDialogList" class="dialog-list"></div>
+            <div class="dialog-actions">
+                <button id="btnCancelRemove" class="btn btn--ghost">Cancel</button>
+                <button id="btnConfirmRemove" class="btn btn--destructive">Remove</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- theme.js MUST load before main.js -->
+    <script src="theme.js"></script>
+    <script src="main.js"></script>
+
+    <script>
+  // ── LICENSE BADGE ──────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const { ipcRenderer } = require('electron')
+      const license = await ipcRenderer.invoke('get-license')
+      if (!license) return
+
+      const badge = document.createElement('div')
+      badge.id = 'licenseBadge'
+      badge.className = 'license-badge'
+      badge.innerHTML = '<span id="licenseDot" class="license-badge__dot">●</span><span id="licenseText" class="license-badge__text">Loading...</span><span id="signOutBtn" class="license-badge__signout" role="button" tabindex="0">SIGN OUT</span>'
+
+      // Dock the badge into the top nav so it never overlaps tab content.
+      // Falls back to the body if the nav isn't present (e.g. license badge
+      // is rendered before DOMContentLoaded in some race conditions).
+      const navActions = document.querySelector('.nav-actions')
+      if (navActions) navActions.insertBefore(badge, navActions.firstChild)
+      else document.body.appendChild(badge)
+
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+          if (confirm('Sign out of Creative Hubb Album Toolkit Pro?')) {
+              await ipcRenderer.invoke('sign-out')
+          }
+      })
+
+      const text = document.getElementById('licenseText')
+      const dot = document.getElementById('licenseDot')
+
+      // Status colors
+      if (license.daysLeft > 7) {
+        dot.style.color = '#22c55e'
+        text.style.color = '#22c55e'
+        text.textContent = license.daysLeft + ' days remaining'
+      } else if (license.daysLeft > 3) {
+        dot.style.color = '#f59e0b'
+        text.style.color = '#f59e0b'
+        text.textContent = license.daysLeft + ' days remaining ⚠'
+      } else {
+        dot.style.color = '#e31c1c'
+        text.style.color = '#e31c1c'
+        text.textContent = license.daysLeft + ' days remaining !'
+      }
+
+      if (license.offline) text.textContent += ' (offline)'
+
+    } catch(e) { console.log('Badge error:', e) }
+  })
+</script>
+</body>
+ </html>

@@ -1,0 +1,2962 @@
+/* ============================================================
+   ADT PRO — PLUGIN STYLESHEET
+   Theme system: all colours live in CSS custom properties.
+   Swap themes by setting data-theme on <html>.
+   ============================================================ */
+
+/* ── THUMBNAIL SIZE TOKENS (shared across themes) ─────────── */
+:root {
+    --red-thumb-size:    70px;
+    --green-thumb-size:  70px;
+    --white-thumb-size: 100px;
+    --yellow-thumb-size: 250px;
+    --wp-thumb-size:    150px;
+    --sb-thumb-size:     56px;  /* Storyboard photo tiles in Export Studio */
+
+    /* ── TYPE SCALE ─────────────────────────────────────────
+       Single source of truth for font sizes. Replaces the
+       8/9/10/11/12/13/14/16/20/32/42px mix that was inlined. */
+    --fs-2xs: 9px;    /* meta labels, badges */
+    --fs-xs:  10px;   /* secondary chrome, folder rows */
+    --fs-sm:  11px;   /* default UI / tabs / buttons */
+    --fs-md:  12px;   /* standard body text */
+    --fs-lg:  14px;   /* dialog titles, emphasized */
+    --fs-xl:  16px;   /* big tool buttons */
+
+    /* ── SPACING SCALE ──────────────────────────────────────
+       4px base. Use these instead of arbitrary inline padding/gap. */
+    --space-1: 4px;
+    --space-2: 6px;
+    --space-3: 8px;
+    --space-4: 10px;
+    --space-5: 12px;
+    --space-6: 14px;
+    --space-7: 16px;
+    --space-8: 20px;
+
+    /* ── RADIUS SCALE ───────────────────────────────────────*/
+    --radius-sm: 3px;
+    --radius-md: 5px;
+    --radius-lg: 6px;
+
+    /* Default control height for buttons / inputs in toolbars */
+    --control-h: 26px;
+
+    /* ── A.2: INTERACTION TOKENS ────────────────────────────
+       One source of truth for selection feedback, elevation, and
+       motion so every interactive surface shares one language. */
+    --select-ring:  var(--accent);
+    --select-glow:  var(--accent-glow);
+
+    /* Elevation ladder: rest → hover → active. Shadow + transform
+       deltas applied consistently to interactive elements. */
+    --elev-rest:   0 1px 2px rgba(0,0,0,0.18);
+    --elev-hover:  0 6px 18px rgba(0,0,0,0.30);
+    --elev-active: 0 2px 6px rgba(0,0,0,0.24);
+    --lift-hover:  translateY(-1px);
+    --lift-active: translateY(0);
+
+    /* Motion: one curve, one default duration for UI transitions. */
+    --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --dur-ui: 180ms;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME 1 — NEBULA  (default · animated 3D · cosmic)
+   Deep-space base · violet/cyan/magenta nebula · parallax starfield
+   ──────────────────────────────────────────────────────────────
+   - Drifting multi-layer nebula clouds on a fixed body backdrop
+   - Twinkling starfield (CSS-only, GPU-cheap)
+   - 3D tilt + lift on cards, glowing CTA, animated slider tracks
+   - All motion is disabled under prefers-reduced-motion (see end)
+══════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="nebula"] {
+    --bg-base:       #06060F;
+    --bg-nav:        #0A0A1A;
+    --bg-panel:      #0D0E20;
+    --bg-card:       #10122A;
+    --bg-surface:    #141634;
+    --bg-elevated:   #191C42;
+    --bg-inset:      #04040C;
+    --bg-red-box:    #110F26;
+    --bg-green-box:  #0C1228;
+    --bg-white-box:  #10122A;
+    --bg-yellow-box: #130F28;
+    --bg-grid:       #0B0C20;
+
+    --border-main:   #232861;
+    --border-subtle: rgba(139, 123, 255, 0.08);
+    --border-folder: #FF6CC8;
+    --border-tpl:    #5BE0FF;
+
+    --accent:        #8B7BFF;
+    --accent-hover:  #6E5BFF;
+    --accent-dim:    rgba(139, 123, 255, 0.18);
+    --accent-glow:   rgba(139, 123, 255, 0.45);
+
+    --txt-primary:   #ECE9FF;
+    --txt-secondary: #A6A2D8;
+    --txt-muted:     #6B679C;
+    --txt-dim:       #383760;
+
+    --tab-active-color:  #8B7BFF;
+    --tab-active-border: #8B7BFF;
+    --tab-export-color:  #5BE0FF;
+
+    --btn-load-bg:    #2A2580;
+    --btn-load-txt:   #ECE9FF;
+    --btn-save-bg:    #8B7BFF;
+    --btn-save-txt:   #06060F;
+    --btn-blue-bg:    #2A2580;
+    --btn-blue-txt:   #ECE9FF;
+    --btn-yellow-bg:  #FFC15B;
+    --btn-yellow-txt: #2A1A05;
+    --btn-red-bg:     #FF6CC8;
+    --btn-red-txt:    #FFFFFF;
+
+    --resizer-bg:         #14163A;
+    --resizer-hover:      #8B7BFF;
+    --slider-track:       #232861;
+    --slider-thumb:       #2A2580;
+    --slider-thumb-hover: #8B7BFF;
+    --slider-thumb-act:   #6E5BFF;
+
+    --card-hover-border:  #8B7BFF;
+
+    --theme-btn-bg:    #10122A;
+    --theme-btn-txt:   #A6A2D8;
+    --theme-btn-bdr:   #232861;
+    --theme-dd-bg:     #0D0E20;
+    --theme-dd-bdr:    #232861;
+    --theme-opt-hover: #141634;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME 2 — OBSIDIAN GOLD  (animated 3D · luxury)
+   Near-black obsidian · champagne-gold accent · light-sweep sheen
+   ──────────────────────────────────────────────────────────────
+   - Slow floating gold-dust particles on the backdrop
+   - Diagonal light sweep across the top nav
+   - Metallic shimmer on the Render CTA, gold rim on 3D card lift
+══════════════════════════════════════════════════════════════ */
+[data-theme="obsidian"] {
+    --bg-base:       #0B0A08;
+    --bg-nav:        #11100C;
+    --bg-panel:      #141209;
+    --bg-card:       #16140D;
+    --bg-surface:    #1B1810;
+    --bg-elevated:   #221E14;
+    --bg-inset:      #070603;
+    --bg-red-box:    #14120B;
+    --bg-green-box:  #12110A;
+    --bg-white-box:  #15130C;
+    --bg-yellow-box: #16130A;
+    --bg-grid:       #100E08;
+
+    --border-main:   #3A3320;
+    --border-subtle: rgba(232, 192, 125, 0.08);
+    --border-folder: #E8C07D;
+    --border-tpl:    #C9A24B;
+
+    --accent:        #E8C07D;
+    --accent-hover:  #F5D89A;
+    --accent-dim:    rgba(232, 192, 125, 0.16);
+    --accent-glow:   rgba(232, 192, 125, 0.40);
+
+    --txt-primary:   #F6EFDD;
+    --txt-secondary: #B8A883;
+    --txt-muted:     #7A6E50;
+    --txt-dim:       #423A28;
+
+    --tab-active-color:  #E8C07D;
+    --tab-active-border: #E8C07D;
+    --tab-export-color:  #F5D89A;
+
+    --btn-load-bg:    #2A2414;
+    --btn-load-txt:   #F6EFDD;
+    --btn-save-bg:    #E8C07D;
+    --btn-save-txt:   #0B0A08;
+    --btn-blue-bg:    #2A2414;
+    --btn-blue-txt:   #F6EFDD;
+    --btn-yellow-bg:  #E8C07D;
+    --btn-yellow-txt: #0B0A08;
+    --btn-red-bg:     #8A3B2E;
+    --btn-red-txt:    #FFFFFF;
+
+    --resizer-bg:         #1B1810;
+    --resizer-hover:      #E8C07D;
+    --slider-track:       #3A3320;
+    --slider-thumb:       #5A4E30;
+    --slider-thumb-hover: #E8C07D;
+    --slider-thumb-act:   #C9A24B;
+
+    --card-hover-border:  #E8C07D;
+
+    --theme-btn-bg:    #16140D;
+    --theme-btn-txt:   #B8A883;
+    --theme-btn-bdr:   #3A3320;
+    --theme-dd-bg:     #141209;
+    --theme-dd-bdr:    #3A3320;
+    --theme-opt-hover: #1B1810;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME 3 — SYNTHWAVE  (animated 3D · neon retro-future)
+   Midnight-purple base · magenta + cyan neon · perspective grid floor
+   ──────────────────────────────────────────────────────────────
+   - Animated neon grid horizon scrolling toward the viewer
+   - Scanline overlay + neon text glow
+   - Chromatic 3D card tilt, pulsing neon CTA
+══════════════════════════════════════════════════════════════ */
+[data-theme="synthwave"] {
+    --bg-base:       #120024;
+    --bg-nav:        #1A0B2E;
+    --bg-panel:      #1E0E38;
+    --bg-card:       #23123F;
+    --bg-surface:    #2A1650;
+    --bg-elevated:   #341B60;
+    --bg-inset:      #0C0018;
+    --bg-red-box:    #200A38;
+    --bg-green-box:  #1C0E38;
+    --bg-white-box:  #23123F;
+    --bg-yellow-box: #260A40;
+    --bg-grid:       #190A30;
+
+    --border-main:   #43216F;
+    --border-subtle: rgba(255, 46, 151, 0.10);
+    --border-folder: #FF2E97;
+    --border-tpl:    #05D9E8;
+
+    --accent:        #FF2E97;
+    --accent-hover:  #FF5CB0;
+    --accent-dim:    rgba(255, 46, 151, 0.18);
+    --accent-glow:   rgba(255, 46, 151, 0.50);
+
+    --txt-primary:   #FDEBFF;
+    --txt-secondary: #C49AE0;
+    --txt-muted:     #8A63B0;
+    --txt-dim:       #4A2E6B;
+
+    --tab-active-color:  #05D9E8;
+    --tab-active-border: #FF2E97;
+    --tab-export-color:  #05D9E8;
+
+    --btn-load-bg:    #2A1650;
+    --btn-load-txt:   #05D9E8;
+    --btn-save-bg:    #FF2E97;
+    --btn-save-txt:   #120024;
+    --btn-blue-bg:    #07303A;
+    --btn-blue-txt:   #05D9E8;
+    --btn-yellow-bg:  #FEE440;
+    --btn-yellow-txt: #2A1A05;
+    --btn-red-bg:     #FF2E97;
+    --btn-red-txt:    #FFFFFF;
+
+    --resizer-bg:         #1E0E38;
+    --resizer-hover:      #FF2E97;
+    --slider-track:       #43216F;
+    --slider-thumb:       #2A1650;
+    --slider-thumb-hover: #FF2E97;
+    --slider-thumb-act:   #05D9E8;
+
+    --card-hover-border:  #FF2E97;
+
+    --theme-btn-bg:    #23123F;
+    --theme-btn-txt:   #C49AE0;
+    --theme-btn-bdr:   #43216F;
+    --theme-dd-bg:     #1E0E38;
+    --theme-dd-bdr:    #43216F;
+    --theme-opt-hover: #2A1650;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME 4 — GLASS  (Apple macOS Tahoe 26 · "Liquid Glass")
+   Light, translucent, frosted. Backdrop blur + saturation on every
+   surface, hairline specular borders, soft depth, system-blue accent.
+   ──────────────────────────────────────────────────────────────
+   Design intent: should feel like a native macOS Tahoe app — surfaces
+   are panes of frosted glass floating over a soft tinted gradient
+   wallpaper; nothing is flat black, nothing has a hard 1px #333 border.
+   The glassmorphism itself (blur/saturate/translucency) is applied in a
+   dedicated [data-theme="glass"] section further below.
+══════════════════════════════════════════════════════════════ */
+[data-theme="glass"] {
+    /* Base "desktop" sits behind translucent panes; panes are rgba so the
+       gradient shows through. The hex values here are the *fallback* solid
+       colors for any surface that doesn't get the glass treatment. */
+    --bg-base:       #EEF1F7;
+    --bg-nav:        rgba(255, 255, 255, 0.55);
+    --bg-panel:      rgba(255, 255, 255, 0.45);
+    --bg-card:       rgba(255, 255, 255, 0.50);
+    --bg-surface:    rgba(255, 255, 255, 0.42);
+    --bg-elevated:   rgba(255, 255, 255, 0.62);
+    --bg-inset:      rgba(255, 255, 255, 0.30);
+    --bg-red-box:    rgba(255, 255, 255, 0.38);
+    --bg-green-box:  rgba(255, 255, 255, 0.38);
+    --bg-white-box:  rgba(255, 255, 255, 0.40);
+    --bg-yellow-box: rgba(255, 255, 255, 0.38);
+    --bg-grid:       rgba(255, 255, 255, 0.34);
+
+    --border-main:   rgba(255, 255, 255, 0.55);
+    --border-subtle: rgba(255, 255, 255, 0.35);
+    --border-folder: #FF6961;
+    --border-tpl:    #0A84FF;
+
+    /* Apple system blue */
+    --accent:        #0A84FF;
+    --accent-hover:  #0060DF;
+    --accent-dim:    rgba(10, 132, 255, 0.14);
+    --accent-glow:   rgba(10, 132, 255, 0.32);
+
+    --txt-primary:   #1C1C2E;
+    --txt-secondary: #4A4A5E;
+    --txt-muted:     #75758A;
+    --txt-dim:       #A6A6B8;
+
+    --tab-active-color:  #0A84FF;
+    --tab-active-border: #0A84FF;
+    --tab-export-color:  #0A84FF;
+
+    --btn-load-bg:    rgba(10, 132, 255, 0.92);
+    --btn-load-txt:   #ffffff;
+    --btn-save-bg:    rgba(255, 255, 255, 0.65);
+    --btn-save-txt:   #1C1C2E;
+    --btn-blue-bg:    rgba(10, 132, 255, 0.92);
+    --btn-blue-txt:   #ffffff;
+    --btn-yellow-bg:  #FFD60A;
+    --btn-yellow-txt: #1C1C2E;
+    --btn-red-bg:     #FF453A;
+    --btn-red-txt:    #ffffff;
+
+    --resizer-bg:         rgba(120, 120, 140, 0.18);
+    --resizer-hover:      #0A84FF;
+    --slider-track:       rgba(120, 120, 140, 0.22);
+    --slider-thumb:       rgba(255, 255, 255, 0.92);
+    --slider-thumb-hover: #0A84FF;
+    --slider-thumb-act:   #0060DF;
+
+    --card-hover-border:  rgba(10, 132, 255, 0.55);
+
+    --theme-btn-bg:    rgba(255, 255, 255, 0.55);
+    --theme-btn-txt:   #1C1C2E;
+    --theme-btn-bdr:   rgba(255, 255, 255, 0.65);
+    --theme-dd-bg:     rgba(255, 255, 255, 0.72);
+    --theme-dd-bdr:    rgba(255, 255, 255, 0.65);
+    --theme-opt-hover: rgba(10, 132, 255, 0.12);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME 5 — GLASS DARK  (Apple macOS Tahoe 26 · "Liquid Glass" dark)
+   The dark companion to Glass. Same frosted-glass language, but the
+   panes are dark translucent graphite over a deep tinted wallpaper,
+   with bright system-blue accents and luminous specular edges.
+══════════════════════════════════════════════════════════════ */
+[data-theme="glass-dark"] {
+    --bg-base:       #0B0D12;
+    --bg-nav:        rgba(30, 32, 42, 0.55);
+    --bg-panel:      rgba(28, 30, 40, 0.48);
+    --bg-card:       rgba(34, 36, 48, 0.52);
+    --bg-surface:    rgba(30, 32, 42, 0.46);
+    --bg-elevated:   rgba(44, 46, 60, 0.62);
+    --bg-inset:      rgba(18, 20, 28, 0.45);
+    --bg-red-box:    rgba(28, 30, 40, 0.42);
+    --bg-green-box:  rgba(28, 30, 40, 0.42);
+    --bg-white-box:  rgba(30, 32, 42, 0.44);
+    --bg-yellow-box: rgba(28, 30, 40, 0.42);
+    --bg-grid:       rgba(24, 26, 34, 0.40);
+
+    --border-main:   rgba(255, 255, 255, 0.14);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-folder: #FF6961;
+    --border-tpl:    #64A8FF;
+
+    /* Apple system blue, brightened for dark ground */
+    --accent:        #409CFF;
+    --accent-hover:  #64B0FF;
+    --accent-dim:    rgba(64, 156, 255, 0.18);
+    --accent-glow:   rgba(64, 156, 255, 0.38);
+
+    --txt-primary:   #F2F4FA;
+    --txt-secondary: #B4B8C6;
+    --txt-muted:     #7E8294;
+    --txt-dim:       #4A4E5E;
+
+    --tab-active-color:  #64B0FF;
+    --tab-active-border: #409CFF;
+    --tab-export-color:  #64B0FF;
+
+    --btn-load-bg:    rgba(64, 156, 255, 0.92);
+    --btn-load-txt:   #ffffff;
+    --btn-save-bg:    rgba(255, 255, 255, 0.14);
+    --btn-save-txt:   #F2F4FA;
+    --btn-blue-bg:    rgba(64, 156, 255, 0.92);
+    --btn-blue-txt:   #ffffff;
+    --btn-yellow-bg:  #FFD60A;
+    --btn-yellow-txt: #1C1C2E;
+    --btn-red-bg:     #FF453A;
+    --btn-red-txt:    #ffffff;
+
+    --resizer-bg:         rgba(255, 255, 255, 0.10);
+    --resizer-hover:      #409CFF;
+    --slider-track:       rgba(255, 255, 255, 0.16);
+    --slider-thumb:       rgba(255, 255, 255, 0.92);
+    --slider-thumb-hover: #409CFF;
+    --slider-thumb-act:   #64B0FF;
+
+    --card-hover-border:  rgba(64, 156, 255, 0.55);
+
+    --theme-btn-bg:    rgba(44, 46, 60, 0.55);
+    --theme-btn-txt:   #F2F4FA;
+    --theme-btn-bdr:   rgba(255, 255, 255, 0.16);
+    --theme-dd-bg:     rgba(30, 32, 42, 0.80);
+    --theme-dd-bdr:    rgba(255, 255, 255, 0.16);
+    --theme-opt-hover: rgba(64, 156, 255, 0.18);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME DOTS — picker swatches
+══════════════════════════════════════════════════════════════ */
+.theme-dot.nebula {
+    background: conic-gradient(from 200deg, #8B7BFF, #5BE0FF, #FF6CC8, #8B7BFF);
+    border-color: rgba(139, 123, 255, 0.5);
+}
+.theme-dot.obsidian {
+    background: linear-gradient(135deg, #3A3320 0%, #E8C07D 50%, #F5D89A 100%);
+    border-color: rgba(232, 192, 125, 0.55);
+}
+.theme-dot.synthwave {
+    background: linear-gradient(135deg, #FF2E97 0%, #b026ff 50%, #05D9E8 100%);
+    border-color: rgba(255, 46, 151, 0.55);
+}
+.theme-dot.glass {
+    background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(10,132,255,0.55));
+    border-color: rgba(255, 255, 255, 0.8);
+    box-shadow: inset 0 0 3px rgba(255,255,255,0.9);
+}
+.theme-dot.glass-dark {
+    background: linear-gradient(135deg, rgba(60,64,82,0.95), rgba(64,156,255,0.7));
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: inset 0 0 3px rgba(120,160,255,0.7);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SHARED 3D / MOTION PRIMITIVES (apply to all animated themes)
+   Cards lift and tilt in 3D; the lift transition is shared, only the
+   glow color differs per theme below.
+══════════════════════════════════════════════════════════════ */
+[data-theme="nebula"] .thumb-card,
+[data-theme="nebula"] .wp-card,
+[data-theme="nebula"] .sb-page-card,
+[data-theme="nebula"] .tools-card,
+[data-theme="obsidian"] .thumb-card,
+[data-theme="obsidian"] .wp-card,
+[data-theme="obsidian"] .sb-page-card,
+[data-theme="obsidian"] .tools-card,
+[data-theme="synthwave"] .thumb-card,
+[data-theme="synthwave"] .wp-card,
+[data-theme="synthwave"] .sb-page-card,
+[data-theme="synthwave"] .tools-card {
+    transform-style: preserve-3d;
+    perspective: 900px;
+    transition:
+        transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
+        box-shadow 0.35s ease,
+        border-color 0.2s;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
+                0 6px 18px rgba(0, 0, 0, 0.35);
+    will-change: transform;
+}
+
+/* Top-nav + tab panes get a stacking context so backdrops sit behind. */
+[data-theme="nebula"] .top-nav,    [data-theme="nebula"] .tab-pane,
+[data-theme="obsidian"] .top-nav,  [data-theme="obsidian"] .tab-pane,
+[data-theme="synthwave"] .top-nav, [data-theme="synthwave"] .tab-pane { position: relative; }
+[data-theme="nebula"] .tab-pane,
+[data-theme="obsidian"] .tab-pane,
+[data-theme="synthwave"] .tab-pane { z-index: 1; }
+
+/* ══════════════════════════════════════════════════════════════
+   NEBULA — backdrop, starfield, glow
+══════════════════════════════════════════════════════════════ */
+[data-theme="nebula"] body { position: relative; }
+[data-theme="nebula"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(1200px 800px at 15% 10%, rgba(139,123,255,0.22), transparent 60%),
+        radial-gradient(1000px 700px at 85% 90%, rgba(91,224,255,0.16),  transparent 60%),
+        radial-gradient(800px 600px  at 55% 45%, rgba(255,108,200,0.14), transparent 65%);
+    background-size: 200% 200%, 200% 200%, 200% 200%;
+    animation: nebula-drift 32s ease-in-out infinite alternate;
+}
+/* Twinkling starfield — two layered radial-gradient star sheets. */
+[data-theme="nebula"] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 20% 30%,  rgba(255,255,255,0.9), transparent),
+        radial-gradient(1px 1px   at 70% 65%,  rgba(255,255,255,0.7), transparent),
+        radial-gradient(1.5px 1.5px at 40% 80%,  rgba(200,220,255,0.8), transparent),
+        radial-gradient(1px 1px   at 85% 20%,  rgba(255,255,255,0.6), transparent),
+        radial-gradient(1px 1px   at 10% 70%,  rgba(255,255,255,0.7), transparent),
+        radial-gradient(1.5px 1.5px at 60% 40%,  rgba(220,200,255,0.8), transparent);
+    background-repeat: repeat;
+    background-size: 320px 320px;
+    animation: nebula-twinkle 5s ease-in-out infinite alternate;
+    opacity: 0.6;
+}
+@keyframes nebula-drift {
+    0%   { background-position:   0% 0%,   100% 100%, 50% 50%; }
+    50%  { background-position: 100% 30%,    0% 70%, 70% 20%; }
+    100% { background-position:  30% 100%,  70% 30%, 30% 80%; }
+}
+@keyframes nebula-twinkle {
+    0%   { opacity: 0.35; }
+    100% { opacity: 0.7; }
+}
+[data-theme="nebula"] .top-nav {
+    background: linear-gradient(180deg, #0A0A1A 0%, #050510 100%);
+    box-shadow: 0 1px 0 rgba(139,123,255,0.18) inset, 0 0 0 1px rgba(139,123,255,0.06);
+}
+[data-theme="nebula"] .top-nav::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(139,123,255,0.7) 50%, rgba(91,224,255,0) 90%, transparent 100%);
+    background-size: 200% 100%;
+    animation: scan-x 6s linear infinite;
+    pointer-events: none;
+}
+[data-theme="nebula"] .tab-btn          { transition: color .2s, text-shadow .2s, background .2s; }
+[data-theme="nebula"] .tab-btn:hover    { text-shadow: 0 0 12px rgba(139,123,255,0.55); }
+[data-theme="nebula"] .tab-btn.active   { text-shadow: 0 0 14px rgba(139,123,255,0.75); }
+[data-theme="nebula"] .thumb-card:hover,
+[data-theme="nebula"] .wp-card:hover,
+[data-theme="nebula"] .sb-page-card:hover,
+[data-theme="nebula"] .tools-card:hover {
+    transform: translateY(-3px) rotateX(4deg) rotateY(-4deg) scale(1.015);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 36px rgba(0,0,0,0.55),
+                0 0 0 1px rgba(139,123,255,0.35), 0 0 28px rgba(139,123,255,0.30);
+    border-color: var(--accent);
+}
+[data-theme="nebula"] .btn--render {
+    background: linear-gradient(135deg, #6E5BFF 0%, #8B7BFF 50%, #5BE0FF 100%);
+    background-size: 200% 200%;
+    animation: shimmer-x 6s ease-in-out infinite;
+    border-color: transparent;
+}
+[data-theme="nebula"] .btn--render:hover {
+    box-shadow: 0 0 24px rgba(139,123,255,0.55), 0 0 48px rgba(91,224,255,0.35);
+    transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   OBSIDIAN GOLD — gold dust, light sweep, metallic CTA
+══════════════════════════════════════════════════════════════ */
+[data-theme="obsidian"] body { position: relative; }
+[data-theme="obsidian"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(900px 700px at 80% 15%, rgba(232,192,125,0.10), transparent 60%),
+        radial-gradient(700px 600px at 15% 85%, rgba(201,162,75,0.08),  transparent 60%);
+    background-size: 200% 200%, 200% 200%;
+    animation: nebula-drift 40s ease-in-out infinite alternate;
+}
+/* Floating gold-dust motes */
+[data-theme="obsidian"] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 25% 20%, rgba(232,192,125,0.9), transparent),
+        radial-gradient(1px 1px   at 65% 55%, rgba(245,216,154,0.7), transparent),
+        radial-gradient(2px 2px   at 45% 75%, rgba(232,192,125,0.6), transparent),
+        radial-gradient(1px 1px   at 80% 30%, rgba(245,216,154,0.7), transparent);
+    background-repeat: repeat;
+    background-size: 360px 360px;
+    animation: gold-rise 14s linear infinite;
+    opacity: 0.5;
+}
+@keyframes gold-rise {
+    0%   { background-position: 0 0,   0 0,   0 0,   0 0; }
+    100% { background-position: 0 -360px, 0 -300px, 0 -420px, 0 -340px; }
+}
+[data-theme="obsidian"] .top-nav {
+    background: linear-gradient(180deg, #11100C 0%, #070603 100%);
+    box-shadow: 0 1px 0 rgba(232,192,125,0.18) inset, 0 0 0 1px rgba(232,192,125,0.06);
+    overflow: hidden;
+}
+/* Diagonal sheen sweeping across the nav */
+[data-theme="obsidian"] .top-nav::before {
+    content: ''; position: absolute; top: -50%; bottom: -50%; left: -30%; width: 30%;
+    background: linear-gradient(105deg, transparent, rgba(245,216,154,0.18), transparent);
+    transform: skewX(-18deg);
+    animation: gold-sweep 7s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes gold-sweep {
+    0%   { left: -30%; }
+    55%  { left: 130%; }
+    100% { left: 130%; }
+}
+[data-theme="obsidian"] .tab-btn:hover   { text-shadow: 0 0 10px rgba(232,192,125,0.55); }
+[data-theme="obsidian"] .tab-btn.active  { text-shadow: 0 0 12px rgba(232,192,125,0.7); }
+[data-theme="obsidian"] .thumb-card:hover,
+[data-theme="obsidian"] .wp-card:hover,
+[data-theme="obsidian"] .sb-page-card:hover,
+[data-theme="obsidian"] .tools-card:hover {
+    transform: translateY(-3px) rotateX(3deg) rotateY(-3deg) scale(1.012);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 36px rgba(0,0,0,0.6),
+                0 0 0 1px rgba(232,192,125,0.45), 0 0 26px rgba(232,192,125,0.28);
+    border-color: var(--accent);
+}
+[data-theme="obsidian"] .btn--render {
+    background: linear-gradient(135deg, #C9A24B 0%, #E8C07D 45%, #F5D89A 55%, #C9A24B 100%);
+    background-size: 250% 100%;
+    color: #0B0A08;
+    animation: shimmer-x 5s linear infinite;
+    border-color: transparent;
+    font-weight: 700;
+}
+[data-theme="obsidian"] .btn--render:hover {
+    box-shadow: 0 0 22px rgba(232,192,125,0.6), 0 0 44px rgba(245,216,154,0.3);
+    transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SYNTHWAVE — neon grid horizon, scanlines, chromatic glow
+══════════════════════════════════════════════════════════════ */
+[data-theme="synthwave"] body { position: relative; }
+/* Perspective neon grid floor scrolling toward the viewer */
+[data-theme="synthwave"] body::before {
+    content: '';
+    position: fixed;
+    left: 0; right: 0; bottom: 0; height: 55%;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        linear-gradient(rgba(255,46,151,0.5) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(5,217,232,0.4) 2px, transparent 2px);
+    background-size: 60px 60px, 60px 60px;
+    transform: perspective(420px) rotateX(62deg);
+    transform-origin: center bottom;
+    animation: grid-scroll 2.2s linear infinite;
+    opacity: 0.5;
+    mask-image: linear-gradient(to top, #000 0%, transparent 90%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 90%);
+}
+/* Glowing sun + scanline veil */
+[data-theme="synthwave"] body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(600px 380px at 50% 12%, rgba(255,46,151,0.18), transparent 70%),
+        repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0) 4px);
+}
+@keyframes grid-scroll {
+    0%   { background-position: 0 0, 0 0; }
+    100% { background-position: 0 60px, 60px 0; }
+}
+[data-theme="synthwave"] .top-nav {
+    background: linear-gradient(180deg, #1A0B2E 0%, #0C0018 100%);
+    box-shadow: 0 1px 0 rgba(255,46,151,0.22) inset, 0 0 0 1px rgba(5,217,232,0.06);
+}
+[data-theme="synthwave"] .top-nav::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #FF2E97 35%, #05D9E8 65%, transparent);
+    background-size: 200% 100%;
+    animation: scan-x 4s linear infinite;
+    box-shadow: 0 0 10px rgba(255,46,151,0.7);
+    pointer-events: none;
+}
+[data-theme="synthwave"] .tab-btn:hover  { text-shadow: 0 0 10px rgba(5,217,232,0.7); color: #05D9E8; }
+[data-theme="synthwave"] .tab-btn.active { text-shadow: 0 0 12px rgba(255,46,151,0.8), 0 0 4px rgba(5,217,232,0.6); }
+[data-theme="synthwave"] .thumb-card:hover,
+[data-theme="synthwave"] .wp-card:hover,
+[data-theme="synthwave"] .sb-page-card:hover,
+[data-theme="synthwave"] .tools-card:hover {
+    transform: translateY(-3px) rotateX(5deg) rotateY(-5deg) scale(1.018);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 40px rgba(0,0,0,0.6),
+                -4px 0 18px rgba(255,46,151,0.35), 4px 0 18px rgba(5,217,232,0.35);
+    border-color: var(--accent);
+}
+[data-theme="synthwave"] .btn--render {
+    background: linear-gradient(135deg, #FF2E97 0%, #b026ff 50%, #05D9E8 100%);
+    background-size: 220% 220%;
+    animation: shimmer-x 4s ease-in-out infinite;
+    border-color: transparent;
+    text-shadow: 0 0 6px rgba(0,0,0,0.4);
+}
+[data-theme="synthwave"] .btn--render:hover {
+    box-shadow: 0 0 24px rgba(255,46,151,0.6), 0 0 48px rgba(5,217,232,0.4);
+    transform: translateY(-1px);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SHARED KEYFRAMES + selection / slider / toast polish (all 3 themes)
+══════════════════════════════════════════════════════════════ */
+@keyframes scan-x    { 0% { background-position: -50% 0; } 100% { background-position: 150% 0; } }
+@keyframes shimmer-x { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+
+[data-theme="nebula"] .thumb-card.is-selected,
+[data-theme="obsidian"] .thumb-card.is-selected,
+[data-theme="synthwave"] .thumb-card.is-selected {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 28px var(--accent-glow);
+}
+
+[data-theme="nebula"] input[type="range"]::-webkit-slider-runnable-track,
+[data-theme="obsidian"] input[type="range"]::-webkit-slider-runnable-track,
+[data-theme="synthwave"] input[type="range"]::-webkit-slider-runnable-track {
+    background: linear-gradient(90deg, var(--slider-thumb), var(--accent), var(--tab-export-color));
+    background-size: 200% 100%;
+    animation: shimmer-x 8s linear infinite;
+}
+[data-theme="nebula"] input[type="range"]::-webkit-slider-thumb,
+[data-theme="obsidian"] input[type="range"]::-webkit-slider-thumb,
+[data-theme="synthwave"] input[type="range"]::-webkit-slider-thumb {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+}
+
+[data-theme="nebula"] .toast,
+[data-theme="obsidian"] .toast,
+[data-theme="synthwave"] .toast {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px var(--accent-dim);
+}
+
+[data-theme="nebula"] .folder-rail--accent-images,
+[data-theme="obsidian"] .folder-rail--accent-images,
+[data-theme="synthwave"] .folder-rail--accent-images { border-color: var(--border-folder); }
+[data-theme="nebula"] .folder-rail--accent-templates,
+[data-theme="obsidian"] .folder-rail--accent-templates,
+[data-theme="synthwave"] .folder-rail--accent-templates { border-color: var(--border-tpl); }
+
+[data-theme="nebula"] .sb-page-header,
+[data-theme="obsidian"] .sb-page-header,
+[data-theme="synthwave"] .sb-page-header {
+    color: var(--accent);
+    text-shadow: 0 0 14px var(--accent-glow);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GLASS — Apple macOS Tahoe 26 "Liquid Glass"
+   ──────────────────────────────────────────────────────────────
+   Every major surface becomes a pane of frosted glass: translucent
+   white, heavy backdrop-blur + saturation (the signature Tahoe look),
+   a hairline specular top-edge highlight, soft ambient shadow for
+   float, and generous rounded corners. Sits over a slowly drifting
+   tinted gradient "wallpaper".
+══════════════════════════════════════════════════════════════ */
+
+/* The soft tinted desktop wallpaper that all the glass floats over. */
+[data-theme="glass"] body {
+    position: relative;
+    background: #EEF1F7;
+}
+[data-theme="glass-dark"] body {
+    position: relative;
+    background: #0B0D12;
+}
+[data-theme="glass"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(1200px 800px at 12% 8%,  rgba(10,132,255,0.18),  transparent 60%),
+        radial-gradient(1000px 760px at 88% 18%, rgba(191,90,242,0.16),  transparent 60%),
+        radial-gradient(1100px 820px at 70% 92%, rgba(48,209,158,0.16),  transparent 62%),
+        radial-gradient(900px 700px  at 25% 88%, rgba(255,159,10,0.12),  transparent 60%),
+        linear-gradient(180deg, #EFF3FA 0%, #E7ECF5 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: glass-wallpaper 36s ease-in-out infinite alternate;
+}
+/* Dark variant: deeper, moodier tints over near-black. */
+[data-theme="glass-dark"] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(1200px 800px at 12% 8%,  rgba(64,156,255,0.20),  transparent 60%),
+        radial-gradient(1000px 760px at 88% 18%, rgba(150,70,255,0.18),  transparent 60%),
+        radial-gradient(1100px 820px at 70% 92%, rgba(40,200,160,0.16),  transparent 62%),
+        radial-gradient(900px 700px  at 25% 88%, rgba(255,120,80,0.12),  transparent 60%),
+        linear-gradient(180deg, #0C0E14 0%, #070810 100%);
+    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
+    animation: glass-wallpaper 36s ease-in-out infinite alternate;
+}
+@keyframes glass-wallpaper {
+    0%   { background-position:   0% 0%,  100% 0%,  70% 100%, 25% 90%, 0 0; }
+    50%  { background-position:  60% 40%,  40% 30%, 30% 60%,  70% 40%, 0 0; }
+    100% { background-position: 100% 100%,  0% 80%, 100% 0%,  0% 10%, 0 0; }
+}
+[data-theme="glass"] .top-nav,
+[data-theme="glass"] .tab-pane,
+[data-theme="glass-dark"] .top-nav,
+[data-theme="glass-dark"] .tab-pane { position: relative; z-index: 1; }
+
+/* ── Frosted glass mixin via shared declarations ─────────────── */
+/* NOTE: `.cmd-bar` is intentionally NOT frosted. backdrop-filter creates a
+   new stacking context, which traps the Clear-album overflow dropdown behind
+   the page content below the command bar (it comes later in the DOM), so the
+   menu was unclickable in the glass themes only. Plain `.row` rows elsewhere
+   still get the frost. */
+[data-theme="glass"] .top-nav,
+[data-theme="glass"] .toolbar,
+[data-theme="glass"] .row:not(.cmd-bar),
+[data-theme="glass"] .folder-rail,
+[data-theme="glass"] .folder-rail__panel,
+[data-theme="glass"] .tools-card,
+[data-theme="glass"] .thumb-card,
+[data-theme="glass"] .wp-card,
+[data-theme="glass"] .sb-page-card,
+[data-theme="glass"] .toast,
+[data-theme="glass"] #themeDropdown,
+[data-theme="glass"] dialog,
+[data-theme="glass"] .render-badge,
+[data-theme="glass"] .license-badge {
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    background-color: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),     /* specular top edge */
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.5),
+        0 8px 30px rgba(20, 30, 60, 0.12);          /* soft ambient float */
+}
+/* Dark variant: graphite glass, luminous (not white) specular edge. */
+[data-theme="glass-dark"] .top-nav,
+[data-theme="glass-dark"] .toolbar,
+[data-theme="glass-dark"] .row:not(.cmd-bar),
+[data-theme="glass-dark"] .folder-rail,
+[data-theme="glass-dark"] .folder-rail__panel,
+[data-theme="glass-dark"] .tools-card,
+[data-theme="glass-dark"] .thumb-card,
+[data-theme="glass-dark"] .wp-card,
+[data-theme="glass-dark"] .sb-page-card,
+[data-theme="glass-dark"] .toast,
+[data-theme="glass-dark"] #themeDropdown,
+[data-theme="glass-dark"] dialog,
+[data-theme="glass-dark"] .render-badge,
+[data-theme="glass-dark"] .license-badge {
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    backdrop-filter: blur(28px) saturate(180%);
+    background-color: rgba(34, 36, 48, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),    /* luminous top edge */
+        inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
+        0 8px 30px rgba(0, 0, 0, 0.45);             /* deep ambient float */
+}
+
+/* Top nav: brighter, thinner, hairline divider instead of hard border. */
+[data-theme="glass"] .top-nav {
+    background-color: rgba(255, 255, 255, 0.62);
+    border: none;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 12px rgba(20,30,60,0.06);
+}
+[data-theme="glass-dark"] .top-nav {
+    background-color: rgba(30, 32, 42, 0.62);
+    border: none;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 1px 12px rgba(0,0,0,0.4);
+}
+
+/* Tabs: pill-style active state, the Tahoe signature. */
+[data-theme="glass"] .tab-btn,
+[data-theme="glass-dark"] .tab-btn {
+    color: var(--txt-secondary);
+    border-bottom: none;
+    border-radius: 9px;
+    margin: 5px 2px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+[data-theme="glass"] .tab-btn:hover {
+    background: rgba(10, 132, 255, 0.08);
+    color: var(--txt-primary);
+}
+[data-theme="glass-dark"] .tab-btn:hover {
+    background: rgba(64, 156, 255, 0.14);
+    color: var(--txt-primary);
+}
+[data-theme="glass"] .tab-btn.active {
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--accent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 2px 8px rgba(10,132,255,0.18);
+}
+[data-theme="glass-dark"] .tab-btn.active {
+    background: rgba(64, 70, 90, 0.85);
+    color: var(--accent);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 10px rgba(64,156,255,0.3);
+}
+
+/* Buttons: glassy, rounded, with a primary system-blue variant. */
+[data-theme="glass"] .btn {
+    border-radius: 9px;
+    border: 0.5px solid rgba(255,255,255,0.6);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    background-color: rgba(255, 255, 255, 0.6);
+    color: var(--txt-primary);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 4px rgba(20,30,60,0.08);
+    transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+[data-theme="glass-dark"] .btn {
+    border-radius: 9px;
+    border: 0.5px solid rgba(255,255,255,0.14);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    backdrop-filter: blur(12px) saturate(160%);
+    background-color: rgba(54, 58, 74, 0.6);
+    color: var(--txt-primary);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+[data-theme="glass"] .btn:hover {
+    background-color: rgba(255, 255, 255, 0.78);
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(20,30,60,0.14);
+}
+[data-theme="glass-dark"] .btn:hover {
+    background-color: rgba(66, 70, 88, 0.78);
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 14px rgba(0,0,0,0.4);
+}
+[data-theme="glass"] .btn:active,
+[data-theme="glass-dark"] .btn:active { transform: translateY(0); }
+[data-theme="glass"] .btn--primary,
+[data-theme="glass"] .btn--render,
+[data-theme="glass-dark"] .btn--primary,
+[data-theme="glass-dark"] .btn--render {
+    background: linear-gradient(180deg, #3D9BFF 0%, #0A84FF 100%);
+    color: #fff;
+    border-color: rgba(255,255,255,0.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px rgba(10,132,255,0.35);
+}
+[data-theme="glass"] .btn--primary:hover,
+[data-theme="glass"] .btn--render:hover,
+[data-theme="glass-dark"] .btn--primary:hover,
+[data-theme="glass-dark"] .btn--render:hover {
+    background: linear-gradient(180deg, #57A8FF 0%, #1E8FFF 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 6px 20px rgba(10,132,255,0.45);
+}
+[data-theme="glass"] .btn--destructive,
+[data-theme="glass-dark"] .btn--destructive {
+    background: linear-gradient(180deg, #FF6961 0%, #FF453A 100%);
+    color: #fff; border-color: rgba(255,255,255,0.35);
+}
+
+/* Cards float on hover with a gentle 3D lift — subtle, not flashy. */
+[data-theme="glass"] .thumb-card,
+[data-theme="glass"] .wp-card,
+[data-theme="glass"] .sb-page-card,
+[data-theme="glass"] .tools-card,
+[data-theme="glass-dark"] .thumb-card,
+[data-theme="glass-dark"] .wp-card,
+[data-theme="glass-dark"] .sb-page-card,
+[data-theme="glass-dark"] .tools-card {
+    border-radius: 14px;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    transition: transform 0.32s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.32s ease, border-color 0.2s;
+}
+[data-theme="glass"] .thumb-card:hover,
+[data-theme="glass"] .wp-card:hover,
+[data-theme="glass"] .sb-page-card:hover,
+[data-theme="glass"] .tools-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(10,132,255,0.5);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.95),
+        0 18px 40px rgba(20,30,60,0.20),
+        0 0 0 1px rgba(10,132,255,0.18);
+}
+[data-theme="glass-dark"] .thumb-card:hover,
+[data-theme="glass-dark"] .wp-card:hover,
+[data-theme="glass-dark"] .sb-page-card:hover,
+[data-theme="glass-dark"] .tools-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    border-color: rgba(64,156,255,0.55);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 18px 44px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(64,156,255,0.30);
+}
+
+/* Inputs / selects: frosted pills. */
+[data-theme="glass"] input[type="number"],
+[data-theme="glass"] input[type="text"],
+[data-theme="glass"] select,
+[data-theme="glass"] textarea {
+    background-color: rgba(255,255,255,0.6);
+    border: 0.5px solid rgba(255,255,255,0.7);
+    border-radius: 8px;
+    color: var(--txt-primary);
+    box-shadow: inset 0 1px 2px rgba(20,30,60,0.06);
+}
+[data-theme="glass-dark"] input[type="number"],
+[data-theme="glass-dark"] input[type="text"],
+[data-theme="glass-dark"] select,
+[data-theme="glass-dark"] textarea {
+    background-color: rgba(54, 58, 74, 0.6);
+    border: 0.5px solid rgba(255,255,255,0.14);
+    border-radius: 8px;
+    color: var(--txt-primary);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+}
+[data-theme="glass"] input:focus,
+[data-theme="glass"] select:focus,
+[data-theme="glass"] textarea:focus,
+[data-theme="glass-dark"] input:focus,
+[data-theme="glass-dark"] select:focus,
+[data-theme="glass-dark"] textarea:focus {
+    outline: none;
+    border-color: rgba(64,156,255,0.7);
+    box-shadow: 0 0 0 3px rgba(64,156,255,0.22);
+}
+
+/* Sliders: track translucent, thumb a glossy white pill. */
+[data-theme="glass"] input[type="range"]::-webkit-slider-runnable-track,
+[data-theme="glass-dark"] input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--slider-track);
+    border-radius: 999px;
+}
+[data-theme="glass"] input[type="range"]::-webkit-slider-thumb,
+[data-theme="glass-dark"] input[type="range"]::-webkit-slider-thumb {
+    background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(0,0,0,0.06);
+}
+
+/* Boxes: let the wallpaper glow through with a faint frost. */
+[data-theme="glass"] .box,
+[data-theme="glass"] .grid-box {
+    background-color: rgba(255,255,255,0.28);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+}
+[data-theme="glass-dark"] .box,
+[data-theme="glass-dark"] .grid-box {
+    background-color: rgba(20, 22, 30, 0.34);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* Folder rails: rounded frosted side panels. */
+[data-theme="glass"] .folder-rail--boxed,
+[data-theme="glass-dark"] .folder-rail--boxed { border-radius: 14px; }
+
+/* Resizers: subtle, become blue on hover. */
+[data-theme="glass"] .resizer:hover,
+[data-theme="glass"] .resizer-h:hover,
+[data-theme="glass-dark"] .resizer:hover,
+[data-theme="glass-dark"] .resizer-h:hover { background: var(--accent); }
+
+/* Toasts + dialogs: rounded glass with deep ambient shadow. */
+[data-theme="glass"] .toast,
+[data-theme="glass"] dialog,
+[data-theme="glass"] #themeDropdown,
+[data-theme="glass-dark"] .toast,
+[data-theme="glass-dark"] dialog,
+[data-theme="glass-dark"] #themeDropdown {
+    border-radius: 14px;
+}
+
+/* Storyboard header text in calm ink, no neon glow here. */
+[data-theme="glass"] .sb-page-header,
+[data-theme="glass-dark"] .sb-page-header { color: var(--accent); }
+
+/* Footer + status text legible on light ground. */
+[data-theme="glass"] .footer { background-color: rgba(255,255,255,0.5); }
+[data-theme="glass-dark"] .footer { background-color: rgba(28, 30, 40, 0.55); }
+
+/* Photo letterbox cells: a soft neutral instead of near-black so they read
+   as glass rather than dark slabs on the light wallpaper. */
+[data-theme="glass"] { --photo-cell-bg: rgba(120, 120, 140, 0.16); }
+[data-theme="glass-dark"] { --photo-cell-bg: rgba(10, 12, 18, 0.55); }
+
+/* ══════════════════════════════════════════════════════════════
+   ACCESSIBILITY — honor reduced-motion: kill every animation above.
+══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    [data-theme="nebula"] body::before,
+    [data-theme="nebula"] body::after,
+    [data-theme="obsidian"] body::before,
+    [data-theme="obsidian"] body::after,
+    [data-theme="obsidian"] .top-nav::before,
+    [data-theme="synthwave"] body::before,
+    [data-theme="glass"] body::before,
+    [data-theme="glass-dark"] body::before,
+    [data-theme="synthwave"] .top-nav::after,
+    [data-theme="nebula"] .top-nav::after,
+    [data-theme*=""] .btn--render,
+    [data-theme*=""] input[type="range"]::-webkit-slider-runnable-track {
+        animation: none !important;
+    }
+    [data-theme="nebula"] .thumb-card,
+    [data-theme="obsidian"] .thumb-card,
+    [data-theme="synthwave"] .thumb-card,
+    [data-theme="nebula"] .wp-card,
+    [data-theme="obsidian"] .wp-card,
+    [data-theme="synthwave"] .wp-card { transition: none !important; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-base);
+    color: var(--txt-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+    letter-spacing: 0.05em;
+    transition: background-color 0.25s, color 0.25s;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TOP NAVIGATION
+══════════════════════════════════════════════════════════════ */
+.top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-right: 12px;
+    background: var(--bg-nav);
+    border-bottom: 1px solid var(--border-main);
+    flex-shrink: 0;
+    /* CRITICAL: establish a stacking context ABOVE every tab pane so the
+       theme dropdown (z-index inside this context) is never painted behind
+       page content. The aurora theme used to give both .top-nav and
+       .tab-pane z-index:1, and since the tab pane comes later in the DOM it
+       won the paint order and hid the dropdown — the "theme button isn't
+       working" bug. A high z-index here fixes it for every theme. */
+    position: relative;
+    z-index: 1000;
+}
+.tablist { display: flex; }
+.tab-btn {
+    background: transparent;
+    color: var(--txt-muted);
+    border: none;
+    border-radius: 0;
+    border-bottom: 2px solid transparent;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    outline: none;
+    white-space: nowrap;
+}
+.tab-btn:hover  { color: var(--txt-primary); background: var(--bg-elevated); }
+.tab-btn.active {
+    color: var(--tab-active-color);
+    border-bottom-color: var(--tab-active-border);
+    background: var(--bg-elevated);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   THEME DROPDOWN
+══════════════════════════════════════════════════════════════ */
+#themeContainer {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+#themeBtn {
+    padding: 5px 11px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    background: var(--theme-btn-bg);
+    color: var(--theme-btn-txt);
+    border: 1px solid var(--theme-btn-bdr);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: border-color 0.2s, color 0.2s;
+}
+#themeBtn:hover { border-color: var(--accent); color: var(--accent); }
+#themeBtn::after { content: '▾'; font-size: 9px; opacity: 0.55; }
+
+#themeDropdown {
+    display: none;
+    position: fixed;
+    background: var(--theme-dd-bg);
+    border: 1px solid var(--theme-dd-bdr);
+    border-radius: 5px;
+    overflow: hidden;
+    z-index: 100000;
+    min-width: 185px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+}
+/* !important so no theme-specific cascade rule can ever re-hide it once
+   theme.js adds .open. The element is reparented to <body> and positioned
+   inline by JS, so absolute top/right anchors are not needed here. */
+#themeDropdown.open { display: block !important; }
+
+.theme-option {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--txt-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.05em;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+.theme-option:hover  { background: var(--theme-opt-hover); color: var(--txt-primary); }
+.theme-option.active { color: var(--accent); }
+
+.theme-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+.theme-dot.classic   { background: #1E824C; }
+.theme-dot.enerblock { background: #FF5949; }
+
+.theme-label-sub {
+    font-size: 9px;
+    opacity: 0.55;
+    margin-left: auto;
+    letter-spacing: 0.04em;
+}
+.theme-sep { height: 1px; background: var(--theme-dd-bdr); }
+
+/* ══════════════════════════════════════════════════════════════
+   NAV ACTIONS  ── workspace LOAD / SAVE buttons inherit .btn styling
+══════════════════════════════════════════════════════════════ */
+.nav-actions { display: flex; align-items: center; gap: var(--space-3); }
+
+/* ══════════════════════════════════════════════════════════════
+   TAB PANES & LAYOUT
+══════════════════════════════════════════════════════════════ */
+.tab-pane {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+.tab-pane.active { display: flex; }
+
+/* Tools tab is the one tab whose content is naturally taller than the
+   viewport (curation, library, plugins panels stack vertically). Override
+   the default `overflow: hidden` so the user can scroll. The other tabs
+   intentionally keep overflow hidden because they manage their own grids. */
+#tab-tools.active {
+    overflow-y: auto;
+    /* Reserve space for a thicker, more visible scrollbar so the user
+       actually sees there's more content. */
+    scrollbar-gutter: stable;
+}
+#tab-tools::-webkit-scrollbar { width: 12px; }
+#tab-tools::-webkit-scrollbar-track {
+    background: var(--bg-inset);
+    border-left: 1px solid var(--border-main);
+}
+#tab-tools::-webkit-scrollbar-thumb {
+    background: var(--border-main);
+    border-radius: 6px;
+    border: 2px solid var(--bg-inset);
+}
+#tab-tools::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    padding: 3px 4px;
+    gap: 3px;
+    flex-shrink: 0;
+    background: var(--bg-nav);
+    border-bottom: 1px solid var(--border-main);
+}
+
+/* ── B.1/B.2: segmented command bar ───────────────────────────────
+   The Tab-1 command row is chunked into labeled groups separated by
+   dividers, with destructive/rare actions pushed into an overflow menu so
+   "Clear album" is never a one-hop neighbor of "Auto Fill". */
+.cmd-bar { gap: var(--space-2); flex-wrap: wrap; padding: var(--space-2) var(--space-3); }
+.cmd-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+.cmd-divider {
+    width: 1px;
+    align-self: stretch;
+    min-height: 22px;
+    background: var(--border-main);
+    margin: 0 var(--space-1);
+}
+.cmd-spacer { flex: 1 1 auto; }
+.cmd-overflow { position: relative; z-index: 1100; }
+.cmd-overflow__menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    /* Sit above page content (cards/toolbars below the command bar create
+       their own stacking contexts via transform on the 3D-card themes and
+       were painting over / swallowing clicks on this small dropdown). */
+    z-index: 100001;
+    min-width: 180px;
+    padding: var(--space-1);
+    /* Force a fully opaque surface. Several themes define --bg-elevated as a
+       translucent rgba(), which made the menu (and its red text) look washed
+       out and hard to read. Layer a solid base under the theme colour. */
+    background-color: var(--bg-card);
+    background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover);
+}
+.cmd-overflow__menu.open { display: block; }
+.cmd-overflow__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--txt-primary);
+    font: inherit;
+    font-size: var(--fs-sm);
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--dur-ui) var(--ease-ui);
+}
+.cmd-overflow__item:hover { background: var(--bg-surface); }
+/* Tint the danger item's text but keep it readable: a translucent red wash
+   plus a solid red text colour, never red-on-red. */
+.cmd-overflow__item--danger { color: var(--btn-red-bg); font-weight: 600; }
+.cmd-overflow__item--danger:hover {
+    background: color-mix(in srgb, var(--btn-red-bg) 18%, transparent);
+    color: var(--txt-primary);
+}
+
+.box-row    { display: flex; flex: 1; overflow: hidden; }
+.box-wrapper { display: flex; flex-direction: column; overflow: hidden; flex: 1; }
+
+/* ── A.1: layout utilities lifted from inline styles ──────────────
+   Named classes replace the scattered style="width:50%/flex:1/..." so the
+   layout intent lives in the stylesheet, is themeable, and is inspectable. */
+.box-wrapper--half { width: 50%; flex: 0 0 auto; }
+.box-wrapper--fill { flex: 1; }
+.box--seamless { border: none !important; border-radius: 0; flex: 1; }
+.rail__resizer {
+    width: 5px;
+    background: var(--resizer-bg);
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+.rail__resizer:hover { background: var(--resizer-hover); }
+.is-hidden { display: none !important; }
+
+.toolbar {
+    background: var(--bg-panel);
+    padding: 3px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border-main);
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BOXES
+══════════════════════════════════════════════════════════════ */
+.box { flex: 1; overflow-y: auto; padding: 8px; }
+.red-box    { background: var(--bg-red-box); }
+.green-box  { background: var(--bg-green-box); }
+.white-box  { background: var(--bg-white-box); }
+.yellow-box { background: var(--bg-yellow-box); display: flex; justify-content: center; align-items: flex-start; }
+
+/* ══════════════════════════════════════════════════════════════
+   THUMBNAILS
+══════════════════════════════════════════════════════════════ */
+.thumb-red {
+    width: var(--red-thumb-size) !important;
+    min-width: var(--red-thumb-size) !important;
+    max-width: var(--red-thumb-size) !important;
+    height: auto !important;
+    display: inline-block;
+    vertical-align: top;
+    margin: 3px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.thumb-red:hover:not(.used) { border-color: var(--accent); }
+/* Unified selection language (A.2 tokens): accent ring + soft glow, theme-
+   aware. Was an off-palette maroon (#9E2A2B) that matched nothing else. */
+.thumb-red.selected         { border-color: var(--select-ring); box-shadow: 0 0 0 1px var(--select-ring), 0 0 12px var(--select-glow); }
+.thumb-red.used {
+    opacity: 0.55 !important;
+    border: 2px solid var(--accent) !important;
+    box-shadow: 0 0 7px var(--accent-glow) !important;
+    border-radius: 3px !important;
+    box-sizing: border-box !important;
+}
+
+/* ── USED-STATE CHECKMARK BADGE ───────────────────────────
+   The .used class already conveys state through opacity + glow,
+   but those alone fail for color-blind users and are easy to miss
+   on a busy grid. The ::after badge gives an unambiguous visual
+   cue. We attach it to the wrapper (which is already positioned)
+   using :has() so we don't have to mutate JS to add a span. */
+.img-wrapper-red:has(.thumb-red.used)::after,
+#photosGrid .wp-card.used::after {
+    content: '✓';
+    position: absolute;
+    top: var(--space-1);
+    right: var(--space-1);
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+    z-index: 12;
+}
+#photosGrid .wp-card { position: relative; }
+
+.img-container {
+    display: inline-block !important;
+    vertical-align: top;
+    margin: 5px;
+    position: relative;
+    /* Both axes are slider-driven so the slider grows the cell as a whole
+       instead of just stretching the width. The 1.5× ratio matches the
+       horizontal aspect of an album spread; vertical photos sit inside this
+       cell with letterboxing, but the cell itself scales correctly with the
+       slider. */
+    width: calc(var(--green-thumb-size) * 1.5) !important;
+    min-width: calc(var(--green-thumb-size) * 1.5) !important;
+    max-width: calc(var(--green-thumb-size) * 1.5) !important;
+    height: var(--green-thumb-size) !important;
+    background: var(--photo-cell-bg, #1a1a1a);
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 4px;
+    /* Selection ring lives here, not on the inner img — the previous setup
+       had inline `border: 2px solid transparent` on the img that beat the
+       .selected class so selection was invisible. */
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    transition: outline-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+    cursor: pointer;
+}
+.img-container.selected {
+    outline-color: var(--select-ring);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px var(--select-glow);
+}
+.img-container:hover:not(.selected) {
+    outline-color: rgba(255, 255, 255, 0.18);
+}
+.img-container.is-dragging {
+    opacity: 0.4;
+    transform: scale(0.96);
+}
+/* Drop indicator — the side the dragged tile would land on. Matches the
+   storyboard tile drop visuals so the gesture feels consistent. */
+.img-container.drop-before::before,
+.img-container.drop-after::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent);
+}
+.img-container.drop-before::before { left: -5px; }
+.img-container.drop-after::after  { right: -5px; }
+.thumb-green {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    cursor: pointer;
+    border: 2px solid transparent;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+.thumb-green.selected { border-color: var(--accent); }
+
+/* Orientation badge (H/V) shown on each green-box thumbnail */
+.orient-label {
+    position: absolute;
+    bottom: var(--space-1);
+    left: var(--space-1);
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--fs-2xs);
+    padding: 1px var(--space-1);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border-radius: var(--radius-sm);
+    z-index: 10;
+}
+
+/* Wrapper element rendered around each thumb-green inside greenBox */
+.greenbox-wrapper {
+    display: inline-flex;
+    margin: var(--space-2);
+    vertical-align: top;
+    justify-content: center;
+    align-items: center;
+}
+
+#yellowPreviewArea img {
+    width: var(--yellow-thumb-size) !important;
+    max-width: var(--yellow-thumb-size) !important;
+    height: auto !important;
+    display: block;
+}
+/* Subtle "compositing…" feedback while the live preview renders. */
+#yellowPreviewArea.is-rendering { opacity: 0.6; transition: opacity 0.12s ease; }
+
+/* ── Per-photo adjustments panel (live, non-destructive) ── */
+.adjust-panel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    padding: 6px 10px;
+    background: var(--bg-nav);
+    border-top: 1px solid var(--border-main);
+    flex-shrink: 0;
+}
+.adjust-panel[hidden] { display: none; }
+.adjust-panel__title { font-size: var(--fs-xs); font-weight: 600; color: var(--txt-secondary); letter-spacing: 0.04em; }
+.adjust-panel__count { color: var(--txt-muted); font-weight: 400; }
+.adjust-ctl { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--txt-secondary); }
+.adjust-ctl input[type="range"] { width: 90px; }
+.adjust-val { min-width: 26px; text-align: right; font-variant-numeric: tabular-nums; color: var(--txt-primary); }
+.adjust-ctl input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
+.adjust-panel:has(input:disabled) .adjust-panel__count { color: var(--txt-muted); }
+
+.thumb-card {
+    display: inline-block;
+    vertical-align: top;
+    margin: 5px;
+    cursor: pointer;
+    width: var(--white-thumb-size) !important;
+    min-width: var(--white-thumb-size) !important;
+    max-width: var(--white-thumb-size) !important;
+    overflow: hidden;
+    border: 1px solid var(--border-main);
+    border-radius: 3px;
+    background: var(--bg-card);
+    transition: border-color 0.15s;
+}
+.thumb-card:hover { border-color: var(--accent); }
+.thumb-card.is-selected { border-color: var(--tab-export-color); border-width: 2px; }
+.thumb-card__label {
+    font-size: var(--fs-xs);
+    text-align: center;
+    color: var(--txt-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    margin-top: var(--space-1);
+    padding: 0 var(--space-1);
+}
+.thumb-card img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    box-sizing: border-box;
+    border-radius: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FOLDER RAIL  (shared component, used in 6 places)
+   ──────────────────────────────────────────────────────────────
+   - .folder-rail               outer container
+   - .folder-rail--boxed        Album tab: thick colored border, rounded
+   - .folder-rail--side         Tabs 2/3/4/6: narrow side rail
+   - .folder-rail--accent-*     border-color hooks per content type
+   - .folder-rail__panel        the scrollable panel itself
+   - .folder-rail__header       "Folders:" + action buttons
+   - .folder-rail__actions      group wrapping the icon buttons
+   - .folder-rail__action       individual icon button (reload/remove)
+   - .folder-rail__row          one folder entry (added at runtime)
+   - .folder-rail__label        the checkbox + folder-name label inside a row
+══════════════════════════════════════════════════════════════ */
+.folder-rail {
+    display: flex;
+    background: var(--bg-surface);
+    overflow: hidden;
+}
+.folder-rail--boxed {
+    flex: 1;
+    border: 2px solid var(--border-main);
+    border-radius: 6px;
+}
+.folder-rail--accent-images    { border-color: var(--border-folder); }
+.folder-rail--accent-templates { border-color: var(--border-tpl); }
+
+.folder-rail--side {
+    width: 150px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border-main);
+    background: var(--bg-elevated);
+}
+
+.folder-rail__panel {
+    width: 110px;
+    background: var(--bg-elevated);
+    overflow-y: auto;
+    padding: 5px;
+    font-size: 10px;
+    color: var(--txt-secondary);
+    flex-shrink: 0;
+}
+.folder-rail--side .folder-rail__panel { width: 100%; }
+
+.folder-rail__header {
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--txt-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.folder-rail__actions { display: flex; gap: 6px; }
+
+.folder-rail__action {
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--txt-secondary);
+    transition: color 0.15s;
+}
+.folder-rail__action:hover { color: var(--accent); }
+
+.folder-rail__row {
+    margin-bottom: 6px;
+    word-wrap: break-word;
+    cursor: pointer;
+}
+.folder-rail__label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: var(--txt-primary);
+}
+/* Full folder name, truncated with an ellipsis only when it overflows the
+   rail (was hard-truncated to 10 chars in JS, hiding which folder is which). */
+.folder-rail__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Count badge (e.g. number of photos in a source folder). */
+.folder-rail__count {
+    flex: 0 0 auto;
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: var(--txt-secondary);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GRID (Tabs 2, 3, 4, 6)
+══════════════════════════════════════════════════════════════ */
+.grid-box {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 15px;
+    overflow-y: auto;
+    background: var(--bg-grid);
+    flex: 1;
+    width: 100%;
+}
+.wp-card {
+    display: flex;
+    flex-direction: column;
+    width: var(--wp-thumb-size) !important;
+    flex: 0 0 auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: 5px;
+    padding: 5px;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+.wp-card:hover { border-color: var(--card-hover-border); }
+.wp-card img {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+    border-radius: 2px;
+    background-color: #ffffff;
+    background-image:
+        linear-gradient(45deg,  #cccccc 25%, transparent 25%),
+        linear-gradient(-45deg, #cccccc 25%, transparent 25%),
+        linear-gradient(45deg,  transparent 75%, #cccccc 75%),
+        linear-gradient(-45deg, transparent 75%, #cccccc 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+}
+.wp-card .label {
+    font-size: 10px;
+    color: var(--txt-secondary);
+    margin-top: 5px;
+    width: 100%;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   JS-INJECTED COMPONENT CLASSES (moved from main.js)
+══════════════════════════════════════════════════════════════ */
+.img-wrapper-red {
+    position: relative;
+    display: inline-flex;
+    margin: 4px;
+    vertical-align: top;
+    overflow: hidden;
+    width: calc(var(--red-thumb-size, 70px) * 1.5);
+    height: var(--red-thumb-size, 70px);
+    background: var(--bg-surface);
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 1px solid var(--border-main);
+    transition: border-color 0.15s;
+}
+.rot-badge {
+    position: absolute;
+    top: 3px; left: 3px;
+    background: var(--accent-dim);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 8px;
+    font-weight: 600;
+    padding: 1px 4px;
+    border-radius: 2px;
+    z-index: 10;
+    pointer-events: none;
+    display: none;
+    letter-spacing: 0.04em;
+}
+.btn-rotate-red {
+    position: absolute;
+    bottom: 3px; right: 3px;
+    background: rgba(0,0,0,0.78);
+    color: var(--txt-muted);
+    border: 1px solid var(--border-main);
+    border-radius: 2px;
+    padding: 2px 5px;
+    font-size: 12px;
+    cursor: pointer;
+    opacity: 0;
+    z-index: 10;
+    transition: opacity 0.15s, color 0.15s;
+}
+.img-wrapper-red:hover     .btn-rotate-red,
+.wp-card-img-wrapper:hover .btn-rotate-red { opacity: 1; }
+.btn-rotate-red:hover { color: var(--accent); }
+
+.wp-card-img-wrapper {
+    width: 100%;
+    aspect-ratio: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: var(--bg-surface);
+    position: relative;
+    border-radius: 2px;
+}
+.tab6-photo-img {
+    max-height: 100%; max-width: 100%;
+    object-fit: contain;
+    transform-origin: center;
+    display: block;
+}
+
+#photosGrid .wp-card { width: var(--wp-thumb-size, 150px) !important; cursor: grab; }
+#photosGrid .wp-card:active { cursor: grabbing; }
+#photosGrid .wp-card.used {
+    opacity: 0.5;
+    border: 1px solid var(--accent) !important;
+    box-shadow: 0 0 7px var(--accent-glow);
+}
+
+/* Storyboard classes */
+.sb-page-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-main);
+    border-radius: 6px;
+    padding: 10px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+}
+.sb-page-header {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--tab-export-color);
+    text-align: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border-main);
+}
+.sb-template-preview {
+    width: 100%; height: 115px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: 3px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+.sb-template-preview img { max-width: 100%; max-height: 100%; object-fit: contain; opacity: 0.85; }
+/* When a proof composite has been rendered for the page, the static
+   template thumbnail is swapped for the real composite. Drop the dimming so
+   the photographer sees ground truth. */
+.sb-template-preview--proofed { background: #0a0a0a; }
+.sb-template-preview--proofed img { opacity: 1; object-fit: cover; transition: opacity 180ms ease; }
+.sb-photo-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    min-height: 50px;
+    padding: 5px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: 3px;
+}
+.sb-photo-item {
+    width: var(--sb-thumb-size);
+    height: var(--sb-thumb-size);
+    background: var(--bg-surface);
+    border-radius: 3px;
+    overflow: visible;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--border-main);
+    cursor: grab;
+    position: relative;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.sb-photo-item img {
+    max-width:100%; max-height:100%; object-fit:contain; border-radius:2px;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    user-drag: none;
+}
+/* Hover uses an outline (sits OUTSIDE the border) so it is visually distinct
+   from the selected state's accent border + box-shadow ring. */
+.sb-photo-item:hover {
+    outline: 2px solid var(--accent-hover);
+    outline-offset: 1px;
+}
+.sb-photo-item.sb-dragging { opacity:0.2; border-color:var(--accent); cursor:grabbing; }
+
+/* Selection state — multi-select aware. The ring is wide enough to read
+   over the thumbnail's own border at any zoom level, plus a checkmark
+   in the corner so it's not color-dependent. */
+.sb-photo-item.is-selected {
+    border-color: var(--accent);
+    box-shadow:
+        0 0 0 2px var(--accent),
+        0 0 14px var(--accent-glow);
+    z-index: 1;
+}
+.sb-photo-item.is-selected::after {
+    content: '✓';
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    text-align: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--fs-2xs);
+    font-weight: 700;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Multi-drag count badge: shown on the lead drag ghost when >1 selected. */
+.sb-drag-ghost__count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    min-width: 22px;
+    height: 22px;
+    line-height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    background: var(--accent);
+    color: #fff;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+    z-index: 3;
+}
+.sb-photo-item.drop-before::before,
+.sb-photo-item.drop-after::after {
+    content:'';
+    position:absolute;
+    top:-5px; bottom:-5px;
+    width:3px;
+    background: var(--accent);
+    border-radius:3px;
+    box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent-glow);
+    z-index:20;
+    pointer-events:none;
+    animation: sb-bar-pulse 0.8s ease-in-out infinite alternate;
+}
+.sb-photo-item.drop-before::before { left:-3px; }
+.sb-photo-item.drop-after::after   { right:-3px; }
+@keyframes sb-bar-pulse { from{opacity:0.7} to{opacity:1} }
+
+.sb-drag-ghost {
+    position:fixed;
+    pointer-events:none;
+    z-index:9999;
+    width:60px; height:60px;
+    border: 2px solid var(--accent);
+    border-radius:3px;
+    background:rgba(0,0,0,0.88);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.75), 0 0 0 1px var(--accent-dim);
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+.sb-drag-ghost img { max-width:100%; max-height:100%; object-fit:contain; opacity:0.9; }
+
+/* ══════════════════════════════════════════════════════════════
+   SLIDERS & RESIZERS
+══════════════════════════════════════════════════════════════ */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100px;
+    background: transparent;
+    outline: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+    width:100%; height:3px;
+    background: var(--slider-track);
+    border-radius: 1px;
+}
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height:12px; width:12px;
+    background: var(--slider-thumb);
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    transition: background-color 0.2s;
+}
+input[type="range"]::-webkit-slider-thumb:hover  { background: var(--slider-thumb-hover); }
+input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thumb-act); }
+
+.resizer {
+    width:5px;
+    background: var(--resizer-bg);
+    cursor:col-resize;
+    flex-shrink:0;
+    border-left:  1px solid var(--border-main);
+    border-right: 1px solid var(--border-main);
+    transition: background 0.15s;
+}
+.resizer:hover, .resizer:active { background: var(--resizer-hover); }
+
+.resizer-h {
+    height:5px; width:100%;
+    background: var(--resizer-bg);
+    cursor:row-resize;
+    flex-shrink:0;
+    border-top:    1px solid var(--border-main);
+    border-bottom: 1px solid var(--border-main);
+    box-sizing:border-box;
+    transition: background 0.15s;
+}
+.resizer-h:hover, .resizer-h:active { background: var(--resizer-hover); }
+
+/* ══════════════════════════════════════════════════════════════
+   BUTTONS  ── semantic hierarchy
+   ──────────────────────────────────────────────────────────────
+   .btn                 base
+   .btn--primary        filled accent (one per region)
+   .btn--secondary      neutral filled (frequent, supportive actions)
+   .btn--ghost          outlined / low-emphasis
+   .btn--destructive    outlined red (delete, remove, kill)
+   .btn--warning        filled amber (caution actions: teleport, skip)
+   .btn--render         the heaviest CTA (final render, export)
+   .btn--sm             smaller height for toolbar context
+   .btn--lg             larger height for tool launchers (Tab 5)
+   .btn--block          fills container width
+
+   Backwards-compat aliases (.btn-blue / .btn-yellow / .btn-red /
+   .btn-load-ws / .btn-save-ws) now route through the same visuals
+   so the old class names keep working until the cleanup is done.
+══════════════════════════════════════════════════════════════ */
+.btn,
+.btn-blue, .btn-yellow, .btn-red, .btn-load-ws, .btn-save-ws {
+    --_btn-bg: var(--btn-blue-bg);
+    --_btn-fg: var(--btn-blue-txt);
+    --_btn-bd: transparent;
+    height: var(--control-h);
+    padding: 0 var(--space-4);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--_btn-fg);
+    background: var(--_btn-bg);
+    border: 1px solid var(--_btn-bd);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    transition: opacity 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+.btn:hover,
+.btn-blue:hover, .btn-yellow:hover, .btn-red:hover,
+.btn-load-ws:hover, .btn-save-ws:hover { opacity: 0.85; }
+.btn:focus-visible,
+.btn-blue:focus-visible, .btn-yellow:focus-visible, .btn-red:focus-visible,
+.btn-load-ws:focus-visible, .btn-save-ws:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+.btn:disabled, .btn[disabled] { opacity: 0.4; cursor: not-allowed; }
+
+.btn--primary,
+.btn-blue, .btn-load-ws {
+    --_btn-bg: var(--btn-blue-bg);
+    --_btn-fg: var(--btn-blue-txt);
+}
+.btn--secondary,
+.btn-yellow, .btn-save-ws {
+    --_btn-bg: var(--btn-yellow-bg);
+    --_btn-fg: var(--btn-yellow-txt);
+}
+.btn--warning {
+    --_btn-bg: var(--btn-yellow-bg);
+    --_btn-fg: var(--btn-yellow-txt);
+}
+.btn--destructive,
+.btn-red {
+    --_btn-bg: transparent;
+    --_btn-fg: var(--btn-red-bg);
+    --_btn-bd: var(--btn-red-bg);
+}
+.btn--destructive:hover,
+.btn-red:hover {
+    --_btn-bg: var(--btn-red-bg);
+    --_btn-fg: var(--btn-red-txt);
+    opacity: 1;
+}
+.btn--ghost {
+    --_btn-bg: transparent;
+    --_btn-fg: var(--txt-secondary);
+    --_btn-bd: var(--border-main);
+}
+.btn--ghost:hover {
+    --_btn-fg: var(--txt-primary);
+    --_btn-bd: var(--accent);
+    opacity: 1;
+}
+.btn--render {
+    --_btn-bg: var(--accent);
+    --_btn-fg: #fff;
+    --_btn-bd: var(--accent);
+    height: 30px;
+    padding: 0 var(--space-6);
+    font-size: var(--fs-md);
+    box-shadow: 0 0 0 0 var(--accent-glow);
+    transition: opacity 0.2s, box-shadow 0.25s;
+}
+.btn--render:hover {
+    opacity: 1;
+    background: var(--accent-hover);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.btn--sm  { height: 22px; padding: 0 var(--space-3); font-size: var(--fs-xs); }
+.btn--lg  { height: 44px; padding: 0 var(--space-8); font-size: var(--fs-xl); }
+.btn--block { width: 100%; }
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITY LAYOUT CLASSES  ── absorb inline `style="display:flex"`
+══════════════════════════════════════════════════════════════ */
+.u-row          { display: flex; align-items: center; }
+.u-row--gap-1   { gap: var(--space-1); }
+.u-row--gap-2   { gap: var(--space-2); }
+.u-row--gap-3   { gap: var(--space-3); }
+.u-row--gap-4   { gap: var(--space-4); }
+.u-row--between { display: flex; align-items: center; justify-content: space-between; }
+.u-row--start   { display: flex; align-items: center; justify-content: flex-start; }
+.u-flex-1       { flex: 1; }
+
+.u-text-secondary { color: var(--txt-secondary); }
+.u-text-muted     { color: var(--txt-muted); }
+.u-text-accent    { color: var(--accent); }
+.u-text-export    { color: var(--tab-export-color); }
+
+.u-fs-xs { font-size: var(--fs-xs); }
+.u-fs-sm { font-size: var(--fs-sm); }
+.u-fs-md { font-size: var(--fs-md); }
+
+.u-bold   { font-weight: 700; }
+
+/* ══════════════════════════════════════════════════════════════
+   TOOLBAR CONTROLS  ── slider + button sizing for the .toolbar/.row
+══════════════════════════════════════════════════════════════ */
+.toolbar input[type="range"],
+.row input[type="range"] { width: 100px; }
+.toolbar .slider--sm     { width: 70px; }
+.toolbar .slider--md     { width: 100px; }
+.toolbar .slider--lg     { width: 150px; }
+
+.toolbar .select--sm,
+.row     .select--sm { font-size: var(--fs-xs); max-width: 80px; }
+
+/* ══════════════════════════════════════════════════════════════
+   PAGE CONTROLS  ── used in Tab 1 row
+══════════════════════════════════════════════════════════════ */
+.page-controls { display: flex; align-items: center; gap: var(--space-2); }
+.page-tracker  { font-size: var(--fs-xs); color: var(--txt-secondary); letter-spacing: 0.05em; }
+
+/* ══════════════════════════════════════════════════════════════
+   GREEN BOX TITLE
+══════════════════════════════════════════════════════════════ */
+.greenbox-title { color: var(--tab-active-color); font-weight: 700; letter-spacing: 0.04em; }
+
+/* ══════════════════════════════════════════════════════════════
+   TOOLS TAB — redesigned as a card grid
+   ══════════════════════════════════════════════════════════════
+   The previous "stacked sections with horizontal rules" layout got noisy
+   once the tier-3 modules landed. The card grid:
+   - Visually separates each module so the eye knows where one ends.
+   - Lets wide modules (curation, library, plugins) span both columns.
+   - Scales cleanly when we add more modules — drop a new <section
+     class="tools-card"> in and the grid takes care of placement.
+*/
+.tools-row {
+    /* Retained for any legacy uses elsewhere. New code uses .tools-card. */
+    display: flex;
+    justify-content: flex-start;
+    padding: var(--space-4) var(--space-6);
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+.tools-help {
+    padding: 0 var(--space-6);
+    color: var(--txt-secondary);
+    font-size: var(--fs-sm);
+    max-width: 600px;
+    line-height: 1.5;
+}
+
+/* ─── Hero strip — Tab 5 page header + global actions ─────── */
+.tools-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-8) var(--space-4);
+    background: linear-gradient(180deg, rgba(125, 77, 255, 0.04) 0%, transparent 100%);
+    border-bottom: 1px solid var(--border-main);
+    flex-wrap: wrap;
+}
+.tools-hero__copy { min-width: 0; flex: 1; }
+.tools-hero__title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.tools-hero__subtitle {
+    margin: 4px 0 0;
+    color: var(--txt-secondary);
+    font-size: var(--fs-sm);
+    line-height: 1.45;
+    max-width: 600px;
+}
+.tools-hero__actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+/* ─── Card grid ───────────────────────────────────────────── */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: var(--space-5);
+    padding: var(--space-6) var(--space-8) var(--space-10);
+    align-items: start;
+}
+.tools-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01));
+    border: 1px solid var(--border-main);
+    border-radius: 12px;
+    padding: var(--space-5);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+    overflow: hidden;
+}
+.tools-card:hover {
+    border-color: rgba(125, 77, 255, 0.32);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.tools-card--wide {
+    grid-column: 1 / -1;
+}
+.tools-card__head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+}
+.tools-card__icon {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(125, 77, 255, 0.12);
+    border-radius: 8px;
+}
+.tools-card__title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+.tools-card__hint {
+    color: var(--txt-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}
+.tools-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+.tools-card__cta {
+    align-self: flex-start;
+}
+.tools-card__detail {
+    color: var(--txt-secondary);
+    font-size: 12px;
+    line-height: 1.55;
+    margin: 0;
+}
+.tools-card__detail--mono {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+}
+.tools-card__detail code {
+    background: var(--bg-inset);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+}
+.tools-card__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: nowrap;
+}
+.tools-card__row--wrap { flex-wrap: wrap; }
+.tools-card__row-label {
+    font-size: 12px;
+    color: var(--txt-secondary);
+    font-weight: 500;
+    flex: 1;
+}
+.tools-card__pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.tools-card__pill--neutral {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-main);
+    color: var(--txt-secondary);
+}
+.tools-card__pill--active {
+    background: rgba(76, 175, 80, 0.15);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    color: #74e07a;
+}
+.tools-card__divider {
+    height: 1px;
+    background: var(--border-main);
+    margin: var(--space-1) 0;
+}
+.tools-card__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 13px;
+    cursor: pointer;
+}
+.tools-card__toggle input[type="checkbox"] { accent-color: var(--accent); }
+.tools-card__view {
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: 8px;
+    padding: var(--space-3) var(--space-4);
+    font-size: 12px;
+    color: var(--txt-secondary);
+    line-height: 1.5;
+    max-height: 320px;
+    overflow-y: auto;
+}
+.tools-card__view:empty { display: none; }
+
+/* ─── Curation control grid ──────────────────────────────── */
+.curate-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-3) var(--space-4);
+    padding: var(--space-3);
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: 8px;
+}
+.curate-control {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.curate-control--narrow { max-width: 110px; }
+.curate-control label {
+    font-size: 11px;
+    color: var(--txt-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+}
+.curate-control__row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+.curate-control__row input[type="range"] { flex: 1; min-width: 0; }
+.curate-control__val {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    width: 38px;
+    text-align: right;
+    color: var(--accent);
+}
+.curate-control input[type="number"] {
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    color: var(--txt-primary);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font: inherit;
+    font-size: 13px;
+}
+.curate-control__actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--border-main);
+}
+
+/* Library chips — compact pill rows of saved sets and layouts. */
+.lib-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: 999px;
+    font-size: 12px;
+}
+.lib-chip__action,
+.lib-chip__remove {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--txt-secondary);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 2px;
+}
+.lib-chip__action:hover { color: var(--accent); }
+.lib-chip__remove:hover { color: var(--btn-red-bg); }
+
+/* JPEG export progress bar — sits inside the Utilities card under the
+   button. Live-updated from the JSX-side progress file. */
+.jpeg-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+}
+.jpeg-progress__bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.jpeg-progress__fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), #b07bff);
+    transition: width 0.25s ease;
+}
+.jpeg-progress__text {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    color: var(--txt-secondary);
+    min-width: 70px;
+    text-align: right;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EXPORT TAB
+══════════════════════════════════════════════════════════════ */
+.export-toolbar {
+    padding: var(--space-3) var(--space-6);
+}
+.export-path {
+    color: var(--txt-secondary);
+    font-size: var(--fs-sm);
+}
+.export-hint {
+    padding: var(--space-3) var(--space-8);
+    color: var(--txt-muted);
+    font-size: var(--fs-sm);
+    text-align: center;
+    border-bottom: 1px solid var(--border-main);
+    background: var(--bg-inset);
+    letter-spacing: 0.04em;
+}
+.storyboard-canvas {
+    flex: 1;
+    overflow-y: auto;
+    background: var(--bg-base);
+}
+.storyboard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8);
+    padding: var(--space-8);
+    justify-content: center;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DIALOG
+══════════════════════════════════════════════════════════════ */
+.dialog-body  { display: flex; flex-direction: column; }
+.dialog-title {
+    margin: 0 0 var(--space-5) 0;
+    color: var(--accent);
+    font-size: var(--fs-lg);
+    letter-spacing: 0.04em;
+}
+.dialog-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: var(--space-7);
+    border: 1px solid var(--border-main);
+    padding: var(--space-4);
+    background: var(--bg-inset);
+    border-radius: var(--radius-sm);
+    font-size: var(--fs-md);
+}
+.dialog-list label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+    cursor: pointer;
+}
+.dialog-list label:last-child { margin-bottom: 0; }
+.dialog-empty { color: var(--txt-muted); font-size: var(--fs-md); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-4); }
+
+/* ══════════════════════════════════════════════════════════════
+   LICENSE BADGE
+   ──────────────────────────────────────────────────────────────
+   Lives inside .nav-actions in the top nav. Compact, inline, and
+   participates in the flex layout so it never floats over toolbar
+   buttons (Tab 7 "Render" was getting covered by the previous
+   position:fixed implementation).
+══════════════════════════════════════════════════════════════ */
+.license-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    height: var(--control-h);
+    padding: 0 var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-main);
+    border-left: 3px solid var(--btn-red-bg);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: var(--fs-xs);
+    color: var(--txt-secondary);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+.license-badge__dot { line-height: 1; }
+.license-badge__text { line-height: 1; }
+.license-badge__signout {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.08em;
+    border-left: 1px solid var(--border-main);
+    padding-left: var(--space-2);
+    margin-left: var(--space-1);
+    transition: color 0.15s;
+}
+.license-badge__signout:hover { color: var(--btn-red-bg); }
+
+/* ══════════════════════════════════════════════════════════════
+   RENDER QUEUE BADGE
+   ──────────────────────────────────────────────────────────────
+   Compact progress indicator that surfaces in the export toolbar
+   while a render queue is draining. Replaces the old "blocked
+   modal" UX where the user couldn't do anything during a render.
+══════════════════════════════════════════════════════════════ */
+.render-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    height: var(--control-h);
+    padding: 0 var(--space-3);
+    background: var(--bg-panel);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-md);
+    font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+    font-size: var(--fs-xs);
+    color: var(--txt-secondary);
+}
+.render-badge__bar {
+    width: 80px;
+    height: 4px;
+    background: var(--bg-inset);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.render-badge__fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.25s ease;
+}
+.render-badge__text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+}
+.render-badge__cancel {
+    background: none;
+    border: 0;
+    color: var(--txt-muted);
+    cursor: pointer;
+    font-size: var(--fs-md);
+    line-height: 1;
+    padding: 0 var(--space-1);
+    transition: color 0.15s;
+}
+.render-badge__cancel:hover { color: var(--btn-red-bg); }
+
+/* ══════════════════════════════════════════════════════════════
+   TOAST STACK
+   ──────────────────────────────────────────────────────────────
+   Replaces the 10px footer status text as the primary feedback
+   channel. The footer #statusText still gets updated as a
+   persistent "current activity" indicator — the toast is the
+   ephemeral, high-visibility version that surfaces success and
+   error events even when the user isn't looking at the footer.
+══════════════════════════════════════════════════════════════ */
+.toast-stack {
+    position: fixed;
+    bottom: var(--space-7);
+    right: var(--space-7);
+    display: flex;
+    flex-direction: column-reverse; /* newest on top */
+    gap: var(--space-3);
+    z-index: 9998;
+    pointer-events: none;
+    max-width: 360px;
+}
+.toast {
+    pointer-events: auto;
+    background: var(--bg-panel);
+    color: var(--txt-primary);
+    border: 1px solid var(--border-main);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--fs-sm);
+    letter-spacing: 0.03em;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    line-height: 1.4;
+    min-width: 240px;
+    animation: toast-in 0.2s ease-out;
+}
+.toast.is-leaving { animation: toast-out 0.18s ease-in forwards; }
+
+.toast--info     { border-left-color: var(--btn-blue-bg); }
+.toast--success  { border-left-color: var(--accent); }
+.toast--warning  { border-left-color: var(--btn-yellow-bg); }
+.toast--error    { border-left-color: var(--btn-red-bg); }
+
+.toast__icon {
+    flex-shrink: 0;
+    font-size: var(--fs-md);
+    line-height: 1.2;
+}
+.toast--info    .toast__icon { color: var(--btn-blue-bg); }
+.toast--success .toast__icon { color: var(--accent); }
+.toast--warning .toast__icon { color: var(--btn-yellow-bg); }
+.toast--error   .toast__icon { color: var(--btn-red-bg); }
+
+.toast__body { flex: 1; word-break: break-word; }
+.toast__close {
+    background: none;
+    border: 0;
+    color: var(--txt-muted);
+    font-size: var(--fs-md);
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 var(--space-1);
+    margin-left: var(--space-2);
+    align-self: flex-start;
+    transition: color 0.15s;
+}
+.toast__close:hover { color: var(--txt-primary); }
+
+@keyframes toast-in {
+    from { transform: translateX(20px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes toast-out {
+    from { transform: translateX(0);   opacity: 1; }
+    to   { transform: translateX(40px); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PLACEHOLDER / EMPTY STATES
+══════════════════════════════════════════════════════════════ */
+.placeholder-row {
+    padding: var(--space-8);
+    color: var(--txt-muted);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   GLOBAL ACCESSIBILITY
+══════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+
+
+/* ══════════════════════════════════════════════════════════════
+   INPUTS
+══════════════════════════════════════════════════════════════ */
+.input-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-1);
+    font-size: var(--fs-sm);
+    color: var(--txt-secondary);
+    letter-spacing: 0.04em;
+}
+
+input[type="number"],
+select {
+    height: var(--control-h);
+    background: var(--bg-surface);
+    color: var(--txt-primary);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-sm);
+    padding: 0 var(--space-2);
+    font-family: inherit;
+    font-size: var(--fs-sm);
+}
+input[type="number"] { width: 44px; text-align: center; }
+input[type="number"]:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-color: var(--accent);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FOOTER & MISC
+══════════════════════════════════════════════════════════════ */
+.footer {
+    padding:5px 10px;
+    background: var(--bg-inset);
+    font-size:10px;
+    color: var(--txt-muted);
+    flex-shrink:0;
+    letter-spacing:0.05em;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-top: 1px solid var(--border-main);
+}
+.placeholder-text {
+    color: var(--txt-dim);
+    font-size:10px;
+    letter-spacing:0.06em;
+    font-style:italic;
+    text-align:center;
+    padding:20px;
+    width:100%;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   A.4 / C.1 — SHARED UI COMPONENTS
+   chip · skeleton · dropzone · empty-state
+══════════════════════════════════════════════════════════════ */
+
+/* ── Chip: compact status/metadata pill (match counts, H/V signature) ── */
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-3);
+    border-radius: 999px;
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.6;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    color: var(--txt-secondary);
+    white-space: nowrap;
+}
+.chip--ok {
+    background: color-mix(in srgb, #2ecc71 16%, transparent);
+    border-color: color-mix(in srgb, #2ecc71 45%, transparent);
+    color: #6fe6a0;
+}
+.chip--warn {
+    background: color-mix(in srgb, #f5a623 16%, transparent);
+    border-color: color-mix(in srgb, #f5a623 45%, transparent);
+    color: #ffc870;
+}
+.chip--accent {
+    background: var(--accent-dim);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    color: var(--accent);
+}
+.chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ── Skeleton: shimmer placeholder while thumbnails decode ── */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--bg-inset);
+    border-radius: var(--radius-md);
+}
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--txt-dim) 22%, transparent) 50%,
+        transparent 100%);
+    animation: skeleton-sweep 1.3s ease-in-out infinite;
+}
+@keyframes skeleton-sweep { 100% { transform: translateX(100%); } }
+
+/* ── Dropzone: valid drag destination highlight ── */
+.dropzone--active {
+    outline: 2px dashed var(--accent) !important;
+    outline-offset: -4px;
+    background: var(--accent-dim) !important;
+    transition: background var(--dur-ui) var(--ease-ui);
+}
+
+/* ── Empty state: icon + message + action, replaces bare gray text ── */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--txt-muted);
+}
+.empty-state__icon { font-size: 34px; opacity: 0.55; line-height: 1; }
+.empty-state__title { font-size: var(--fs-md); font-weight: 600; color: var(--txt-secondary); }
+.empty-state__hint  { font-size: var(--fs-sm); color: var(--txt-muted); max-width: 320px; line-height: 1.5; }
+.empty-state__action { margin-top: var(--space-3); }
+
+/* ── Inline panel progress bar (C.4) — reused across long ops ── */
+.panel-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-5);
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-main);
+    flex-shrink: 0;
+}
+.panel-progress__bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-inset);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.panel-progress__fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+    transition: width var(--dur-ui) var(--ease-ui);
+}
+.panel-progress__text {
+    font-size: var(--fs-xs);
+    color: var(--txt-secondary);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    min-width: 80px;
+    text-align: right;
+}
+@media (prefers-reduced-motion: reduce) {
+    .skeleton::after { animation: none; }
+}
+
+dialog {
+    background: var(--bg-surface);
+    color: var(--txt-primary);
+    border: 1px solid var(--border-main);
+    border-radius:6px;
+    padding:20px;
+    width:300px;
+}
+dialog::backdrop { background: rgba(0,0,0,0.6); }
