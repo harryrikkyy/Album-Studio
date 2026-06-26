@@ -72,7 +72,11 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
   🟧 ⚠med — **DONE (needs PS verify):** redBox `contextmenu`; new `placeClipped` JSX
   template + `place-clipped` IPC (Place + `GrpL` clip to the active layer). Opens the
   HR original when resolvable, else the proxy.
-- [ ] **F1** PSD Resizer tool (12in/300ppi, overwrite-or-copy). 🟧 ⚠med
+- [x] **F1** PSD Resizer tool (12in/300ppi, overwrite-or-copy). 🟧 ⚠med — **DONE
+  (needs PS verify):** Tools-tab "PSD Resizer" card (overwrite toggle + folder pick +
+  progress bar). New `scripts/resize_psds.jsx` (resizeImage → 3600px tall @ 300ppi,
+  proportional; saveAs PSD overwrite-or-`Resized/`) + `resize-psds` IPC with progress
+  polling. Overwrite is confirm-gated.
 - [ ] **Thumb cache** `_thumbnails` generate/use across folder loaders. 🟥 ⚠med
 
 ### Slice 4 — Matching + build flow

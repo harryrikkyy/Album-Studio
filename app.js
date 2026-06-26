@@ -1463,6 +1463,59 @@ ipcMain.handle('jpeg-export', async (event, sourceFolder) => {
   }
 })
 
+// ── PSD RESIZER (F1) ──────────────────────────────────────
+// Walks a folder of PSDs, opens each in Photoshop, resizes proportionally to
+// 12 in height @ 300 ppi (3600 px), and saves — either overwriting the
+// original (mode "overwrite") or into a sibling `Resized/` subfolder
+// (mode "copy"). Same progress-polling pattern as jpeg-export.
+ipcMain.handle('resize-psds', async (event, sourceFolder, mode) => {
+  const t0 = Date.now()
+  const tmpDir = require('os').tmpdir()
+  const tag = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  const outputPath   = path.join(tmpDir, `albumstudio_resize_result_${tag}.json`)
+  const progressPath = path.join(tmpDir, `albumstudio_resize_progress_${tag}.json`)
+
+  const dataPath = writeJsonData({
+    sourceFolder,
+    mode: mode === 'overwrite' ? 'overwrite' : 'copy',
+    outputPath,
+    progressPath,
+  })
+  const jsxPath = path.join(__dirname, 'scripts', 'resize_psds.jsx')
+
+  const poller = setInterval(() => {
+    try {
+      if (!fs.existsSync(progressPath)) return
+      const raw = fs.readFileSync(progressPath, 'utf8')
+      if (!raw) return
+      try { event.sender.send('resize-psds-progress', JSON.parse(raw)) } catch (_) {}
+    } catch (_) { /* ignore parse races */ }
+  }, 500)
+
+  try {
+    await executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
+    if (!fs.existsSync(outputPath)) {
+      return { ok: false, error: 'resize_psds produced no output' }
+    }
+    const result = JSON.parse(fs.readFileSync(outputPath, 'utf8'))
+    telemetry.event('resize_psds', {
+      total: result.total,
+      processed: result.processed,
+      failed: result.failed,
+      mode: mode === 'overwrite' ? 'overwrite' : 'copy',
+      durationMs: Date.now() - t0,
+    })
+    return { ok: true, ...result, mode, durationMs: Date.now() - t0 }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  } finally {
+    clearInterval(poller)
+    try { fs.unlinkSync(dataPath) } catch (_) {}
+    try { fs.unlinkSync(outputPath) } catch (_) {}
+    try { fs.unlinkSync(progressPath) } catch (_) {}
+  }
+})
+
 // ── INJECT PHOTO (Tab 6 double-click) ─────────────────────
 // Injects a photo into the active layer of the active Photoshop document via
 // the JSX bridge (the UXP stub path never worked in this Electron build —

@@ -384,6 +384,33 @@
                 </div>
             </section>
 
+            <!-- ─── CARD: PSD RESIZER ───────────────────────── -->
+            <section class="tools-card">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon">📐</span>
+                    <div>
+                        <div class="tools-card__title">PSD Resizer</div>
+                        <div class="tools-card__hint">Resize a folder of PSDs to 12&nbsp;in tall @ 300&nbsp;ppi (proportional).</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <label class="tools-card__toggle">
+                        <input type="checkbox" id="chkResizeOverwrite">
+                        <span>Overwrite originals (off = save copies into a <code>Resized/</code> subfolder)</span>
+                    </label>
+                    <button id="btnResizePsds" class="btn btn--primary tools-card__cta">📐 Choose folder &amp; resize</button>
+                    <p class="tools-card__detail">
+                        Every <code>.psd</code> is resized proportionally to 12&nbsp;inches tall at
+                        300&nbsp;ppi (3600&nbsp;px). Choose overwrite or save copies above.
+                    </p>
+                    <div id="resizeStatus" class="tools-card__detail tools-card__detail--mono"></div>
+                    <div class="jpeg-progress" id="resizeProgress" style="display:none;">
+                        <div class="jpeg-progress__bar"><div class="jpeg-progress__fill" id="resizeProgressFill"></div></div>
+                        <div class="jpeg-progress__text" id="resizeProgressText">0 / 0</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ─── CARD: RENAMER ───────────────────────────── -->
             <section class="tools-card">
                 <header class="tools-card__head">

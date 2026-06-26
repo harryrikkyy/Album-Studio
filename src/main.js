@@ -2792,6 +2792,74 @@ if (btnJpegExport) {
     });
 }
 
+// ─── PSD RESIZER (F1) ────────────────────────────────────────
+// Pick a folder of PSDs → resize each to 12in tall @ 300ppi (proportional).
+// Overwrite originals or save copies into a Resized/ subfolder. Live progress
+// via the resize-psds-progress IPC stream, mirroring JPEG export.
+const btnResizePsds = document.getElementById('btnResizePsds');
+const resizeProgressEl = document.getElementById('resizeProgress');
+const resizeProgressFill = document.getElementById('resizeProgressFill');
+const resizeProgressText = document.getElementById('resizeProgressText');
+const resizeStatusEl = document.getElementById('resizeStatus');
+if (btnResizePsds) {
+    const ipc = require('electron').ipcRenderer;
+    ipc.on('resize-psds-progress', (_e, p) => {
+        if (!resizeProgressEl) return;
+        resizeProgressEl.style.display = 'flex';
+        const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
+        if (resizeProgressFill) resizeProgressFill.style.width = pct + '%';
+        if (resizeProgressText) resizeProgressText.textContent = `${p.done}/${p.total}`;
+        if (resizeStatusEl) resizeStatusEl.textContent = p.current ? `Now: ${p.current}` : '';
+    });
+
+    btnResizePsds.addEventListener('click', async () => {
+        try {
+            const folder = await fs.getFolder();
+            if (!folder) return;
+            const overwrite = !!document.getElementById('chkResizeOverwrite')?.checked;
+            if (overwrite) {
+                const ok = confirm('Overwrite the original PSDs in "' + folder.name + '"?\n\nThis replaces each file in place. Turn the toggle off to save copies into a Resized/ subfolder instead.');
+                if (!ok) return;
+            }
+            btnResizePsds.disabled = true;
+            resizeProgressEl.style.display = 'flex';
+            if (resizeProgressFill) resizeProgressFill.style.width = '0%';
+            if (resizeProgressText) resizeProgressText.textContent = 'Starting…';
+            if (resizeStatusEl) resizeStatusEl.textContent = 'Scanning PSDs…';
+            setStatus('Resizing PSDs in ' + folder.name + '…');
+
+            const res = await ipc.invoke('resize-psds', folder.nativePath, overwrite ? 'overwrite' : 'copy');
+            if (!res?.ok) {
+                toast('PSD resize failed: ' + (res?.error || 'unknown'), 'error');
+                if (resizeStatusEl) resizeStatusEl.textContent = 'Failed';
+                return;
+            }
+            if (res.total === 0) {
+                toast('No PSDs found in that folder', 'info');
+                if (resizeStatusEl) resizeStatusEl.textContent = 'No PSDs found';
+                resizeProgressEl.style.display = 'none';
+                return;
+            }
+            if (resizeProgressFill) resizeProgressFill.style.width = '100%';
+            if (resizeProgressText) resizeProgressText.textContent = `${res.processed}/${res.total}`;
+            const seconds = (res.durationMs / 1000).toFixed(1);
+            const dest = overwrite ? 'overwritten in place' : 'saved to Resized/';
+            const summary = `Resized ${res.processed} of ${res.total} (${dest})` +
+                (res.failed ? ` · ${res.failed} failed` : '') + ` in ${seconds}s`;
+            if (resizeStatusEl) resizeStatusEl.textContent = summary;
+            notify(summary, res.failed ? 'warning' : 'success', { duration: 6000 });
+            if (res.failed && res.errors?.length) {
+                for (const msg of res.errors.slice(0, 3)) toast('Resize error: ' + msg, 'error', { duration: 8000 });
+            }
+        } catch (e) {
+            toast('PSD resize error: ' + e.message, 'error');
+        } finally {
+            btnResizePsds.disabled = false;
+            setTimeout(() => { if (resizeProgressEl) resizeProgressEl.style.display = 'none'; }, 5000);
+        }
+    });
+}
+
 // ─── FLOATING TOOLS BAR LAUNCHER ─────────────────────────────
 // Opens (or focuses) the thin frameless window that docks itself to
 // Photoshop's bottom edge. Status pill on the card mirrors open/closed.
