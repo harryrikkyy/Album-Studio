@@ -181,24 +181,44 @@ function placeMaskedFrame(filePath, layerName, isJpg) {
 }
 
 /**
- * Place an image into the active document and clip it to the currently active
- * (selected) layer — i.e. the placed photo becomes a clipping mask of the
- * layer below it. Mirrors the place+GrpL pattern used in build_page.jsx.
+ * Place an image into the active document, scale it to COVER the currently
+ * active (selected) layer's bounds (centered), then clip it to that layer.
+ * The placed photo becomes a clipping mask of the layer below it, filling its
+ * frame — same cover-fit behaviour as build_page.jsx's placeAndFit.
  */
 function placeClipped(filePath) {
   return `
     var step = "start";
+    function getBounds(layer) {
+      var b = layer.bounds;
+      var x = b[0].as("px"), y = b[1].as("px"), x2 = b[2].as("px"), y2 = b[3].as("px");
+      return { x: x, y: y, w: (x2 - x), h: (y2 - y), cx: (x + x2) / 2, cy: (y + y2) / 2 };
+    }
     try {
       if (app.documents.length === 0) { "No document open in Photoshop"; }
       else {
-        step = "place";
+        app.preferences.rulerUnits = Units.PIXELS;
         var doc = app.activeDocument;
+        step = "read target layer";
+        var baseLayer = doc.activeLayer;          // the selected layer to fill
+        var fb = getBounds(baseLayer);
+        step = "place";
         var desc = new ActionDescriptor();
         desc.putPath(charIDToTypeID("null"), new File(${jsxString(filePath)}));
         desc.putBoolean(charIDToTypeID("Lnkd"), false);
         executeAction(charIDToTypeID("Plc "), desc, DialogModes.NO);
         step = "commit";
         try { executeAction(charIDToTypeID("Cmmt"), new ActionDescriptor(), DialogModes.NO); } catch(e) {}
+        step = "scale to fit (cover)";
+        var placed = doc.activeLayer;
+        var pb = getBounds(placed);
+        if (pb.w > 0 && pb.h > 0 && fb.w > 0 && fb.h > 0) {
+          var scale = Math.max(fb.w / pb.w, fb.h / pb.h) * 100;
+          placed.resize(scale, scale, AnchorPosition.MIDDLECENTER);
+          step = "center on target";
+          pb = getBounds(placed);
+          placed.translate(fb.cx - pb.cx, fb.cy - pb.cy);
+        }
         step = "clip to layer below";
         executeAction(charIDToTypeID("GrpL"), new ActionDescriptor(), DialogModes.NO);
         "success";
