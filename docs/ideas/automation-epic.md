@@ -77,7 +77,12 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
   progress bar). New `scripts/resize_psds.jsx` (resizeImage → 3600px tall @ 300ppi,
   proportional; saveAs PSD overwrite-or-`Resized/`) + `resize-psds` IPC with progress
   polling. Overwrite is confirm-gated.
-- [ ] **Thumb cache** `_thumbnails` generate/use across folder loaders. 🟥 ⚠med
+- [x] **Thumb cache** `_thumbnails` generate/use across folder loaders. 🟥 ⚠med — **DONE
+  (needs verify):** Source-pool + Wallpaper loaders now auto-generate a `_Thumbnails`
+  cache (via the existing `thumbnails-generate` IPC: sharp lane + RAW/Photoshop lane)
+  when one is absent, then Smart-Load from it. Slow once, instant after. Falls back to
+  loading originals if generation produces nothing or fails. (Uses existing `_Thumbnails`
+  capitalisation for compatibility with the load/restore detection.)
 
 ### Slice 4 — Matching + build flow
 - [ ] **A1** Sync on/off toggle gating template matching. 🟧 ⚠med

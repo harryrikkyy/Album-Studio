@@ -1393,16 +1393,36 @@ if (btnLoadPhotos) {
         await new Promise(resolve => setTimeout(resolve, 50));
 
         let targetFolderToLoad = folder, hrFolder = null;
+        let thumbFolder = null;
         try {
-            const thumbFolder = await folder.getEntry("_Thumbnails");
-            if (thumbFolder.isFolder) {
-                targetFolderToLoad = thumbFolder; hrFolder = folder;
-                const hrToken = await fs.createPersistentToken(folder);
-                if (!projectData.highResTokens) projectData.highResTokens = [];
-                if (!projectData.highResTokens.includes(hrToken)) projectData.highResTokens.push(hrToken);
-                toast("Smart Load active — high-res master folder linked", "info");
+            const tf = await folder.getEntry("_Thumbnails");
+            if (tf && tf.isFolder) thumbFolder = tf;
+        } catch (e) { /* no _Thumbnails yet */ }
+
+        // Auto-cache: no _Thumbnails subfolder → generate one now (slow on the
+        // first load, instant on every load after), then Smart-Load from it.
+        if (!thumbFolder) {
+            try {
+                setStatus("First load — generating thumbnails (this folder will open fast next time)…");
+                const genRes = await require('electron').ipcRenderer.invoke('thumbnails-generate', folder.nativePath);
+                if (genRes && genRes.ok && genRes.processed > 0) {
+                    try { const tf2 = await folder.getEntry("_Thumbnails"); if (tf2 && tf2.isFolder) thumbFolder = tf2; } catch (e2) {}
+                } else if (genRes && genRes.error) {
+                    toast('Thumbnail cache skipped: ' + genRes.error + ' — loading originals.', 'warning');
+                }
+            } catch (genErr) {
+                console.error('Auto thumbnail generation failed:', genErr);
+                // Fall through and load the master folder directly (originals).
             }
-        } catch(e) {}
+        }
+
+        if (thumbFolder) {
+            targetFolderToLoad = thumbFolder; hrFolder = folder;
+            const hrToken = await fs.createPersistentToken(folder);
+            if (!projectData.highResTokens) projectData.highResTokens = [];
+            if (!projectData.highResTokens.includes(hrToken)) projectData.highResTokens.push(hrToken);
+            toast("Smart Load active — high-res master folder linked", "info");
+        }
 
         const token = await fs.createPersistentToken(folder);
         if (!projectData.imageTokens.includes(token)) projectData.imageTokens.push(token);
@@ -2542,10 +2562,21 @@ if (btnLoadWallpapers) {
         setStatus("Scanning Wallpapers…");
         await new Promise(resolve => setTimeout(resolve, 50));
         let uiFolder = folder, hrFolder = null, displayName = folder.name;
+        let wpThumb = null;
         try {
-            const thumbFolder = await folder.getEntry("_Thumbnails");
-            if (thumbFolder.isFolder) { uiFolder = thumbFolder; hrFolder = folder; toast('Smart Wallpaper Load active — high-res master folder linked', 'info'); }
-        } catch(e) {}
+            const tf = await folder.getEntry("_Thumbnails");
+            if (tf && tf.isFolder) wpThumb = tf;
+        } catch (e) { /* no _Thumbnails yet */ }
+        if (!wpThumb) {
+            try {
+                setStatus("First load — generating wallpaper thumbnails (faster next time)…");
+                const genRes = await require('electron').ipcRenderer.invoke('thumbnails-generate', folder.nativePath);
+                if (genRes && genRes.ok && genRes.processed > 0) {
+                    try { const tf2 = await folder.getEntry("_Thumbnails"); if (tf2 && tf2.isFolder) wpThumb = tf2; } catch (e2) {}
+                }
+            } catch (genErr) { console.error('Auto wallpaper thumbnail generation failed:', genErr); }
+        }
+        if (wpThumb) { uiFolder = wpThumb; hrFolder = folder; toast('Smart Wallpaper Load active — high-res master folder linked', 'info'); }
         const token = await fs.createPersistentToken(folder);
         if (!projectData.wallpaperTokens.includes(token)) projectData.wallpaperTokens.push(token);
         await processWallpaperFolder(uiFolder, hrFolder, displayName, token);
