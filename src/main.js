@@ -38,6 +38,11 @@ tabButtons.forEach(btn => {
 // ==========================================
 let albumPages = {}, templateLibrary = [], filteredTemplates = [];
 let previewIndex = 0, currentPage = 1, totalActivePages = 1;
+// Slice 4 (A1/B2): template sync state. Sync ON = match templates to the source
+// selection / hovered page; OFF = always show all. _hoverPages tracks whether
+// the pointer is over the pages panel (current-page match trigger).
+let _syncTemplates = (() => { try { return localStorage.getItem('adt_template_sync') !== '0'; } catch (_) { return true; } })();
+let _hoverPages = false;
 let photoCache = {}, wallpaperCache = {}, pngCache = {}, maskedCache = {};
 let outputFolder = null;
 
@@ -1069,6 +1074,7 @@ redBox.addEventListener('pointerup', (e) => {
         state.timer = setTimeout(() => {
             state.count = 0;
             img.classList.toggle("selected");
+            scheduleFilterUpdate(); // B2: selection drives template matching
         }, 300);
     } else if (state.count === 2) {
         clearTimeout(state.timer);
@@ -1501,17 +1507,73 @@ function scheduleFilterUpdate() {
     });
 }
 
+// Slice 4 wiring: pages-panel hover + the template Sync toggle.
+;(function _initTemplateSync() {
+    // Hovering the pages panel (green compose box) matches templates to the
+    // current page (when sync is on and nothing is selected in the source).
+    if (greenBox) {
+        greenBox.addEventListener('pointerenter', () => { if (!_hoverPages) { _hoverPages = true; scheduleFilterUpdate(); } });
+        greenBox.addEventListener('pointerleave', () => { if (_hoverPages) { _hoverPages = false; scheduleFilterUpdate(); } });
+    }
+    const btn = document.getElementById('btnTemplateSync');
+    if (btn) {
+        const reflect = () => {
+            btn.classList.toggle('is-active', _syncTemplates);
+            btn.setAttribute('aria-pressed', _syncTemplates ? 'true' : 'false');
+            btn.title = _syncTemplates
+                ? 'Sync ON — templates match your selected photos / hovered page. Click to show all.'
+                : 'Sync OFF — showing all templates. Click to match your selection / page.';
+        };
+        reflect();
+        btn.addEventListener('click', () => {
+            _syncTemplates = !_syncTemplates;
+            try { localStorage.setItem('adt_template_sync', _syncTemplates ? '1' : '0'); } catch (_) {}
+            reflect();
+            scheduleFilterUpdate();
+        });
+    }
+})();
+
+// Count the orientation signature (H/V) of the currently selected source
+// thumbnails, accounting for any per-photo rotation (matches prepareAndMove).
+function _selectedSourceHV() {
+    const sel = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
+    let h = 0, v = 0;
+    sel.forEach(img => {
+        const c = photoCache[img.id];
+        let orient = (c && c.orient) || (img.naturalWidth >= img.naturalHeight ? 'h' : 'v');
+        const rot = projectData.imageRotations?.[img.id] || 0;
+        if (rot === 90 || rot === 270) orient = orient === 'h' ? 'v' : 'h';
+        if (orient === 'v') v++; else h++;
+    });
+    return { h, v, count: sel.length };
+}
+
 function autoFilterTemplates() {
     if (!albumPages[currentPage]) albumPages[currentPage] = { photos: [], template: null };
     const photos = albumPages[currentPage].photos || [];
     const hCount = photos.filter(p => p.orient === 'h').length;
     const vCount = photos.filter(p => p.orient === 'v').length;
     const activeLibrary = templateLibrary.filter(t => activeTemplateFolders.has(t.folderId));
-    filteredTemplates = activeLibrary.filter(t => t.h === hCount && t.v === vCount);
-    // exactMatches = templates whose H/V signature matches the page exactly,
-    // before the "show everything" fallback below. Drives the chip color.
-    const exactMatchCount = filteredTemplates.length;
-    if (photos.length === 0 || filteredTemplates.length === 0) filteredTemplates = [...activeLibrary];
+
+    // Sync-driven matching (A1/B2). Sync OFF → always show all. Sync ON →
+    // match the source SELECTION if any; else the CURRENT PAGE while the
+    // pointer is over the pages panel; else (nothing selected, not hovering)
+    // show all.
+    let target = null;
+    if (_syncTemplates) {
+        const sel = _selectedSourceHV();
+        if (sel.count > 0) target = { h: sel.h, v: sel.v };
+        else if (_hoverPages && photos.length > 0) target = { h: hCount, v: vCount };
+    }
+    if (target) {
+        filteredTemplates = activeLibrary.filter(t => t.h === target.h && t.v === target.v);
+        if (filteredTemplates.length === 0) filteredTemplates = [...activeLibrary]; // graceful fallback
+    } else {
+        filteredTemplates = [...activeLibrary];
+    }
+    // exactMatchCount always reflects the CURRENT PAGE's signature (drives the chip).
+    const exactMatchCount = activeLibrary.filter(t => t.h === hCount && t.v === vCount).length;
 
     const matchText = document.getElementById("templateMatchText");
     if (matchText) matchText.innerText = `Matches: ${filteredTemplates.length} (${hCount}H, ${vCount}V)`;

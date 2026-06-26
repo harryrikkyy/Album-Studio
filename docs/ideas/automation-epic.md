@@ -85,8 +85,11 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
   capitalisation for compatibility with the load/restore detection.)
 
 ### Slice 4 — Matching + build flow
-- [ ] **A1** Sync on/off toggle gating template matching. 🟧 ⚠med
-- [ ] **B2** Selection-driven + page-hover-driven template match. 🟧 ⚠med
+- [x] **A1** Sync on/off toggle gating template matching. 🟧 ⚠med — **DONE:** "🔗 Sync"
+  toggle in the Templates toolbar; persisted (`adt_template_sync`). OFF = always show all.
+- [x] **B2** Selection-driven + page-hover-driven template match. 🟧 ⚠med — **DONE:** sync ON →
+  match the source SELECTION's H/V (rotation-aware) if any, else the current page while
+  hovering the pages panel, else show all. Graceful fallback to all when no exact match.
 - [ ] **C1** Double-click template → open in PS + place images (sync ON =
   matched set; OFF = sequential; drop extras / leave empty frames). 🟥 ⚠high
 
