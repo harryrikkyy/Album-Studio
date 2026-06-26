@@ -65,8 +65,13 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
   — **DONE** (⌘/Shift-click multi-select; zoom/colour/reset apply to all selected).
 
 ### Slice 3 — Photoshop integration (higher risk)
-- [ ] **A2** Right-click template → "Open template" in Photoshop. 🟧 ⚠med
-- [ ] **B1** Right-click source image → "Open in PS" / "Place" (active layer, clipped). 🟧 ⚠med
+- [x] **A2** Right-click template → "Open template" in Photoshop. 🟧 ⚠med — **DONE
+  (needs PS verify):** whiteBox `contextmenu` → reuses `open-in-photoshop` IPC with
+  `template.file.nativePath`. Generative templates (no PSD) are skipped.
+- [x] **B1** Right-click source image → "Open in PS" / "Place" (active layer, clipped).
+  🟧 ⚠med — **DONE (needs PS verify):** redBox `contextmenu`; new `placeClipped` JSX
+  template + `place-clipped` IPC (Place + `GrpL` clip to the active layer). Opens the
+  HR original when resolvable, else the proxy.
 - [ ] **F1** PSD Resizer tool (12in/300ppi, overwrite-or-copy). 🟧 ⚠med
 - [ ] **Thumb cache** `_thumbnails` generate/use across folder loaders. 🟥 ⚠med
 

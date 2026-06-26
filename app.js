@@ -723,6 +723,14 @@ ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) =
   return executeJSX(jsxTemplates.placeMaskedFrame(filePath, layerName, isJpg))
 })
 
+// ── PLACE IMAGE CLIPPED (B1) ──────────────────────────────
+// Places an image into the active Photoshop document and clips it to the
+// currently selected layer (clipping mask). Used by the Source-panel
+// right-click → "Place".
+ipcMain.handle('place-clipped', async (event, filePath) => {
+  return executeJSX(jsxTemplates.placeClipped(filePath))
+})
+
 // ── SWAP IMAGES ───────────────────────────────────────────
 ipcMain.handle('swap-images', async () => {
   const jsxPath = path.join(__dirname, 'scripts', 'Swap_Clipped_Images.jsx')

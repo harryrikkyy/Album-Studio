@@ -1526,6 +1526,7 @@ function renderWhiteBox() {
 
     filteredTemplates.forEach((temp, idx) => {
         const card = document.createElement("div"); card.className = "thumb-card";
+        card.dataset.tplId = temp.id;
         const isSelected = (previewIndex === idx) || (savedId && savedId === temp.id);
         if (isSelected) card.classList.add("is-selected");
         // Generative templates synthesize a quick SVG preview from their frame
@@ -1555,6 +1556,93 @@ function renderWhiteBox() {
 
     whiteBox.innerHTML = ""; // Clear once
     whiteBox.appendChild(frag); // ⚡ Single reflow
+}
+
+// ── A2/B1: right-click context menus → Photoshop ───────────────
+// Templates → "Open in Photoshop"; Source images → "Open in PS" / "Place
+// (clipped to the active layer)". Reuses the osascript bridge IPCs
+// (open-in-photoshop, place-clipped). Opens the HR original when resolvable.
+function _photoNativePath(id) {
+    const c = photoCache[id];
+    if (!c) return null;
+    if (c.hrFolder?.nativePath && c.baseName) {
+        try {
+            const np = require('path'); const nfs = require('fs');
+            const base = c.baseName.toLowerCase();
+            const match = nfs.readdirSync(c.hrFolder.nativePath)
+                .find(f => f.replace(/\.[^/.]+$/, '').toLowerCase() === base);
+            if (match) return np.join(c.hrFolder.nativePath, match);
+        } catch (_) {}
+    }
+    return c.proxy?.nativePath || c.file?.nativePath || null;
+}
+
+let _appCtxEl = null;
+function _hideAppCtx() { if (_appCtxEl) { _appCtxEl.remove(); _appCtxEl = null; } }
+function _showAppCtx(x, y, entries) {
+    _hideAppCtx();
+    const menu = document.createElement('div');
+    menu.className = 'app-ctx-menu';
+    entries.forEach(en => {
+        const b = document.createElement('button');
+        b.className = 'app-ctx-menu__item';
+        b.textContent = en.label;
+        b.disabled = !!en.disabled;
+        if (!en.disabled) b.addEventListener('click', () => { _hideAppCtx(); en.fn(); });
+        menu.appendChild(b);
+    });
+    document.body.appendChild(menu);
+    const r = menu.getBoundingClientRect();
+    menu.style.left = Math.min(x, window.innerWidth - r.width - 8) + 'px';
+    menu.style.top = Math.min(y, window.innerHeight - r.height - 8) + 'px';
+    _appCtxEl = menu;
+}
+document.addEventListener('click', _hideAppCtx);
+document.addEventListener('scroll', _hideAppCtx, true);
+window.addEventListener('blur', _hideAppCtx);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _hideAppCtx(); });
+
+async function _openInPS(filePath) {
+    if (!filePath) { toast('Could not resolve the file path', 'error'); return; }
+    setStatus('Opening in Photoshop…');
+    try { await require('electron').ipcRenderer.invoke('open-in-photoshop', filePath); notify('Opened in Photoshop', 'success'); }
+    catch (e) { toast('Open in Photoshop failed: ' + (e.message || e), 'error'); }
+    setStatus('');
+}
+async function _placeClippedPS(filePath) {
+    if (!filePath) { toast('Could not resolve the file path', 'error'); return; }
+    setStatus('Placing in Photoshop…');
+    try {
+        const r = await require('electron').ipcRenderer.invoke('place-clipped', filePath);
+        if (typeof r === 'string' && r.indexOf('success') === -1) toast('Place: ' + r, 'error');
+        else notify('Placed & clipped in Photoshop', 'success');
+    } catch (e) { toast('Place failed: ' + (e.message || e), 'error'); }
+    setStatus('');
+}
+
+if (whiteBox) {
+    whiteBox.addEventListener('contextmenu', (e) => {
+        const card = e.target.closest('.thumb-card'); if (!card) return;
+        const id = card.dataset.tplId; if (!id) return;
+        const tpl = filteredTemplates.find(t => t.id === id) || templateLibrary.find(t => t.id === id);
+        const tplPath = tpl && tpl.file && tpl.file.nativePath;
+        if (!tplPath) return; // generative templates have no PSD on disk
+        e.preventDefault();
+        _showAppCtx(e.clientX, e.clientY, [
+            { label: '🎨 Open template in Photoshop', fn: () => _openInPS(tplPath) },
+        ]);
+    });
+}
+if (redBox) {
+    redBox.addEventListener('contextmenu', (e) => {
+        const img = e.target.closest('.thumb-red'); if (!img) return;
+        const p = _photoNativePath(img.id);
+        e.preventDefault();
+        _showAppCtx(e.clientX, e.clientY, [
+            { label: '🎨 Open in Photoshop', disabled: !p, fn: () => _openInPS(p) },
+            { label: '📌 Place on selected layer (clipped)', disabled: !p, fn: () => _placeClippedPS(p) },
+        ]);
+    });
 }
 
 function setPreview(idx, saveToMemory = true) {

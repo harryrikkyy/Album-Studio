@@ -180,9 +180,37 @@ function placeMaskedFrame(filePath, layerName, isJpg) {
   `
 }
 
+/**
+ * Place an image into the active document and clip it to the currently active
+ * (selected) layer — i.e. the placed photo becomes a clipping mask of the
+ * layer below it. Mirrors the place+GrpL pattern used in build_page.jsx.
+ */
+function placeClipped(filePath) {
+  return `
+    var step = "start";
+    try {
+      if (app.documents.length === 0) { "No document open in Photoshop"; }
+      else {
+        step = "place";
+        var doc = app.activeDocument;
+        var desc = new ActionDescriptor();
+        desc.putPath(charIDToTypeID("null"), new File(${jsxString(filePath)}));
+        desc.putBoolean(charIDToTypeID("Lnkd"), false);
+        executeAction(charIDToTypeID("Plc "), desc, DialogModes.NO);
+        step = "commit";
+        try { executeAction(charIDToTypeID("Cmmt"), new ActionDescriptor(), DialogModes.NO); } catch(e) {}
+        step = "clip to layer below";
+        executeAction(charIDToTypeID("GrpL"), new ActionDescriptor(), DialogModes.NO);
+        "success";
+      }
+    } catch(e) { "Failed at [" + step + "]: " + e.message; }
+  `
+}
+
 module.exports = {
   openInPhotoshop,
   placeWallpaper,
   placePngFrame,
-  placeMaskedFrame
+  placeMaskedFrame,
+  placeClipped
 }

@@ -3308,3 +3308,26 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
 #tab-album.automation-off > #bottomRow { display: flex; flex: 1; min-height: 0; }
 
 #btnAutomationEnter.is-active { color: var(--accent); border-color: var(--accent); }
+
+/* ── A2/B1 right-click context menu (templates / source images) ── */
+.app-ctx-menu {
+    position: fixed;
+    z-index: 100000;
+    min-width: 200px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--elev-hover);
+    padding: var(--space-1);
+}
+[data-theme="glass"] .app-ctx-menu { background: #FFFFFF; }
+[data-theme="glass-dark"] .app-ctx-menu { background: #1E222B; }
+.app-ctx-menu__item {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: none; color: var(--txt-primary);
+    font-size: var(--fs-sm); padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md); cursor: pointer; white-space: nowrap;
+    transition: background-color 0.12s;
+}
+.app-ctx-menu__item:hover:not(:disabled) { background: var(--accent-dim); color: var(--accent); }
+.app-ctx-menu__item:disabled { color: var(--txt-muted); cursor: default; }
