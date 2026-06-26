@@ -3224,6 +3224,8 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
     border-radius: var(--radius-sm);
     transition: color 0.15s, background-color 0.15s;
 }
+.folder-rail__collapse::before { content: '‹'; }
+.folder-rail.is-folders-collapsed .folder-rail__collapse::before { content: '›'; }
 .folder-rail__collapse:hover { color: var(--accent); background: var(--accent-dim); }
 .folder-rail__collapse:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
@@ -3261,6 +3263,10 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
     z-index: 10000;
 }
 .save-menu.open { display: block; }
+/* Opaque background — the glass themes' --bg-card is translucent, which made
+   the menu see-through and hard to read over content. */
+[data-theme="glass"] .save-menu { background: #FFFFFF; }
+[data-theme="glass-dark"] .save-menu { background: #1E222B; }
 .save-menu__item {
     display: block; width: 100%; text-align: left;
     background: transparent; border: none; color: var(--txt-primary);

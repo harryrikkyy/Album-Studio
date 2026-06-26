@@ -390,6 +390,7 @@ function notify(message, kind = 'info', opts = {}) {
 
 function getPanelHeaderHTML(type) {
     return `<div class="folder-rail__header">`
+         +   `<button class="folder-rail__collapse" type="button" aria-label="Toggle folder list"></button>`
          +   `<span>Folders:</span>`
          +   `<div class="folder-rail__actions">`
          +     `<span class="btn-reload-fld folder-rail__action" data-type="${type}" title="Refresh Folders">🔄</span>`
@@ -4603,18 +4604,35 @@ if (btnSaveWorkspace) {
     btnSaveWorkspace.addEventListener("click", () => { saveProject(false); });
 }
 
-// Save split-button menu (Save As / New Project).
+// Save split-button menu (Save As / New Project). Reparented to <body> and
+// fixed-positioned from the button (same approach as the theme dropdown) so it
+// can't be clipped or painted under the tab content / stacking contexts.
 const btnSaveMenuBtn = document.getElementById("btnSaveMenuBtn");
 const saveMenu = document.getElementById("saveMenu");
 if (btnSaveMenuBtn && saveMenu) {
+    let _saveMenuReparented = false;
+    const positionSaveMenu = () => {
+        if (!_saveMenuReparented) { document.body.appendChild(saveMenu); _saveMenuReparented = true; }
+        const r = btnSaveMenuBtn.getBoundingClientRect();
+        saveMenu.style.position = 'fixed';
+        saveMenu.style.top = (r.bottom + 4) + 'px';
+        saveMenu.style.left = 'auto';
+        saveMenu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+        saveMenu.style.zIndex = '100000';
+    };
     const closeSaveMenu = () => { saveMenu.classList.remove('open'); btnSaveMenuBtn.setAttribute('aria-expanded', 'false'); };
     btnSaveMenuBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const open = saveMenu.classList.toggle('open');
-        btnSaveMenuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (saveMenu.classList.contains('open')) { closeSaveMenu(); return; }
+        positionSaveMenu();
+        saveMenu.classList.add('open');
+        btnSaveMenuBtn.setAttribute('aria-expanded', 'true');
     });
-    document.addEventListener('click', (e) => { if (!e.target.closest('.save-split')) closeSaveMenu(); });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.save-split') && !e.target.closest('#saveMenu')) closeSaveMenu();
+    });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaveMenu(); });
+    window.addEventListener('resize', () => { if (saveMenu.classList.contains('open')) positionSaveMenu(); });
     const btnSaveAs = document.getElementById("btnSaveAs");
     if (btnSaveAs) btnSaveAs.addEventListener("click", () => { closeSaveMenu(); saveProject(true); });
     const btnNewProject = document.getElementById("btnNewProject");
