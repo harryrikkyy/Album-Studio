@@ -1824,7 +1824,29 @@ require('electron').ipcRenderer.on('editor-changes', (_e, changes) => {
         if (typeof scheduleLivePreview === 'function') scheduleLivePreview();
         updateAdjustPanel();
     }
+    // The edited page's storyboard proof (Tab 7 / page_NNN.jpg) is now stale.
+    // Invalidate its cache and re-render it in the background (debounced) so
+    // the proof reflects the edit without a manual "Generate Proofs" pass.
+    if (changes.pageNum) _scheduleEditedPageReproof(changes.pageNum);
 });
+
+// Debounced per-page storyboard re-proof after a Spread Editor edit.
+const _reproofTimers = {};
+function _scheduleEditedPageReproof(pageNum) {
+    const page = albumPages[pageNum];
+    if (!page || !page.template || !(page.photos && page.photos.length)) return;
+    if (typeof _proofHashes === 'object') delete _proofHashes[pageNum]; // mark stale
+    clearTimeout(_reproofTimers[pageNum]);
+    _reproofTimers[pageNum] = setTimeout(async () => {
+        try {
+            if (typeof _generateProofForPage !== 'function') return;
+            const r = await _generateProofForPage(pageNum);
+            if (r && r.ok && typeof _swapProofIntoStoryboard === 'function') {
+                _swapProofIntoStoryboard(pageNum);
+            }
+        } catch (_) {}
+    }, 450);
+}
 
 // Editor → here: swap two photos between frames on a page. Photos keep their
 // own per-id placement/adjust (keyed by photo id), so each photo's crop and
@@ -1852,6 +1874,8 @@ require('electron').ipcRenderer.on('editor-swap', (_e, msg) => {
         if (typeof renderGreenBox === 'function') renderGreenBox();
         if (typeof scheduleLivePreview === 'function') scheduleLivePreview();
     }
+    // The swapped page's storyboard proof is now stale — refresh it too.
+    _scheduleEditedPageReproof(msg.pageNum);
 });
 
 // Editor → here: navigate the editor to a different page. Rebuild that page's
