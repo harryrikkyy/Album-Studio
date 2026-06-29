@@ -38,11 +38,12 @@ tabButtons.forEach(btn => {
 // ==========================================
 let albumPages = {}, templateLibrary = [], filteredTemplates = [];
 let previewIndex = 0, currentPage = 1, totalActivePages = 1;
-// Slice 4 (A1/B2): template sync state. Sync ON = match templates to the source
-// selection / hovered page; OFF = always show all. _hoverPages tracks whether
-// the pointer is over the pages panel (current-page match trigger).
+// Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
+// panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
+// ('source' | 'pages' | null) — it remembers the last panel you worked in so
+// moving the pointer to the Templates panel keeps the match instead of resetting.
 let _syncTemplates = (() => { try { return localStorage.getItem('adt_template_sync') !== '0'; } catch (_) { return true; } })();
-let _hoverPages = false;
+let _activeMatchPanel = null;
 let photoCache = {}, wallpaperCache = {}, pngCache = {}, maskedCache = {};
 let outputFolder = null;
 
@@ -1074,7 +1075,8 @@ redBox.addEventListener('pointerup', (e) => {
         state.timer = setTimeout(() => {
             state.count = 0;
             img.classList.toggle("selected");
-            scheduleFilterUpdate(); // B2: selection drives template matching
+            _activeMatchPanel = 'source'; // B2: working in the source panel
+            scheduleFilterUpdate(); // selection drives template matching
         }, 300);
     } else if (state.count === 2) {
         clearTimeout(state.timer);
@@ -1507,28 +1509,25 @@ function scheduleFilterUpdate() {
     });
 }
 
-// Slice 4 wiring: pages-panel hover + the template Sync toggle.
+// Slice 4 wiring: sticky active-panel tracking + the template Sync switch.
 ;(function _initTemplateSync() {
-    // Hovering the pages panel (green compose box) matches templates to the
-    // current page (when sync is on and nothing is selected in the source).
-    if (greenBox) {
-        greenBox.addEventListener('pointerenter', () => { if (!_hoverPages) { _hoverPages = true; scheduleFilterUpdate(); } });
-        greenBox.addEventListener('pointerleave', () => { if (_hoverPages) { _hoverPages = false; scheduleFilterUpdate(); } });
-    }
-    const btn = document.getElementById('btnTemplateSync');
-    if (btn) {
-        const reflect = () => {
-            btn.classList.toggle('is-active', _syncTemplates);
-            btn.setAttribute('aria-pressed', _syncTemplates ? 'true' : 'false');
-            btn.title = _syncTemplates
-                ? 'Sync ON — templates match your selected photos / hovered page. Click to show all.'
-                : 'Sync OFF — showing all templates. Click to match your selection / page.';
-        };
-        reflect();
-        btn.addEventListener('click', () => {
-            _syncTemplates = !_syncTemplates;
+    // Entering a panel makes it the active match context. It's STICKY — we
+    // never clear it on pointerleave, so moving to the Templates panel to pick
+    // a layout keeps showing matches for the panel you were just working in.
+    const setActive = (panel) => {
+        if (_activeMatchPanel !== panel) { _activeMatchPanel = panel; scheduleFilterUpdate(); }
+    };
+    if (redBox) redBox.addEventListener('pointerenter', () => setActive('source'));
+    const greenWrapper = document.getElementById('greenWrapper');
+    if (greenWrapper) greenWrapper.addEventListener('pointerenter', () => setActive('pages'));
+    else if (greenBox) greenBox.addEventListener('pointerenter', () => setActive('pages'));
+
+    const chk = document.getElementById('chkTemplateSync');
+    if (chk) {
+        chk.checked = _syncTemplates;
+        chk.addEventListener('change', () => {
+            _syncTemplates = chk.checked;
             try { localStorage.setItem('adt_template_sync', _syncTemplates ? '1' : '0'); } catch (_) {}
-            reflect();
             scheduleFilterUpdate();
         });
     }
@@ -1562,9 +1561,12 @@ function autoFilterTemplates() {
     // show all.
     let target = null;
     if (_syncTemplates) {
-        const sel = _selectedSourceHV();
-        if (sel.count > 0) target = { h: sel.h, v: sel.v };
-        else if (_hoverPages && photos.length > 0) target = { h: hCount, v: vCount };
+        if (_activeMatchPanel === 'source') {
+            const sel = _selectedSourceHV();
+            if (sel.count > 0) target = { h: sel.h, v: sel.v }; // else nothing selected → show all
+        } else if (_activeMatchPanel === 'pages') {
+            if (photos.length > 0) target = { h: hCount, v: vCount };
+        }
     }
     if (target) {
         filteredTemplates = activeLibrary.filter(t => t.h === target.h && t.v === target.v);
