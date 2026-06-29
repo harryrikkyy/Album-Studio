@@ -90,8 +90,20 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
 - [x] **B2** Selection-driven + page-hover-driven template match. 🟧 ⚠med — **DONE:** sync ON →
   match the source SELECTION's H/V (rotation-aware) if any, else the current page while
   hovering the pages panel, else show all. Graceful fallback to all when no exact match.
-- [ ] **C1** Double-click template → open in PS + place images (sync ON =
-  matched set; OFF = sequential; drop extras / leave empty frames). 🟥 ⚠high
+- [x] **C1** Double-click template → open in PS + place images (sync ON =
+  matched set; OFF = sequential; drop extras / leave empty frames). 🟥 ⚠high — **DONE
+  (needs PS verify):** double-clicking a template builds it with the SELECTED source
+  photos via the `build-page` bridge (orientation-matched placement → drops extras /
+  leaves empty frames, into a safe duplicate). No selection → opens the template in PS.
+  Note: placement is orientation-matched for both sync states; true ignore-orientation
+  "sequential" for sync-off is a possible follow-up.
+
+### Native drag-out (added on request)
+- [x] **Drag source / Photos-tab thumbnails → Photoshop** drops the ORIGINAL high-res
+  file (like Finder→PS), via Electron `webContents.startDrag`. New `start-native-drag`
+  IPC; renderer cancels the proxy drag and sends resolved HR path(s). Multi-select drags
+  the whole selection. ⚠ Replaces the in-app source→page drag (double-click + Auto-Fill
+  still place in-app). Needs runtime verify.
 
 ### Slice 5 — Export
 - [ ] **J1** Render with editable clipped adjustment layers instead of baked pixels. 🟥 ⚠high

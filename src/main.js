@@ -1085,33 +1085,37 @@ redBox.addEventListener('pointerup', (e) => {
     }
 });
 
-// ── Source → Page drag (D.2: make drag the universal verb) ──────────────
-// Source thumbnails are now draggable onto the current page (green box),
-// matching the storyboard/green-box drag grammar. Double-click still works
-// as the documented shortcut. Module-scoped so the green box's drop handler
-// (in the IIFE below) can read it. Holds [{id, url}] of the dragged photos.
+// ── Source → Photoshop native drag-out ──────────────────────────────────
+// Dragging a source thumbnail now starts a NATIVE OS file drag carrying the
+// ORIGINAL high-res file, so dropping onto Photoshop (or Finder) behaves just
+// like dragging from Finder. Multi-selection drags the whole selected set.
+// (In-app placement still works via double-click and Auto-Fill.)
 let _sourceDragItems = null;
 redBox.addEventListener('dragstart', (e) => {
     const img = e.target.closest('.thumb-red');
     if (!img) return;
-    // If the dragged thumb is part of a multi-selection, drag the whole set;
-    // otherwise just the one. Mirrors the PULL button's behaviour.
     const selected = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
-    _sourceDragItems = (img.classList.contains('selected') && selected.length > 0)
-        ? selected.map(el => ({ id: el.id, url: el.src }))
-        : [{ id: img.id, url: img.src }];
-    try {
-        e.dataTransfer.effectAllowed = 'copy';
-        e.dataTransfer.setData('text/plain', _sourceDragItems.map(i => i.id).join(','));
-    } catch (_) {}
-    // Highlight the current page as the drop target (same affordance as the
-    // green box's internal reorder and the storyboard).
-    if (greenBox) greenBox.classList.add('dropzone--active');
+    const ids = (img.classList.contains('selected') && selected.length > 0)
+        ? selected.map(el => el.id)
+        : [img.id];
+    const paths = ids.map(id => _photoNativePath(id)).filter(Boolean);
+    if (paths.length === 0) return;
+    e.preventDefault(); // cancel the default thumbnail (proxy) drag
+    require('electron').ipcRenderer.send('start-native-drag', paths);
 });
-redBox.addEventListener('dragend', () => {
-    _sourceDragItems = null;
-    if (greenBox) greenBox.classList.remove('dropzone--active');
-});
+
+// Photos tab (Tab 6) → Photoshop native drag-out (original file).
+if (photosGrid) {
+    photosGrid.addEventListener('dragstart', (e) => {
+        const card = e.target.closest('.wp-card');
+        if (!card) return;
+        const id = card.dataset.photoId;
+        const p = id ? _photoNativePath(id) : null;
+        if (!p) return;
+        e.preventDefault();
+        require('electron').ipcRenderer.send('start-native-drag', [p]);
+    });
+}
 
 // ⚡ FIX: processImageFolder only builds Tab 1 (redBox) DOM now.
 // Tab 6 is built lazily via renderPhotosGrid() the first time the user opens that tab.
@@ -1289,7 +1293,7 @@ function renderPhotosGrid() {
         photoCard.dataset.folderId = cacheData.folderId;
         photoCard.dataset.photoId = safeId;
         photoCard.id = "pt_" + safeId;
-        photoCard.draggable = false;
+        photoCard.draggable = true; // native drag-out to Photoshop (original file)
 
         const photoImgWrapper = document.createElement("div");
         photoImgWrapper.className = "wp-card-img-wrapper";
@@ -1548,6 +1552,62 @@ function _selectedSourceHV() {
     return { h, v, count: sel.length };
 }
 
+// C1: build the SELECTED source photos into a chosen template. Reuses the
+// build-page bridge, which assigns photos to frames by orientation, drops
+// extras, and leaves surplus frames empty — exactly the requested behaviour.
+function _selectedSourcePhotosForBuild() {
+    const sel = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
+    return sel.map(img => {
+        const id = img.id;
+        const c = photoCache[id];
+        const fp = _photoNativePath(id);
+        if (!fp) return null;
+        let orient = (c && c.orient) || (img.naturalWidth >= img.naturalHeight ? 'h' : 'v');
+        const rotation = projectData.imageRotations?.[id] || 0;
+        if (rotation === 90 || rotation === 270) orient = orient === 'h' ? 'v' : 'h';
+        return {
+            id,
+            filePath: fp,
+            baseName: (c && c.baseName) || id,
+            orient,
+            rotation,
+            placement: projectData.imagePlacements?.[id] || null,
+        };
+    }).filter(Boolean);
+}
+
+async function buildTemplateWithSelection(temp) {
+    if (!temp) return;
+    const photos = _selectedSourcePhotosForBuild();
+    // No source selection → just open the template in Photoshop for editing.
+    if (photos.length === 0) {
+        const p = temp.file && temp.file.nativePath;
+        if (p) _openInPS(p);
+        else toast('Select photos in the Source panel first', 'info');
+        return;
+    }
+    if (temp._generative || !temp.file?.nativePath) {
+        toast('Quick-build needs a PSD template (generative layouts build via Render)', 'info');
+        return;
+    }
+    setStatus(`Building ${temp.name} with ${photos.length} photo${photos.length === 1 ? '' : 's'}…`);
+    try {
+        const r = await require('electron').ipcRenderer.invoke('build-page', {
+            templatePath: temp.file.nativePath,
+            pageName: 'Quick',
+            photos,
+        });
+        if (typeof r === 'string' && r && r.indexOf('success') === -1 && r.toLowerCase().indexOf('fail') !== -1) {
+            toast('Build: ' + r, 'error');
+        } else {
+            notify(`Built ${temp.name} — review it in Photoshop`, 'success');
+        }
+    } catch (e) {
+        toast('Build failed: ' + (e.message || e), 'error');
+    }
+    setStatus('');
+}
+
 function autoFilterTemplates() {
     if (!albumPages[currentPage]) albumPages[currentPage] = { photos: [], template: null };
     const photos = albumPages[currentPage].photos || [];
@@ -1622,19 +1682,7 @@ function renderWhiteBox() {
             card.innerHTML = `<img src="${temp.url}"><div class="thumb-card__label">${temp.name}</div>`;
         }
         card.onclick = () => setPreview(idx, true);
-        card.ondblclick = async () => {
-            await core.executeAsModal(async () => {
-                try {
-                    setStatus(`Opening ${temp.name}…`);
-                    const originalDoc = await app.open(temp.file);
-                    const safeName = temp.name.replace(/\.[^/.]+$/, "") + "_Safe";
-                    const safeDoc = await originalDoc.duplicate(safeName);
-                    await batchPlay([{"_obj":"close", "_target":[{"_ref":"document", "_id": originalDoc.id}], "saving":{"_enum":"yesNo", "_value":"no"}}], {});
-                    app.activeDocument = safeDoc;
-                    notify("Safe template ready", "success");
-                } catch (err) { app.showAlert("Failed to open template: " + err.message); }
-            }, {"commandName": "Open Safe Template"});
-        };
+        card.ondblclick = () => buildTemplateWithSelection(temp);
         frag.appendChild(card);
     });
 

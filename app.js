@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeImage } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
@@ -729,6 +729,33 @@ ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) =
 // right-click → "Place".
 ipcMain.handle('place-clipped', async (event, filePath) => {
   return executeJSX(jsxTemplates.placeClipped(filePath))
+})
+
+// ── NATIVE FILE DRAG-OUT ──────────────────────────────────
+// Lets the user drag source/Photos-tab thumbnails straight into Photoshop (or
+// Finder) and drop the ORIGINAL high-res files — exactly like dragging from
+// Finder. The renderer cancels its own HTML5 drag and calls this with the
+// resolved original file path(s); Electron then starts a real OS drag.
+let _dragIcon = null
+function getDragIcon() {
+  if (_dragIcon && !_dragIcon.isEmpty()) return _dragIcon
+  try { _dragIcon = nativeImage.createFromPath(path.join(__dirname, 'assets', 'icon.iconset', 'icon_32x32.png')) } catch (_) {}
+  // startDrag throws on an empty icon (macOS), so guarantee a non-empty one.
+  if (!_dragIcon || _dragIcon.isEmpty()) {
+    _dragIcon = nativeImage.createFromDataURL(
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==')
+  }
+  return _dragIcon
+}
+ipcMain.on('start-native-drag', (event, filePaths) => {
+  if (!Array.isArray(filePaths) || filePaths.length === 0) return
+  const existing = filePaths.filter(p => { try { return fs.existsSync(p) } catch (_) { return false } })
+  if (existing.length === 0) return
+  const icon = getDragIcon()
+  try {
+    if (existing.length === 1) event.sender.startDrag({ file: existing[0], icon })
+    else event.sender.startDrag({ file: existing[0], files: existing, icon })
+  } catch (e) { /* startDrag can throw if the drag isn't active; ignore */ }
 })
 
 // ── SWAP IMAGES ───────────────────────────────────────────
