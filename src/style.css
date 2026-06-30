@@ -3359,3 +3359,13 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
 }
 .app-ctx-menu__item:hover:not(:disabled) { background: var(--accent-dim); color: var(--accent); }
 .app-ctx-menu__item:disabled { color: var(--txt-muted); cursor: default; }
+
+/* ── No 3D tilt on Tools cards or the Preview panel (per request) ──────
+   ui_tilt.js no longer tilts these; this also flattens the per-theme hover
+   tilt CSS so Tools cards keep only their border/shadow hover, and the
+   Preview never tilts or shows the cursor sheen. */
+.tools-card,
+.tools-card:hover { transform: none !important; }
+#yellowPreviewArea,
+#yellowPreviewArea.is-tilting { transform: none !important; }
+#yellowPreviewArea.has-sheen::after { display: none !important; }

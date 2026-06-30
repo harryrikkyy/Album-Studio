@@ -26,10 +26,8 @@
 
   // Cards the themes already tilt + the hero preview. Each entry: the max
   // tilt angle (deg) and whether it gets a pointer-following sheen.
-  const TILE_SELECTOR = '.thumb-card, .wp-card, .sb-page-card, .tools-card'
-  const PREVIEW_ID = 'yellowPreviewArea'
+  const TILE_SELECTOR = '.thumb-card, .wp-card, .sb-page-card'
   const TILT_TILE = 6
-  const TILT_PREVIEW = 8
   const PERSPECTIVE = 900
 
   let active = null          // the element currently being tilted
@@ -40,8 +38,6 @@
     if (!node || !node.closest) return null
     const tile = node.closest(TILE_SELECTOR)
     if (tile) return { el: tile, max: TILT_TILE, sheen: false }
-    const prev = node.closest('#' + PREVIEW_ID)
-    if (prev) return { el: prev, max: TILT_PREVIEW, sheen: true }
     return null
   }
 
