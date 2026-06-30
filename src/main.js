@@ -44,6 +44,9 @@ let previewIndex = 0, currentPage = 1, totalActivePages = 1;
 // moving the pointer to the Templates panel keeps the match instead of resetting.
 let _syncTemplates = (() => { try { return localStorage.getItem('adt_template_sync') !== '0'; } catch (_) { return true; } })();
 let _activeMatchPanel = null;
+// J1: render colour as editable clipped adjustment layers instead of baking
+// pixels. EXPERIMENTAL — off by default (the bake path stays the safe default).
+let _useAdjLayers = (() => { try { return localStorage.getItem('adt_adj_layers') === '1'; } catch (_) { return false; } })();
 let photoCache = {}, wallpaperCache = {}, pngCache = {}, maskedCache = {};
 let outputFolder = null;
 
@@ -2561,12 +2564,15 @@ if (btnAutoThis) {
             const exportData = buildExportData(currentPage, currentPage);
             const pageEntry = exportData.pages[currentPage];
             if (!pageEntry) return app.showAlert("Could not resolve page data!");
-            // Bake per-photo adjustments so the built PSD reflects the preview.
-            await bakeExportAdjustments(exportData);
+            // Bake per-photo adjustments so the built PSD reflects the preview —
+            // UNLESS J1 (editable adjustment layers) is on, which places
+            // originals + adds clipped adjustment layers in the JSX instead.
+            if (!_useAdjLayers) await bakeExportAdjustments(exportData);
             const payload = {
                 templatePath: pageEntry.templatePath,
                 pageName: String(currentPage).padStart(3, '0'),
-                photos: pageEntry.photos
+                photos: pageEntry.photos,
+                useAdjustmentLayers: _useAdjLayers
             };
             await require('electron').ipcRenderer.invoke('build-page', payload);
             notify(`Page ${currentPage} built successfully`, "success");
@@ -2807,6 +2813,19 @@ if (btnSwapImages) {
                 notify('Swap complete', 'success');
             }
         } catch(err) { toast('Swap error: ' + err.message, 'error'); }
+    });
+}
+
+// J1 toggle: editable adjustment layers on render (experimental, persisted).
+const chkAdjLayers = document.getElementById('chkAdjLayers');
+if (chkAdjLayers) {
+    chkAdjLayers.checked = _useAdjLayers;
+    chkAdjLayers.addEventListener('change', () => {
+        _useAdjLayers = chkAdjLayers.checked;
+        try { localStorage.setItem('adt_adj_layers', _useAdjLayers ? '1' : '0'); } catch (_) {}
+        toast(_useAdjLayers
+            ? 'Renders will use editable adjustment layers (experimental)'
+            : 'Renders will bake colour into pixels (exact preview match)', 'info');
     });
 }
 
@@ -3887,6 +3906,7 @@ async function _renderWorker() {
             await require('electron').ipcRenderer.invoke('build-pages-batch', {
                 templatePath: chunk[0].pageData.templatePath,
                 outputPath: chunk[0].outputPath,
+                useAdjustmentLayers: _useAdjLayers,
                 pages: fresh.map(j => ({
                     pageName: String(j.pageNum).padStart(3, '0'),
                     photos: j.pageData.photos
@@ -3906,7 +3926,8 @@ async function _renderWorker() {
                     await require('electron').ipcRenderer.invoke('build-page', {
                         templatePath: j.pageData.templatePath,
                         pageName: String(j.pageNum).padStart(3, '0'),
-                        photos: j.pageData.photos
+                        photos: j.pageData.photos,
+                        useAdjustmentLayers: _useAdjLayers
                     });
                     _renderHashes[j.cacheKey] = j.hash;
                     _saveRenderHashes();
@@ -3954,10 +3975,14 @@ async function queueRender(exportData) {
     }
     // Bake per-photo adjustments into the sources before queueing, so every
     // built PSD reflects the live preview. Mutates pages[*].photos[*].filePath
-    // in place, which is what the queue holds a reference to.
+    // in place, which is what the queue holds a reference to. Skipped when J1
+    // (editable adjustment layers) is on — the JSX places originals + adds
+    // clipped adjustment layers instead.
     try {
-        const baked = await bakeExportAdjustments(exportData);
-        if (baked > 0) setStatus(`Applied edits to ${baked} photo${baked === 1 ? '' : 's'} before render…`);
+        if (!_useAdjLayers) {
+            const baked = await bakeExportAdjustments(exportData);
+            if (baked > 0) setStatus(`Applied edits to ${baked} photo${baked === 1 ? '' : 's'} before render…`);
+        }
     } catch (_) { /* fall back to unadjusted sources */ }
     _renderStats.total += numbers.length;
     numbers.forEach(n => {

@@ -106,7 +106,16 @@ Legend: 🟥 high impact · 🟧 medium · 🟦 low · ⚠ risk · ⏱ effort
   still place in-app). Needs runtime verify.
 
 ### Slice 5 — Export
-- [ ] **J1** Render with editable clipped adjustment layers instead of baked pixels. 🟥 ⚠high
+- [x] **J1** Render with editable clipped adjustment layers instead of baked pixels. 🟥 ⚠high
+  — **DONE (EXPERIMENTAL, off by default, needs PS verify):** Tools→Utilities toggle
+  "Render colour as editable adjustment layers" (persisted `adt_adj_layers`). When ON,
+  the bake step is skipped and `build_page.jsx` + `build_pages_batch.jsx` place originals
+  then add clipped adjustment layers per photo — Exposure (stops=exp/100),
+  Brightness/Contrast (contrast), Hue/Saturation (saturation), Photo Filter
+  (warmth, warming/cooling + density). OFF = the proven bake path (exact preview match).
+  ⚠ Action Manager descriptors + value mapping are a first cut and need live-PS
+  verification + `colormatch` tuning; this intentionally trades pixel-exact
+  preview==final for editability.
 
 ---
 

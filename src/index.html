@@ -378,6 +378,18 @@
                     </div>
 
                     <div class="tools-card__divider"></div>
+                    <label class="tools-card__toggle">
+                        <input type="checkbox" id="chkAdjLayers">
+                        <span>Render colour as editable adjustment layers <em>(experimental)</em></span>
+                    </label>
+                    <p class="tools-card__detail">
+                        When on, renders place the original photos and add clipped, editable
+                        Exposure / Brightness-Contrast / Hue-Saturation / Photo-Filter layers
+                        instead of baking colour into pixels — so you can fine-tune in Photoshop.
+                        Colour may differ slightly from the on-screen preview. Off = baked (exact match).
+                    </p>
+
+                    <div class="tools-card__divider"></div>
                     <div class="tools-card__row">
                         <span class="tools-card__row-label">Editing dock</span>
                         <span id="toolsBarStatus" class="tools-card__pill tools-card__pill--neutral">Closed</span>

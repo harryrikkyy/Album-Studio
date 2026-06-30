@@ -24,6 +24,66 @@ else {
 
   // data = { templatePath, outputPath, pages: [{ pageName, photos: [...] }, ...] }
 
+  // J1: editable clipped adjustment layers instead of baked pixels (EXPERIMENTAL).
+  var USE_ADJ = !!data.useAdjustmentLayers;
+
+  function _makeAdjLayer(typeStringID, buildTypeDesc) {
+    var desc = new ActionDescriptor();
+    var ref = new ActionReference();
+    ref.putClass(stringIDToTypeID("adjustmentLayer"));
+    desc.putReference(stringIDToTypeID("null"), ref);
+    var using = new ActionDescriptor();
+    var typeDesc = new ActionDescriptor();
+    typeDesc.putEnumerated(stringIDToTypeID("presetKind"), stringIDToTypeID("presetKindType"), stringIDToTypeID("presetKindDefault"));
+    if (buildTypeDesc) buildTypeDesc(typeDesc);
+    using.putObject(stringIDToTypeID("type"), stringIDToTypeID(typeStringID), typeDesc);
+    desc.putObject(stringIDToTypeID("using"), stringIDToTypeID("adjustmentLayer"), using);
+    executeAction(stringIDToTypeID("make"), desc, DialogModes.NO);
+    executeAction(charIDToTypeID("GrpL"), new ActionDescriptor(), DialogModes.NO);
+  }
+
+  function addAdjustmentLayers(adj) {
+    if (!adj) return;
+    var exposure = adj.exposure || 0, contrast = adj.contrast || 0;
+    var saturation = adj.saturation || 0, warmth = adj.warmth || 0;
+    if (exposure) {
+      _makeAdjLayer("exposure", function (t) {
+        t.putUnitDouble(stringIDToTypeID("exposure"), stringIDToTypeID("exposure"), exposure / 100);
+        t.putUnitDouble(stringIDToTypeID("offset"), stringIDToTypeID("offset"), 0);
+        t.putUnitDouble(stringIDToTypeID("gammaCorrection"), stringIDToTypeID("gammaCorrection"), 1);
+      });
+    }
+    if (contrast) {
+      _makeAdjLayer("brightnessEvent", function (t) {
+        t.putInteger(stringIDToTypeID("brightness"), 0);
+        t.putInteger(stringIDToTypeID("center"), Math.round(contrast));
+        t.putBoolean(stringIDToTypeID("useLegacy"), false);
+      });
+    }
+    if (saturation) {
+      _makeAdjLayer("hueSaturation", function (t) {
+        t.putBoolean(stringIDToTypeID("colorize"), false);
+        var list = new ActionList();
+        var a = new ActionDescriptor();
+        a.putInteger(stringIDToTypeID("hue"), 0);
+        a.putInteger(stringIDToTypeID("saturation"), Math.round(saturation));
+        a.putInteger(stringIDToTypeID("lightness"), 0);
+        list.putObject(stringIDToTypeID("hueSatAdjustmentV2"), a);
+        t.putList(stringIDToTypeID("adjustment"), list);
+      });
+    }
+    if (warmth) {
+      _makeAdjLayer("photoFilter", function (t) {
+        t.putBoolean(stringIDToTypeID("preserveLuminosity"), true);
+        t.putInteger(stringIDToTypeID("density"), Math.min(100, Math.abs(Math.round(warmth))));
+        var c = new ActionDescriptor();
+        if (warmth > 0) { c.putDouble(stringIDToTypeID("red"), 236); c.putDouble(stringIDToTypeID("grain"), 138); c.putDouble(stringIDToTypeID("blue"), 0); }
+        else { c.putDouble(stringIDToTypeID("red"), 0); c.putDouble(stringIDToTypeID("grain"), 181); c.putDouble(stringIDToTypeID("blue"), 255); }
+        t.putObject(stringIDToTypeID("color"), stringIDToTypeID("RGBColor"), c);
+      });
+    }
+  }
+
   function findFrames(pattern, container) {
     var result = [];
     for (var i = 0; i < container.layers.length; i++) {
@@ -44,7 +104,7 @@ else {
     return { w:x2-x1, h:y2-y1, cx:x1+(x2-x1)/2, cy:y1+(y2-y1)/2 };
   }
 
-  function placeAndFit(filePath, frameLayer, rotation, layerName, placement) {
+  function placeAndFit(filePath, frameLayer, rotation, layerName, placement, adjust) {
     app.activeDocument.activeLayer = frameLayer;
     var idPlc = charIDToTypeID("Plc ");
     var desc = new ActionDescriptor();
@@ -85,6 +145,11 @@ else {
     var tx = (fb.cx - pb.cx) + (-ox * (pb.w - fb.w) / 2);
     var ty = (fb.cy - pb.cy) + (-oy * (pb.h - fb.h) / 2);
     placedLayer.translate(tx, ty);
+
+    if (USE_ADJ && adjust) {
+      app.activeDocument.activeLayer = placedLayer;
+      addAdjustmentLayers(adjust);
+    }
   }
 
   var failures = 0, successes = 0;
@@ -114,9 +179,9 @@ else {
         }
 
         for (var h = 0; h < hPhotos.length && h < hFrames.length; h++)
-          placeAndFit(hPhotos[h].filePath, hFrames[h], hPhotos[h].rotation, hPhotos[h].baseName, hPhotos[h].placement);
+          placeAndFit(hPhotos[h].filePath, hFrames[h], hPhotos[h].rotation, hPhotos[h].baseName, hPhotos[h].placement, hPhotos[h].adjust);
         for (var v = 0; v < vPhotos.length && v < vFrames.length; v++)
-          placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement);
+          placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement, vPhotos[v].adjust);
 
         var saveOptions = new PhotoshopSaveOptions();
         saveOptions.maximizeCompatibility = true;
