@@ -48,9 +48,14 @@
   - Acceptance: `npm run test:e2e` launches the app and asserts the login window.
   - Verify: green E2E job on macOS CI (Linux can't run it — app quits on non-darwin).
   - Files: `playwright.config.js`, `e2e/boot.spec.js`, `.github/workflows/ci.yml`, `package.json`
-- [ ] **E2E: post-login main flows** (build page, edit spread, undo/redo, export)
-  - Needs a guarded test-mode: stub the Photoshop bridge + bypass auth behind an
-    env flag (`ALBUMSTUDIO_E2E`) never set in production. Drives the sample fixture.
+- [x] **Guarded test-mode + first real-flow E2E**
+  - Acceptance: app skips auth in test-mode (`ALBUMSTUDIO_E2E`, dev-only + double-
+    guarded by `!app.isPackaged`); E2E reaches the workspace and drives a real tab
+    switch. Companion `ALBUMSTUDIO_E2E_LOGIN` forces the login path deterministically.
+  - Verify: `npm run test:e2e` → 2 passed (local ✅; CI pending). Files: app.js,
+    e2e/workspace.spec.js, e2e/boot.spec.js
+- [ ] **E2E: heavier flows** (load sample project → undo/redo; export w/ Photoshop mocked)
+  - Next: a guarded project-load hook so the fixture drives page/state/undo tests.
 - [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
   - Likely needs handler logic extracted from `ipcMain.handle(...)` registration
     (dovetails with the Phase 2 module split).

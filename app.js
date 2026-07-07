@@ -1743,6 +1743,28 @@ ipcMain.handle('thumbnails-generate', async (event, folderPath) => {
 
 // ── APP READY ─────────────────────────────────────────────
 app.whenReady().then(async () => {
+  // ── E2E test-mode (guarded) ──────────────────────────────────────────────
+  // When launched by the Playwright harness, skip Google sign-in + the license
+  // check and open the workspace directly with a stub license, so end-to-end
+  // tests can drive real flows without real auth or a valid license file.
+  //
+  // Double-guarded so it can NEVER activate in a shipped app: it requires both
+  // the ALBUMSTUDIO_E2E env flag (only set by the test runner) AND a non-packaged
+  // build (app.isPackaged is true in any distributed DMG). The env flag alone is
+  // inert in a real build.
+  if (process.env.ALBUMSTUDIO_E2E === '1' && !app.isPackaged) {
+    currentLicense = { allowed: true, daysLeft: 999, email: 'e2e@test.local', offline: true }
+    currentUser = { email: 'e2e@test.local' }
+    createMainWindow(currentLicense)
+    return
+  }
+  // Companion flag: force the login screen regardless of any saved license, so
+  // the login-path E2E is deterministic on any machine (incl. a licensed dev box).
+  if (process.env.ALBUMSTUDIO_E2E_LOGIN === '1' && !app.isPackaged) {
+    createLoginWindow()
+    return
+  }
+
   // Resolve Photoshop name once at startup so the first IPC call is fast.
   // Wrapped because running on a machine without Photoshop should not crash boot.
   try { getPhotoshopAppName() } catch (_) {}

@@ -7,9 +7,12 @@ const { test, expect } = require('@playwright/test')
 const { _electron: electron } = require('playwright-core')
 
 test('app boots to the login window with the sign-in button', async () => {
+  // Force the login screen deterministically (independent of any saved license
+  // on the dev machine), so this guards the real login path users hit on a
+  // fresh install.
   const app = await electron.launch({
     args: [path.join(__dirname, '..')], // launch the project (main = app.js)
-    env: { ...process.env, ALBUMSTUDIO_E2E: '1' },
+    env: { ...process.env, ALBUMSTUDIO_E2E_LOGIN: '1' },
   })
   try {
     const win = await app.firstWindow()
