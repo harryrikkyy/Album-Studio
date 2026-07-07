@@ -20,3 +20,6 @@ dist/
 # ── Python cache (from steering skill scripts) ────────────
 __pycache__/
 *.pyc
+
+# Impeccable design tool (separate checkout)
+impeccable/
