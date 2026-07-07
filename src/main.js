@@ -5202,3 +5202,27 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+
+// ── E2E test hook (guarded) ──────────────────────────────────────────────────
+// Present ONLY when the (non-packaged) main process launched us with --e2e; it
+// never exists in a shipped build. Gives the Playwright suite a dialog-free way
+// to load a project and to inspect + drive the real undo/redo history system,
+// so the stateful core is covered before the Phase 2 refactor touches it.
+if (process.argv.includes('--e2e')) {
+    window.__E2E__ = {
+        loadProject: (data) => restoreWorkspace(data),
+        state: () => ({
+            totalActivePages,
+            pageCount: Object.keys(albumPages).length,
+            currentPage,
+        }),
+        // A real, undoable mutation routed through the history system.
+        clearAlbum: () => mutate('e2e-clear', () => {
+            albumPages = { 1: { photos: [], template: null } };
+            totalActivePages = 1;
+            currentPage = 1;
+        }),
+        undo: () => undo(),
+        redo: () => redo(),
+    };
+}

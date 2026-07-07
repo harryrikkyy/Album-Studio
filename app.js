@@ -159,13 +159,18 @@ function createLoginWindow() {
 
 // ── CREATE MAIN APP WINDOW ─────────────────────────────────
 function createMainWindow(licenseInfo = {}) {
+  // Pass a definitive --e2e signal to the renderer only when the (non-packaged)
+  // main process is in test-mode, so the renderer's guarded test hook is double-
+  // protected the same way the auth bypass is.
+  const additionalArguments = [`--license=${JSON.stringify(licenseInfo)}`]
+  if (process.env.ALBUMSTUDIO_E2E === '1' && !app.isPackaged) additionalArguments.push('--e2e')
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      additionalArguments: [`--license=${JSON.stringify(licenseInfo)}`]
+      additionalArguments
     },
     title: 'Creative Hubb Album Toolkit Pro',
     icon: path.join(__dirname, 'assets/icon.icns')

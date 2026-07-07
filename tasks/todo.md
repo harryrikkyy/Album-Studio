@@ -54,8 +54,14 @@
     switch. Companion `ALBUMSTUDIO_E2E_LOGIN` forces the login path deterministically.
   - Verify: `npm run test:e2e` → 2 passed (local ✅; CI pending). Files: app.js,
     e2e/workspace.spec.js, e2e/boot.spec.js
-- [ ] **E2E: heavier flows** (load sample project → undo/redo; export w/ Photoshop mocked)
-  - Next: a guarded project-load hook so the fixture drives page/state/undo tests.
+- [x] **Guarded project-load hook + undo/redo E2E**
+  - Acceptance: test-mode exposes `window.__E2E__` (loadProject/state/undo/redo,
+    via `--e2e` from the non-packaged main process); E2E loads the 15-page fixture
+    and proves undo restores all pages, redo re-clears. ✅ local 3/3.
+  - Files: app.js, src/main.js, e2e/undo-redo.spec.js
+- [ ] **E2E: export flow with the Photoshop bridge mocked**
+- [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
+- [ ] **Characterization tests for the render-queue dirty-tracking**
 - [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
   - Likely needs handler logic extracted from `ipcMain.handle(...)` registration
     (dovetails with the Phase 2 module split).
