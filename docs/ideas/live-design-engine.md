@@ -2,7 +2,7 @@
 
 **Status:** Proposed — for discussion. No code changed.
 **Author:** Ideation pass (idea-refine)
-**Relates to:** `proof_renderer.js`, `performance-design.md`, `src/main.js` (Tab 1 compose loop), `src/builtin_plugins/focal-point`
+**Relates to:** `proof_renderer.js`, `docs/notes/performance-design.md`, `src/main.js` (Tab 1 compose loop), `src/builtin_plugins/focal-point`
 
 ---
 

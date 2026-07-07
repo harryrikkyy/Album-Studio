@@ -8,7 +8,7 @@
       composite updates, so every edit visibly lands (instant-feedback
       dopamine — see live-design-engine.md).
 
-   Design notes (see docs/ideas + ui-ux-design-system.md):
+   Design notes (see docs/ideas + docs/notes/ui-ux-design-system.md):
    - GPU-friendly: only mutates `transform` + a couple of CSS vars.
    - Event-delegated at document level (works with the virtualized,
      event-delegated grids — no per-tile listeners, no edits to the

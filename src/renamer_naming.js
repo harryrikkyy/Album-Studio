@@ -2,7 +2,7 @@
 //
 // Pure naming logic for the Renamer feature. No Electron, no filesystem, no
 // DOM — just functions that turn UI state into base names. This is the
-// "contract" from renamer-design.md §2/§4, ported to plain CommonJS so it can
+// "contract" from docs/notes/renamer-design.md §2/§4, ported to plain CommonJS so it can
 // be required by both the main process and the renderer (nodeIntegration is
 // on) and unit-tested in isolation.
 //

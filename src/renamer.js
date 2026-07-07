@@ -8,7 +8,7 @@
 //   • PSD/PSB embedded-JPEG thumbnail extraction (no PSD decoder needed)
 //
 // Kept dependency-free (uses the app's existing sharp for raster thumbs).
-// See renamer-design.md.
+// See docs/notes/renamer-design.md.
 
 const { BrowserWindow } = require('electron')
 const fs = require('fs')
