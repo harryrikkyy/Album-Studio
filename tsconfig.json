@@ -15,6 +15,6 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["app.js", "src/**/*.js", "test/**/*.js", "e2e/**/*.js"],
+  "include": ["app.js", "src/**/*.js", "src/**/*.ts", "test/**/*.js", "e2e/**/*.js"],
   "exclude": ["node_modules", "dist", "build", "impeccable"]
 }

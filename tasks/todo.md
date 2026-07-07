@@ -94,7 +94,12 @@
     per-function annotations; `tsc --noEmit` strict-clean. Surfaced + fixed 2
     latent issues (possibly-undefined index + url). Behavior byte-identical
     (76 unit + 9 E2E green). Files: src/renderer_pure.js
-- [ ] **Define `src/shared/` types + the IPC channel contract**
+- [x] **Define `src/shared/` types + the IPC channel contract**
+  - Acceptance: `src/shared/domain.d.ts` (Frame/Template/Photo/Page/…) and
+    `src/shared/ipc.d.ts` — the exhaustive registry of all 71 invoke + 1 send + 9
+    push channels (typed subset precise, rest `Loose`, tighten as handlers move).
+    renderer_pure now imports the shared domain types (de-duped). tsc green.
+  - Files: src/shared/domain.d.ts, src/shared/ipc.d.ts, src/renderer_pure.js, tsconfig.json
 - [ ] **Build the state store** (single source of truth; retire reassigned globals)
 - [ ] **Split `main.js`** into `renderer/features/*`, `renderer/state/*` (≤~400 lines each)
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)

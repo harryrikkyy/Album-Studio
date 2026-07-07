@@ -4,21 +4,19 @@
 // Pure, dependency-free helpers extracted from the main renderer (src/main.js).
 //
 // This is the first module migrated to strict type-checking (via // @ts-check +
-// JSDoc). The shared domain shapes below are intentionally permissive — they
-// describe the dynamic objects the renderer already passes, tightening over time.
+// JSDoc). Domain shapes come from the shared contract in src/shared/domain.d.ts
+// (type-only import — no runtime dependency), so every module speaks the same
+// vocabulary.
 //
 /**
- * @typedef {{ name: string, x: number, y: number, w: number, h: number }} Frame
- * @typedef {{ id?: string, name?: string, url?: string, _generative?: boolean,
- *   _spec?: unknown, _canvas?: { w: number, h: number }, _frames?: Frame[] }} Template
- * @typedef {{ id?: string, orient?: string, url?: string, filePath?: string,
- *   baseName?: string, rotation?: number, adjust?: unknown, placement?: unknown }} Photo
- * @typedef {{ template?: Template | null, photos?: Photo[] }} Page
- * @typedef {{ id?: string, orient?: string }} PhotoRef
- * @typedef {{ template: null | { id?: string, generative?: boolean, spec?: unknown },
- *   photos: PhotoRef[] }} CompactPage
- * @typedef {{ templatePath?: string, photos: Photo[] }} HashablePage
- * @typedef {{ pageNum: number, outputPath: string, pageData: HashablePage }} RenderJob
+ * @typedef {import('./shared/domain').Frame} Frame
+ * @typedef {import('./shared/domain').Template} Template
+ * @typedef {import('./shared/domain').Photo} Photo
+ * @typedef {import('./shared/domain').Page} Page
+ * @typedef {import('./shared/domain').PhotoRef} PhotoRef
+ * @typedef {import('./shared/domain').CompactPage} CompactPage
+ * @typedef {import('./shared/domain').HashablePage} HashablePage
+ * @typedef {import('./shared/domain').RenderJob} RenderJob
  */
 // Everything here is a plain function of its arguments — no DOM, no shared
 // mutable module state, no I/O — which is exactly why it can live outside the
