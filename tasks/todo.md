@@ -79,3 +79,19 @@
     (dovetails with the Phase 2 module split).
 - [ ] **Characterization tests for the stateful core** (history, render-queue)
   - Captures current outputs before the Phase 2 refactor touches them.
+
+---
+
+# Todo — Phase 2: TypeScript + state store + module split (in progress)
+
+- [x] **TypeScript foundation (no runtime change)**
+  - Acceptance: `typescript` + `@types/node` added; strict `tsconfig.json`
+    (allowJs, checkJs off = opt-in per file, noEmit); `typecheck` is now
+    `tsc --noEmit` and green over the whole codebase. App still runs the same .js.
+  - Files: tsconfig.json, package.json
+- [ ] **Type the first module** (`renderer_pure.js` → `// @ts-check` + JSDoc)
+- [ ] **Define `src/shared/` types + the IPC channel contract**
+- [ ] **Build the state store** (single source of truth; retire reassigned globals)
+- [ ] **Split `main.js`** into `renderer/features/*`, `renderer/state/*` (≤~400 lines each)
+- [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
+- [ ] **Extract fs/paths service** replacing the UXP stubs

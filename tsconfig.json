@@ -1,0 +1,20 @@
+{
+  "// note": "Type-checking only (noEmit). The app still loads the same .js at runtime — no build step. Type-checking is opt-in per file via `// @ts-check` (checkJs is false), so the whole codebase is parsed for syntax while we migrate module-by-module toward full strict TS.",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["app.js", "src/**/*.js", "test/**/*.js", "e2e/**/*.js"],
+  "exclude": ["node_modules", "dist", "build", "impeccable"]
+}
