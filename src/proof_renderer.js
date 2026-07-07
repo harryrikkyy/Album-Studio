@@ -395,4 +395,8 @@ module.exports = {
   renderFinalComposite,
   templateKey,
   applyAdjust,
+  // Exposed for unit tests — pure geometry helpers that must stay identical
+  // between the preview and the final export.
+  proofDims,
+  partitionFrames,
 }

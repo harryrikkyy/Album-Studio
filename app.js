@@ -114,6 +114,20 @@ function safeJsonParse(str, fallback = null) {
   try { return JSON.parse(str) } catch (_) { return fallback }
 }
 
+// Run a scripts/*.jsx file with a per-call data JSON injected as __DATA_PATH__,
+// guaranteeing the temp data file is cleaned up afterwards. Centralizes the
+// write-data / run / unlink dance that every simple JSX handler repeated
+// verbatim. Returns whatever executeJSXFile resolves to.
+async function runJsxDataJob(scriptName, data, timeoutMs) {
+  const dataPath = writeJsonData(data)
+  const jsxPath = path.join(__dirname, 'scripts', scriptName)
+  try {
+    return await executeJSXFile(jsxPath, timeoutMs, { DATA_PATH: dataPath })
+  } finally {
+    try { fs.unlinkSync(dataPath) } catch (_) {}
+  }
+}
+
 let mainWindow = null
 let loginWindow = null
 let currentUser = null
@@ -769,24 +783,12 @@ ipcMain.handle('swap-images', async () => {
 // concurrent invocations could stomp. We now write to a per-call randomized
 // path and inject it into the JSX via __DATA_PATH__ substitution.
 ipcMain.handle('export-album', async (event, exportData) => {
-  const dataPath = writeJsonData(exportData)
-  const jsxPath = path.join(__dirname, 'scripts', 'export_album.jsx')
-  try {
-    return await executeJSXFile(jsxPath, 600000, { DATA_PATH: dataPath })
-  } finally {
-    try { fs.unlinkSync(dataPath) } catch (_) {}
-  }
+  return runJsxDataJob('export_album.jsx', exportData, 600000)
 })
 
 // ── BUILD PAGE ────────────────────────────────────────────
 ipcMain.handle('build-page', async (event, pageData) => {
-  const dataPath = writeJsonData(pageData)
-  const jsxPath = path.join(__dirname, 'scripts', 'build_page.jsx')
-  try {
-    return await executeJSXFile(jsxPath, 300000, { DATA_PATH: dataPath })
-  } finally {
-    try { fs.unlinkSync(dataPath) } catch (_) {}
-  }
+  return runJsxDataJob('build_page.jsx', pageData, 300000)
 })
 
 // ── EXTRACT TEMPLATE FRAMES ────────────────────────────────
@@ -1259,7 +1261,7 @@ ipcMain.handle('tools-bar-set-interactive', (event, interactive) => {
 // ── RENAMER ───────────────────────────────────────────────
 // Visual drag-and-drop workspace that renames a folder of album sheets to a
 // print naming convention. Lives in src/renamer.{html,js} + the pure
-// src/renamer_naming.js. See renamer-design.md.
+// src/renamer_naming.js. See docs/notes/renamer-design.md.
 ipcMain.handle('renamer-open', () => {
   try { renamer.openRenamerWindow(); return { ok: true } }
   catch (e) { return { ok: false, error: e.message } }
@@ -1290,7 +1292,14 @@ ipcMain.handle('editor-open', (event, spreadPayload) => {
     minHeight: 600,
     title: 'Spread Editor — Album Toolkit',
     backgroundColor: '#0b0c20',
-    webPreferences: { nodeIntegration: true, contextIsolation: false },
+    // Hardened: the editor renderer talks to main only through the frozen
+    // contextBridge surface in editor_preload.js, so it runs with no direct
+    // Node access. (Pilot for migrating the rest of the app off nodeIntegration.)
+    webPreferences: {
+      preload: path.join(__dirname, 'src/editor_preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+    },
   })
   _editorWin.loadFile(path.join(__dirname, 'src/editor.html'))
   _editorWin.on('closed', () => { _editorWin = null })
@@ -1640,26 +1649,14 @@ ipcMain.handle('actions-run', async (event, payload) => {
 // when the render queue feeds N consecutive pages with the same template.
 ipcMain.handle('build-pages-batch', async (event, batch) => {
   // batch = { templatePath, outputPath, pages: [{ pageName, photos }] }
-  const dataPath = writeJsonData(batch)
-  const jsxPath = path.join(__dirname, 'scripts', 'build_pages_batch.jsx')
-  try {
-    // Generous timeout: 30s per page, capped at 30 minutes.
-    const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
-    return await executeJSXFile(jsxPath, ms, { DATA_PATH: dataPath })
-  } finally {
-    try { fs.unlinkSync(dataPath) } catch (_) {}
-  }
+  // Generous timeout: 30s per page, capped at 30 minutes.
+  const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
+  return runJsxDataJob('build_pages_batch.jsx', batch, ms)
 })
 
 // ── BATCH THUMBNAILS (legacy: all through Photoshop) ──────
 ipcMain.handle('batch-thumbnails', async (event, folderPath) => {
-  const dataPath = writeJsonData({ folderPath })
-  const jsxPath = path.join(__dirname, 'scripts', 'batch_thumbnails.jsx')
-  try {
-    return await executeJSXFile(jsxPath, 600000, { DATA_PATH: dataPath })
-  } finally {
-    try { fs.unlinkSync(dataPath) } catch (_) {}
-  }
+  return runJsxDataJob('batch_thumbnails.jsx', { folderPath }, 600000)
 })
 
 // ── BATCH THUMBNAILS (fast hybrid) ────────────────────────

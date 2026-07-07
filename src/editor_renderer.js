@@ -6,7 +6,8 @@
 // zoom, and colour-grade — edits are sent back to the main app to persist and
 // re-render. See docs/ideas/spread-editor.md.
 
-const { ipcRenderer } = require('electron')
+// Bridged IPC surface exposed by editor_preload.js (contextIsolation on).
+const api = window.editorAPI
 
 // Theme (shared via file:// localStorage), opaque for this non-transparent window.
 ;(function () {
@@ -40,7 +41,7 @@ function toast(msg) {
 
 // ── Load ───────────────────────────────────────────────────────
 async function load() {
-  spread = await ipcRenderer.invoke('editor-get-spread')
+  spread = await api.getSpread()
   if (!spread || !spread.items || !spread.items.length) {
     emptyEl.style.display = 'block'
     return
@@ -54,7 +55,7 @@ async function load() {
   buildScene()
   buildRail()
 }
-ipcRenderer.on('editor-spread-updated', () => load())
+api.onSpreadUpdated(() => load())
 
 // ── Scene ──────────────────────────────────────────────────────
 function buildScene() {
@@ -312,7 +313,7 @@ function gotoSpread(pageNum) {
   selectedIds = []
   // Main rebuilds the payload for this page and pushes it back via
   // `editor-spread-updated`, which re-runs load().
-  ipcRenderer.invoke('editor-goto', { pageNum }).catch(() => {})
+  api.goto({ pageNum }).catch(() => {})
 }
 
 // ── Context menu (right-click) ─────────────────────────────────
@@ -362,7 +363,7 @@ function performSwap(a, b) {
   a._img.style.filter = cssFilter(a.adjust); b._img.style.filter = cssFilter(b.adjust)
   layoutItem(a); layoutItem(b)
   setSelection(null)
-  ipcRenderer.invoke('editor-swap', { pageNum: spread.pageNum, aId: a.id, bId: b.id }).catch(() => {})
+  api.swap({ pageNum: spread.pageNum, aId: a.id, bId: b.id }).catch(() => {})
 }
 
 // ── Apply back ─────────────────────────────────────────────────
@@ -386,7 +387,7 @@ function applyNow() {
     placements[it.id] = _nonDefaultPlacement(it.placement)
     adjustments[it.id] = _nonDefaultAdjust(it.adjust)
   }
-  ipcRenderer.invoke('editor-apply', { pageNum: spread.pageNum, placements, adjustments })
+  api.apply({ pageNum: spread.pageNum, placements, adjustments })
     .catch(() => {})
 }
 

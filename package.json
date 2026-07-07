@@ -7,9 +7,10 @@
   "main": "app.js",
   "scripts": {
     "start": "electron .",
+    "test": "node --test test/*.test.js",
     "lint": "eslint app.js \"src/**/*.js\"",
     "lint:fix": "eslint --fix app.js \"src/**/*.js\"",
-    "typecheck": "node --check app.js && node --check src/main.js && node --check src/license.js && node --check src/photoshop.js && node --check src/theme.js && node --check src/stubs/uxp.js && node --check src/stubs/photoshop.js && node --check src/jsx/templates.js && node --check src/proof_renderer.js && node --check src/telemetry.js && node --check src/curation.js && node --check src/generative_templates.js && node --check src/plugins.js && node --check src/library.js && node --check src/builtin_plugins/focal-point/index.js && node --check src/tools_bar.js && node --check src/sharp_config.js && node --check src/thumbnailer.js && node --check src/renamer.js && node --check src/renamer_naming.js && node --check src/renamer_renderer.js && node --check src/editor_renderer.js && node --check src/ui_tilt.js && node --check src/ui_layout.js && node --check src/ui_folders.js",
+    "typecheck": "node --check app.js && node --check src/main.js && node --check src/license.js && node --check src/photoshop.js && node --check src/theme.js && node --check src/stubs/uxp.js && node --check src/stubs/photoshop.js && node --check src/jsx/templates.js && node --check src/proof_renderer.js && node --check src/telemetry.js && node --check src/curation.js && node --check src/generative_templates.js && node --check src/plugins.js && node --check src/library.js && node --check src/builtin_plugins/focal-point/index.js && node --check src/tools_bar.js && node --check src/sharp_config.js && node --check src/thumbnailer.js && node --check src/renamer.js && node --check src/renderer_pure.js && node --check src/renamer_naming.js && node --check src/renamer_renderer.js && node --check src/editor_renderer.js && node --check src/editor_preload.js && node --check src/ui_tilt.js && node --check src/ui_layout.js && node --check src/ui_folders.js",
     "prebuild:mac": "npm run typecheck && npm run lint",
     "build:mac": "electron-builder --mac",
     "prepare": "husky || true"
@@ -26,7 +27,6 @@
       "scripts/**/*",
       "assets/**/*",
       "package.json",
-      ".env",
       "!**/*.map",
       "!**/.DS_Store",
       "!**/.claude/**",

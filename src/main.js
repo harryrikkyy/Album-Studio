@@ -2,6 +2,22 @@ const fs = require("./stubs/uxp").storage.localFileSystem;
 const { app, core } = require("./stubs/photoshop");
 const { batchPlay } = require("./stubs/photoshop").action;
 
+// Pure, testable helpers extracted from this file (no DOM / no shared state).
+// See src/renderer_pure.js. Destructured here so every existing call site
+// (escapeHtml(...), _generativePreviewSvg(...), etc.) resolves unchanged.
+const {
+    escapeHtml,
+    _generativePreviewSvg,
+    getPanelHeaderHTML,
+    getDisplayName,
+    _hashPage,
+    _parseExifDateFromBuffer,
+    _proofTemplatePreviewPath,
+    _isEditingTarget,
+    _compactPage,
+    _hydratePage,
+} = require("./renderer_pure");
+
 // ⚡ PERFORMANCE NOTE: All CSS that was previously injected here as a JS string
 // has been moved to style.css. This removes a render-blocking JS-to-CSSOM path.
 
@@ -159,23 +175,7 @@ function saveStateToStorage() {
     }, 800);
 }
 
-// Generative templates have no on-disk preview JPG — render a synthetic SVG
-// from the frame geometry so the template grid and yellow preview show
-// something meaningful. Cheap to recompute, no I/O, no images to cache.
-function _generativePreviewSvg(template, large = false) {
-    const w = template._canvas?.w || 3000;
-    const h = template._canvas?.h || 2000;
-    const frames = template._frames || [];
-    const fillH = '#7d4dff';
-    const fillV = '#ff6b9b';
-    const rects = frames.map(f => {
-        const fill = f.name.toLowerCase().includes('toolkithframe') ? fillH : fillV;
-        return `<rect x="${f.x}" y="${f.y}" width="${f.w}" height="${f.h}" fill="${fill}" fill-opacity="0.55" stroke="${fill}" stroke-width="6"/>`;
-    }).join('');
-    const sizeAttr = large ? 'width="100%" height="100%"' : '';
-    return `<svg ${sizeAttr} viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="background:#11142e">
-        <rect x="0" y="0" width="${w}" height="${h}" fill="#11142e"/>${rects}</svg>`;
-}
+// escapeHtml + _generativePreviewSvg moved to src/renderer_pure.js (required above).
 
 // ─── HISTORY (undo / redo) ─────────────────────────────────────
 // Every mutation that should be undoable is wrapped in mutate(label, fn).
@@ -200,42 +200,9 @@ let _historyMuted = 0; // mutate() calls inside undo/redo must not push history
 // or any other re-derivable field. On apply we re-hydrate full photo objects
 // from photoCache (url) and re-link templates from templateLibrary. This
 // shrinks each snapshot by ~10–50× with identical restore fidelity.
-function _compactPage(page) {
-    if (!page) return { template: null, photos: [] };
-    return {
-        template: page.template ? {
-            id: page.template.id,
-            generative: !!page.template._generative,
-            spec: page.template._spec || null,
-        } : null,
-        // Keep only id + orient (orient can be flipped by rotation and is not
-        // recomputed on hydrate, so it must persist). url/baseName/etc. are
-        // re-derived from photoCache.
-        photos: (page.photos || []).map(p => ({ id: p.id, orient: p.orient })),
-    };
-}
-
-function _hydratePage(cpage) {
-    if (!cpage) return { template: null, photos: [] };
-    let template = null;
-    if (cpage.template) {
-        template = templateLibrary.find(t => t.id === cpage.template.id) || null;
-        // Generative templates may not be in templateLibrary if the user
-        // toggled them off; keep the lightweight ref so a re-enable re-links.
-        if (!template && cpage.template.generative && cpage.template.spec) {
-            template = { id: cpage.template.id, _generative: true, _spec: cpage.template.spec };
-        }
-    }
-    const photos = (cpage.photos || []).map(ref => {
-        const c = photoCache[ref.id];
-        return {
-            id: ref.id,
-            orient: ref.orient,
-            url: c ? c.url : '',
-        };
-    });
-    return { template, photos };
-}
+// _compactPage + _hydratePage moved to src/renderer_pure.js (required at top).
+// _hydratePage now takes (cpage, templateLibrary, photoCache) — the caller in
+// _historyApply passes the renderer's live collections.
 
 function _historySnapshot(label) {
     const compactPages = {};
@@ -251,7 +218,7 @@ function _historySnapshot(label) {
 
 function _historyApply(snap) {
     const hydrated = {};
-    for (const [num, cpage] of Object.entries(snap.albumPages)) hydrated[num] = _hydratePage(cpage);
+    for (const [num, cpage] of Object.entries(snap.albumPages)) hydrated[num] = _hydratePage(cpage, templateLibrary, photoCache);
     albumPages = hydrated;
     totalActivePages = snap.totalActivePages;
     projectData.imageRotations = structuredClone(snap.imageRotations);
@@ -397,16 +364,7 @@ function notify(message, kind = 'info', opts = {}) {
     toast(message, kind, opts);
 }
 
-function getPanelHeaderHTML(type) {
-    return `<div class="folder-rail__header">`
-         +   `<button class="folder-rail__collapse" type="button" aria-label="Toggle folder list"></button>`
-         +   `<span>Folders:</span>`
-         +   `<div class="folder-rail__actions">`
-         +     `<span class="btn-reload-fld folder-rail__action" data-type="${type}" title="Refresh Folders">🔄</span>`
-         +     `<span class="btn-remove-fld folder-rail__action" data-type="${type}" title="Remove Folders">🗑️</span>`
-         +   `</div>`
-         + `</div>`;
-}
+// getPanelHeaderHTML moved to src/renderer_pure.js (required at top).
 
 // ⚡ Single source of truth for the per-folder row that lives inside a
 // .folder-rail__panel. The 5 processXxxFolder() functions used to inline
@@ -447,14 +405,7 @@ function createFolderRow(displayName, folderId, token, count) {
     return { row, checkbox: cb, countEl };
 }
 
-function getDisplayName(folder) {
-    if (folder.name.toLowerCase() !== "_thumbnails") return folder.name;
-    try {
-        const parts = folder.nativePath.split(/[\\/]/).filter(p => p.length > 0);
-        if (parts.length >= 2) return parts[parts.length - 2];
-    } catch(e) {}
-    return "Thumbs";
-}
+// getDisplayName moved to src/renderer_pure.js (required at top).
 
 // ⚡ FIX: Rotation only triggers renderGreenBox on orientation flip (h↔v).
 // Non-flip rotations (0→90→180→270 within same axis) update the CSS transform
@@ -552,49 +503,7 @@ async function getTrueFile(cacheData) {
 // Cached by photoId because we re-call this from auto-fill and curation.
 const _exifCache = new Map();
 
-function _parseExifDateFromBuffer(buf) {
-    // JPEG SOI must be 0xFFD8
-    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return null;
-    let off = 2;
-    while (off < buf.length - 8) {
-        if (buf[off] !== 0xFF) return null;
-        const marker = buf[off + 1];
-        const size = buf.readUInt16BE(off + 2);
-        // APP1 (0xE1) holds EXIF.
-        if (marker === 0xE1) {
-            // EXIF\0\0 magic
-            if (buf.toString('ascii', off + 4, off + 10) === 'Exif\u0000\u0000') {
-                const tiff = off + 10;
-                const little = buf.toString('ascii', tiff, tiff + 2) === 'II';
-                const u16 = (p) => little ? buf.readUInt16LE(p) : buf.readUInt16BE(p);
-                const u32 = (p) => little ? buf.readUInt32LE(p) : buf.readUInt32BE(p);
-                const ifd0 = tiff + u32(tiff + 4);
-                const numEntries = u16(ifd0);
-                let exifIfd = 0;
-                for (let i = 0; i < numEntries; i++) {
-                    const e = ifd0 + 2 + i * 12;
-                    if (u16(e) === 0x8769) { exifIfd = tiff + u32(e + 8); break; }
-                }
-                if (!exifIfd) return null;
-                const n2 = u16(exifIfd);
-                for (let i = 0; i < n2; i++) {
-                    const e = exifIfd + 2 + i * 12;
-                    if (u16(e) === 0x9003) { // DateTimeOriginal
-                        const valOff = tiff + u32(e + 8);
-                        const str = buf.toString('ascii', valOff, valOff + 19);
-                        // "YYYY:MM:DD HH:MM:SS"
-                        const m = str.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
-                        if (!m) return null;
-                        return new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`).getTime();
-                    }
-                }
-                return null;
-            }
-        }
-        off += 2 + size;
-    }
-    return null;
-}
+// _parseExifDateFromBuffer moved to src/renderer_pure.js (required at top).
 
 async function readExifDate(filePath) {
     if (_exifCache.has(filePath)) return _exifCache.get(filePath);
@@ -936,7 +845,7 @@ document.addEventListener('click', (e) => {
                 const labelText = cb.parentElement.innerText.replace("📁", "").replace("🗑️", "").replace("🔄", "").trim();
                 const folderId = cb.value;
                 const token = cb.dataset.token || "";
-                listDiv.innerHTML += `<label><input type="checkbox" class="dialog-fld-cb" value="${folderId}" data-type="${type}" data-token="${token}"> 📁 ${labelText}</label>`;
+                listDiv.innerHTML += `<label><input type="checkbox" class="dialog-fld-cb" value="${escapeHtml(folderId)}" data-type="${escapeHtml(type)}" data-token="${escapeHtml(token)}"> 📁 ${escapeHtml(labelText)}</label>`;
             });
         }
         document.getElementById("removeFolderDialog").showModal();
@@ -1659,7 +1568,7 @@ function autoFilterTemplates() {
     if (savedTemplate) {
         const foundIdx = filteredTemplates.findIndex(t => t.id === savedTemplate.id);
         if (foundIdx !== -1) setPreview(foundIdx, false);
-        else yellowPreviewArea.innerHTML = savedTemplate.url ? `<img src="${savedTemplate.url}">` : `<div style="color:#aaa;">${savedTemplate.name}</div>`;
+        else yellowPreviewArea.innerHTML = savedTemplate.url ? `<img src="${escapeHtml(savedTemplate.url)}">` : `<div style="color:#aaa;">${escapeHtml(savedTemplate.name)}</div>`;
     } else {
         if (filteredTemplates.length > 0) setPreview(0, false); else yellowPreviewArea.innerHTML = "";
     }
@@ -1679,10 +1588,10 @@ function renderWhiteBox() {
         // Generative templates synthesize a quick SVG preview from their frame
         // geometry so the user can see the layout without authoring a PSD.
         if (temp._generative) {
-            card.innerHTML = `${_generativePreviewSvg(temp)}<div class="thumb-card__label">${temp.name}</div>`;
+            card.innerHTML = `${_generativePreviewSvg(temp)}<div class="thumb-card__label">${escapeHtml(temp.name)}</div>`;
             card.classList.add('thumb-card--generative');
         } else {
-            card.innerHTML = `<img src="${temp.url}"><div class="thumb-card__label">${temp.name}</div>`;
+            card.innerHTML = `<img src="${escapeHtml(temp.url)}"><div class="thumb-card__label">${escapeHtml(temp.name)}</div>`;
         }
         card.onclick = () => setPreview(idx, true);
         card.ondblclick = () => buildTemplateWithSelection(temp);
@@ -1791,7 +1700,7 @@ function setPreview(idx, saveToMemory = true) {
         if (temp._generative) {
             yellowPreviewArea.innerHTML = _generativePreviewSvg(temp, /*large*/ true);
         } else {
-            yellowPreviewArea.innerHTML = temp.url ? `<img src="${temp.url}">` : `<div style="color:#aaa;">${temp.name}</div>`;
+            yellowPreviewArea.innerHTML = temp.url ? `<img src="${escapeHtml(temp.url)}">` : `<div style="color:#aaa;">${escapeHtml(temp.name)}</div>`;
         }
     }
     if (saveToMemory) {
@@ -1820,7 +1729,7 @@ function _showTemplateThumb() {
     const t = albumPages[currentPage] && albumPages[currentPage].template;
     if (!t) { yellowPreviewArea.innerHTML = ''; return; }
     if (t._generative) yellowPreviewArea.innerHTML = _generativePreviewSvg(t, true);
-    else yellowPreviewArea.innerHTML = t.url ? `<img src="${t.url}">` : `<div style="color:#aaa;">${t.name || ''}</div>`;
+    else yellowPreviewArea.innerHTML = t.url ? `<img src="${escapeHtml(t.url)}">` : `<div style="color:#aaa;">${escapeHtml(t.name || '')}</div>`;
 }
 
 async function renderLivePreview() {
@@ -2099,7 +2008,7 @@ function renderGreenBox() {
         // No more inline `border` here — selection is conveyed via the
         // container's outline ring.
         const cssRotation = `transform: rotate(${savedRotation}deg); transform-origin: center; transition: transform 0.2s ease; max-height:100%; max-width:100%; object-fit:contain; cursor:pointer;`;
-        container.innerHTML = `<img src="${p.url}" class="thumb-green" style="${cssRotation}" draggable="false"><div class="orient-label">${p.orient.toUpperCase()}</div>`;
+        container.innerHTML = `<img src="${escapeHtml(p.url)}" class="thumb-green" style="${cssRotation}" draggable="false"><div class="orient-label">${escapeHtml(p.orient).toUpperCase()}</div>`;
 
         const imgEl = container.querySelector('.thumb-green');
 
@@ -3811,20 +3720,7 @@ function _saveRenderHashes() {
     try { localStorage.setItem(_RENDER_HASH_KEY, JSON.stringify(_renderHashes)); }
     catch (_) {}
 }
-function _hashPage(pageData) {
-    // Deterministic stringification of the inputs that affect render output.
-    // Includes adjust + placement so colour/zoom-pan edits re-render (they
-    // don't change filePath, so they'd otherwise be cached as unchanged).
-    const parts = [
-        pageData.templatePath,
-        ...pageData.photos.map(p => {
-            const a = p.adjust ? JSON.stringify(p.adjust) : '';
-            const pl = p.placement ? JSON.stringify(p.placement) : '';
-            return `${p.filePath}|${p.orient}|${p.rotation || 0}|${p.baseName}|${a}|${pl}`;
-        })
-    ];
-    return parts.join('§');
-}
+// _hashPage moved to src/renderer_pure.js (required at top).
 
 const _renderQueue = []; // [{ pageNum, pageData, outputPath }]
 let _renderActive = false;
@@ -4112,7 +4008,7 @@ function renderStoryboard() {
         if (pageData.template._generative) {
             preview.innerHTML = _generativePreviewSvg(pageData.template);
         } else {
-            preview.innerHTML = `<img src="${pageData.template.url}" alt="Template">`;
+            preview.innerHTML = `<img src="${escapeHtml(pageData.template.url)}" alt="Template">`;
         }
         card.appendChild(preview);
 
@@ -4542,17 +4438,7 @@ function _proofHrIndex(hrFolderPath) {
     return idx;
 }
 
-function _proofTemplatePreviewPath(template) {
-    // The template entry already carries a `url` (file://...) that points at
-    // the JPG/PNG sibling preview. Decode it back to a filesystem path for
-    // sharp.
-    if (!template?.url) return null;
-    try {
-        const u = new URL(template.url);
-        if (u.protocol === 'file:') return decodeURIComponent(u.pathname);
-    } catch (_) {}
-    return null;
-}
+// _proofTemplatePreviewPath moved to src/renderer_pure.js (required at top).
 
 async function _generateProofForPage(pageNum, opts = {}) {
     const page = albumPages[pageNum];
@@ -5217,11 +5103,7 @@ function showShortcutHelp() {
     dlg.showModal();
 }
 
-function _isEditingTarget(t) {
-    if (!t) return false;
-    const tag = t.tagName;
-    return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t.isContentEditable;
-}
+// _isEditingTarget moved to src/renderer_pure.js (required at top).
 
 document.addEventListener('keydown', (e) => {
     // Don't hijack typing.
