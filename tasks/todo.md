@@ -27,17 +27,32 @@
   - Acceptance: a sanitized `.json` (no private paths/emails) in `e2e/fixtures/`.
   - Verify: 0 private markers, valid JSON, 15 pages. ✅ `e2e/fixtures/sample-project.json`.
 
-- [~] **Rotate the leaked credentials (owner action)**
+- [x] **Rotate the leaked credentials (owner action)**
   - Acceptance: Google OAuth client secret + `LICENSE_SECRET_KEY` rotated; old
-    `dist/` build (which contains the old secrets) deleted.
-  - Verify: new secret in local `.env` only; app still signs in.
-  - Blocked on: **owner** (Cloud Console + Firebase).
+    `dist/` deleted. ✅ owner reset secret, new `.env`, `dist/` removed.
+  - Verify: app still signs in. ✅ confirmed working (`npm start` sign-in).
 
-## Phase 0 checkpoint (exit criteria)
+## Phase 0 checkpoint — ✅ COMPLETE
 
-- [ ] CI green on GitHub for a no-op change.
-- [ ] `docs/DEVELOPMENT.md` gets a cold start running against the sample fixture.
-- [ ] Leaked secret rotated; compromised build removed.
+- [x] CI green on GitHub (run `abbf43d` success).
+- [x] `docs/DEVELOPMENT.md` written; sample fixture committed.
+- [x] Leaked secret rotated; compromised build removed.
 
-When these pass → proceed to Phase 1 (safety-net tests), write `tasks/todo.md`
-for it.
+→ Proceeding to Phase 1. See "Phase 1" below.
+
+---
+
+# Todo — Phase 1: Safety net (in progress)
+
+- [x] **Playwright-Electron E2E harness + first boot test**
+  - Acceptance: `npm run test:e2e` launches the app and asserts the login window.
+  - Verify: green E2E job on macOS CI (Linux can't run it — app quits on non-darwin).
+  - Files: `playwright.config.js`, `e2e/boot.spec.js`, `.github/workflows/ci.yml`, `package.json`
+- [ ] **E2E: post-login main flows** (build page, edit spread, undo/redo, export)
+  - Needs a guarded test-mode: stub the Photoshop bridge + bypass auth behind an
+    env flag (`ALBUMSTUDIO_E2E`) never set in production. Drives the sample fixture.
+- [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
+  - Likely needs handler logic extracted from `ipcMain.handle(...)` registration
+    (dovetails with the Phase 2 module split).
+- [ ] **Characterization tests for the stateful core** (history, render-queue)
+  - Captures current outputs before the Phase 2 refactor touches them.

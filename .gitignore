@@ -23,3 +23,7 @@ __pycache__/
 
 # Impeccable design tool (separate checkout)
 impeccable/
+
+# Playwright
+test-results/
+playwright-report/
