@@ -1,0 +1,629 @@
+{
+ "version": 1,
+ "savedAt": "2026-06-22T11:29:56.561Z",
+ "workspace": {
+  "imageTokens": [
+   "/fixtures/sample-album",
+   "/fixtures/sample-album/Engagement stills/Engagement Stills"
+  ],
+  "templateTokens": [
+   "/fixtures/toolkit-data/Auto PSD/1200 Auto PSD ( 2026 )",
+   "/fixtures/toolkit-data/Auto PSD/New Auto psd",
+   "/fixtures/toolkit-data/Auto PSD/1395+ Auto PSD converted",
+   "/fixtures/toolkit-data/Market PSD's"
+  ],
+  "wallpaperTokens": [
+   "/fixtures/toolkit-data/Wallpapers/Dark",
+   "/fixtures/toolkit-data/Wallpapers/Default",
+   "/fixtures/toolkit-data/Wallpapers/Tintone",
+   "/fixtures/toolkit-data/Wallpapers/Double",
+   "/fixtures/toolkit-data/Wallpapers/Flower",
+   "/fixtures/toolkit-data/Wallpapers/H-Strip",
+   "/fixtures/toolkit-data/Wallpapers/Light",
+   "/fixtures/toolkit-data/Wallpapers/Lineing",
+   "/fixtures/toolkit-data/Wallpapers/other",
+   "/fixtures/toolkit-data/Wallpapers/Plain",
+   "/fixtures/toolkit-data/Wallpapers/Shadow",
+   "/fixtures/toolkit-data/Wallpapers/Texture",
+   "/fixtures/toolkit-data/Wallpapers/V-Strip",
+   "/fixtures/toolkit-data/Wallpapers/Sky"
+  ],
+  "pngTokens": [
+   "/fixtures/toolkit-data/Frames/100 Beautiful PNG Frames",
+   "/fixtures/toolkit-data/Frames/PNG Frames",
+   "/fixtures/toolkit-data/Frames/Simple PNG Frames"
+  ],
+  "maskTokens": [
+   "/fixtures/toolkit-data/Frames/Mask Frame (Black JPEG)"
+  ],
+  "highResTokens": [
+   "/fixtures/sample-album"
+  ],
+  "wpHighResTokens": [],
+  "outputToken": "/fixtures/sample-album/PSD's",
+  "imageRotations": {
+   "img_SAI_BFA_20_SHEETS_DSC02122_jpg": 0,
+   "img_June_2026_to_May_2027_calender_Please_hold_my_hand_through_the_good_and_difficult_days__jpeg": 0
+  }
+ },
+ "albumPages": {
+  "1": {
+   "template": {
+    "id": "tpl_Market_PSD_s_4h0v_0010_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "4h0v_0010.psd",
+    "h": 4,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/4h0v_0010.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC06640_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06640.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06647_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06647.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06650_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06650.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06655_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06655.jpg"
+    }
+   ]
+  },
+  "2": {
+   "template": {
+    "id": "tpl_Market_PSD_s_6h0v_0003_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "6h0v_0003.psd",
+    "h": 6,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/6h0v_0003.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC06752_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06752.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06759_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06759.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06762_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06762.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06776_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06776.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06848_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06848.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06896_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06896.jpg"
+    }
+   ]
+  },
+  "3": {
+   "template": {
+    "id": "tpl_Market_PSD_s_3h2v_0002_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "3h2v_0002.psd",
+    "h": 3,
+    "v": 2,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/3h2v_0002.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC06898_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06898.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06947_jpg",
+     "orient": "v",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06947.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC06981_jpg",
+     "orient": "v",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC06981.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07003_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07003.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07022_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07022.jpg"
+    }
+   ]
+  },
+  "4": {
+   "template": {
+    "id": "tpl_Market_PSD_s_4h0v_0007_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "4h0v_0007.psd",
+    "h": 4,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/4h0v_0007.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07034_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07034.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07049_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07049.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07060_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07060.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07063_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07063.jpg"
+    }
+   ]
+  },
+  "5": {
+   "template": {
+    "id": "tpl_Market_PSD_s_5h0v_0026_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "5h0v_0026.psd",
+    "h": 5,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/5h0v_0026.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07071_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07071.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07073_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07073.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07075_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07075.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07082_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07082.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07085_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07085.jpg"
+    }
+   ]
+  },
+  "6": {
+   "template": {
+    "id": "tpl_Market_PSD_s_6h0v_0006_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "6h0v_0006.psd",
+    "h": 6,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/6h0v_0006.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07134_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07134.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07138_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07138.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07145_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07145.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07147_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07147.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07151_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07151.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07107_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07107.jpg"
+    }
+   ]
+  },
+  "7": {
+   "template": {
+    "id": "tpl_Market_PSD_s_5h0v_0006_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "5h0v_0006.psd",
+    "h": 5,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/5h0v_0006.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07155_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07155.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07159_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07159.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07160_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07160.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07162_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07162.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07165_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07165.jpg"
+    }
+   ]
+  },
+  "8": {
+   "template": {
+    "id": "tpl_Market_PSD_s_5h0v_0007_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "5h0v_0007.psd",
+    "h": 5,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/5h0v_0007.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07181_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07181.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07190_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07190.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07178_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07178.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07202_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07202.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07203_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07203.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07208_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07208.jpg"
+    }
+   ]
+  },
+  "9": {
+   "template": {
+    "id": "tpl_Market_PSD_s_6h0v_0001_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "6h0v_0001.psd",
+    "h": 6,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/6h0v_0001.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07212_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07212.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07215_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07215.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07218_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07218.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07235_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07235.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07269_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07269.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07274_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07274.jpg"
+    }
+   ]
+  },
+  "10": {
+   "template": {
+    "id": "tpl_Market_PSD_s_4h0v_0025_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "4h0v_0025.psd",
+    "h": 4,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/4h0v_0025.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07237_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07237.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07241_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07241.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07226_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07226.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07265_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07265.jpg"
+    }
+   ]
+  },
+  "11": {
+   "template": {
+    "id": "tpl_Market_PSD_s_5h0v_0003_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "5h0v_0003.psd",
+    "h": 5,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/5h0v_0003.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07279_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07279.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07288_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07288.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07302_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07302.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07309_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07309.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07312_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07312.jpg"
+    }
+   ]
+  },
+  "12": {
+   "template": {
+    "id": "tpl_Market_PSD_s_4h1v_0001_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "4h1v_0001.psd",
+    "h": 4,
+    "v": 1,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/4h1v_0001.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07321_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07321.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07325_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07325.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07337_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07337.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07340_jpg",
+     "orient": "v",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07340.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07356_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07356.jpg"
+    }
+   ]
+  },
+  "13": {
+   "template": {
+    "id": "tpl_Market_PSD_s_2h2v_0004_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "2h2v_0004.psd",
+    "h": 2,
+    "v": 2,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/2h2v_0004.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07359_jpg",
+     "orient": "v",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07359.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07371_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07371.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07376_jpg",
+     "orient": "v",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07376.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07381_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07381.jpg"
+    }
+   ]
+  },
+  "14": {
+   "template": {
+    "id": "tpl_Market_PSD_s_5h0v_0020_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "5h0v_0020.psd",
+    "h": 5,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/5h0v_0020.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07384_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07384.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07388_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07388.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07397_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07397.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07404_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07404.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07415_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07415.jpg"
+    }
+   ]
+  },
+  "15": {
+   "template": {
+    "id": "tpl_Market_PSD_s_6h0v_0019_psd",
+    "folderId": "tplFld_Market_PSD_s1782127285428",
+    "name": "6h0v_0019.psd",
+    "h": 6,
+    "v": 0,
+    "url": "file:///fixtures/toolkit-data/Market PSD's/Thumbnails/6h0v_0019.jpg"
+   },
+   "photos": [
+    {
+     "id": "img_Engagement_DSC07428_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07428.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07433_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07433.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07436_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07436.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07439_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07439.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07446_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07446.jpg"
+    },
+    {
+     "id": "img_Engagement_DSC07449_jpg",
+     "orient": "h",
+     "url": "file:///fixtures/sample-album/_Thumbnails/DSC07449.jpg"
+    }
+   ]
+  }
+ },
+ "totalActivePages": 15,
+ "renderHashes": {
+  "/fixtures/sample-album/PSD's|1": "/fixtures/toolkit-data/Market PSD's/4h0v_0010.psd\u00a7/fixtures/sample-album/DSC06640.JPG|h|0|dsc06640\u00a7/fixtures/sample-album/DSC06647.JPG|h|0|dsc06647\u00a7/fixtures/sample-album/DSC06650.JPG|h|0|dsc06650\u00a7/fixtures/sample-album/DSC06655.JPG|h|0|dsc06655",
+  "/fixtures/sample-album/PSD's|2": "/fixtures/toolkit-data/Market PSD's/6h0v_0003.psd\u00a7/fixtures/sample-album/DSC06752.JPG|h|0|dsc06752\u00a7/fixtures/sample-album/DSC06759.JPG|h|0|dsc06759\u00a7/fixtures/sample-album/DSC06762.JPG|h|0|dsc06762\u00a7/fixtures/sample-album/DSC06776.JPG|h|0|dsc06776\u00a7/fixtures/sample-album/DSC06848.JPG|h|0|dsc06848\u00a7/fixtures/sample-album/DSC06896.JPG|h|0|dsc06896",
+  "/fixtures/sample-album/PSD's|3": "/fixtures/toolkit-data/Market PSD's/3h2v_0002.psd\u00a7/fixtures/sample-album/DSC06898.JPG|h|0|dsc06898\u00a7/fixtures/sample-album/DSC06947.JPG|v|0|dsc06947\u00a7/fixtures/sample-album/DSC06981.JPG|v|0|dsc06981\u00a7/fixtures/sample-album/DSC07003.JPG|h|0|dsc07003\u00a7/fixtures/sample-album/DSC07022.JPG|h|0|dsc07022",
+  "/fixtures/sample-album/PSD's|4": "/fixtures/toolkit-data/Market PSD's/4h0v_0008.psd\u00a7/fixtures/sample-album/DSC07034.JPG|h|0|dsc07034\u00a7/fixtures/sample-album/DSC07049.JPG|h|0|dsc07049\u00a7/fixtures/sample-album/DSC07060.JPG|h|0|dsc07060\u00a7/fixtures/sample-album/DSC07063.JPG|h|0|dsc07063",
+  "/fixtures/sample-album/PSD's|5": "/fixtures/toolkit-data/Market PSD's/5h0v_0026.psd\u00a7/fixtures/sample-album/DSC07071.JPG|h|0|dsc07071\u00a7/fixtures/sample-album/DSC07073.JPG|h|0|dsc07073\u00a7/fixtures/sample-album/DSC07075.JPG|h|0|dsc07075\u00a7/fixtures/sample-album/DSC07082.JPG|h|0|dsc07082\u00a7/fixtures/sample-album/DSC07085.JPG|h|0|dsc07085",
+  "/fixtures/sample-album/PSD's|6": "/fixtures/toolkit-data/Market PSD's/6h0v_0006.psd\u00a7/fixtures/sample-album/DSC07134.JPG|h|0|dsc07134\u00a7/fixtures/sample-album/DSC07138.JPG|h|0|dsc07138\u00a7/fixtures/sample-album/DSC07145.JPG|h|0|dsc07145\u00a7/fixtures/sample-album/DSC07147.JPG|h|0|dsc07147\u00a7/fixtures/sample-album/DSC07151.JPG|h|0|dsc07151\u00a7/fixtures/sample-album/DSC07107.JPG|h|0|dsc07107",
+  "/fixtures/sample-album/PSD's|7": "/fixtures/toolkit-data/Market PSD's/5h0v_0006.psd\u00a7/fixtures/sample-album/DSC07155.JPG|h|0|dsc07155\u00a7/fixtures/sample-album/DSC07159.JPG|h|0|dsc07159\u00a7/fixtures/sample-album/DSC07160.JPG|h|0|dsc07160\u00a7/fixtures/sample-album/DSC07162.JPG|h|0|dsc07162\u00a7/fixtures/sample-album/DSC07165.JPG|h|0|dsc07165",
+  "/fixtures/sample-album/PSD's|8": "/fixtures/toolkit-data/Market PSD's/5h0v_0007.psd\u00a7/fixtures/sample-album/DSC07181.JPG|h|0|dsc07181\u00a7/fixtures/sample-album/DSC07190.JPG|h|0|dsc07190\u00a7/fixtures/sample-album/DSC07178.JPG|h|0|dsc07178\u00a7/fixtures/sample-album/DSC07202.JPG|h|0|dsc07202\u00a7/fixtures/sample-album/DSC07203.JPG|h|0|dsc07203\u00a7/fixtures/sample-album/DSC07208.JPG|h|0|dsc07208",
+  "/fixtures/sample-album/PSD's|9": "/fixtures/toolkit-data/Market PSD's/6h0v_0001.psd\u00a7/fixtures/sample-album/DSC07212.JPG|h|0|dsc07212\u00a7/fixtures/sample-album/DSC07215.JPG|h|0|dsc07215\u00a7/fixtures/sample-album/DSC07218.JPG|h|0|dsc07218\u00a7/fixtures/sample-album/DSC07235.JPG|h|0|dsc07235\u00a7/fixtures/sample-album/DSC07269.JPG|h|0|dsc07269\u00a7/fixtures/sample-album/DSC07274.JPG|h|0|dsc07274",
+  "/fixtures/sample-album/PSD's|10": "/fixtures/toolkit-data/Market PSD's/4h0v_0025.psd\u00a7/fixtures/sample-album/DSC07237.JPG|h|0|dsc07237\u00a7/fixtures/sample-album/DSC07241.JPG|h|0|dsc07241\u00a7/fixtures/sample-album/DSC07226.JPG|h|0|dsc07226\u00a7/fixtures/sample-album/DSC07265.JPG|h|0|dsc07265",
+  "/fixtures/sample-album/PSD's|11": "/fixtures/toolkit-data/Market PSD's/5h0v_0003.psd\u00a7/fixtures/sample-album/DSC07279.JPG|h|0|dsc07279\u00a7/fixtures/sample-album/DSC07288.JPG|h|0|dsc07288\u00a7/fixtures/sample-album/DSC07302.JPG|h|0|dsc07302\u00a7/fixtures/sample-album/DSC07309.JPG|h|0|dsc07309\u00a7/fixtures/sample-album/DSC07312.JPG|h|0|dsc07312",
+  "/fixtures/sample-album/PSD's|12": "/fixtures/toolkit-data/Market PSD's/4h1v_0001.psd\u00a7/fixtures/sample-album/DSC07321.JPG|h|0|dsc07321\u00a7/fixtures/sample-album/DSC07325.JPG|h|0|dsc07325\u00a7/fixtures/sample-album/DSC07337.JPG|h|0|dsc07337\u00a7/fixtures/sample-album/DSC07340.JPG|v|0|dsc07340\u00a7/fixtures/sample-album/DSC07356.JPG|h|0|dsc07356",
+  "/fixtures/sample-album/PSD's|13": "/fixtures/toolkit-data/Market PSD's/2h2v_0004.psd\u00a7/fixtures/sample-album/DSC07359.JPG|v|0|dsc07359\u00a7/fixtures/sample-album/DSC07371.JPG|h|0|dsc07371\u00a7/fixtures/sample-album/DSC07376.JPG|v|0|dsc07376\u00a7/fixtures/sample-album/DSC07381.JPG|h|0|dsc07381",
+  "/fixtures/sample-album/PSD's|14": "/fixtures/toolkit-data/Market PSD's/5h0v_0020.psd\u00a7/fixtures/sample-album/DSC07384.JPG|h|0|dsc07384\u00a7/fixtures/sample-album/DSC07388.JPG|h|0|dsc07388\u00a7/fixtures/sample-album/DSC07397.JPG|h|0|dsc07397\u00a7/fixtures/sample-album/DSC07404.JPG|h|0|dsc07404\u00a7/fixtures/sample-album/DSC07415.JPG|h|0|dsc07415",
+  "/fixtures/sample-album/PSD's|15": "/fixtures/toolkit-data/Market PSD's/6h0v_0019.psd\u00a7/fixtures/sample-album/DSC07428.JPG|h|0|dsc07428\u00a7/fixtures/sample-album/DSC07433.JPG|h|0|dsc07433\u00a7/fixtures/sample-album/DSC07436.JPG|h|0|dsc07436\u00a7/fixtures/sample-album/DSC07439.JPG|h|0|dsc07439\u00a7/fixtures/sample-album/DSC07446.JPG|h|0|dsc07446\u00a7/fixtures/sample-album/DSC07449.JPG|h|0|dsc07449"
+ }
+}

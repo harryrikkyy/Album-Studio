@@ -19,16 +19,13 @@
   - Acceptance: a cold clone can install, run, and knows the gates + smoke-test.
   - Files: `docs/DEVELOPMENT.md`
 
-- [ ] **Push Phase 0 to GitHub to activate CI**
-  - Acceptance: CI shows a green run on GitHub.
-  - Verify: Actions tab green.
-  - Blocked on: owner OK to `git push` (repo is currently local-ahead of origin).
+- [x] **Push Phase 0 to GitHub to activate CI**
+  - Acceptance: CI runs on GitHub. ✅ pushed `abbf43d`.
+  - Verify: Actions tab (checking).
 
-- [~] **Commit the sample project as an E2E fixture**
-  - Acceptance: a sanitized `.json` (no private paths/emails) lives in
-    `e2e/fixtures/` and loads in the app.
-  - Verify: app opens it without error.
-  - Blocked on: **owner to provide the saved project `.json`.**
+- [x] **Commit the sample project as an E2E fixture**
+  - Acceptance: a sanitized `.json` (no private paths/emails) in `e2e/fixtures/`.
+  - Verify: 0 private markers, valid JSON, 15 pages. ✅ `e2e/fixtures/sample-project.json`.
 
 - [~] **Rotate the leaked credentials (owner action)**
   - Acceptance: Google OAuth client secret + `LICENSE_SECRET_KEY` rotated; old
