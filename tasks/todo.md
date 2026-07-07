@@ -60,9 +60,17 @@
     and proves undo restores all pages, redo re-clears. ✅ local 3/3.
   - Files: app.js, src/main.js, e2e/undo-redo.spec.js
 - [ ] **E2E: export flow with the Photoshop bridge mocked**
-- [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
+- [x] **Integration tests for main-process IPC handlers** (real IPC, no Photoshop)
+  - Acceptance: real handlers invoked through ipcRenderer via the Electron harness.
+    Covers generative-catalog/regen, project-write↔read round-trip, project-read
+    error path, library-list. ✅ local 9/9 E2E.
+  - Files: e2e/ipc.spec.js
 - [ ] **Characterization tests for the render-queue dirty-tracking**
-- [ ] **Integration tests for main-process IPC handlers** (Photoshop/fs mocked)
+- [x] **Integration tests for main-process IPC handlers** (real IPC, no Photoshop)
+  - Acceptance: real handlers invoked through ipcRenderer via the Electron harness.
+    Covers generative-catalog/regen, project-write↔read round-trip, project-read
+    error path, library-list. ✅ local 9/9 E2E.
+  - Files: e2e/ipc.spec.js
   - Likely needs handler logic extracted from `ipcMain.handle(...)` registration
     (dovetails with the Phase 2 module split).
 - [ ] **Characterization tests for the stateful core** (history, render-queue)
