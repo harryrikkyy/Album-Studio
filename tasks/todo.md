@@ -65,7 +65,11 @@
     Covers generative-catalog/regen, project-write↔read round-trip, project-read
     error path, library-list. ✅ local 9/9 E2E.
   - Files: e2e/ipc.spec.js
-- [ ] **Characterization tests for the render-queue dirty-tracking**
+- [x] **Characterization tests for the render-queue dirty-tracking**
+  - Acceptance: extracted the skip/fresh decision to a pure `partitionByRenderCache`
+    (renderer_pure), wired into `_renderWorker` behavior-identically; 6 tests pin
+    the cache-key + hash-match rules. ✅ 76 unit + 9 E2E green.
+  - Files: src/renderer_pure.js, src/main.js, test/render_cache.test.js
 - [x] **Integration tests for main-process IPC handlers** (real IPC, no Photoshop)
   - Acceptance: real handlers invoked through ipcRenderer via the Electron harness.
     Covers generative-catalog/regen, project-write↔read round-trip, project-read

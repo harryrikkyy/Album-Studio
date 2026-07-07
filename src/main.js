@@ -16,6 +16,7 @@ const {
     _isEditingTarget,
     _compactPage,
     _hydratePage,
+    partitionByRenderCache,
 } = require("./renderer_pure");
 
 // ⚡ PERFORMANCE NOTE: All CSS that was previously injected here as a JS string
@@ -3778,16 +3779,8 @@ async function _renderWorker() {
         _updateRenderBadge();
 
         // Filter out pages whose hash matches the previous successful render.
-        const fresh = [];
-        for (const job of chunk) {
-            const hash = _hashPage(job.pageData);
-            const cacheKey = `${job.outputPath}|${job.pageNum}`;
-            if (_renderHashes[cacheKey] === hash) {
-                _renderStats.skipped++;
-            } else {
-                fresh.push({ ...job, hash, cacheKey });
-            }
-        }
+        const { fresh, skipped } = partitionByRenderCache(chunk, _renderHashes);
+        _renderStats.skipped += skipped.length;
         _updateRenderBadge();
         if (fresh.length === 0) continue;
 

@@ -198,6 +198,31 @@ function _hydratePage(cpage, templateLibrary = [], photoCache = {}) {
     return { template, photos };
 }
 
+// Render-queue dirty tracking. Given a batch of render jobs and the stored
+// hash cache, decide which need rendering vs can be skipped (unchanged since
+// their last successful render). This is the "re-render 5 changed pages, not
+// all 200" logic. Pure: the cache is passed in, not read from localStorage.
+//   job:   { pageNum, pageData, outputPath, ... }
+//   key:   `${outputPath}|${pageNum}` — same page to a different output, or a
+//          different page to the same output, are distinct cache entries.
+// A job is skipped when its stored hash equals the current hash of its
+// pageData. Fresh jobs come back with `hash` + `cacheKey` attached, ready to
+// write into the cache on a successful render.
+function partitionByRenderCache(jobs, renderHashes = {}) {
+    const fresh = [];
+    const skipped = [];
+    for (const job of jobs) {
+        const hash = _hashPage(job.pageData);
+        const cacheKey = `${job.outputPath}|${job.pageNum}`;
+        if (renderHashes[cacheKey] === hash) {
+            skipped.push(job);
+        } else {
+            fresh.push({ ...job, hash, cacheKey });
+        }
+    }
+    return { fresh, skipped };
+}
+
 module.exports = {
     escapeHtml,
     _generativePreviewSvg,
@@ -209,4 +234,5 @@ module.exports = {
     _isEditingTarget,
     _compactPage,
     _hydratePage,
+    partitionByRenderCache,
 }
