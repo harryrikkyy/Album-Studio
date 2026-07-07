@@ -89,7 +89,11 @@
     (allowJs, checkJs off = opt-in per file, noEmit); `typecheck` is now
     `tsc --noEmit` and green over the whole codebase. App still runs the same .js.
   - Files: tsconfig.json, package.json
-- [ ] **Type the first module** (`renderer_pure.js` → `// @ts-check` + JSDoc)
+- [x] **Type the first module** (`renderer_pure.js`)
+  - Acceptance: `// @ts-check` + JSDoc typedefs (Frame/Template/Photo/Page/…) and
+    per-function annotations; `tsc --noEmit` strict-clean. Surfaced + fixed 2
+    latent issues (possibly-undefined index + url). Behavior byte-identical
+    (76 unit + 9 E2E green). Files: src/renderer_pure.js
 - [ ] **Define `src/shared/` types + the IPC channel contract**
 - [ ] **Build the state store** (single source of truth; retire reassigned globals)
 - [ ] **Split `main.js`** into `renderer/features/*`, `renderer/state/*` (≤~400 lines each)

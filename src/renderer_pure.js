@@ -1,6 +1,25 @@
+// @ts-check
 // renderer_pure.js
 //
 // Pure, dependency-free helpers extracted from the main renderer (src/main.js).
+//
+// This is the first module migrated to strict type-checking (via // @ts-check +
+// JSDoc). The shared domain shapes below are intentionally permissive — they
+// describe the dynamic objects the renderer already passes, tightening over time.
+//
+/**
+ * @typedef {{ name: string, x: number, y: number, w: number, h: number }} Frame
+ * @typedef {{ id?: string, name?: string, url?: string, _generative?: boolean,
+ *   _spec?: unknown, _canvas?: { w: number, h: number }, _frames?: Frame[] }} Template
+ * @typedef {{ id?: string, orient?: string, url?: string, filePath?: string,
+ *   baseName?: string, rotation?: number, adjust?: unknown, placement?: unknown }} Photo
+ * @typedef {{ template?: Template | null, photos?: Photo[] }} Page
+ * @typedef {{ id?: string, orient?: string }} PhotoRef
+ * @typedef {{ template: null | { id?: string, generative?: boolean, spec?: unknown },
+ *   photos: PhotoRef[] }} CompactPage
+ * @typedef {{ templatePath?: string, photos: Photo[] }} HashablePage
+ * @typedef {{ pageNum: number, outputPath: string, pageData: HashablePage }} RenderJob
+ */
 // Everything here is a plain function of its arguments — no DOM, no shared
 // mutable module state, no I/O — which is exactly why it can live outside the
 // 5,000-line renderer and be unit-tested in isolation. main.js pulls these
@@ -14,6 +33,7 @@
 // and folder labels derive from user filenames/folders (and can arrive via a
 // shared library), so a value like `<img src=x onerror=…>` would otherwise
 // execute with full nodeIntegration privileges.
+/** @param {unknown} value @returns {string} */
 function escapeHtml(value) {
     return String(value == null ? '' : value)
         .replace(/&/g, '&amp;')
@@ -26,6 +46,7 @@ function escapeHtml(value) {
 // Generative templates have no on-disk preview JPG — render a synthetic SVG
 // from the frame geometry so the template grid and yellow preview show
 // something meaningful. Cheap to recompute, no I/O, no images to cache.
+/** @param {Template} template @param {boolean} [large] @returns {string} */
 function _generativePreviewSvg(template, large = false) {
     const w = template._canvas?.w || 3000;
     const h = template._canvas?.h || 2000;
@@ -43,6 +64,7 @@ function _generativePreviewSvg(template, large = false) {
 
 // The folder-rail panel header (Refresh / Remove actions). `type` comes from a
 // controlled set of panel kinds.
+/** @param {string} type @returns {string} */
 function getPanelHeaderHTML(type) {
     return `<div class="folder-rail__header">`
          +   `<button class="folder-rail__collapse" type="button" aria-label="Toggle folder list"></button>`
@@ -57,6 +79,7 @@ function getPanelHeaderHTML(type) {
 // Display name for a folder entry. A `_Thumbnails` folder is shown under its
 // parent's name (so two source folders' thumb caches don't both read
 // "_Thumbnails"); everything else shows its own name.
+/** @param {{ name: string, nativePath: string }} folder @returns {string} */
 function getDisplayName(folder) {
     if (folder.name.toLowerCase() !== "_thumbnails") return folder.name;
     try {
@@ -70,6 +93,7 @@ function getDisplayName(folder) {
 // output. Includes adjust + placement so colour/zoom-pan edits re-render (they
 // don't change filePath, so they'd otherwise be cached as unchanged). The
 // render queue caches this hash so an unchanged page is a no-op re-render.
+/** @param {HashablePage} pageData @returns {string} */
 function _hashPage(pageData) {
     const parts = [
         pageData.templatePath,
@@ -85,6 +109,7 @@ function _hashPage(pageData) {
 // Tiny, dependency-free JPEG EXIF parser. Reads a buffer (the first ~256 KB of
 // a JPEG is plenty — EXIF lives in the APP1 marker right after SOI), finds tag
 // 0x9003 (DateTimeOriginal), parses "YYYY:MM:DD HH:MM:SS" → epoch ms, or null.
+/** @param {Buffer} buf @returns {number | null} */
 function _parseExifDateFromBuffer(buf) {
     // JPEG SOI must be 0xFFD8
     if (buf[0] !== 0xFF || buf[1] !== 0xD8) return null;
@@ -99,8 +124,8 @@ function _parseExifDateFromBuffer(buf) {
             if (buf.toString('ascii', off + 4, off + 10) === 'Exif\u0000\u0000') {
                 const tiff = off + 10;
                 const little = buf.toString('ascii', tiff, tiff + 2) === 'II';
-                const u16 = (p) => little ? buf.readUInt16LE(p) : buf.readUInt16BE(p);
-                const u32 = (p) => little ? buf.readUInt32LE(p) : buf.readUInt32BE(p);
+                const u16 = (/** @type {number} */ p) => little ? buf.readUInt16LE(p) : buf.readUInt16BE(p);
+                const u32 = (/** @type {number} */ p) => little ? buf.readUInt32LE(p) : buf.readUInt32BE(p);
                 const ifd0 = tiff + u32(tiff + 4);
                 const numEntries = u16(ifd0);
                 let exifIfd = 0;
@@ -132,6 +157,7 @@ function _parseExifDateFromBuffer(buf) {
 // A template entry carries a `url` (file://…) pointing at its JPG/PNG sibling
 // preview. Decode it back to a filesystem path so sharp can read it. Returns
 // null when there's no url or it isn't a file: URL.
+/** @param {{ url?: string } | null | undefined} template @returns {string | null} */
 function _proofTemplatePreviewPath(template) {
     if (!template?.url) return null;
     try {
@@ -145,6 +171,7 @@ function _proofTemplatePreviewPath(template) {
 // shortcuts can bow out while the user is typing. Works on any object exposing
 // `tagName` / `isContentEditable` (a real DOM node in the app; a plain object
 // in tests).
+/** @param {{ tagName?: string, isContentEditable?: boolean } | null | undefined} t @returns {boolean | undefined} */
 function _isEditingTarget(t) {
     if (!t) return false;
     const tag = t.tagName;
@@ -160,6 +187,7 @@ function _isEditingTarget(t) {
 
 // Full page → compact skeleton. Pure. `orient` is kept because rotation can flip
 // it and it is not recomputed on hydrate; url/baseName are re-derived later.
+/** @param {Page | null | undefined} page @returns {CompactPage} */
 function _compactPage(page) {
     if (!page) return { template: null, photos: [] };
     return {
@@ -176,19 +204,27 @@ function _compactPage(page) {
 // re-link a template by id) and `photoCache` (to re-derive each photo's url)
 // are passed in rather than read from renderer globals, so this stays pure and
 // testable. The main renderer passes its own live collections at the call site.
+/**
+ * @param {CompactPage | null | undefined} cpage
+ * @param {readonly Template[]} [templateLibrary]
+ * @param {Record<string, { url?: string }>} [photoCache]
+ * @returns {{ template: Template | null, photos: Array<{ id?: string, orient?: string, url: string | undefined }> }}
+ */
 function _hydratePage(cpage, templateLibrary = [], photoCache = {}) {
     if (!cpage) return { template: null, photos: [] };
+    /** @type {Template | null} */
     let template = null;
     if (cpage.template) {
-        template = templateLibrary.find(t => t.id === cpage.template.id) || null;
+        const tref = cpage.template; // hoisted so TS keeps the non-null narrowing in the closure
+        template = templateLibrary.find(t => t.id === tref.id) || null;
         // Generative templates may not be in templateLibrary if the user
         // toggled them off; keep the lightweight ref so a re-enable re-links.
-        if (!template && cpage.template.generative && cpage.template.spec) {
-            template = { id: cpage.template.id, _generative: true, _spec: cpage.template.spec };
+        if (!template && tref.generative && tref.spec) {
+            template = { id: tref.id, _generative: true, _spec: tref.spec };
         }
     }
     const photos = (cpage.photos || []).map(ref => {
-        const c = photoCache[ref.id];
+        const c = ref.id != null ? photoCache[ref.id] : undefined;
         return {
             id: ref.id,
             orient: ref.orient,
@@ -208,6 +244,11 @@ function _hydratePage(cpage, templateLibrary = [], photoCache = {}) {
 // A job is skipped when its stored hash equals the current hash of its
 // pageData. Fresh jobs come back with `hash` + `cacheKey` attached, ready to
 // write into the cache on a successful render.
+/**
+ * @param {RenderJob[]} jobs
+ * @param {Record<string, string>} [renderHashes]
+ * @returns {{ fresh: Array<RenderJob & { hash: string, cacheKey: string }>, skipped: RenderJob[] }}
+ */
 function partitionByRenderCache(jobs, renderHashes = {}) {
     const fresh = [];
     const skipped = [];
