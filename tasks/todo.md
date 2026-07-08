@@ -129,7 +129,10 @@
     `src/features/asset_library.js` (wallpaper/PNG/masked engines +
     template-folder loader — first DOM-owning module; E2E-covered),
     `src/features/photo_library.js` (processImageFolder + virtualized
-    Photos tab + Load Photos; DOM-owning, E2E-covered). Remaining:
-    template filtering engine, storyboard, preview/proofs, tabs/UI glue.
+    Photos tab + Load Photos; DOM-owning, E2E-covered), `src/features/
+    template_filter.js` (sync matching, white box, setPreview, quick-
+    build, PS context menus; previewIndex accessor retired). main.js is
+    at 3,974 lines (from 5,229). Remaining: storyboard, preview/proofs,
+    green-box/page engine, tabs/UI glue.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
