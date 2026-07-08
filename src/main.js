@@ -157,40 +157,8 @@ let _livePreviewOn = false;
 let _liveTimer = null;
 let _liveSeq = 0;
 
-// ⚡ FIX: Debounced save — coalesces rapid calls (rotation spam, slider drag)
-// into a single write 800ms after the last call. Eliminates repeated JSON.stringify.
-let _saveTimer;
-// Build a compact album for persistence: strip re-derivable fields (photo
-// url, full template object) so localStorage stays well under quota even for
-// 200-page albums. url is re-added by processImageFolder on load; templates
-// relink by id in restoreWorkspace.
-function _compactAlbumForStorage() {
-    const out = {};
-    for (const [num, page] of Object.entries(albumPages)) {
-        if (!page) continue;
-        out[num] = {
-            template: page.template ? {
-                id: page.template.id,
-                _generative: !!page.template._generative,
-                _spec: page.template._spec || undefined,
-            } : null,
-            photos: (page.photos || []).map(p => ({ id: p.id, orient: p.orient })),
-        };
-    }
-    return out;
-}
-function saveStateToStorage() {
-    clearTimeout(_saveTimer);
-    _saveTimer = setTimeout(() => {
-        try {
-            localStorage.setItem("adt_workspace", JSON.stringify(projectData));
-            localStorage.setItem("adt_album", JSON.stringify({
-                albumPages: _compactAlbumForStorage(),
-                totalActivePages
-            }));
-        } catch (e) { console.error('saveStateToStorage failed:', e); }
-    }, 800);
-}
+// saveStateToStorage (debounced localStorage autosave) lives in
+// src/features/project_io.js — wired in the PROJECT section below.
 
 // escapeHtml + _generativePreviewSvg moved to src/renderer_pure.js (required above).
 
@@ -4545,45 +4513,58 @@ if (btnRenderFinalAlbum) {
 // Legacy single-file .json projects still load through the same handler.
 // currentProjectPath lives in the state store.
 
-// Build the serialisable project payload (shared by Save / Save As / New).
-function buildProjectPayload() {
-    const safeAlbumPages = JSON.parse(JSON.stringify(albumPages, (key, value) => {
-        if (key === 'file') return undefined;
-        return value;
-    }));
-    return {
-        workspace: projectData,
-        albumPages: safeAlbumPages,
-        totalActivePages: totalActivePages,
-        renderHashes
-    };
-}
-
-// Save the project. forceNewPath=true always prompts (Save As); otherwise
-// re-saves in place once a path is known.
-async function saveProject(forceNewPath) {
-    try {
-        const payload = buildProjectPayload();
-        const ipc = require('electron').ipcRenderer;
-        let target = forceNewPath ? null : currentProjectPath;
-        if (!target) {
-            const suggested = (Object.keys(albumPages).length > 0)
-                ? `Album-${new Date().toISOString().slice(0, 10)}`
-                : 'New Album Project';
-            target = await ipc.invoke('project-pick-save', suggested);
-            if (!target) return false;
-        }
-        const result = await ipc.invoke('project-write', target, payload);
-        if (!result || !result.ok) throw new Error('project write failed');
-        currentProjectPath = result.path;
-        notify(`Project saved · ${result.path.split('/').pop()}`, "success");
-        return true;
-    } catch (e) {
-        toast("Save error: " + e.message, "error");
-        console.error("Save error full:", e);
-        return false;
-    }
-}
+// Project persistence lives in src/features/project_io.js (Phase 2 split):
+// debounced autosave, payload build, save/load/boot-restore orchestration
+// via explicit store access. The DOM-flavored bits — grid/panel resets, the
+// folder processors, output label, generative toggle, view re-sync — are
+// injected here.
+const {
+    saveStateToStorage, saveProject,
+    restoreWorkspace, loadProjectFromDisk, bootRestore,
+} = require('./features/project_io').createProjectIO(store, {
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    storage: localStorage,
+    getEntryForToken: (t) => fs.getEntryForPersistentToken(t),
+    processors: {
+        image: (folder, hrFolder, token) => processImageFolder(folder, hrFolder, token),
+        template: (folder, token) => processTemplateFolder(folder, token),
+        wallpaper: (folder, hrFolder, displayName, token) => processWallpaperFolder(folder, hrFolder, displayName, token),
+        png: (folder, token) => processPngFolder(folder, token),
+        masked: (folder, token) => processMaskedFolder(folder, token),
+    },
+    resetSourceViews: () => {
+        redBox.innerHTML = ""; whiteBox.innerHTML = "";
+        // Only wipe asset grids that actually hold cards (not an empty-state).
+        if (wallpaperGrid.querySelector('.wp-card')) wallpaperGrid.innerHTML = "";
+        if (pngGrid.querySelector('.wp-card')) pngGrid.innerHTML = "";
+        if (maskedGrid.querySelector('.wp-card')) maskedGrid.innerHTML = "";
+        document.getElementById("redFolderPanel").innerHTML = getPanelHeaderHTML("images");
+        document.getElementById("photosFolderPanel").innerHTML = getPanelHeaderHTML("images");
+        document.getElementById("whiteFolderPanel").innerHTML = getPanelHeaderHTML("templates");
+        document.getElementById("wpFolderPanel").innerHTML = getPanelHeaderHTML("wallpapers");
+        document.getElementById("pngFolderPanel").innerHTML = getPanelHeaderHTML("pngs");
+        document.getElementById("maskedFolderPanel").innerHTML = getPanelHeaderHTML("masks");
+    },
+    setOutputFolderLabel: (text) => {
+        const ftxt = document.getElementById("finalOutputText");
+        if (ftxt) ftxt.innerText = text;
+    },
+    ensureGenerativeTemplates: async () => {
+        const chk = document.getElementById('chkGenerativeTemplates');
+        if (chk && !chk.checked) chk.checked = true;
+        await loadGenerativeTemplates();
+    },
+    afterRestore: () => {
+        syncViewToState();
+        rebuildPhotoPageMap(); // ⚡ Initialize reverse lookup from loaded album state
+        tab6Rendered = false;  // ⚡ Force Tab 6 rebuild with fresh data on next visit
+        updatePageDropdowns(); changePage(1);
+    },
+    persistHashes: () => _saveRenderHashes(),
+    setStatus: (msg) => setStatus(msg),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+});
 
 // New Project: keep the reusable library (templates/wallpapers/assets/output +
 // settings); clear the project-specific source photos, Photos tab, and album
@@ -4681,190 +4662,14 @@ if (btnSaveMenuBtn && saveMenu) {
     if (btnNewProject) btnNewProject.addEventListener("click", () => { closeSaveMenu(); newProject(); });
 }
 
-async function restoreWorkspace(data) {
-    if (!data) return;
-    redBox.innerHTML = ""; whiteBox.innerHTML = "";
-    // Only wipe asset grids that actually hold cards (not an empty-state).
-    if (wallpaperGrid.querySelector('.wp-card')) wallpaperGrid.innerHTML = "";
-    if (pngGrid.querySelector('.wp-card')) pngGrid.innerHTML = "";
-    if (maskedGrid.querySelector('.wp-card')) maskedGrid.innerHTML = "";
-
-    templateLibrary = []; photoCache = {}; wallpaperCache = {}; pngCache = {}; maskedCache = {};
-    activeImageFolders.clear(); activeTemplateFolders.clear(); activeWallpaperFolders.clear(); activePngFolders.clear(); activeMaskedFolders.clear();
-
-    document.getElementById("redFolderPanel").innerHTML = getPanelHeaderHTML("images");
-    document.getElementById("photosFolderPanel").innerHTML = getPanelHeaderHTML("images");
-    document.getElementById("whiteFolderPanel").innerHTML = getPanelHeaderHTML("templates");
-    document.getElementById("wpFolderPanel").innerHTML = getPanelHeaderHTML("wallpapers");
-    document.getElementById("pngFolderPanel").innerHTML = getPanelHeaderHTML("pngs");
-    document.getElementById("maskedFolderPanel").innerHTML = getPanelHeaderHTML("masks");
-
-    projectData = data.workspace || data;
-    if(!projectData.imageTokens) projectData.imageTokens = [];
-    if(!projectData.templateTokens) projectData.templateTokens = [];
-    if(!projectData.wallpaperTokens) projectData.wallpaperTokens = [];
-    if(!projectData.pngTokens) projectData.pngTokens = [];
-    if(!projectData.maskTokens) projectData.maskTokens = [];
-    if(!projectData.imageRotations) projectData.imageRotations = {};
-    if(!projectData.imageAdjustments) projectData.imageAdjustments = {};
-    if(!projectData.imagePlacements) projectData.imagePlacements = {};
-
-    albumPages = data.albumPages || {};
-    totalActivePages = data.totalActivePages || 1;
-    setStatus("Restoring workspace folders…");
-
-    if (projectData.outputToken) {
-        try {
-            outputFolder = await fs.getEntryForPersistentToken(projectData.outputToken);
-            const ftxt = document.getElementById("finalOutputText"); if (ftxt) ftxt.innerText = outputFolder.name;
-        } catch (e) {
-            // The saved output folder is gone (moved / unmounted). Don't fail
-            // silently — the user would hit a confusing error at Render time.
-            outputFolder = null;
-            const ftxt = document.getElementById("finalOutputText");
-            if (ftxt) ftxt.innerText = "Output folder missing — re-select";
-            try { require('electron').ipcRenderer.invoke('telemetry-event', 'output_folder_restore_failed', { error: e.message }); } catch (_) {}
-        }
-    }
-
-    // ⚡ Task 5.2: track folder-restore failures so a moved/renamed/unmounted
-    // source folder produces a clear, aggregated warning instead of photos
-    // and templates silently vanishing. The inner _Thumbnails probes stay
-    // silent — they're EXPECTED to fail when a folder has no thumbnails and
-    // have an explicit fallback. Only outer token-resolution failures (the
-    // "this folder is gone" case) are recorded.
-    const _restoreFailures = [];
-
-    // ⚡ FIX: Restore ALL folder types in parallel instead of sequentially.
-    // Startup with 5 folder types × multiple folders each goes from fully sequential
-    // to the time of the slowest single folder — often a 5–10x improvement.
-    await Promise.all([
-        // Image folders
-        ...projectData.imageTokens.map(async t => {
-            try {
-                const masterFolder = await fs.getEntryForPersistentToken(t);
-                let targetFolder = masterFolder, hrFolder = null;
-                try { const thumbFolder = await masterFolder.getEntry("_Thumbnails"); if (thumbFolder.isFolder) { targetFolder = thumbFolder; hrFolder = masterFolder; } } catch(e) {}
-                await processImageFolder(targetFolder, hrFolder, t);
-            } catch (e) { _restoreFailures.push({ kind: 'images', error: e.message }); }
-        }),
-        // Template folders
-        ...projectData.templateTokens.map(async t => {
-            try { const folder = await fs.getEntryForPersistentToken(t); await processTemplateFolder(folder, t); }
-            catch (e) { _restoreFailures.push({ kind: 'templates', error: e.message }); }
-        }),
-        // Wallpaper folders
-        ...projectData.wallpaperTokens.map(async t => {
-            try {
-                const masterFolder = await fs.getEntryForPersistentToken(t);
-                let targetFolder = masterFolder, hrFolder = null;
-                try { const thumbFolder = await masterFolder.getEntry("_Thumbnails"); if (thumbFolder.isFolder) { targetFolder = thumbFolder; hrFolder = masterFolder; } } catch(e) {}
-                await processWallpaperFolder(targetFolder, hrFolder, getDisplayName(masterFolder), t);
-            } catch (e) { _restoreFailures.push({ kind: 'wallpapers', error: e.message }); }
-        }),
-        // PNG folders
-        ...projectData.pngTokens.map(async t => {
-            try { const folder = await fs.getEntryForPersistentToken(t); await processPngFolder(folder, t); }
-            catch (e) { _restoreFailures.push({ kind: 'pngs', error: e.message }); }
-        }),
-        // Mask folders
-        ...projectData.maskTokens.map(async t => {
-            try { const folder = await fs.getEntryForPersistentToken(t); await processMaskedFolder(folder, t); }
-            catch (e) { _restoreFailures.push({ kind: 'masks', error: e.message }); }
-        })
-    ]);
-
-    // Surface restore failures: one telemetry event + one aggregated toast,
-    // grouped by folder kind, instead of N silent swallows.
-    if (_restoreFailures.length > 0) {
-        const byKind = {};
-        for (const f of _restoreFailures) byKind[f.kind] = (byKind[f.kind] || 0) + 1;
-        const summary = Object.entries(byKind)
-            .map(([k, n]) => `${n} ${k}`).join(', ');
-        try {
-            require('electron').ipcRenderer.invoke('telemetry-event', 'workspace_restore_failures', {
-                total: _restoreFailures.length,
-                byKind,
-                sample: _restoreFailures.slice(0, 5).map(f => f.error),
-            });
-        } catch (_) {}
-        toast(
-            `${_restoreFailures.length} folder${_restoreFailures.length === 1 ? '' : 's'} couldn't be restored (${summary}). They may have been moved, renamed, or are on a disconnected drive — re-load them from their tab.`,
-            'warning',
-            { duration: 9000 }
-        );
-    }
-
-    // Auto-enable generative templates if the project references any —
-    // otherwise the relink below silently fails and pages with generative
-    // layouts come back blank. The toggle stays in sync via the checkbox.
-    const needsGenerative = Object.values(albumPages).some(p => p?.template?._generative || p?.template?.id?.startsWith?.('gen_'));
-    if (needsGenerative) {
-        const chk = document.getElementById('chkGenerativeTemplates');
-        if (chk && !chk.checked) chk.checked = true;
-        await loadGenerativeTemplates();
-    }
-
-    // Post-restore: re-link template objects and mark used photos
-    Object.values(albumPages).forEach(page => {
-        if (page.template) { const matchedTemp = templateLibrary.find(t => t.id === page.template.id); if (matchedTemp) page.template = matchedTemp; }
-    });
-    syncViewToState();
-
-    rebuildPhotoPageMap(); // ⚡ Initialize reverse lookup from loaded album state
-    tab6Rendered = false;  // ⚡ Force Tab 6 rebuild with fresh data on next visit
-    updatePageDropdowns(); changePage(1);
-    notify("Workspace ready", "success");
-}
+// restoreWorkspace lives in src/features/project_io.js (wired above).
 
 const btnLoadWorkspace = document.getElementById("btnLoadWorkspace");
 if (btnLoadWorkspace) {
-    btnLoadWorkspace.addEventListener("click", async () => {
-        try {
-            const ipc = require('electron').ipcRenderer;
-            // Try the folder picker first; if the user cancels, fall back to
-            // opening a single legacy .json file.
-            let pathPicked = await ipc.invoke('project-pick-open');
-            if (!pathPicked) {
-                const legacy = await ipc.invoke('pick-file-open');
-                if (!legacy) return;
-                pathPicked = legacy;
-            }
-            const res = await ipc.invoke('project-read', pathPicked);
-            if (!res || !res.ok) throw new Error(res?.error || 'unable to read project');
-            currentProjectPath = res.projectPath || null;
-            const data = res.data;
-            // Re-hydrate render hash cache from the project payload (newer
-            // saves) — older projects don't have it; that's fine, queue will
-            // just re-render everything once.
-            if (data.renderHashes) {
-                renderHashes = data.renderHashes;
-                _saveRenderHashes();
-            }
-            await restoreWorkspace(data);
-            notify("Project loaded", "success");
-        } catch (e) {
-            toast("Load error: " + e.message, "error");
-            console.error("Load error", e);
-        }
-    });
+    btnLoadWorkspace.addEventListener("click", () => { loadProjectFromDisk(); });
 }
 
-window.addEventListener("DOMContentLoaded", async () => {
-    const cachedWorkspace = localStorage.getItem("adt_workspace");
-    const cachedAlbum     = localStorage.getItem("adt_album");
-    if (cachedWorkspace) {
-        try {
-            const data = { workspace: JSON.parse(cachedWorkspace) };
-            if (cachedAlbum) {
-                const a = JSON.parse(cachedAlbum);
-                if (a && a.albumPages) data.albumPages = a.albumPages;
-                if (a && a.totalActivePages) data.totalActivePages = a.totalActivePages;
-            }
-            await restoreWorkspace(data);
-        } catch (e) { console.error("Invisible Boot-Up Error", e); }
-    }
-});
+window.addEventListener("DOMContentLoaded", () => { bootRestore(); });
 
 // ─── KEYBOARD SHORTCUTS ────────────────────────────────────────
 // Single delegated handler. Ignores keystrokes when the user is editing
