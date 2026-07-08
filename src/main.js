@@ -5239,5 +5239,9 @@ if (process.argv.includes('--e2e')) {
         }),
         undo: () => undo(),
         redo: () => redo(),
+        // Drive the real export path (queue → chunking → render cache →
+        // IPC bridge). The main process mocks the Photoshop JSX job behind
+        // the same test-mode guard and logs it to ALBUMSTUDIO_E2E_JSX_LOG.
+        exportRange: (start, end) => queueRender(buildExportData(start, end)),
     };
 }

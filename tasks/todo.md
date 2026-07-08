@@ -59,7 +59,14 @@
     via `--e2e` from the non-packaged main process); E2E loads the 15-page fixture
     and proves undo restores all pages, redo re-clears. ✅ local 3/3.
   - Files: app.js, src/main.js, e2e/undo-redo.spec.js
-- [ ] **E2E: export flow with the Photoshop bridge mocked**
+- [x] **E2E: export flow with the Photoshop bridge mocked**
+  - Acceptance: real export path (buildExportData → queueRender → worker →
+    IPC build-pages-batch) driven end-to-end; runJsxDataJob mocked in test-
+    mode (env + !isPackaged double guard) records each job to a manifest.
+    Proves batching (3 pages → 1 bridge job), render-cache skip (unchanged
+    re-export never reaches the bridge), and selective re-render (rotating
+    one photo re-renders exactly that page). ✅ local 10/10 E2E.
+  - Files: app.js, src/main.js, e2e/export.spec.js
 - [x] **Integration tests for main-process IPC handlers** (real IPC, no Photoshop)
   - Acceptance: real handlers invoked through ipcRenderer via the Electron harness.
     Covers generative-catalog/regen, project-write↔read round-trip, project-read

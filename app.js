@@ -119,6 +119,16 @@ function safeJsonParse(str, fallback = null) {
 // write-data / run / unlink dance that every simple JSX handler repeated
 // verbatim. Returns whatever executeJSXFile resolves to.
 async function runJsxDataJob(scriptName, data, timeoutMs) {
+  // E2E test-mode (env flag AND non-packaged, the same double guard as the
+  // auth bypass): never drive Photoshop. Record the job to the manifest file
+  // the test asserts on, and report success.
+  if (process.env.ALBUMSTUDIO_E2E === '1' && !app.isPackaged) {
+    const log = process.env.ALBUMSTUDIO_E2E_JSX_LOG
+    if (log) {
+      try { fs.appendFileSync(log, JSON.stringify({ scriptName, data }) + '\n') } catch (_) {}
+    }
+    return { success: true, mocked: true }
+  }
   const dataPath = writeJsonData(data)
   const jsxPath = path.join(__dirname, 'scripts', scriptName)
   try {
