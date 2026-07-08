@@ -14,8 +14,6 @@ const {
     _parseExifDateFromBuffer,
     _proofTemplatePreviewPath,
     _isEditingTarget,
-    _compactPage,
-    _hydratePage,
     partitionByRenderCache,
 } = require("./renderer_pure");
 
@@ -60,8 +58,7 @@ tabButtons.forEach(btn => {
 // store until the module split rewrites them to explicit store access.
 /* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
    previewIndex:writable, currentPage:writable, totalActivePages:writable,
-   projectData:writable, historyUndo:writable, historyRedo:writable,
-   historyMuted:writable, renderQueue:writable, renderHashes:writable,
+   projectData:writable, renderQueue:writable, renderHashes:writable,
    renderActive:writable, renderStats:writable, photoCache:writable,
    wallpaperCache:writable, pngCache:writable, maskedCache:writable,
    outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
@@ -72,7 +69,6 @@ const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
-    'historyUndo', 'historyRedo', 'historyMuted',
     'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
     'photoCache', 'wallpaperCache', 'pngCache', 'maskedCache', 'outputFolder',
     'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
@@ -200,118 +196,23 @@ function saveStateToStorage() {
 // escapeHtml + _generativePreviewSvg moved to src/renderer_pure.js (required above).
 
 // ─── HISTORY (undo / redo) ─────────────────────────────────────
-// Every mutation that should be undoable is wrapped in mutate(label, fn).
-// We snapshot the relevant slices BEFORE the mutation and push the snapshot
-// onto an undo stack. Cmd+Z / Cmd+Shift+Z replay snapshots.
-//
-// What's tracked: albumPages (photo placement, templates), totalActivePages,
-// projectData.imageRotations, currentPage. NOT tracked: folder loads, file
-// IPC, ephemeral UI state — those have explicit re-do paths.
-const _HISTORY_CAP = 80;
-// historyUndo / historyRedo / historyMuted live in the state store (see the
-// exposeOnGlobal block up top). historyMuted: mutate() calls inside undo/redo
-// must not push history.
-
-// ⚡ Task 3.2: COMPACT snapshots. The old version did
-// structuredClone(albumPages) on every mutation — for a 200-page album with
-// embedded thumbnail `url` strings per photo, each snapshot was multiple MB,
-// and the 80-entry cap could hold hundreds of MB of deep clones.
-//
-// A snapshot now stores only the structural skeleton: per page the template
-// id (+ generative spec) and an ordered list of photo refs WITHOUT the url
-// or any other re-derivable field. On apply we re-hydrate full photo objects
-// from photoCache (url) and re-link templates from templateLibrary. This
-// shrinks each snapshot by ~10–50× with identical restore fidelity.
-// _compactPage + _hydratePage moved to src/renderer_pure.js (required at top).
-// _hydratePage now takes (cpage, templateLibrary, photoCache) — the caller in
-// _historyApply passes the renderer's live collections.
-
-function _historySnapshot(label) {
-    const compactPages = {};
-    for (const [num, page] of Object.entries(albumPages)) compactPages[num] = _compactPage(page);
-    return {
-        label,
-        albumPages: compactPages,
-        totalActivePages,
-        imageRotations: structuredClone(projectData.imageRotations || {}),
-        currentPage
-    };
-}
-
-function _historyApply(snap) {
-    const hydrated = {};
-    for (const [num, cpage] of Object.entries(snap.albumPages)) hydrated[num] = _hydratePage(cpage, templateLibrary, photoCache);
-    albumPages = hydrated;
-    totalActivePages = snap.totalActivePages;
-    projectData.imageRotations = structuredClone(snap.imageRotations);
-    currentPage = snap.currentPage || 1;
-
-    rebuildPhotoPageMap();
-    if (typeof updatePageDropdowns === 'function') updatePageDropdowns();
-    if (typeof renderGreenBox === 'function') renderGreenBox();
-    if (typeof scheduleFilterUpdate === 'function') scheduleFilterUpdate();
-    if (typeof renderStoryboard === 'function') renderStoryboard();
-
-    // Refresh the .used markers on source thumbnails (single owner).
-    syncViewToState();
-
-    saveStateToStorage();
-}
-
-/**
- * Run a mutating function with undo support. Snapshots state before the call,
- * pushes onto the undo stack, clears the redo stack, runs the mutator, and
- * persists.
- *
- * Usage:
- *   mutate('Add page', () => { albumPages[N+1] = {...}; totalActivePages++; });
- *
- * If you call mutate() from inside another mutate(), only the outermost
- * snapshot is pushed (atomic transactions). Inside undo()/redo(), mutate()
- * does not push at all (historyMuted guard).
- */
-function mutate(label, fn) {
-    if (historyMuted > 0) {
-        // Already inside a history apply — don't snapshot, just run.
-        const r = fn();
-        return r;
-    }
-    const snap = _historySnapshot(label);
-    let result;
-    try {
-        result = fn();
-    } catch (e) {
-        // Rollback on throw so we don't leave partial state behind.
-        historyMuted++;
-        try { _historyApply(snap); } finally { historyMuted--; }
-        throw e;
-    }
-    historyUndo.push(snap);
-    if (historyUndo.length > _HISTORY_CAP) historyUndo.shift();
-    historyRedo.length = 0; // any new mutation invalidates redo stack
-    saveStateToStorage();
-    return result;
-}
-
-function undo() {
-    if (historyUndo.length === 0) { toast('Nothing to undo', 'info', { duration: 1500 }); return; }
-    const current = _historySnapshot('redo');
-    const prev = historyUndo.pop();
-    historyRedo.push(current);
-    historyMuted++;
-    try { _historyApply(prev); } finally { historyMuted--; }
-    toast('Undo: ' + (prev.label || 'change'), 'info', { duration: 1400 });
-}
-
-function redo() {
-    if (historyRedo.length === 0) { toast('Nothing to redo', 'info', { duration: 1500 }); return; }
-    const current = _historySnapshot('undo');
-    const next = historyRedo.pop();
-    historyUndo.push(current);
-    historyMuted++;
-    try { _historyApply(next); } finally { historyMuted--; }
-    toast('Redo', 'info', { duration: 1200 });
-}
+// The undo/redo history system lives in src/state/history.js (the first
+// module of the Phase 2 split): compact snapshots of the undoable core,
+// replayed through the store. The DOM-flavored bits — view re-sync,
+// persistence, toasts — are injected here.
+const { mutate, undo, redo } = require('./state/history').createHistory(store, {
+    afterApply: () => {
+        rebuildPhotoPageMap();
+        if (typeof updatePageDropdowns === 'function') updatePageDropdowns();
+        if (typeof renderGreenBox === 'function') renderGreenBox();
+        if (typeof scheduleFilterUpdate === 'function') scheduleFilterUpdate();
+        if (typeof renderStoryboard === 'function') renderStoryboard();
+        // Refresh the .used markers on source thumbnails (single owner).
+        syncViewToState();
+    },
+    persist: () => saveStateToStorage(),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+});
 
 // ─── TOAST + STATUS SYSTEM ─────────────────────────────────────
 // Replaces the previous pattern of writing every state change into
