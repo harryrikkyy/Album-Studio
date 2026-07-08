@@ -22,6 +22,7 @@
  * @typedef {import('../shared/domain').HistorySnapshot} HistorySnapshot
  * @typedef {import('../shared/domain').RenderJob} RenderJob
  * @typedef {import('../shared/domain').RenderStats} RenderStats
+ * @typedef {import('../shared/domain').Photo} Photo
  */
 
 /**
@@ -43,6 +44,20 @@
  * @property {Record<string, string>} renderHashes   cacheKey → page-input hash
  * @property {boolean} renderActive
  * @property {RenderStats} renderStats
+ * @property {Record<string, Photo>} photoCache      photoId → loaded source photo
+ * @property {Record<string, Photo>} wallpaperCache
+ * @property {Record<string, Photo>} pngCache
+ * @property {Record<string, Photo>} maskedCache
+ * @property {unknown} outputFolder                  UXP folder entry (or null)
+ * @property {Set<string>} activeImageFolders        folderIds currently checked
+ * @property {Set<string>} activeTemplateFolders
+ * @property {Set<string>} activeWallpaperFolders
+ * @property {Set<string>} activePngFolders
+ * @property {Set<string>} activeMaskedFolders
+ * @property {unknown} autoHighResFolder             UXP folder entry (or null)
+ * @property {Record<string, unknown>} globalHighResMap
+ * @property {Record<string, unknown>} globalWpHighResMap
+ * @property {string | null} currentProjectPath
  */
 
 /** @returns {AppState} */
@@ -66,6 +81,20 @@ function defaultState() {
         renderHashes: {},
         renderActive: false,
         renderStats: { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false },
+        photoCache: {},
+        wallpaperCache: {},
+        pngCache: {},
+        maskedCache: {},
+        outputFolder: null,
+        activeImageFolders: new Set(),
+        activeTemplateFolders: new Set(),
+        activeWallpaperFolders: new Set(),
+        activePngFolders: new Set(),
+        activeMaskedFolders: new Set(),
+        autoHighResFolder: null,
+        globalHighResMap: {},
+        globalWpHighResMap: {},
+        currentProjectPath: null,
     };
 }
 

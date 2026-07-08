@@ -30,6 +30,7 @@ export interface Photo {
   rotation?: number
   adjust?: unknown
   placement?: unknown
+  folderId?: string
 }
 
 export interface Page {

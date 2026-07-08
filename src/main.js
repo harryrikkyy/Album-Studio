@@ -62,13 +62,23 @@ tabButtons.forEach(btn => {
    previewIndex:writable, currentPage:writable, totalActivePages:writable,
    projectData:writable, historyUndo:writable, historyRedo:writable,
    historyMuted:writable, renderQueue:writable, renderHashes:writable,
-   renderActive:writable, renderStats:writable */
+   renderActive:writable, renderStats:writable, photoCache:writable,
+   wallpaperCache:writable, pngCache:writable, maskedCache:writable,
+   outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
+   activeWallpaperFolders:writable, activePngFolders:writable, activeMaskedFolders:writable,
+   autoHighResFolder:writable, globalHighResMap:writable, globalWpHighResMap:writable,
+   currentProjectPath:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
     'historyUndo', 'historyRedo', 'historyMuted',
     'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
+    'photoCache', 'wallpaperCache', 'pngCache', 'maskedCache', 'outputFolder',
+    'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
+    'activePngFolders', 'activeMaskedFolders',
+    'autoHighResFolder', 'globalHighResMap', 'globalWpHighResMap',
+    'currentProjectPath',
 ]);
 // Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
 // panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
@@ -79,18 +89,17 @@ let _activeMatchPanel = null;
 // J1: render colour as editable clipped adjustment layers instead of baking
 // pixels. EXPERIMENTAL — off by default (the bake path stays the safe default).
 let _useAdjLayers = (() => { try { return localStorage.getItem('adt_adj_layers') === '1'; } catch (_) { return false; } })();
-let photoCache = {}, wallpaperCache = {}, pngCache = {}, maskedCache = {};
-let outputFolder = null;
+// photoCache / wallpaperCache / pngCache / maskedCache / outputFolder live in
+// the state store (see the exposeOnGlobal block above).
 
 // projectData lives in the store (seeded with the same defaults) — see the
 // exposeOnGlobal block above.
 
-let activeImageFolders = new Set(), activeTemplateFolders = new Set();
-let activeWallpaperFolders = new Set(), activePngFolders = new Set(), activeMaskedFolders = new Set();
+// The five active*Folders Sets (which source folders are checked) live in the
+// state store.
 
-let autoHighResFolder = null;
-let globalHighResMap = {};
-let globalWpHighResMap = {};
+// autoHighResFolder / globalHighResMap / globalWpHighResMap live in the state
+// store.
 
 // ⚡ Reverse lookup: photoId → Set<pageNumber>
 // Eliminates the O(n×m) scan in applyGlobalRotation and other places.
@@ -4741,7 +4750,7 @@ if (btnRenderFinalAlbum) {
 //   <project>/proofs/          ← fast preview JPEGs (future)
 //   <project>/exports/         ← high-res PSDs from the render queue
 // Legacy single-file .json projects still load through the same handler.
-let currentProjectPath = null;
+// currentProjectPath lives in the state store.
 
 // Build the serialisable project payload (shared by Save / Save As / New).
 function buildProjectPayload() {
