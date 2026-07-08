@@ -59,20 +59,19 @@ tabButtons.forEach(btn => {
    previewIndex:writable, currentPage:writable, totalActivePages:writable,
    projectData:writable, renderQueue:writable, renderHashes:writable,
    renderActive:writable, renderStats:writable, photoCache:writable,
-   wallpaperCache:writable, pngCache:writable, maskedCache:writable,
    outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
    activeWallpaperFolders:writable, activePngFolders:writable, activeMaskedFolders:writable,
-   autoHighResFolder:writable, globalHighResMap:writable, globalWpHighResMap:writable,
+   globalHighResMap:writable, globalWpHighResMap:writable,
    currentProjectPath:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
     'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
-    'photoCache', 'wallpaperCache', 'pngCache', 'maskedCache', 'outputFolder',
+    'photoCache', 'outputFolder',
     'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
     'activePngFolders', 'activeMaskedFolders',
-    'autoHighResFolder', 'globalHighResMap', 'globalWpHighResMap',
+    'globalHighResMap', 'globalWpHighResMap',
     'currentProjectPath',
 ]);
 // Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
@@ -2419,181 +2418,26 @@ setupResizer("pngResizer", "pngFolderContainer", "pngRow", 100, 150); setupResiz
 setupResizer("photosResizer", "photosFolderContainer", "photosRow", 100, 150);
 
 // ==========================================
-// --- 10. TAB 2: WALLPAPERS ENGINE ---
+// --- 10+11. TABS 2–3: ASSET LIBRARIES ---
 // ==========================================
-async function placeWallpaper(wallpaperId) {
-    const wpData = wallpaperCache[wallpaperId]; if (!wpData) return;
-    const fetchResult = await getTrueFile(wpData);
-    try {
-        setStatus('Placing wallpaper…');
-        const filePath = fetchResult.file.nativePath;
-        const result = await require('electron').ipcRenderer.invoke('place-wallpaper', filePath, fetchResult.isHr);
-        if (result && (result.startsWith('Error') || result.startsWith('Failed'))) {
-            toast('Wallpaper error: ' + result, 'error');
-        } else {
-            notify('Wallpaper placed', 'success');
-        }
-    } catch(err) { toast('Wallpaper error: ' + err.message, 'error'); }
-}
-
-// ⚡ FIX: Uses DocumentFragment for wallpaper card batch insert
-async function processWallpaperFolder(uiFolder, hrFolder, displayName, token, existingFolderId = null) {
-    if (wallpaperGrid.querySelector('.placeholder-text, .empty-state')) wallpaperGrid.innerHTML = "";
-    const folderId = existingFolderId || ("wpFld_" + displayName.replace(/[^a-zA-Z0-9]/g, '_') + Date.now());
-    activeWallpaperFolders.add(folderId);
-    if (existingFolderId) Array.from(wallpaperGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-
-    const entries = await uiFolder.getEntries();
-    const imgs = entries.filter(e => e.isFile && e.name.match(/\.(jpg|jpeg|png|tif)$/i));
-    imgs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-    const frag = document.createDocumentFragment();
-    imgs.forEach((file) => {
-        const baseName = file.name.replace(/\.[^/.]+$/, "").toLowerCase();
-        const safeId = "wp_" + (displayName + "_" + file.name).replace(/[^a-zA-Z0-9]/g, '_');
-        wallpaperCache[safeId] = { proxy: file, hrFolder: hrFolder, baseName: baseName };
-        const card = document.createElement("div"); card.className = "wp-card"; card.dataset.folderId = folderId;
-        const img = document.createElement("img"); img.src = file.url;
-        const label = document.createElement("div"); label.className = "label"; label.innerText = file.name.substring(0, 15);
-        card.appendChild(img); card.appendChild(label);
-        card.ondblclick = () => placeWallpaper(safeId);
-        frag.appendChild(card);
+// The wallpaper / PNG-frame / masked-frame engines live in
+// src/features/asset_library.js (Phase 2 split): cache + card grids +
+// folder rails + Photoshop place actions + Load buttons. The cross-cutting
+// glue (folder rows, HR resolution, pickers, persistence, status) is
+// injected here.
+const { processWallpaperFolder, processPngFolder, processMaskedFolder } =
+    require('./features/asset_library').createAssetLibrary(store, {
+        invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+        createFolderRow,
+        getTrueFile,
+        pickFolder: () => fs.getFolder(),
+        createToken: (folder) => fs.createPersistentToken(folder),
+        showAlert: (msg) => app.showAlert(msg),
+        saveState: () => saveStateToStorage(),
+        setStatus: (msg) => setStatus(msg),
+        toast: (msg, kind, opts) => toast(msg, kind, opts),
+        notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
-    wallpaperGrid.appendChild(frag); // ⚡ Single insertion
-
-    if (!existingFolderId) {
-        const pnl = document.getElementById("wpFolderPanel");
-        const { row, checkbox } = createFolderRow(displayName, folderId, token);
-        checkbox.onchange = (e) => { if (e.target.checked) activeWallpaperFolders.add(folderId); else activeWallpaperFolders.delete(folderId); Array.from(wallpaperGrid.querySelectorAll('.wp-card')).forEach(c => { if (c.dataset.folderId === folderId) c.style.display = e.target.checked ? "inline-block" : "none"; }); };
-        pnl.appendChild(row);
-    }
-}
-
-const btnLoadWallpapers = document.getElementById("btnLoadWallpapers");
-if (btnLoadWallpapers) {
-    btnLoadWallpapers.addEventListener("click", async () => {
-        const folder = await fs.getFolder(); if (!folder) return;
-        if (folder.name.toLowerCase() === "_thumbnails") {
-            return app.showAlert("🛑 UXP SANDBOX BLOCK!\n\nYou selected the '_Thumbnails' folder directly. Please select the MASTER FOLDER instead.");
-        }
-        setStatus("Scanning Wallpapers…");
-        await new Promise(resolve => setTimeout(resolve, 50));
-        let uiFolder = folder, hrFolder = null, displayName = folder.name;
-        let wpThumb = null;
-        try {
-            const tf = await folder.getEntry("_Thumbnails");
-            if (tf && tf.isFolder) wpThumb = tf;
-        } catch (e) { /* no _Thumbnails yet */ }
-        if (!wpThumb) {
-            try {
-                setStatus("First load — generating wallpaper thumbnails (faster next time)…");
-                const genRes = await require('electron').ipcRenderer.invoke('thumbnails-generate', folder.nativePath);
-                if (genRes && genRes.ok && genRes.processed > 0) {
-                    try { const tf2 = await folder.getEntry("_Thumbnails"); if (tf2 && tf2.isFolder) wpThumb = tf2; } catch (e2) {}
-                }
-            } catch (genErr) { console.error('Auto wallpaper thumbnail generation failed:', genErr); }
-        }
-        if (wpThumb) { uiFolder = wpThumb; hrFolder = folder; toast('Smart Wallpaper Load active — high-res master folder linked', 'info'); }
-        const token = await fs.createPersistentToken(folder);
-        if (!projectData.wallpaperTokens.includes(token)) projectData.wallpaperTokens.push(token);
-        await processWallpaperFolder(uiFolder, hrFolder, displayName, token);
-        saveStateToStorage();
-    });
-}
-
-// ==========================================
-// --- 11. TAB 3: PNG FRAMES & MASKED ---
-// ==========================================
-async function placePngFrame(pngId) {
-    const fileObj = pngCache[pngId]; if (!fileObj) return;
-    try {
-        setStatus('Placing PNG frame…');
-        const layerName = fileObj.name.replace(/\.[^/.]+$/, '');
-        const result = await require('electron').ipcRenderer.invoke('place-png-frame', fileObj.nativePath, layerName);
-        if (result && result.startsWith('Failed')) toast('PNG error: ' + result, 'error');
-        else notify('PNG frame placed', 'success');
-    } catch(err) { toast('PNG placement error: ' + err.message, 'error'); }
-}
-
-// ⚡ FIX: DocumentFragment for PNG cards
-async function processPngFolder(folder, token, existingFolderId = null) {
-    if (pngGrid.querySelector('.placeholder-text, .empty-state')) pngGrid.innerHTML = "";
-    const displayName = getDisplayName(folder);
-    const folderId = existingFolderId || ("pngFld_" + displayName.replace(/[^a-zA-Z0-9]/g, '_') + Date.now());
-    activePngFolders.add(folderId);
-    if (existingFolderId) Array.from(pngGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-
-    const entries = await folder.getEntries();
-    const imgs = entries.filter(e => e.isFile && e.name.match(/\.(png)$/i));
-    imgs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-    const frag = document.createDocumentFragment();
-    imgs.forEach((file) => {
-        const safeId = "png_" + (displayName + "_" + file.name).replace(/[^a-zA-Z0-9]/g, '_'); pngCache[safeId] = file;
-        const card = document.createElement("div"); card.className = "wp-card"; card.dataset.folderId = folderId;
-        const img = document.createElement("img"); img.src = file.url;
-        const label = document.createElement("div"); label.className = "label"; label.innerText = file.name.substring(0, 15);
-        card.appendChild(img); card.appendChild(label);
-        card.ondblclick = () => placePngFrame(safeId);
-        frag.appendChild(card);
-    });
-    pngGrid.appendChild(frag); // ⚡
-
-    if (!existingFolderId) {
-        const pnl = document.getElementById("pngFolderPanel");
-        const { row, checkbox } = createFolderRow(displayName, folderId, token);
-        checkbox.onchange = (e) => { if (e.target.checked) activePngFolders.add(folderId); else activePngFolders.delete(folderId); Array.from(pngGrid.querySelectorAll('.wp-card')).forEach(c => { if (c.dataset.folderId === folderId) c.style.display = e.target.checked ? "inline-block" : "none"; }); };
-        pnl.appendChild(row);
-    }
-}
-const btnLoadPng = document.getElementById("btnLoadPng");
-if (btnLoadPng) { btnLoadPng.addEventListener("click", async () => { const folder = await fs.getFolder(); if (!folder) return; const token = await fs.createPersistentToken(folder); if (!projectData.pngTokens.includes(token)) projectData.pngTokens.push(token); await processPngFolder(folder, token); saveStateToStorage(); }); }
-
-async function placeMaskedFrame(maskId) {
-    const fileObj = maskedCache[maskId]; if (!fileObj) return;
-    try {
-        setStatus('Placing masked frame…');
-        const layerName = 'MaskBase_' + fileObj.name.replace(/\.[^/.]+$/, '');
-        const isJpg = !!fileObj.name.match(/\.(jpg|jpeg)$/i);
-        const result = await require('electron').ipcRenderer.invoke('place-masked-frame', fileObj.nativePath, layerName, isJpg);
-        if (result && result.startsWith('Failed')) toast('Mask error: ' + result, 'error');
-        else notify('Masked frame placed', 'success');
-    } catch(err) { toast('Mask generation error: ' + err.message, 'error'); }
-}
-
-// ⚡ FIX: DocumentFragment for masked cards
-async function processMaskedFolder(folder, token, existingFolderId = null) {
-    if (maskedGrid.querySelector('.placeholder-text, .empty-state')) maskedGrid.innerHTML = "";
-    const displayName = getDisplayName(folder);
-    const folderId = existingFolderId || ("maskFld_" + displayName.replace(/[^a-zA-Z0-9]/g, '_') + Date.now());
-    activeMaskedFolders.add(folderId);
-    if (existingFolderId) Array.from(maskedGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-
-    const entries = await folder.getEntries();
-    const imgs = entries.filter(e => e.isFile && e.name.match(/\.(jpg|jpeg|png)$/i));
-    imgs.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-
-    const frag = document.createDocumentFragment();
-    imgs.forEach((file) => {
-        const safeId = "mask_" + (displayName + "_" + file.name).replace(/[^a-zA-Z0-9]/g, '_'); maskedCache[safeId] = file;
-        const card = document.createElement("div"); card.className = "wp-card"; card.dataset.folderId = folderId;
-        const img = document.createElement("img"); img.src = file.url;
-        const label = document.createElement("div"); label.className = "label"; label.innerText = file.name.substring(0, 15);
-        card.appendChild(img); card.appendChild(label);
-        card.ondblclick = () => placeMaskedFrame(safeId);
-        frag.appendChild(card);
-    });
-    maskedGrid.appendChild(frag); // ⚡
-
-    if (!existingFolderId) {
-        const pnl = document.getElementById("maskedFolderPanel");
-        const { row, checkbox } = createFolderRow(displayName, folderId, token);
-        checkbox.onchange = (e) => { if (e.target.checked) activeMaskedFolders.add(folderId); else activeMaskedFolders.delete(folderId); Array.from(maskedGrid.querySelectorAll('.wp-card')).forEach(c => { if (c.dataset.folderId === folderId) c.style.display = e.target.checked ? "inline-block" : "none"; }); };
-        pnl.appendChild(row);
-    }
-}
-const btnLoadMasked = document.getElementById("btnLoadMasked");
-if (btnLoadMasked) { btnLoadMasked.addEventListener("click", async () => { const folder = await fs.getFolder(); if (!folder) return; const token = await fs.createPersistentToken(folder); if (!projectData.maskTokens.includes(token)) projectData.maskTokens.push(token); await processMaskedFolder(folder, token); saveStateToStorage(); }); }
 
 // ==========================================
 // --- 12. TAB 5: TOOLS (SWAP & THUMBS) ---
