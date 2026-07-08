@@ -125,8 +125,10 @@
     history accessors deleted), `src/features/render_queue.js` (worker +
     queueRender, 7 tests), `src/features/project_io.js` (autosave, save/
     load, restoreWorkspace orchestration, 11 tests), `src/features/
-    export_data.js` (buildExportData + adjustment bake, 6 tests).
-    Remaining: folders/library loading, storyboard, preview/proofs, tabs/UI
-    glue.
+    export_data.js` (buildExportData + adjustment bake, 6 tests),
+    `src/features/asset_library.js` (wallpaper/PNG/masked engines +
+    template-folder loader — first DOM-owning module; E2E-covered).
+    Remaining: image-folder loading + Photos tab, template filtering
+    engine, storyboard, preview/proofs, tabs/UI glue.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
