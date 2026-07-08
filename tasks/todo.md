@@ -133,7 +133,9 @@
     template_filter.js` (sync matching, white box, setPreview, quick-
     build, PS context menus; previewIndex accessor retired),
     `src/features/storyboard.js` (Tab 7 cards + delegated DnD/selection +
-    undoable cross-page move). main.js is at ~3,560 lines (from 5,229).
-    Remaining: preview/proofs, green-box/page engine, tabs/UI glue.
+    undoable cross-page move), `src/features/proofs.js` (fast proof
+    renderer + live preview + client gallery; currentProjectPath accessor
+    retired). main.js is at ~3,126 lines (from 5,229). Remaining:
+    green-box/page engine, tabs/UI glue.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
