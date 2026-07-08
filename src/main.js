@@ -61,8 +61,7 @@ tabButtons.forEach(btn => {
    renderActive:writable, renderStats:writable, photoCache:writable,
    outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
    activeWallpaperFolders:writable, activePngFolders:writable, activeMaskedFolders:writable,
-   globalHighResMap:writable, globalWpHighResMap:writable,
-   currentProjectPath:writable */
+   globalHighResMap:writable, globalWpHighResMap:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
@@ -72,7 +71,6 @@ require('./state/store').exposeOnGlobal(store, [
     'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
     'activePngFolders', 'activeMaskedFolders',
     'globalHighResMap', 'globalWpHighResMap',
-    'currentProjectPath',
 ]);
 // Template sync state (_syncTemplates / _activeMatchPanel) lives in
 // src/features/template_filter.js.
@@ -135,21 +133,14 @@ function syncViewToState() {
 }
 
 const redBox = document.getElementById("redBox"), greenBox = document.getElementById("greenBox");
-const whiteBox = document.getElementById("whiteBox"), yellowPreviewArea = document.getElementById("yellowPreviewArea");
+const whiteBox = document.getElementById("whiteBox");
 const pageSelect = document.getElementById("pageSelect"), teleportSelect = document.getElementById("teleportTargetPage");
 const statusText = document.getElementById("statusText"), wallpaperGrid = document.getElementById("wallpaperGrid");
 const pngGrid = document.getElementById("pngGrid"), maskedGrid = document.getElementById("maskedGrid");
 const photosGrid = document.getElementById("photosGrid");
 const photosSlider = document.getElementById("photosSlider");
-const storyboardGrid = document.getElementById("storyboardGrid");
 
-// ── Live preview state (MVP) ───────────────────────────────────
-// When ON, the Preview pane shows a real libvips composite of the current
-// page instead of the bare template. Declared up top so setPreview() and
-// renderGreenBox() can reference it without TDZ concerns.
-let _livePreviewOn = false;
-let _liveTimer = null;
-let _liveSeq = 0;
+// Live preview state lives in src/features/proofs.js (wired below).
 
 // saveStateToStorage (debounced localStorage autosave) lives in
 // src/features/project_io.js — wired in the PROJECT section below.
@@ -690,10 +681,7 @@ if (btnClearAlbum) {
             } catch (_) {}
 
             // Drop cached proof paths so Tab 7 doesn't show stale composites.
-            if (typeof _proofPaths === 'object') {
-                Object.keys(_proofPaths).forEach(k => delete _proofPaths[k]);
-                Object.keys(_proofHashes).forEach(k => delete _proofHashes[k]);
-            }
+            _clearProofs();
 
             updatePageDropdowns();
             changePage(1);
@@ -958,67 +946,30 @@ document.addEventListener('click', (e) => {
 const { scheduleFilterUpdate, setPreview, setActiveMatchPanel, photoNativePath } =
     require('./features/template_filter').createTemplateFilter(store, {
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
-        isLivePreviewOn: () => _livePreviewOn,
+        isLivePreviewOn: () => isLivePreviewOn(),
         scheduleLivePreview: () => scheduleLivePreview(),
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
 
-// ── Live preview (MVP) ─────────────────────────────────────────
-// Renders the current page through the same libvips engine + centered crop as
-// the final export, shown in the Preview pane. Debounced so rapid edits
-// coalesce; a sequence guard prevents a stale render from overwriting a newer
-// one. Reverts to the bare template thumbnail when off or when the page can't
-// be composited (no template/photos yet).
-const chkLivePreview = document.getElementById('chkLivePreview');
-
-function scheduleLivePreview() {
-    if (!_livePreviewOn) return;
-    clearTimeout(_liveTimer);
-    _liveTimer = setTimeout(renderLivePreview, 280);
-}
-
-function _showTemplateThumb() {
-    const t = albumPages[currentPage] && albumPages[currentPage].template;
-    if (!t) { yellowPreviewArea.innerHTML = ''; return; }
-    if (t._generative) yellowPreviewArea.innerHTML = _generativePreviewSvg(t, true);
-    else yellowPreviewArea.innerHTML = t.url ? `<img src="${escapeHtml(t.url)}">` : `<div style="color:#aaa;">${escapeHtml(t.name || '')}</div>`;
-}
-
-async function renderLivePreview() {
-    if (!_livePreviewOn) return;
-    const page = albumPages[currentPage];
-    if (!page || !page.template || !(page.photos && page.photos.length)) {
-        _showTemplateThumb(); // nothing to composite yet
-        return;
-    }
-    const seq = ++_liveSeq;
-    yellowPreviewArea.classList.add('is-rendering');
-    try {
-        // Smaller maxEdge than batch proofs — the Preview pane is small and we
-        // want it snappy on every edit.
-        const res = await _generateProofForPage(currentPage, { live: true, maxEdge: 1000 });
-        if (seq !== _liveSeq) return; // superseded by a newer render
-        if (res && res.ok && res.outputPath) {
-            yellowPreviewArea.innerHTML = `<img src="file://${encodeURI(res.outputPath)}?h=${res.hash || Date.now()}">`;
-        } else {
-            _showTemplateThumb();
-        }
-    } catch (_) {
-        if (seq === _liveSeq) _showTemplateThumb();
-    } finally {
-        if (seq === _liveSeq) yellowPreviewArea.classList.remove('is-rendering');
-    }
-}
-
-if (chkLivePreview) {
-    chkLivePreview.addEventListener('change', () => {
-        _livePreviewOn = chkLivePreview.checked;
-        if (_livePreviewOn) renderLivePreview();
-        else _showTemplateThumb();
-    });
-}
+// ── Live preview + proofs + client gallery ─────────────────────
+// The live preview (debounced libvips composite of the current page), the
+// fast proof renderer (per-page composite JPEGs, bounded-concurrency batch),
+// and the client gallery export live in src/features/proofs.js (Phase 2
+// split). scheduleEditedPageReproof/ensureTemplateFrames keep their old
+// names for the Spread Editor call sites below.
+const {
+    isLivePreviewOn, scheduleLivePreview,
+    ensureTemplateFrames, scheduleEditedPageReproof: _scheduleEditedPageReproof,
+    reapplyProofs: _reapplyProofs, clearProofs: _clearProofs,
+} = require('./features/proofs').createProofs(store, {
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    setStatus: (msg) => setStatus(msg),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
+    showAlert: (msg) => app.showAlert(msg),
+});
 
 // ── Per-photo adjustments ──────────────────────────────────────
 // The inline Pages adjust panel (H1) was removed — per-photo colour grading
@@ -1128,23 +1079,8 @@ require('electron').ipcRenderer.on('editor-changes', (_e, changes) => {
     if (changes.pageNum) _scheduleEditedPageReproof(changes.pageNum);
 });
 
-// Debounced per-page storyboard re-proof after a Spread Editor edit.
-const _reproofTimers = {};
-function _scheduleEditedPageReproof(pageNum) {
-    const page = albumPages[pageNum];
-    if (!page || !page.template || !(page.photos && page.photos.length)) return;
-    if (typeof _proofHashes === 'object') delete _proofHashes[pageNum]; // mark stale
-    clearTimeout(_reproofTimers[pageNum]);
-    _reproofTimers[pageNum] = setTimeout(async () => {
-        try {
-            if (typeof _generateProofForPage !== 'function') return;
-            const r = await _generateProofForPage(pageNum);
-            if (r && r.ok && typeof _swapProofIntoStoryboard === 'function') {
-                _swapProofIntoStoryboard(pageNum);
-            }
-        } catch (_) {}
-    }, 450);
-}
+// _scheduleEditedPageReproof (debounced per-page re-proof after a Spread
+// Editor edit) lives in src/features/proofs.js (destructured above).
 
 // Editor → here: swap two photos between frames on a page. Photos keep their
 // own per-id placement/adjust (keyed by photo id), so each photo's crop and
@@ -2812,396 +2748,19 @@ if (btnExport) {
 
 // The virtual storyboard engine lives in src/features/storyboard.js
 // (Phase 2 split): the per-page card builder, delegated selection + drag
-// system, and the undoable cross-page photo move. Proof re-apply stays
-// here (the proof renderer below owns _proofPaths) and is injected.
+// system, and the undoable cross-page photo move. Proof re-apply is
+// injected from the proofs module (wired in the live-preview section).
 const { renderStoryboard } = require('./features/storyboard').createStoryboard(store, {
     mutate: (label, fn) => mutate(label, fn),
     addToPageMap: (photoId, pageNum) => addToPageMap(photoId, pageNum),
     removeFromPageMap: (photoId, pageNum) => removeFromPageMap(photoId, pageNum),
     renderGreenBox: () => renderGreenBox(),
     scheduleFilterUpdate: () => scheduleFilterUpdate(),
-    reapplyProofs: () => {
-        if (typeof _proofPaths === 'object') {
-            for (let i = 1; i <= totalActivePages; i++) {
-                if (_proofPaths[i] && typeof _swapProofIntoStoryboard === 'function') {
-                    _swapProofIntoStoryboard(i);
-                }
-            }
-        }
-    },
+    reapplyProofs: () => _reapplyProofs(),
 });
 
-// ─── FAST PROOF RENDERER ─────────────────────────────────────────
-// Generates composite preview JPEGs for every page in the storyboard via the
-// main-process sharp pipeline (proof_renderer.js). No Photoshop in the loop:
-// a 200-page album proofs in seconds, not minutes. Frame geometry is
-// extracted once per template (via extract_frames.jsx) and cached on the
-// template object so re-proofing the same album is pure libvips.
-const _proofPaths = {};        // pageNum -> proof file path on disk (file://)
-const _proofHashes = {};       // pageNum -> last successful render hash
-
-function _proofProjectDir() {
-    if (!currentProjectPath) return null;
-    return require('path').join(currentProjectPath, 'proofs', 'pages');
-}
-
-async function ensureTemplateFrames(template) {
-    // Lazily extract frame geometry once per template, then cache it on the
-    // template object so subsequent proofs are instant.
-    if (template._frames && template._canvas) return template;
-    // Generative templates carry pre-baked frames — never round-trip through
-    // Photoshop frame extraction for them.
-    if (template._generative) return template;
-    const tplPath = template.file?.nativePath;
-    if (!tplPath) {
-        toast(`Template ${template.name || '(unnamed)'} has no file path — re-load its folder`, 'error');
-        return null;
-    }
-    setStatus(`Reading frame layout from ${template.name}…`);
-    const ipc = require('electron').ipcRenderer;
-    let result;
-    try {
-        result = await ipc.invoke('extract-template-frames', tplPath);
-    } catch (e) {
-        // IPC-level failure — usually means Photoshop isn't reachable.
-        const msg = e?.message || String(e) || 'Photoshop is not responding';
-        toast(`Couldn't open ${template.name}: ${msg}`, 'error');
-        return null;
-    }
-    if (!result || !result.ok) {
-        const detail = result?.error || 'unknown extension error (is the file inside the album reachable?)';
-        toast(`Couldn't read frames from ${template.name}: ${detail}`, 'error', { duration: 8000 });
-        return null;
-    }
-    if (result.warning) {
-        toast(`${template.name}: ${result.warning}`, 'warning', { duration: 6000 });
-    }
-    template._frames = result.frames;
-    template._canvas = { w: result.canvasWidth, h: result.canvasHeight };
-    return template;
-}
-
-function _resolvePhotoFilePath(photo) {
-    // Returns { primary, fallback } so the proof renderer can retry with a
-    // smaller / known-good source if the HR file is in a format libvips
-    // doesn't understand (RAW formats from camera SD cards being the usual
-    // suspect — Canon .cr2, Nikon .nef, Sony .arw, generic .dng).
-    const cache = photoCache[photo.id];
-    if (!cache) return { primary: null, fallback: null };
-
-    const proxyPath = cache.file?.nativePath || cache.proxy?.nativePath || null;
-
-    // Extensions sharp/libvips can decode reliably. JFIF, EXIF JPEG, PNG, TIFF,
-    // WebP, HEIC, AVIF, GIF. Everything else (RAW, .psd, .cr2, ...) gets
-    // skipped here so we don't waste a sharp call on a guaranteed failure.
-    const READABLE = /\.(jpe?g|png|tiff?|webp|heic|heif|avif|gif)$/i;
-
-    let hrPath = null;
-    if (cache.hrFolder?.nativePath && cache.baseName) {
-        const nodepath = require('path');
-        // ⚡ PERF: was readdirSync PER PHOTO here — on a 200-page proof run
-        // that's hundreds of synchronous directory scans on the renderer
-        // thread. Reuse a session-cached, path-keyed HR index so it's one
-        // read per unique HR folder. Exact-base match avoids the old greedy
-        // bug (baseName "img_001" must not match "img_0010.cr2").
-        const idx = _proofHrIndex(cache.hrFolder.nativePath);
-        const candidates = idx.get(cache.baseName.toLowerCase()) || [];
-        const exactReadable = candidates.find((f) => READABLE.test(f));
-        if (exactReadable) {
-            hrPath = nodepath.join(cache.hrFolder.nativePath, exactReadable);
-        }
-    }
-
-    return {
-        primary: hrPath || proxyPath,
-        fallback: hrPath ? proxyPath : null,
-    };
-}
-
-// Session cache of HR folder listings for proof file resolution, keyed by the
-// folder's native path. Mirrors getTrueFile's _hrEntriesCache (session-stable)
-// and is cleared at the start of each full proof batch so a folder whose files
-// changed between runs is re-scanned. value: Map<baseNameLower, filename[]>
-const _proofHrIndexCache = new Map();
-function _proofHrIndex(hrFolderPath) {
-    let idx = _proofHrIndexCache.get(hrFolderPath);
-    if (idx) return idx;
-    idx = new Map();
-    try {
-        const nodefs = require('fs');
-        for (const f of nodefs.readdirSync(hrFolderPath)) {
-            const base = f.replace(/\.[^/.]+$/, '').toLowerCase();
-            if (!idx.has(base)) idx.set(base, []);
-            idx.get(base).push(f);
-        }
-    } catch (_) { /* unreadable HR folder → empty index, proxy is used */ }
-    _proofHrIndexCache.set(hrFolderPath, idx);
-    return idx;
-}
-
-// _proofTemplatePreviewPath moved to src/renderer_pure.js (required at top).
-
-async function _generateProofForPage(pageNum, opts = {}) {
-    const page = albumPages[pageNum];
-    if (!page || !page.template || !page.photos?.length) return null;
-    const tpl = await ensureTemplateFrames(page.template);
-    if (!tpl) return null;
-
-    const photos = page.photos.map(p => {
-        const fp = _resolvePhotoFilePath(p);
-        if (!fp.primary) return null;
-        return {
-            filePath: fp.primary,
-            fallbackPath: fp.fallback || null,
-            orient: p.orient,
-            rotation: projectData.imageRotations?.[p.id] || 0,
-            adjust: projectData.imageAdjustments?.[p.id] || null,
-            placement: projectData.imagePlacements?.[p.id] || null,
-        };
-    }).filter(Boolean);
-    if (photos.length === 0) return null;
-
-    const projectDir = _proofProjectDir();
-    // If no project folder is set yet, fall back to the OS temp dir so users
-    // can preview before the first save.
-    const baseDir = projectDir || require('path').join(require('os').tmpdir(), 'albumstudio_proofs');
-    // The live preview writes to a separate file so it never fights the
-    // storyboard's page_NNN.jpg (different size, rendered on every edit).
-    const fname = opts.live
-        ? `live_page_${String(pageNum).padStart(3, '0')}.jpg`
-        : `page_${String(pageNum).padStart(3, '0')}.jpg`;
-    const outPath = require('path').join(baseDir, fname);
-
-    const job = {
-        templatePath: tpl.file.nativePath,
-        templatePreviewPath: _proofTemplatePreviewPath(tpl),
-        frames: tpl._frames,
-        canvasWidth: tpl._canvas.w,
-        canvasHeight: tpl._canvas.h,
-        photos,
-        outputPath: outPath,
-        // Live preview renders smaller for speed (the preview pane is small);
-        // batch proofs stay at 1500 for the storyboard/gallery.
-        maxEdge: opts.maxEdge || 1500,
-        // Center cover-fit, matching how Photoshop places photos
-        // (build_page.jsx: resize to cover + MIDDLECENTER + center translate)
-        // AND how the final libvips composite renders (render-final-composite
-        // uses smartCrop:false). Saliency 'attention' crop here would show a
-        // crop the user never actually gets — defeating the proof's purpose
-        // as a faithful preview.
-        smartCrop: false,
-    };
-
-    const ipc = require('electron').ipcRenderer;
-    const res = await ipc.invoke('render-proof', job);
-    if (!res?.ok) {
-        // Aggregate identical failures across the run so a 200-page album
-        // with one bad source folder doesn't fire 200 toasts.
-        const key = res?.error || 'unknown';
-        _proofErrorCounts.set(key, (_proofErrorCounts.get(key) || 0) + 1);
-        _proofFailedPages.push(pageNum);
-        return null;
-    }
-    if (res.skipped?.length) {
-        // Page composed but with missing photos (RAW etc.). Surface as a
-        // single warning per run, not per page.
-        for (const s of res.skipped) {
-            const key = `skipped: ${s.error}`;
-            _proofErrorCounts.set(key, (_proofErrorCounts.get(key) || 0) + 1);
-        }
-    }
-    // Don't let the live preview's separate output overwrite the storyboard's
-    // stored proof path/hash for this page.
-    if (!opts.live) {
-        _proofPaths[pageNum] = res.outputPath;
-        _proofHashes[pageNum] = res.hash;
-    }
-    return res;
-}
-// Aggregated diagnostics for the current proof run. Cleared by
-// generateAllProofs() at the start of each invocation.
-const _proofErrorCounts = new Map();
-const _proofFailedPages = [];
-
-async function generateAllProofs() {
-    // Fresh HR-folder listings for this batch (files may have changed since
-    // the last run); the per-photo resolver reuses these within the run.
-    _proofHrIndexCache.clear();
-    const pages = [];
-    for (let i = 1; i <= totalActivePages; i++) {
-        if (albumPages[i]?.template && albumPages[i]?.photos?.length) pages.push(i);
-    }
-    if (pages.length === 0) {
-        toast('No complete pages to proof yet', 'info');
-        return;
-    }
-
-    // Phase 1: extract frame geometry for every UNIQUE template up front.
-    // Without this, a 200-page album with 20 templates re-asked Photoshop
-    // for the same frame data hundreds of times AND a single failure
-    // surfaced as the same toast on every page using that template.
-    const uniqueTemplates = new Map();
-    for (const n of pages) {
-        const tpl = albumPages[n].template;
-        const key = tpl.file?.nativePath || tpl.id;
-        if (!uniqueTemplates.has(key)) uniqueTemplates.set(key, tpl);
-    }
-    setStatus(`Reading frame layout from ${uniqueTemplates.size} template${uniqueTemplates.size > 1 ? 's' : ''}…`);
-    const failedTemplates = new Set();
-    for (const [key, tpl] of uniqueTemplates) {
-        const ready = await ensureTemplateFrames(tpl);
-        if (!ready) failedTemplates.add(key);
-    }
-    if (failedTemplates.size === uniqueTemplates.size) {
-        // Nothing usable — bail with a single, descriptive toast instead of
-        // letting per-page errors flood the screen.
-        toast('All templates failed frame extraction. Check that Photoshop is running and the PSD files are reachable.', 'error');
-        return;
-    }
-
-    // Reset run-level diagnostics so we report only this run's issues.
-    _proofErrorCounts.clear();
-    _proofFailedPages.length = 0;
-
-    const t0 = performance.now();
-    let done = 0, failed = 0, skippedTpl = 0;
-    setStatus(`Generating ${pages.length} proofs…`);
-
-    // ⚡ Bounded-concurrency pool. Frames are already extracted (Photoshop,
-    // above), so each page render is pure libvips — safe to overlap. Running a
-    // few pages at once keeps the libvips threadpool and disk I/O saturated
-    // (was strictly one-page-at-a-time). Bounded at 4 so peak memory stays
-    // predictable on large albums (the C9 memory-spike guard).
-    const PROOF_CONCURRENCY = 4;
-    let cursor = 0;
-    async function _proofWorker() {
-        while (cursor < pages.length) {
-            const pageNum = pages[cursor++];
-            const tpl = albumPages[pageNum].template;
-            const key = tpl.file?.nativePath || tpl.id;
-            if (failedTemplates.has(key)) { skippedTpl++; continue; }
-            const r = await _generateProofForPage(pageNum);
-            if (r?.ok) done++; else failed++;
-            // Live update: swap the placeholder for the real proof as it lands.
-            _swapProofIntoStoryboard(pageNum);
-            if ((done + failed) % 5 === 0 || (done + failed + skippedTpl) === pages.length) {
-                setStatus(`Proofing ${done}/${pages.length}…`);
-            }
-        }
-    }
-    await Promise.all(
-        Array.from({ length: Math.min(PROOF_CONCURRENCY, pages.length || 1) }, _proofWorker)
-    );
-
-    const ms = Math.round(performance.now() - t0);
-    require('electron').ipcRenderer.invoke('telemetry-event', 'proof_run', {
-        pages: pages.length, done, failed, skippedTpl, durationMs: ms,
-        templatesFailed: failedTemplates.size,
-    });
-    const summary = [
-        `Proofs ready · ${done} of ${pages.length}`,
-        failed ? `${failed} failed` : null,
-        skippedTpl ? `${skippedTpl} skipped (template unreadable)` : null,
-        `${(ms / 1000).toFixed(1)}s`,
-    ].filter(Boolean).join(' · ');
-    notify(summary, (failed || skippedTpl) ? 'warning' : 'success', { duration: 6000 });
-
-    // Aggregated error breakdown — one toast per distinct error class, with
-    // a count and a sampled page list so the user can act on it instead of
-    // dismissing 200 identical messages.
-    if (_proofErrorCounts.size > 0) {
-        for (const [reason, count] of _proofErrorCounts) {
-            const samplePages = _proofFailedPages.slice(0, 5).join(', ');
-            const more = _proofFailedPages.length > 5 ? ` (+${_proofFailedPages.length - 5} more)` : '';
-            toast(
-                `${count} page${count > 1 ? 's' : ''} affected · ${reason}${samplePages ? ` · pages ${samplePages}${more}` : ''}`,
-                'error',
-                { duration: 9000 }
-            );
-        }
-    }
-}
-
-function _swapProofIntoStoryboard(pageNum) {
-    // Replace the static template thumbnail in the rendered card with the
-    // freshly composited proof. Avoids a full renderStoryboard() re-render
-    // for every page and keeps DnD state intact.
-    const cards = storyboardGrid?.querySelectorAll('.sb-page-card');
-    if (!cards) return;
-    const card = cards[pageNum - 1];
-    if (!card) return;
-    const wrap = card.querySelector('.sb-template-preview');
-    if (!wrap) return;
-    const img = wrap.querySelector('img');
-    if (!img) return;
-    // Cache-bust with the hash so a re-proof of the same page actually
-    // refreshes the visible image instead of getting served the cached file.
-    const hash = _proofHashes[pageNum] || Date.now();
-    img.src = `file://${_proofPaths[pageNum]}?h=${hash}`;
-    img.style.opacity = '1';
-    wrap.classList.add('sb-template-preview--proofed');
-}
-
-const btnGenerateProofs = document.getElementById('btnGenerateProofs');
-if (btnGenerateProofs) {
-    btnGenerateProofs.addEventListener('click', () => {
-        generateAllProofs().catch(e => toast('Proof error: ' + e.message, 'error'));
-    });
-}
-
-// ─── CLIENT PROOF GALLERY ────────────────────────────────────────
-const btnExportGallery = document.getElementById('btnExportGallery');
-if (btnExportGallery) {
-    btnExportGallery.addEventListener('click', async () => {
-        try {
-            if (!currentProjectPath) {
-                return app.showAlert('Save the project first — the gallery is exported next to project.json.');
-            }
-            // Make sure proofs exist for every populated page. If something is
-            // missing we run a partial proof pass before exporting.
-            const missing = [];
-            for (let i = 1; i <= totalActivePages; i++) {
-                const page = albumPages[i];
-                if (!page?.template || !page?.photos?.length) continue;
-                if (!_proofPaths[i]) missing.push(i);
-            }
-            if (missing.length > 0) {
-                setStatus(`Proofing ${missing.length} pages before gallery export…`);
-                for (const n of missing) {
-                    await _generateProofForPage(n);
-                    _swapProofIntoStoryboard(n);
-                }
-            }
-
-            const pages = [];
-            for (let i = 1; i <= totalActivePages; i++) {
-                if (_proofPaths[i]) {
-                    pages.push({
-                        pageNum: i,
-                        proofPath: _proofPaths[i],
-                        label: `Page ${String(i).padStart(3, '0')}`
-                    });
-                }
-            }
-            if (pages.length === 0) return app.showAlert('No proofs available to export.');
-
-            const albumName = currentProjectPath.split('/').pop() || 'Album';
-            const ipc = require('electron').ipcRenderer;
-            const result = await ipc.invoke('export-proof-gallery', {
-                projectPath: currentProjectPath,
-                albumName,
-                pages,
-            });
-            if (!result?.ok) throw new Error('gallery export failed');
-
-            // Open the gallery folder so the photographer can grab it.
-            await ipc.invoke('open-external', `file://${result.path}`);
-            notify(`Gallery ready · ${result.pages} pages`, 'success', { duration: 6000 });
-        } catch (e) {
-            toast('Gallery error: ' + e.message, 'error');
-        }
-    });
-}
+// The fast proof renderer + client gallery live in src/features/proofs.js
+// (wired in the live-preview section above).
 
 const btnSetFinalOutput = document.getElementById("btnSetFinalOutput");
 if (btnSetFinalOutput) {
@@ -3330,10 +2889,7 @@ async function newProject() {
         projectData.imageAdjustments = {};
         projectData.imagePlacements = {};
         try { renderHashes = {}; _saveRenderHashes(); } catch (_) {}
-        if (typeof _proofPaths === 'object') {
-            Object.keys(_proofPaths).forEach(k => delete _proofPaths[k]);
-            Object.keys(_proofHashes).forEach(k => delete _proofHashes[k]);
-        }
+        _clearProofs();
         syncViewToState();
         updatePageDropdowns();
         renderGreenBox();
@@ -3343,7 +2899,7 @@ async function newProject() {
         toast('New Project: clearing failed — ' + e.message, 'error');
         return;
     }
-    currentProjectPath = target;
+    store.set('currentProjectPath', target);
     await saveProject(false);
 }
 
