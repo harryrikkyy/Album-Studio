@@ -49,6 +49,25 @@ export interface CompactPage {
   photos: PhotoRef[]
 }
 
+/**
+ * The persisted workspace: folder-token lists + per-photo edit maps. This is
+ * what localStorage `adt_workspace` and the saved project `.json` carry.
+ * Loaded data may pre-date a field, so consumers guard with `|| {}` / `|| []`.
+ */
+export interface ProjectData {
+  imageTokens?: unknown[]
+  templateTokens?: unknown[]
+  wallpaperTokens?: unknown[]
+  pngTokens?: unknown[]
+  maskTokens?: unknown[]
+  highResTokens?: unknown[]
+  wpHighResTokens?: unknown[]
+  outputToken?: unknown
+  imageRotations?: Record<string, number>
+  imageAdjustments?: Record<string, unknown>
+  imagePlacements?: Record<string, unknown>
+}
+
 /** The subset of a page that feeds the render-cache hash. */
 export interface HashablePage {
   templatePath?: string
