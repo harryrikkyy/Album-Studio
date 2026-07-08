@@ -127,8 +127,9 @@
     load, restoreWorkspace orchestration, 11 tests), `src/features/
     export_data.js` (buildExportData + adjustment bake, 6 tests),
     `src/features/asset_library.js` (wallpaper/PNG/masked engines +
-    template-folder loader — first DOM-owning module; E2E-covered).
-    Remaining: image-folder loading + Photos tab, template filtering
-    engine, storyboard, preview/proofs, tabs/UI glue.
+    template-folder loader — first DOM-owning module; E2E-covered),
+    `src/features/photo_library.js` (processImageFolder + virtualized
+    Photos tab + Load Photos; DOM-owning, E2E-covered). Remaining:
+    template filtering engine, storyboard, preview/proofs, tabs/UI glue.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
