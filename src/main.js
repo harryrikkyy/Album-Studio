@@ -56,7 +56,7 @@ tabButtons.forEach(btn => {
 // globalThis, so every bare reference below transparently reads/writes the
 // store until the module split rewrites them to explicit store access.
 /* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
-   previewIndex:writable, currentPage:writable, totalActivePages:writable,
+   currentPage:writable, totalActivePages:writable,
    projectData:writable, renderQueue:writable, renderHashes:writable,
    renderActive:writable, renderStats:writable, photoCache:writable,
    outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
@@ -66,7 +66,7 @@ tabButtons.forEach(btn => {
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
-    'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
+    'currentPage', 'totalActivePages', 'projectData',
     'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
     'photoCache', 'outputFolder',
     'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
@@ -74,12 +74,8 @@ require('./state/store').exposeOnGlobal(store, [
     'globalHighResMap', 'globalWpHighResMap',
     'currentProjectPath',
 ]);
-// Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
-// panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
-// ('source' | 'pages' | null) — it remembers the last panel you worked in so
-// moving the pointer to the Templates panel keeps the match instead of resetting.
-let _syncTemplates = (() => { try { return localStorage.getItem('adt_template_sync') !== '0'; } catch (_) { return true; } })();
-let _activeMatchPanel = null;
+// Template sync state (_syncTemplates / _activeMatchPanel) lives in
+// src/features/template_filter.js.
 // J1: render colour as editable clipped adjustment layers instead of baking
 // pixels. EXPERIMENTAL — off by default (the bake path stays the safe default).
 let _useAdjLayers = (() => { try { return localStorage.getItem('adt_adj_layers') === '1'; } catch (_) { return false; } })();
@@ -582,7 +578,7 @@ updatePageDropdowns();
 function changePage(newPage) {
     if (newPage < 1 || newPage > totalActivePages) return;
     currentPage = newPage;
-    previewIndex = 0; // ⚡ FIX: reset stale preview index on every page switch
+    store.set('previewIndex', 0); // ⚡ FIX: reset stale preview index on every page switch
     if (pageSelect) pageSelect.value = currentPage;
     const greenTitle = document.getElementById("greenBoxTitle"); if (greenTitle) greenTitle.innerText = `Page ${String(currentPage).padStart(3, '0')}`;
     if (!albumPages[currentPage]) albumPages[currentPage] = { photos: [], template: null };
@@ -868,7 +864,7 @@ redBox.addEventListener('pointerup', (e) => {
         state.timer = setTimeout(() => {
             state.count = 0;
             img.classList.toggle("selected");
-            _activeMatchPanel = 'source'; // B2: working in the source panel
+            setActiveMatchPanel('source'); // B2: working in the source panel
             scheduleFilterUpdate(); // selection drives template matching
         }, 300);
     } else if (state.count === 2) {
@@ -891,7 +887,7 @@ redBox.addEventListener('dragstart', (e) => {
     const ids = (img.classList.contains('selected') && selected.length > 0)
         ? selected.map(el => el.id)
         : [img.id];
-    const paths = ids.map(id => _photoNativePath(id)).filter(Boolean);
+    const paths = ids.map(id => photoNativePath(id)).filter(Boolean);
     if (paths.length === 0) return;
     e.preventDefault(); // cancel the default thumbnail (proxy) drag
     require('electron').ipcRenderer.send('start-native-drag', paths);
@@ -903,7 +899,7 @@ if (photosGrid) {
         const card = e.target.closest('.wp-card');
         if (!card) return;
         const id = card.dataset.photoId;
-        const p = id ? _photoNativePath(id) : null;
+        const p = id ? photoNativePath(id) : null;
         if (!p) return;
         e.preventDefault();
         require('electron').ipcRenderer.send('start-native-drag', [p]);
@@ -955,304 +951,19 @@ document.addEventListener('click', (e) => {
 // --- 5. FILTERING & TEMPLATE SAFE OPENER ---
 // ==========================================
 
-// ⚡ FIX: scheduleFilterUpdate — coalesces multiple autoFilterTemplates() calls
-// within the same frame into a single execution via requestAnimationFrame.
-// Prevents redundant full renderWhiteBox() rebuilds on rapid state changes.
-let _filterPending = false;
-function scheduleFilterUpdate() {
-    if (_filterPending) return;
-    _filterPending = true;
-    requestAnimationFrame(() => {
-        _filterPending = false;
-        autoFilterTemplates();
+// The template matching/filtering engine, white-box picker, preview pane
+// (setPreview), quick-build, PS context menus, and the HR path resolver live
+// in src/features/template_filter.js (Phase 2 split). The live-preview seam
+// stays here and is injected.
+const { scheduleFilterUpdate, setPreview, setActiveMatchPanel, photoNativePath } =
+    require('./features/template_filter').createTemplateFilter(store, {
+        invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+        isLivePreviewOn: () => _livePreviewOn,
+        scheduleLivePreview: () => scheduleLivePreview(),
+        setStatus: (msg) => setStatus(msg),
+        toast: (msg, kind, opts) => toast(msg, kind, opts),
+        notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
-}
-
-// Slice 4 wiring: sticky active-panel tracking + the template Sync switch.
-;(function _initTemplateSync() {
-    // Entering a panel makes it the active match context. It's STICKY — we
-    // never clear it on pointerleave, so moving to the Templates panel to pick
-    // a layout keeps showing matches for the panel you were just working in.
-    const setActive = (panel) => {
-        if (_activeMatchPanel !== panel) { _activeMatchPanel = panel; scheduleFilterUpdate(); }
-    };
-    if (redBox) redBox.addEventListener('pointerenter', () => setActive('source'));
-    const greenWrapper = document.getElementById('greenWrapper');
-    if (greenWrapper) greenWrapper.addEventListener('pointerenter', () => setActive('pages'));
-    else if (greenBox) greenBox.addEventListener('pointerenter', () => setActive('pages'));
-
-    const chk = document.getElementById('chkTemplateSync');
-    if (chk) {
-        chk.checked = _syncTemplates;
-        chk.addEventListener('change', () => {
-            _syncTemplates = chk.checked;
-            try { localStorage.setItem('adt_template_sync', _syncTemplates ? '1' : '0'); } catch (_) {}
-            scheduleFilterUpdate();
-        });
-    }
-})();
-
-// Count the orientation signature (H/V) of the currently selected source
-// thumbnails, accounting for any per-photo rotation (matches prepareAndMove).
-function _selectedSourceHV() {
-    const sel = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
-    let h = 0, v = 0;
-    sel.forEach(img => {
-        const c = photoCache[img.id];
-        let orient = (c && c.orient) || (img.naturalWidth >= img.naturalHeight ? 'h' : 'v');
-        const rot = projectData.imageRotations?.[img.id] || 0;
-        if (rot === 90 || rot === 270) orient = orient === 'h' ? 'v' : 'h';
-        if (orient === 'v') v++; else h++;
-    });
-    return { h, v, count: sel.length };
-}
-
-// C1: build the SELECTED source photos into a chosen template. Reuses the
-// build-page bridge, which assigns photos to frames by orientation, drops
-// extras, and leaves surplus frames empty — exactly the requested behaviour.
-function _selectedSourcePhotosForBuild() {
-    const sel = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
-    return sel.map(img => {
-        const id = img.id;
-        const c = photoCache[id];
-        const fp = _photoNativePath(id);
-        if (!fp) return null;
-        let orient = (c && c.orient) || (img.naturalWidth >= img.naturalHeight ? 'h' : 'v');
-        const rotation = projectData.imageRotations?.[id] || 0;
-        if (rotation === 90 || rotation === 270) orient = orient === 'h' ? 'v' : 'h';
-        return {
-            id,
-            filePath: fp,
-            baseName: (c && c.baseName) || id,
-            orient,
-            rotation,
-            placement: projectData.imagePlacements?.[id] || null,
-        };
-    }).filter(Boolean);
-}
-
-async function buildTemplateWithSelection(temp) {
-    if (!temp) return;
-    const photos = _selectedSourcePhotosForBuild();
-    // No source selection → just open the template in Photoshop for editing.
-    if (photos.length === 0) {
-        const p = temp.file && temp.file.nativePath;
-        if (p) _openInPS(p);
-        else toast('Select photos in the Source panel first', 'info');
-        return;
-    }
-    if (temp._generative || !temp.file?.nativePath) {
-        toast('Quick-build needs a PSD template (generative layouts build via Render)', 'info');
-        return;
-    }
-    setStatus(`Building ${temp.name} with ${photos.length} photo${photos.length === 1 ? '' : 's'}…`);
-    try {
-        const r = await require('electron').ipcRenderer.invoke('build-page', {
-            templatePath: temp.file.nativePath,
-            pageName: 'Quick',
-            photos,
-        });
-        if (typeof r === 'string' && r && r.indexOf('success') === -1 && r.toLowerCase().indexOf('fail') !== -1) {
-            toast('Build: ' + r, 'error');
-        } else {
-            notify(`Built ${temp.name} — review it in Photoshop`, 'success');
-        }
-    } catch (e) {
-        toast('Build failed: ' + (e.message || e), 'error');
-    }
-    setStatus('');
-}
-
-function autoFilterTemplates() {
-    if (!albumPages[currentPage]) albumPages[currentPage] = { photos: [], template: null };
-    const photos = albumPages[currentPage].photos || [];
-    const hCount = photos.filter(p => p.orient === 'h').length;
-    const vCount = photos.filter(p => p.orient === 'v').length;
-    const activeLibrary = templateLibrary.filter(t => activeTemplateFolders.has(t.folderId));
-
-    // Sync-driven matching (A1/B2). Sync OFF → always show all. Sync ON →
-    // match the source SELECTION if any; else the CURRENT PAGE while the
-    // pointer is over the pages panel; else (nothing selected, not hovering)
-    // show all.
-    let target = null;
-    if (_syncTemplates) {
-        if (_activeMatchPanel === 'source') {
-            const sel = _selectedSourceHV();
-            if (sel.count > 0) target = { h: sel.h, v: sel.v }; // else nothing selected → show all
-        } else if (_activeMatchPanel === 'pages') {
-            if (photos.length > 0) target = { h: hCount, v: vCount };
-        }
-    }
-    if (target) {
-        filteredTemplates = activeLibrary.filter(t => t.h === target.h && t.v === target.v);
-        if (filteredTemplates.length === 0) filteredTemplates = [...activeLibrary]; // graceful fallback
-    } else {
-        filteredTemplates = [...activeLibrary];
-    }
-    // exactMatchCount always reflects the CURRENT PAGE's signature (drives the chip).
-    const exactMatchCount = activeLibrary.filter(t => t.h === hCount && t.v === vCount).length;
-
-    const matchText = document.getElementById("templateMatchText");
-    if (matchText) matchText.innerText = `Matches: ${filteredTemplates.length} (${hCount}H, ${vCount}V)`;
-
-    // ⚡ B.4: surface the page's H/V signature + exact match count as a chip on
-    // the Page header, where the user is actually looking. Green when exact
-    // templates exist, amber when none (so the constraint is visible).
-    const chip = document.getElementById('pageMatchChip');
-    if (chip) {
-        chip.textContent = `${hCount}H ${vCount}V · ${exactMatchCount} template${exactMatchCount === 1 ? '' : 's'}`;
-        chip.classList.toggle('chip--ok', exactMatchCount > 0);
-        chip.classList.toggle('chip--warn', exactMatchCount === 0 && photos.length > 0);
-        chip.classList.toggle('chip--accent', photos.length === 0);
-    }
-    renderWhiteBox();
-
-    const savedTemplate = albumPages[currentPage].template;
-    if (savedTemplate) {
-        const foundIdx = filteredTemplates.findIndex(t => t.id === savedTemplate.id);
-        if (foundIdx !== -1) setPreview(foundIdx, false);
-        else yellowPreviewArea.innerHTML = savedTemplate.url ? `<img src="${escapeHtml(savedTemplate.url)}">` : `<div style="color:#aaa;">${escapeHtml(savedTemplate.name)}</div>`;
-    } else {
-        if (filteredTemplates.length > 0) setPreview(0, false); else yellowPreviewArea.innerHTML = "";
-    }
-}
-
-// ⚡ FIX: renderWhiteBox uses DocumentFragment — all cards built off-DOM,
-// then inserted in a single operation. Eliminates N reflows for N templates.
-function renderWhiteBox() {
-    const frag = document.createDocumentFragment();
-    const savedId = albumPages[currentPage] && albumPages[currentPage].template && albumPages[currentPage].template.id;
-
-    filteredTemplates.forEach((temp, idx) => {
-        const card = document.createElement("div"); card.className = "thumb-card";
-        card.dataset.tplId = temp.id;
-        const isSelected = (previewIndex === idx) || (savedId && savedId === temp.id);
-        if (isSelected) card.classList.add("is-selected");
-        // Generative templates synthesize a quick SVG preview from their frame
-        // geometry so the user can see the layout without authoring a PSD.
-        if (temp._generative) {
-            card.innerHTML = `${_generativePreviewSvg(temp)}<div class="thumb-card__label">${escapeHtml(temp.name)}</div>`;
-            card.classList.add('thumb-card--generative');
-        } else {
-            card.innerHTML = `<img src="${escapeHtml(temp.url)}"><div class="thumb-card__label">${escapeHtml(temp.name)}</div>`;
-        }
-        card.onclick = () => setPreview(idx, true);
-        card.ondblclick = () => buildTemplateWithSelection(temp);
-        frag.appendChild(card);
-    });
-
-    whiteBox.innerHTML = ""; // Clear once
-    whiteBox.appendChild(frag); // ⚡ Single reflow
-}
-
-// ── A2/B1: right-click context menus → Photoshop ───────────────
-// Templates → "Open in Photoshop"; Source images → "Open in PS" / "Place
-// (clipped to the active layer)". Reuses the osascript bridge IPCs
-// (open-in-photoshop, place-clipped). Opens the HR original when resolvable.
-function _photoNativePath(id) {
-    const c = photoCache[id];
-    if (!c) return null;
-    if (c.hrFolder?.nativePath && c.baseName) {
-        try {
-            const np = require('path'); const nfs = require('fs');
-            const base = c.baseName.toLowerCase();
-            const match = nfs.readdirSync(c.hrFolder.nativePath)
-                .find(f => f.replace(/\.[^/.]+$/, '').toLowerCase() === base);
-            if (match) return np.join(c.hrFolder.nativePath, match);
-        } catch (_) {}
-    }
-    return c.proxy?.nativePath || c.file?.nativePath || null;
-}
-
-let _appCtxEl = null;
-function _hideAppCtx() { if (_appCtxEl) { _appCtxEl.remove(); _appCtxEl = null; } }
-function _showAppCtx(x, y, entries) {
-    _hideAppCtx();
-    const menu = document.createElement('div');
-    menu.className = 'app-ctx-menu';
-    entries.forEach(en => {
-        const b = document.createElement('button');
-        b.className = 'app-ctx-menu__item';
-        b.textContent = en.label;
-        b.disabled = !!en.disabled;
-        if (!en.disabled) b.addEventListener('click', () => { _hideAppCtx(); en.fn(); });
-        menu.appendChild(b);
-    });
-    document.body.appendChild(menu);
-    const r = menu.getBoundingClientRect();
-    menu.style.left = Math.min(x, window.innerWidth - r.width - 8) + 'px';
-    menu.style.top = Math.min(y, window.innerHeight - r.height - 8) + 'px';
-    _appCtxEl = menu;
-}
-document.addEventListener('click', _hideAppCtx);
-document.addEventListener('scroll', _hideAppCtx, true);
-window.addEventListener('blur', _hideAppCtx);
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') _hideAppCtx(); });
-
-async function _openInPS(filePath) {
-    if (!filePath) { toast('Could not resolve the file path', 'error'); return; }
-    setStatus('Opening in Photoshop…');
-    try { await require('electron').ipcRenderer.invoke('open-in-photoshop', filePath); notify('Opened in Photoshop', 'success'); }
-    catch (e) { toast('Open in Photoshop failed: ' + (e.message || e), 'error'); }
-    setStatus('');
-}
-async function _placeClippedPS(filePath) {
-    if (!filePath) { toast('Could not resolve the file path', 'error'); return; }
-    setStatus('Placing in Photoshop…');
-    try {
-        const r = await require('electron').ipcRenderer.invoke('place-clipped', filePath);
-        if (typeof r === 'string' && r.indexOf('success') === -1) toast('Place: ' + r, 'error');
-        else notify('Placed & clipped in Photoshop', 'success');
-    } catch (e) { toast('Place failed: ' + (e.message || e), 'error'); }
-    setStatus('');
-}
-
-if (whiteBox) {
-    whiteBox.addEventListener('contextmenu', (e) => {
-        const card = e.target.closest('.thumb-card'); if (!card) return;
-        const id = card.dataset.tplId; if (!id) return;
-        const tpl = filteredTemplates.find(t => t.id === id) || templateLibrary.find(t => t.id === id);
-        const tplPath = tpl && tpl.file && tpl.file.nativePath;
-        if (!tplPath) return; // generative templates have no PSD on disk
-        e.preventDefault();
-        _showAppCtx(e.clientX, e.clientY, [
-            { label: '🎨 Open template in Photoshop', fn: () => _openInPS(tplPath) },
-        ]);
-    });
-}
-if (redBox) {
-    redBox.addEventListener('contextmenu', (e) => {
-        const img = e.target.closest('.thumb-red'); if (!img) return;
-        const p = _photoNativePath(img.id);
-        e.preventDefault();
-        _showAppCtx(e.clientX, e.clientY, [
-            { label: '🎨 Open in Photoshop', disabled: !p, fn: () => _openInPS(p) },
-            { label: '📌 Place on selected layer (clipped)', disabled: !p, fn: () => _placeClippedPS(p) },
-        ]);
-    });
-}
-
-function setPreview(idx, saveToMemory = true) {
-    if (!filteredTemplates[idx]) return;
-    previewIndex = idx;
-    const temp = filteredTemplates[idx];
-    // When live preview is on, the Preview pane is owned by the live composite
-    // — don't flash the bare template over it. (Selecting a template still
-    // saves it below and triggers a re-composite.)
-    if (!_livePreviewOn) {
-        if (temp._generative) {
-            yellowPreviewArea.innerHTML = _generativePreviewSvg(temp, /*large*/ true);
-        } else {
-            yellowPreviewArea.innerHTML = temp.url ? `<img src="${escapeHtml(temp.url)}">` : `<div style="color:#aaa;">${escapeHtml(temp.name)}</div>`;
-        }
-    }
-    if (saveToMemory) {
-        if (!albumPages[currentPage]) albumPages[currentPage] = { photos: [], template: null };
-        albumPages[currentPage].template = temp;
-        scheduleLivePreview(); // template changed → re-composite if live
-    }
-    renderWhiteBox();
-}
 
 // ── Live preview (MVP) ─────────────────────────────────────────
 // Renders the current page through the same libvips engine + centered crop as
