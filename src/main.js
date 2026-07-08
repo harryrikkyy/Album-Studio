@@ -61,12 +61,14 @@ tabButtons.forEach(btn => {
 /* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
    previewIndex:writable, currentPage:writable, totalActivePages:writable,
    projectData:writable, historyUndo:writable, historyRedo:writable,
-   historyMuted:writable */
+   historyMuted:writable, renderQueue:writable, renderHashes:writable,
+   renderActive:writable, renderStats:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
     'historyUndo', 'historyRedo', 'historyMuted',
+    'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
 ]);
 // Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
 // panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
@@ -812,7 +814,7 @@ if (btnClearAlbum) {
             // Without this, a future render at the same page numbers would
             // skip rather than re-render.
             try {
-                _renderHashes = {};
+                renderHashes = {};
                 _saveRenderHashes();
             } catch (_) {}
 
@@ -3723,23 +3725,24 @@ async function bakeExportAdjustments(exportData) {
 // pages out of 200.
 
 const _RENDER_HASH_KEY = 'adt_render_hashes';
-let _renderHashes = (() => {
+// renderHashes lives in the state store (see the exposeOnGlobal block up
+// top); seed it from localStorage at boot so cache hits survive restarts.
+renderHashes = (() => {
     try { return JSON.parse(localStorage.getItem(_RENDER_HASH_KEY) || '{}'); }
     catch (_) { return {}; }
 })();
 function _saveRenderHashes() {
-    try { localStorage.setItem(_RENDER_HASH_KEY, JSON.stringify(_renderHashes)); }
+    try { localStorage.setItem(_RENDER_HASH_KEY, JSON.stringify(renderHashes)); }
     catch (_) {}
 }
 // _hashPage moved to src/renderer_pure.js (required at top).
 
-const _renderQueue = []; // [{ pageNum, pageData, outputPath }]
-let _renderActive = false;
-let _renderStats = { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false };
+// renderQueue / renderActive / renderStats live in the state store (see the
+// exposeOnGlobal block up top).
 
 function _updateRenderBadge() {
     let badge = document.getElementById('renderBadge');
-    if (!_renderQueue.length && !_renderActive) {
+    if (!renderQueue.length && !renderActive) {
         if (badge) badge.remove();
         return;
     }
@@ -3751,46 +3754,46 @@ function _updateRenderBadge() {
         if (exportTb) exportTb.appendChild(badge);
         else document.body.appendChild(badge);
     }
-    const remaining = _renderQueue.length + (_renderActive ? 1 : 0);
-    const pct = _renderStats.total > 0
-        ? Math.round((_renderStats.done + _renderStats.skipped) / _renderStats.total * 100)
+    const remaining = renderQueue.length + (renderActive ? 1 : 0);
+    const pct = renderStats.total > 0
+        ? Math.round((renderStats.done + renderStats.skipped) / renderStats.total * 100)
         : 0;
     badge.innerHTML = `
         <div class="render-badge__bar"><div class="render-badge__fill" style="width:${pct}%"></div></div>
         <div class="render-badge__text">
-            ${_renderStats.done + _renderStats.skipped} / ${_renderStats.total}
-            ${_renderStats.skipped ? `· <span class="u-text-secondary">${_renderStats.skipped} cached</span>` : ''}
-            ${_renderStats.failed ? `· <span style="color:var(--btn-red-bg)">${_renderStats.failed} failed</span>` : ''}
+            ${renderStats.done + renderStats.skipped} / ${renderStats.total}
+            ${renderStats.skipped ? `· <span class="u-text-secondary">${renderStats.skipped} cached</span>` : ''}
+            ${renderStats.failed ? `· <span style="color:var(--btn-red-bg)">${renderStats.failed} failed</span>` : ''}
             <button class="render-badge__cancel" title="Cancel queue">×</button>
         </div>`;
     badge.querySelector('.render-badge__cancel').onclick = () => {
-        _renderStats.cancelled = true;
-        _renderQueue.length = 0;
+        renderStats.cancelled = true;
+        renderQueue.length = 0;
     };
 }
 
 async function _renderWorker() {
-    if (_renderActive) return; // one worker only — Photoshop is single-threaded
-    _renderActive = true;
-    while (_renderQueue.length > 0) {
-        if (_renderStats.cancelled) break;
+    if (renderActive) return; // one worker only — Photoshop is single-threaded
+    renderActive = true;
+    while (renderQueue.length > 0) {
+        if (renderStats.cancelled) break;
 
         // Chunk consecutive jobs that share a template path. The warm-process
         // batch JSX opens the template once for the whole chunk, saving the
         // ~1–4s app.open() cost per page when many pages share a template.
-        const chunk = [_renderQueue.shift()];
+        const chunk = [renderQueue.shift()];
         while (
-            _renderQueue.length > 0 &&
-            _renderQueue[0].pageData.templatePath === chunk[0].pageData.templatePath &&
-            _renderQueue[0].outputPath === chunk[0].outputPath
+            renderQueue.length > 0 &&
+            renderQueue[0].pageData.templatePath === chunk[0].pageData.templatePath &&
+            renderQueue[0].outputPath === chunk[0].outputPath
         ) {
-            chunk.push(_renderQueue.shift());
+            chunk.push(renderQueue.shift());
         }
         _updateRenderBadge();
 
         // Filter out pages whose hash matches the previous successful render.
-        const { fresh, skipped } = partitionByRenderCache(chunk, _renderHashes);
-        _renderStats.skipped += skipped.length;
+        const { fresh, skipped } = partitionByRenderCache(chunk, renderHashes);
+        renderStats.skipped += skipped.length;
         _updateRenderBadge();
         if (fresh.length === 0) continue;
 
@@ -3812,15 +3815,15 @@ async function _renderWorker() {
                 }))
             });
             for (const j of fresh) {
-                _renderHashes[j.cacheKey] = j.hash;
-                _renderStats.done++;
+                renderHashes[j.cacheKey] = j.hash;
+                renderStats.done++;
             }
             _saveRenderHashes();
         } catch (err) {
             // Batch failed wholesale — fall back to per-page renders so we
             // don't lose the entire chunk to one bad page.
             for (const j of fresh) {
-                if (_renderStats.cancelled) break;
+                if (renderStats.cancelled) break;
                 try {
                     await require('electron').ipcRenderer.invoke('build-page', {
                         templatePath: j.pageData.templatePath,
@@ -3828,35 +3831,35 @@ async function _renderWorker() {
                         photos: j.pageData.photos,
                         useAdjustmentLayers: _useAdjLayers
                     });
-                    _renderHashes[j.cacheKey] = j.hash;
+                    renderHashes[j.cacheKey] = j.hash;
                     _saveRenderHashes();
-                    _renderStats.done++;
+                    renderStats.done++;
                 } catch (e2) {
-                    _renderStats.failed++;
+                    renderStats.failed++;
                     toast(`Page ${j.pageNum} failed: ${e2.message}`, 'error');
                 }
             }
-            if (!_renderStats.cancelled) {
+            if (!renderStats.cancelled) {
                 console.warn('Batch render failed, fell back to per-page:', err.message);
             }
         }
         _updateRenderBadge();
     }
-    _renderActive = false;
+    renderActive = false;
     _updateRenderBadge();
 
-    if (_renderStats.cancelled) {
-        notify(`Render cancelled (${_renderStats.done} of ${_renderStats.total} done)`, 'warning');
-    } else if (_renderStats.failed > 0) {
-        notify(`Render finished with ${_renderStats.failed} failures`, 'warning', { duration: 6000 });
-    } else if (_renderStats.total > 0) {
+    if (renderStats.cancelled) {
+        notify(`Render cancelled (${renderStats.done} of ${renderStats.total} done)`, 'warning');
+    } else if (renderStats.failed > 0) {
+        notify(`Render finished with ${renderStats.failed} failures`, 'warning', { duration: 6000 });
+    } else if (renderStats.total > 0) {
         notify(
-            `Render complete · ${_renderStats.done} fresh${_renderStats.skipped ? `, ${_renderStats.skipped} cached` : ''}`,
+            `Render complete · ${renderStats.done} fresh${renderStats.skipped ? `, ${renderStats.skipped} cached` : ''}`,
             'success',
             { duration: 5000 }
         );
     }
-    _renderStats = { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false };
+    renderStats = { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false };
 }
 
 /**
@@ -3883,9 +3886,9 @@ async function queueRender(exportData) {
             if (baked > 0) setStatus(`Applied edits to ${baked} photo${baked === 1 ? '' : 's'} before render…`);
         }
     } catch (_) { /* fall back to unadjusted sources */ }
-    _renderStats.total += numbers.length;
+    renderStats.total += numbers.length;
     numbers.forEach(n => {
-        _renderQueue.push({ pageNum: n, pageData: pages[n], outputPath: exportData.outputPath });
+        renderQueue.push({ pageNum: n, pageData: pages[n], outputPath: exportData.outputPath });
     });
     _updateRenderBadge();
     _renderWorker();
@@ -4750,7 +4753,7 @@ function buildProjectPayload() {
         workspace: projectData,
         albumPages: safeAlbumPages,
         totalActivePages: totalActivePages,
-        renderHashes: _renderHashes
+        renderHashes
     };
 }
 
@@ -4818,7 +4821,7 @@ async function newProject() {
         projectData.imageRotations = {};
         projectData.imageAdjustments = {};
         projectData.imagePlacements = {};
-        try { _renderHashes = {}; _saveRenderHashes(); } catch (_) {}
+        try { renderHashes = {}; _saveRenderHashes(); } catch (_) {}
         if (typeof _proofPaths === 'object') {
             Object.keys(_proofPaths).forEach(k => delete _proofPaths[k]);
             Object.keys(_proofHashes).forEach(k => delete _proofHashes[k]);
@@ -5033,7 +5036,7 @@ if (btnLoadWorkspace) {
             // saves) — older projects don't have it; that's fine, queue will
             // just re-render everything once.
             if (data.renderHashes) {
-                _renderHashes = data.renderHashes;
+                renderHashes = data.renderHashes;
                 _saveRenderHashes();
             }
             await restoreWorkspace(data);

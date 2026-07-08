@@ -86,6 +86,15 @@ export interface HashablePage {
   photos: Photo[]
 }
 
+/** Progress counters for the render batch currently being worked. */
+export interface RenderStats {
+  total: number
+  done: number
+  skipped: number
+  failed: number
+  cancelled: boolean
+}
+
 /** One unit of work in the render queue. */
 export interface RenderJob {
   pageNum: number

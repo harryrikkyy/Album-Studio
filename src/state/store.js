@@ -20,6 +20,8 @@
  * @typedef {import('../shared/domain').Template} Template
  * @typedef {import('../shared/domain').ProjectData} ProjectData
  * @typedef {import('../shared/domain').HistorySnapshot} HistorySnapshot
+ * @typedef {import('../shared/domain').RenderJob} RenderJob
+ * @typedef {import('../shared/domain').RenderStats} RenderStats
  */
 
 /**
@@ -37,6 +39,10 @@
  * @property {HistorySnapshot[]} historyUndo
  * @property {HistorySnapshot[]} historyRedo
  * @property {number} historyMuted   mutate() nesting depth during undo/redo apply
+ * @property {RenderJob[]} renderQueue
+ * @property {Record<string, string>} renderHashes   cacheKey → page-input hash
+ * @property {boolean} renderActive
+ * @property {RenderStats} renderStats
  */
 
 /** @returns {AppState} */
@@ -56,6 +62,10 @@ function defaultState() {
         historyUndo: [],
         historyRedo: [],
         historyMuted: 0,
+        renderQueue: [],
+        renderHashes: {},
+        renderActive: false,
+        renderStats: { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false },
     };
 }
 
