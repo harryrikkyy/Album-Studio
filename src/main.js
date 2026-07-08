@@ -53,8 +53,19 @@ tabButtons.forEach(btn => {
 // ==========================================
 // --- GLOBAL VARIABLES & MEMORY ---
 // ==========================================
-let albumPages = {}, templateLibrary = [], filteredTemplates = [];
-let previewIndex = 0, currentPage = 1, totalActivePages = 1;
+// Phase 2 state store: the undoable core (album pages, paging, project data,
+// template lists) lives in src/state/store.js — the single source of truth.
+// exposeOnGlobal surfaces each migrated slice as an accessor property on
+// globalThis, so every bare reference below transparently reads/writes the
+// store until the module split rewrites them to explicit store access.
+/* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
+   previewIndex:writable, currentPage:writable, totalActivePages:writable,
+   projectData:writable */
+const store = require('./state/store').createStore();
+require('./state/store').exposeOnGlobal(store, [
+    'albumPages', 'templateLibrary', 'filteredTemplates',
+    'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
+]);
 // Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
 // panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
 // ('source' | 'pages' | null) — it remembers the last panel you worked in so
@@ -67,11 +78,8 @@ let _useAdjLayers = (() => { try { return localStorage.getItem('adt_adj_layers')
 let photoCache = {}, wallpaperCache = {}, pngCache = {}, maskedCache = {};
 let outputFolder = null;
 
-let projectData = {
-    imageTokens: [], templateTokens: [], wallpaperTokens: [],
-    pngTokens: [], maskTokens: [], highResTokens: [], wpHighResTokens: [],
-    outputToken: null, imageRotations: {}, imageAdjustments: {}, imagePlacements: {}
-};
+// projectData lives in the store (seeded with the same defaults) — see the
+// exposeOnGlobal block above.
 
 let activeImageFolders = new Set(), activeTemplateFolders = new Set();
 let activeWallpaperFolders = new Set(), activePngFolders = new Set(), activeMaskedFolders = new Set();
