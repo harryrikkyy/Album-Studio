@@ -19,6 +19,7 @@
  * @typedef {import('../shared/domain').Page} Page
  * @typedef {import('../shared/domain').Template} Template
  * @typedef {import('../shared/domain').ProjectData} ProjectData
+ * @typedef {import('../shared/domain').HistorySnapshot} HistorySnapshot
  */
 
 /**
@@ -33,6 +34,9 @@
  * @property {number} currentPage
  * @property {number} totalActivePages
  * @property {ProjectData} projectData
+ * @property {HistorySnapshot[]} historyUndo
+ * @property {HistorySnapshot[]} historyRedo
+ * @property {number} historyMuted   mutate() nesting depth during undo/redo apply
  */
 
 /** @returns {AppState} */
@@ -49,6 +53,9 @@ function defaultState() {
             pngTokens: [], maskTokens: [], highResTokens: [], wpHighResTokens: [],
             outputToken: null, imageRotations: {}, imageAdjustments: {}, imagePlacements: {}
         },
+        historyUndo: [],
+        historyRedo: [],
+        historyMuted: 0,
     };
 }
 

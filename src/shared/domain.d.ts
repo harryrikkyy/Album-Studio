@@ -68,6 +68,18 @@ export interface ProjectData {
   imagePlacements?: Record<string, unknown>
 }
 
+/**
+ * One undo/redo stack entry: the compact structural snapshot of the undoable
+ * core taken by _historySnapshot before each mutate().
+ */
+export interface HistorySnapshot {
+  label: string
+  albumPages: Record<string, CompactPage>
+  totalActivePages: number
+  imageRotations: Record<string, number>
+  currentPage: number
+}
+
 /** The subset of a page that feeds the render-cache hash. */
 export interface HashablePage {
   templatePath?: string

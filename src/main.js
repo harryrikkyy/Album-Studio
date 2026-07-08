@@ -60,11 +60,13 @@ tabButtons.forEach(btn => {
 // store until the module split rewrites them to explicit store access.
 /* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
    previewIndex:writable, currentPage:writable, totalActivePages:writable,
-   projectData:writable */
+   projectData:writable, historyUndo:writable, historyRedo:writable,
+   historyMuted:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'previewIndex', 'currentPage', 'totalActivePages', 'projectData',
+    'historyUndo', 'historyRedo', 'historyMuted',
 ]);
 // Slice 4 (A1/B2): template sync state. Sync ON = match templates to whichever
 // panel you're working in; OFF = always show all. `_activeMatchPanel` is sticky
@@ -195,9 +197,9 @@ function saveStateToStorage() {
 // projectData.imageRotations, currentPage. NOT tracked: folder loads, file
 // IPC, ephemeral UI state — those have explicit re-do paths.
 const _HISTORY_CAP = 80;
-const _historyUndo = [];
-const _historyRedo = [];
-let _historyMuted = 0; // mutate() calls inside undo/redo must not push history
+// historyUndo / historyRedo / historyMuted live in the state store (see the
+// exposeOnGlobal block up top). historyMuted: mutate() calls inside undo/redo
+// must not push history.
 
 // ⚡ Task 3.2: COMPACT snapshots. The old version did
 // structuredClone(albumPages) on every mutation — for a 200-page album with
@@ -255,10 +257,10 @@ function _historyApply(snap) {
  *
  * If you call mutate() from inside another mutate(), only the outermost
  * snapshot is pushed (atomic transactions). Inside undo()/redo(), mutate()
- * does not push at all (_historyMuted guard).
+ * does not push at all (historyMuted guard).
  */
 function mutate(label, fn) {
-    if (_historyMuted > 0) {
+    if (historyMuted > 0) {
         // Already inside a history apply — don't snapshot, just run.
         const r = fn();
         return r;
@@ -269,34 +271,34 @@ function mutate(label, fn) {
         result = fn();
     } catch (e) {
         // Rollback on throw so we don't leave partial state behind.
-        _historyMuted++;
-        try { _historyApply(snap); } finally { _historyMuted--; }
+        historyMuted++;
+        try { _historyApply(snap); } finally { historyMuted--; }
         throw e;
     }
-    _historyUndo.push(snap);
-    if (_historyUndo.length > _HISTORY_CAP) _historyUndo.shift();
-    _historyRedo.length = 0; // any new mutation invalidates redo stack
+    historyUndo.push(snap);
+    if (historyUndo.length > _HISTORY_CAP) historyUndo.shift();
+    historyRedo.length = 0; // any new mutation invalidates redo stack
     saveStateToStorage();
     return result;
 }
 
 function undo() {
-    if (_historyUndo.length === 0) { toast('Nothing to undo', 'info', { duration: 1500 }); return; }
+    if (historyUndo.length === 0) { toast('Nothing to undo', 'info', { duration: 1500 }); return; }
     const current = _historySnapshot('redo');
-    const prev = _historyUndo.pop();
-    _historyRedo.push(current);
-    _historyMuted++;
-    try { _historyApply(prev); } finally { _historyMuted--; }
+    const prev = historyUndo.pop();
+    historyRedo.push(current);
+    historyMuted++;
+    try { _historyApply(prev); } finally { historyMuted--; }
     toast('Undo: ' + (prev.label || 'change'), 'info', { duration: 1400 });
 }
 
 function redo() {
-    if (_historyRedo.length === 0) { toast('Nothing to redo', 'info', { duration: 1500 }); return; }
+    if (historyRedo.length === 0) { toast('Nothing to redo', 'info', { duration: 1500 }); return; }
     const current = _historySnapshot('undo');
-    const next = _historyRedo.pop();
-    _historyUndo.push(current);
-    _historyMuted++;
-    try { _historyApply(next); } finally { _historyMuted--; }
+    const next = historyRedo.pop();
+    historyUndo.push(current);
+    historyMuted++;
+    try { _historyApply(next); } finally { historyMuted--; }
     toast('Redo', 'info', { duration: 1200 });
 }
 
