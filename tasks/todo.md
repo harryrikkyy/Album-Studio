@@ -100,7 +100,17 @@
     push channels (typed subset precise, rest `Loose`, tighten as handlers move).
     renderer_pure now imports the shared domain types (de-duped). tsc green.
   - Files: src/shared/domain.d.ts, src/shared/ipc.d.ts, src/renderer_pure.js, tsconfig.json
-- [ ] **Build the state store** (single source of truth; retire reassigned globals)
+- [x] **Build the state store** (single source of truth; retire reassigned globals)
+  - Acceptance: every reassigned app-state module `let` in main.js lives in
+    `src/state/store.js` (sealed slices, get/set/subscribe), exposed back on
+    globalThis via configurable accessors until the module split rewrites
+    references. Migrated in 4 commits: undoable core → history → render
+    queue → library caches/project path. Selection has no module global (it
+    lives on DOM `.selected` classes) — nothing to migrate; the remaining
+    lets are ephemeral UI (timers/drag/observers), scoped during the split.
+  - Verify: tsc clean, lint 0 errors (31→23 warnings), 86 unit + 9 E2E green
+    after each commit. ✅
+  - Files: src/state/store.js, src/main.js, src/shared/domain.d.ts
 - [ ] **Split `main.js`** into `renderer/features/*`, `renderer/state/*` (≤~400 lines each)
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
