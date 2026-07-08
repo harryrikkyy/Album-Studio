@@ -3504,94 +3504,13 @@ if (btnOutput) {
     });
 }
 
-function buildExportData(startPage, endPage) {
-    // ⚡ Memoize HR folder scans: a 200-page album with 5 photos/page used to
-    // do up to 1,000 sync readdirSync calls (one per photo) on the renderer
-    // thread before the export even started. Now we do one per unique HR folder.
-    const _hrDirCache = new Map();
-    const nodefs = require('fs');
-    const nodepath = require('path');
-    function listHrDir(p) {
-        if (!_hrDirCache.has(p)) {
-            try { _hrDirCache.set(p, nodefs.readdirSync(p)); }
-            catch (_) { _hrDirCache.set(p, []); }
-        }
-        return _hrDirCache.get(p);
-    }
-
-    const exportData = { outputPath: outputFolder.nativePath, pages: {} };
-    for (let i = startPage; i <= endPage; i++) {
-        const pageData = albumPages[i];
-        if (!pageData || !pageData.template || pageData.photos.length === 0) continue;
-        const photos = [];
-        for (const photo of pageData.photos) {
-            const cacheData = photoCache[photo.id];
-            if (!cacheData) continue;
-            let filePath = cacheData.file?.nativePath || cacheData.proxy?.nativePath || null;
-            if (!filePath) continue;
-            if (cacheData.hrFolder && cacheData.hrFolder.nativePath) {
-                const files = listHrDir(cacheData.hrFolder.nativePath);
-                const lower = cacheData.baseName.toLowerCase();
-                const hrFile = files.find(f => f.toLowerCase().startsWith(lower));
-                if (hrFile) filePath = nodepath.join(cacheData.hrFolder.nativePath, hrFile);
-            }
-            photos.push({
-                filePath,
-                orient: photo.orient,
-                rotation: projectData.imageRotations?.[photo.id] || 0,
-                baseName: cacheData.baseName || photo.id,
-                id: photo.id,
-                adjust: projectData.imageAdjustments?.[photo.id] || null,
-                placement: projectData.imagePlacements?.[photo.id] || null,
-            });
-        }
-        if (photos.length > 0) {
-            // Generative templates have no PSD on disk. We synthesize a
-            // sentinel templatePath that the IPC interceptor recognizes and
-            // dispatches to the JS-only HR composite renderer.
-            const templatePath = pageData.template._generative
-                ? 'generative://' + pageData.template.id
-                : pageData.template.file.nativePath;
-            exportData.pages[i] = { templatePath, photos };
-        }
-    }
-    return exportData;
-}
-
-// Bake per-photo adjustments into full-res copies before the Photoshop build,
-// then point the export data at those copies. Closes the "edits round-trip to
-// the final PSD" loop: PS places an already-adjusted file (same libvips math
-// as the preview), so the delivered PSD matches the on-screen preview.
-// Returns the number of baked photos. Baked files live in a dedicated temp
-// dir that is wiped at the start of each export so they don't accumulate.
-async function bakeExportAdjustments(exportData) {
-    const ipc = require('electron').ipcRenderer;
-    const nodepath = require('path');
-    const nodeos = require('os');
-    const outDir = nodepath.join(nodeos.tmpdir(), 'albumstudio_baked');
-    // Wipe previous bake so temp files stay bounded.
-    try { require('fs').rmSync(outDir, { recursive: true, force: true }); } catch (_) {}
-    let baked = 0;
-    for (const pageNum of Object.keys(exportData.pages)) {
-        const page = exportData.pages[pageNum];
-        // Generative pages render via the libvips final composite, which
-        // applies `adjust` from the param directly — baking the source too
-        // would double-apply. Only bake for PSD (Photoshop) pages.
-        if (typeof page.templatePath === 'string' && page.templatePath.startsWith('generative://')) continue;
-        for (const photo of page.photos) {
-            if (!photo.adjust) continue;
-            try {
-                const r = await ipc.invoke('bake-adjusted-source', {
-                    srcPath: photo.filePath,
-                    adjust: photo.adjust,
-                    outDir,
-                });
-                if (r?.ok && r.path) { photo.filePath = r.path; baked++; }
-            } catch (_) { /* on failure, fall back to the unadjusted original */ }
-        }
-    }
-    return baked;
-}
+// Export-data assembly lives in src/features/export_data.js (Phase 2 split):
+// page range → render payload (HR path upgrade, per-photo edits, generative
+// sentinel), plus the pre-render adjustment bake.
+const { buildExportData, bakeExportAdjustments } = require('./features/export_data').createExportData(store, {
+    invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
+    readDir: (p) => require('fs').readdirSync(p),
+});
 
 // ─── RENDER QUEUE + DIRTY TRACKING ─────────────────────────────
 // Ships render jobs to Photoshop one page at a time so the renderer thread
