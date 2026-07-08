@@ -123,7 +123,9 @@
     explicit store access → delete the module's exposeOnGlobal accessors →
     unit tests. Done so far: `src/state/history.js` (undo/redo, 8 tests;
     history accessors deleted), `src/features/render_queue.js` (worker +
-    queueRender, 7 tests). Remaining: folders/library loading, storyboard,
-    preview/proofs, export data assembly, project save/load, tabs/UI glue.
+    queueRender, 7 tests), `src/features/project_io.js` (autosave, save/
+    load, restoreWorkspace orchestration, 11 tests). Remaining: export data
+    assembly, folders/library loading, storyboard, preview/proofs, tabs/UI
+    glue.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
