@@ -1,6 +1,7 @@
 // @ts-check
 // features/asset_library.js — the wallpaper / PNG-frame / masked-frame
-// libraries (Tabs 2–3), extracted from main.js (Phase 2 split).
+// libraries (Tabs 2–3) and the PSD template-folder loader, extracted from
+// main.js (Phase 2 split).
 //
 // Each asset type follows the same shape: a process*Folder builder that
 // populates its cache slice + card grid (DocumentFragment batch insert) and
@@ -35,6 +36,7 @@ const { getDisplayName } = require('../renderer_pure');
  * @param {(msg: string) => void} deps.setStatus
  * @param {(msg: string, kind?: string, opts?: { duration?: number }) => void} deps.toast
  * @param {(msg: string, kind?: string, opts?: { duration?: number }) => void} deps.notify
+ * @param {() => void} deps.scheduleFilterUpdate  re-run template matching after library changes
  */
 function createAssetLibrary(store, deps) {
     const wallpaperGrid = /** @type {HTMLElement} */ (document.getElementById("wallpaperGrid"));
@@ -278,7 +280,73 @@ function createAssetLibrary(store, deps) {
         });
     }
 
-    return { processWallpaperFolder, processPngFolder, processMaskedFolder };
+    // ── PSD template folders (Tab 4 library) ────────────────────────────
+
+    // ⚡ FIX: Concurrent subfolder scan — subfolders resolved in parallel, not sequentially
+    /** @param {any} folder @returns {Promise<any[]>} */
+    async function scanFolderRecursive(folder) {
+        const entries = await folder.getEntries();
+        const files = entries.filter((/** @type {any} */ e) => e.isFile);
+        const subFolders = entries.filter((/** @type {any} */ e) => e.isFolder);
+        const subResults = await Promise.all(subFolders.map((/** @type {any} */ f) => scanFolderRecursive(f)));
+        return files.concat(...subResults);
+    }
+
+    /**
+     * @param {any} folder
+     * @param {unknown} token
+     * @param {string | null} [existingFolderId]
+     */
+    async function processTemplateFolder(folder, token, existingFolderId = null) {
+        const displayName = getDisplayName(folder);
+        const folderId = existingFolderId || ("tplFld_" + displayName.replace(/[^a-zA-Z0-9]/g, '_') + Date.now());
+        store.get('activeTemplateFolders').add(folderId);
+        if (existingFolderId) store.set('templateLibrary', store.get('templateLibrary').filter(t => t.folderId !== folderId));
+
+        const allFiles = await scanFolderRecursive(folder);
+        const psdFiles = allFiles.filter(e => e.name.toLowerCase().endsWith(".psd"));
+        const jpgFiles = allFiles.filter(e => e.name.match(/\.(jpg|jpeg|png)$/i));
+
+        const newTemplates = psdFiles.map(psd => {
+            const match = psd.name.toLowerCase().match(/(\d+)h(\d+)v/);
+            const base = psd.name.toLowerCase().replace(".psd", "");
+            const preview = jpgFiles.find(img => img.name.toLowerCase().includes(base));
+            const safeId = "tpl_" + (displayName + "_" + psd.name).replace(/[^a-zA-Z0-9]/g, '_');
+            return {
+                id: safeId, folderId: folderId, name: psd.name, file: psd,
+                h: match ? parseInt(match[1]) : 0,
+                v: match ? parseInt(match[2]) : 0,
+                url: preview ? preview.url : ""
+            };
+        });
+        store.set('templateLibrary', store.get('templateLibrary').concat(newTemplates));
+
+        if (!existingFolderId) {
+            const pnl = /** @type {HTMLElement} */ (document.getElementById("whiteFolderPanel"));
+            const { row, checkbox } = deps.createFolderRow(displayName, folderId, token);
+            checkbox.onchange = (e) => {
+                const checked = /** @type {HTMLInputElement} */ (e.target).checked;
+                if (checked) store.get('activeTemplateFolders').add(folderId); else store.get('activeTemplateFolders').delete(folderId);
+                deps.scheduleFilterUpdate();
+            };
+            pnl.appendChild(row);
+        }
+        deps.scheduleFilterUpdate();
+    }
+
+    const btnLPT = document.getElementById("btnLPT");
+    if (btnLPT) {
+        btnLPT.addEventListener("click", async () => {
+            const folder = await deps.pickFolder(); if (!folder) return;
+            const token = await deps.createToken(folder);
+            const projectData = store.get('projectData');
+            if (!(projectData.templateTokens || []).includes(token)) /** @type {unknown[]} */ (projectData.templateTokens).push(token);
+            await processTemplateFolder(folder, token);
+            deps.saveState();
+        });
+    }
+
+    return { processWallpaperFolder, processPngFolder, processMaskedFolder, processTemplateFolder };
 }
 
 module.exports = { createAssetLibrary };

@@ -846,14 +846,7 @@ document.addEventListener('click', async (e) => {
 // --- 3. FILE LOADING (PHOTOS / TAB 6) ---
 // ==========================================
 
-// ⚡ FIX: Concurrent subfolder scan — subfolders resolved in parallel, not sequentially
-async function scanFolderRecursive(folder) {
-    const entries = await folder.getEntries();
-    const files = entries.filter(e => e.isFile);
-    const subFolders = entries.filter(e => e.isFolder);
-    const subResults = await Promise.all(subFolders.map(f => scanFolderRecursive(f)));
-    return files.concat(...subResults);
-}
+// scanFolderRecursive moved to src/features/asset_library.js (its only caller).
 
 // ⚡ Per-image click state map for event-delegated double-click detection
 const _redClickState = {};
@@ -1258,44 +1251,8 @@ document.addEventListener('click', (e) => {
 // ==========================================
 // --- 4. TEMPLATES ENGINE ---
 // ==========================================
-async function processTemplateFolder(folder, token, existingFolderId = null) {
-    const displayName = getDisplayName(folder);
-    const folderId = existingFolderId || ("tplFld_" + displayName.replace(/[^a-zA-Z0-9]/g, '_') + Date.now());
-    activeTemplateFolders.add(folderId);
-
-    if (existingFolderId) templateLibrary = templateLibrary.filter(t => t.folderId !== folderId);
-
-    const allFiles = await scanFolderRecursive(folder);
-    const psdFiles = allFiles.filter(e => e.name.toLowerCase().endsWith(".psd"));
-    const jpgFiles = allFiles.filter(e => e.name.match(/\.(jpg|jpeg|png)$/i));
-
-    const newTemplates = psdFiles.map(psd => {
-        const match = psd.name.toLowerCase().match(/(\d+)h(\d+)v/);
-        const base = psd.name.toLowerCase().replace(".psd", "");
-        const preview = jpgFiles.find(img => img.name.toLowerCase().includes(base));
-        const safeId = "tpl_" + (displayName + "_" + psd.name).replace(/[^a-zA-Z0-9]/g, '_');
-        return { id: safeId, folderId: folderId, name: psd.name, file: psd, h: match ? parseInt(match[1]) : 0, v: match ? parseInt(match[2]) : 0, url: preview ? preview.url : "" };
-    });
-    templateLibrary = templateLibrary.concat(newTemplates);
-
-    if (!existingFolderId) {
-        const pnl = document.getElementById("whiteFolderPanel");
-        const { row, checkbox } = createFolderRow(displayName, folderId, token);
-        checkbox.onchange = (e) => { if (e.target.checked) activeTemplateFolders.add(folderId); else activeTemplateFolders.delete(folderId); scheduleFilterUpdate(); };
-        pnl.appendChild(row);
-    }
-    scheduleFilterUpdate();
-}
-
-const btnLPT = document.getElementById("btnLPT");
-if (btnLPT) {
-    btnLPT.addEventListener("click", async () => {
-        const folder = await fs.getFolder(); if (!folder) return;
-        const token = await fs.createPersistentToken(folder);
-        if (!projectData.templateTokens.includes(token)) projectData.templateTokens.push(token);
-        await processTemplateFolder(folder, token); saveStateToStorage();
-    });
-}
+// processTemplateFolder + the Load Templates button live in
+// src/features/asset_library.js (wired in the asset-libraries section).
 
 // ==========================================
 // --- 5. FILTERING & TEMPLATE SAFE OPENER ---
@@ -2425,7 +2382,7 @@ setupResizer("photosResizer", "photosFolderContainer", "photosRow", 100, 150);
 // folder rails + Photoshop place actions + Load buttons. The cross-cutting
 // glue (folder rows, HR resolution, pickers, persistence, status) is
 // injected here.
-const { processWallpaperFolder, processPngFolder, processMaskedFolder } =
+const { processWallpaperFolder, processPngFolder, processMaskedFolder, processTemplateFolder } =
     require('./features/asset_library').createAssetLibrary(store, {
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
         createFolderRow,
@@ -2437,6 +2394,7 @@ const { processWallpaperFolder, processPngFolder, processMaskedFolder } =
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
+        scheduleFilterUpdate: () => scheduleFilterUpdate(),
     });
 
 // ==========================================

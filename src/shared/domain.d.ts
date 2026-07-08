@@ -15,6 +15,10 @@ export interface Template {
   id?: string
   name?: string
   url?: string
+  folderId?: string
+  file?: unknown
+  h?: number
+  v?: number
   _generative?: boolean
   _spec?: unknown
   _canvas?: { w: number; h: number }
