@@ -14,7 +14,6 @@ const {
     _parseExifDateFromBuffer,
     _proofTemplatePreviewPath,
     _isEditingTarget,
-    partitionByRenderCache,
 } = require("./renderer_pure");
 
 // ⚡ PERFORMANCE NOTE: All CSS that was previously injected here as a JS string
@@ -3682,127 +3681,20 @@ function _updateRenderBadge() {
     };
 }
 
-async function _renderWorker() {
-    if (renderActive) return; // one worker only — Photoshop is single-threaded
-    renderActive = true;
-    while (renderQueue.length > 0) {
-        if (renderStats.cancelled) break;
-
-        // Chunk consecutive jobs that share a template path. The warm-process
-        // batch JSX opens the template once for the whole chunk, saving the
-        // ~1–4s app.open() cost per page when many pages share a template.
-        const chunk = [renderQueue.shift()];
-        while (
-            renderQueue.length > 0 &&
-            renderQueue[0].pageData.templatePath === chunk[0].pageData.templatePath &&
-            renderQueue[0].outputPath === chunk[0].outputPath
-        ) {
-            chunk.push(renderQueue.shift());
-        }
-        _updateRenderBadge();
-
-        // Filter out pages whose hash matches the previous successful render.
-        const { fresh, skipped } = partitionByRenderCache(chunk, renderHashes);
-        renderStats.skipped += skipped.length;
-        _updateRenderBadge();
-        if (fresh.length === 0) continue;
-
-        const tplName = (chunk[0].pageData.templatePath || '').split('/').pop();
-        if (fresh.length === 1) {
-            setStatus(`Rendering page ${fresh[0].pageNum}…`);
-        } else {
-            setStatus(`Rendering pages ${fresh[0].pageNum}–${fresh[fresh.length - 1].pageNum} (${tplName})…`);
-        }
-
-        try {
-            await require('electron').ipcRenderer.invoke('build-pages-batch', {
-                templatePath: chunk[0].pageData.templatePath,
-                outputPath: chunk[0].outputPath,
-                useAdjustmentLayers: _useAdjLayers,
-                pages: fresh.map(j => ({
-                    pageName: String(j.pageNum).padStart(3, '0'),
-                    photos: j.pageData.photos
-                }))
-            });
-            for (const j of fresh) {
-                renderHashes[j.cacheKey] = j.hash;
-                renderStats.done++;
-            }
-            _saveRenderHashes();
-        } catch (err) {
-            // Batch failed wholesale — fall back to per-page renders so we
-            // don't lose the entire chunk to one bad page.
-            for (const j of fresh) {
-                if (renderStats.cancelled) break;
-                try {
-                    await require('electron').ipcRenderer.invoke('build-page', {
-                        templatePath: j.pageData.templatePath,
-                        pageName: String(j.pageNum).padStart(3, '0'),
-                        photos: j.pageData.photos,
-                        useAdjustmentLayers: _useAdjLayers
-                    });
-                    renderHashes[j.cacheKey] = j.hash;
-                    _saveRenderHashes();
-                    renderStats.done++;
-                } catch (e2) {
-                    renderStats.failed++;
-                    toast(`Page ${j.pageNum} failed: ${e2.message}`, 'error');
-                }
-            }
-            if (!renderStats.cancelled) {
-                console.warn('Batch render failed, fell back to per-page:', err.message);
-            }
-        }
-        _updateRenderBadge();
-    }
-    renderActive = false;
-    _updateRenderBadge();
-
-    if (renderStats.cancelled) {
-        notify(`Render cancelled (${renderStats.done} of ${renderStats.total} done)`, 'warning');
-    } else if (renderStats.failed > 0) {
-        notify(`Render finished with ${renderStats.failed} failures`, 'warning', { duration: 6000 });
-    } else if (renderStats.total > 0) {
-        notify(
-            `Render complete · ${renderStats.done} fresh${renderStats.skipped ? `, ${renderStats.skipped} cached` : ''}`,
-            'success',
-            { duration: 5000 }
-        );
-    }
-    renderStats = { total: 0, done: 0, skipped: 0, failed: 0, cancelled: false };
-}
-
-/**
- * Public entry: queue up a range of pages for rendering. Returns immediately;
- * the worker drains the queue in the background.
- *
- * @param {object} exportData - Result of buildExportData(start, end)
- */
-async function queueRender(exportData) {
-    const pages = exportData.pages;
-    const numbers = Object.keys(pages).map(n => parseInt(n)).sort((a, b) => a - b);
-    if (numbers.length === 0) {
-        toast('No complete pages to render in this range', 'info');
-        return;
-    }
-    // Bake per-photo adjustments into the sources before queueing, so every
-    // built PSD reflects the live preview. Mutates pages[*].photos[*].filePath
-    // in place, which is what the queue holds a reference to. Skipped when J1
-    // (editable adjustment layers) is on — the JSX places originals + adds
-    // clipped adjustment layers instead.
-    try {
-        if (!_useAdjLayers) {
-            const baked = await bakeExportAdjustments(exportData);
-            if (baked > 0) setStatus(`Applied edits to ${baked} photo${baked === 1 ? '' : 's'} before render…`);
-        }
-    } catch (_) { /* fall back to unadjusted sources */ }
-    renderStats.total += numbers.length;
-    numbers.forEach(n => {
-        renderQueue.push({ pageNum: n, pageData: pages[n], outputPath: exportData.outputPath });
-    });
-    _updateRenderBadge();
-    _renderWorker();
-}
+// The render worker + queueRender live in src/features/render_queue.js
+// (Phase 2 split): chunking, cache partition, IPC dispatch, and stats via
+// explicit store access. The DOM badge, status/notify/toast, hash
+// persistence, and the adjustment bake stay here and are injected.
+const { queueRender } = require('./features/render_queue').createRenderQueue(store, {
+    invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
+    updateBadge: () => _updateRenderBadge(),
+    setStatus: (msg) => setStatus(msg),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+    persistHashes: () => _saveRenderHashes(),
+    bakeAdjustments: (exportData) => bakeExportAdjustments(exportData),
+    useAdjLayers: () => _useAdjLayers,
+});
 
 const btnExport = document.getElementById("btnExport");
 if (btnExport) {

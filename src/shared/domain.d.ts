@@ -96,6 +96,12 @@ export interface RenderStats {
   cancelled: boolean
 }
 
+/** buildExportData's product: the page range queueRender consumes. */
+export interface ExportData {
+  outputPath: string
+  pages: Record<string, HashablePage>
+}
+
 /** One unit of work in the render queue. */
 export interface RenderJob {
   pageNum: number
