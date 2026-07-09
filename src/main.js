@@ -771,263 +771,28 @@ if (btnOpenRenamer) {
 }
 
 
-// Generative templates are virtual layouts (no PSD on disk). They appear in
-// the same template grid as PSD-backed entries and are flagged with
-// `_generative: true` so the export queue can route them through the JS-only
-// HR composite pipeline instead of Photoshop. Loading is idempotent — toggling
-// the checkbox off removes them from templateLibrary, on re-adds them.
-const _GENERATIVE_FOLDER_ID = '__generative__';
-let _generativeLoaded = false;
-
-async function loadGenerativeTemplates() {
-    if (_generativeLoaded) return;
-    const ipc = require('electron').ipcRenderer;
-    const res = await ipc.invoke('generative-catalog');
-    if (!res?.ok) { toast('Could not load generative templates: ' + (res?.error || ''), 'error'); return; }
-
-    // Each generative template gets a fake folderId so it shows up in the
-    // existing folder filter logic, plus a flag the export queue picks up.
-    activeTemplateFolders.add(_GENERATIVE_FOLDER_ID);
-    const wrapped = res.templates.map(t => ({
-        id: t.id,
-        folderId: _GENERATIVE_FOLDER_ID,
-        name: t.name,
-        // No `file` property — that's how downstream code knows this is virtual.
-        h: t.h,
-        v: t.v,
-        url: '', // we'll build a synthetic preview tile via CSS
-        _generative: true,
-        _spec: { generator: t.generator, params: t.params },
-        // Pre-bake frames + canvas so the proof renderer doesn't need to
-        // round-trip through Photoshop frame extraction.
-        _frames: t.frames,
-        _canvas: { w: t.canvasWidth, h: t.canvasHeight },
-    }));
-    templateLibrary = templateLibrary.concat(wrapped);
-    _generativeLoaded = true;
-
-    const status = document.getElementById('generativeStatus');
-    if (status) status.textContent = `${wrapped.length} layouts available in template grid`;
-    scheduleFilterUpdate();
-}
-
-function unloadGenerativeTemplates() {
-    if (!_generativeLoaded) return;
-    templateLibrary = templateLibrary.filter(t => t.folderId !== _GENERATIVE_FOLDER_ID);
-    activeTemplateFolders.delete(_GENERATIVE_FOLDER_ID);
-    _generativeLoaded = false;
-    const status = document.getElementById('generativeStatus');
-    if (status) status.textContent = '';
-    scheduleFilterUpdate();
-}
-
-const chkGenerativeTemplates = document.getElementById('chkGenerativeTemplates');
-if (chkGenerativeTemplates) {
-    chkGenerativeTemplates.addEventListener('change', (e) => {
-        if (e.target.checked) loadGenerativeTemplates();
-        else unloadGenerativeTemplates();
+// Generative templates (virtual layouts, the checkbox loader, and the
+// generative-aware HR render interceptor that diverts build-page(s) to the
+// JS-only composite) live in src/features/generative_ui.js (Phase 2 split).
+const { loadGenerativeTemplates, ensureGenerativeLoaded } =
+    require('./features/generative_ui').createGenerativeUi(store, {
+        scheduleFilterUpdate: () => scheduleFilterUpdate(),
+        toast: (msg, kind, opts) => toast(msg, kind, opts),
     });
-}
-
-// ─── Generative-aware proof rendering ─────────────────────────────────────
-// `ensureTemplateFrames` already short-circuits for templates with pre-baked
-// frames (which generative templates always have), so proofs Just Work. The
-// only remaining piece is HR rendering — see the IPC interceptor below.
-
-// ─── Generative-aware HR rendering ────────────────────────────────────────
-// The render queue's worker calls IPC `build-pages-batch` for every chunk.
-// We monkey-patch ipcRenderer.invoke for that one channel so generative pages
-// get diverted to the JS-only HR composite, while PSD-backed pages flow
-// through the existing Photoshop bridge unchanged.
-;(function _interceptHrRenderForGenerative() {
-    const ipc = require('electron').ipcRenderer;
-    const realInvoke = ipc.invoke.bind(ipc);
-    ipc.invoke = async function (channel, ...args) {
-        if (channel !== 'build-pages-batch' && channel !== 'build-page') {
-            return realInvoke(channel, ...args);
-        }
-        // Inspect the payload — if its templatePath references a generative
-        // template, dispatch it to render-final-composite instead.
-        const payload = args[0];
-        const isBatch = channel === 'build-pages-batch';
-        const pages = isBatch ? payload.pages : [payload];
-        const tpl = _findTemplateByPath(payload.templatePath);
-        if (!tpl?._generative) {
-            return realInvoke(channel, ...args);
-        }
-
-        // Run each page through the HR composite. Sequential so libvips
-        // doesn't oversaturate memory.
-        let successes = 0, failures = 0;
-        for (const p of pages) {
-            const rawPhotos = p.photos || payload.photos || [];
-            // Carry per-photo adjustments into the libvips final composite so
-            // the delivered output matches the live preview.
-            const photos = rawPhotos.map(ph => (
-                ph && ph.id && projectData.imageAdjustments?.[ph.id]
-                    ? { ...ph, adjust: projectData.imageAdjustments[ph.id] }
-                    : ph
-            ));
-            const outDir = isBatch ? payload.outputPath : null;
-            const pageName = isBatch ? p.pageName : payload.pageName;
-            const outputPath = (outDir
-                ? outDir + '/Page_' + pageName + '.jpg'
-                : (payload.outputPath || (require('os').tmpdir() + '/Page_' + pageName + '.jpg'))
-            );
-            const job = {
-                templatePath: 'generative://' + tpl.id,
-                templatePreviewPath: null, // no backdrop — fully synthesized
-                frames: tpl._frames,
-                canvasWidth: tpl._canvas.w,
-                canvasHeight: tpl._canvas.h,
-                photos,
-                outputPath,
-                smartCrop: false, // HR exports stay deterministic
-            };
-            const r = await realInvoke('render-final-composite', job);
-            if (r?.ok) successes++; else failures++;
-        }
-        return `OK ${successes}/${successes + failures}`;
-    };
-})();
-
-function _findTemplateByPath(p) {
-    if (!p) return null;
-    return templateLibrary.find(t =>
-        (t._generative && p.startsWith && p.startsWith('generative://') && p.endsWith(t.id)) ||
-        (t.file?.nativePath === p)
-    ) || null;
-}
 
 // ==========================================
 // --- TIER 3: PHOTO CURATION ---
 // ==========================================
-// Drop a folder, get a curated subset. Three-step UX:
-//   1. ANALYZE — extracts features (sharpness, exposure, perceptual hash) for
-//      every photo. Streams progress.
-//   2. APPLY  — slide thresholds, see live counts of kept / dropped / dups.
-//   3. EXPORT — copies keepers to <folder>/_Selected.
-
-const _curationState = {
-    folderPath: null,    // absolute path of last analyzed folder
-    features: null,      // last analysis result
-    lastCurate: null,    // last curate() result for export
-};
-
-const _curateBtnAnalyze = document.getElementById('btnCurateAnalyze');
-const _curateControls = document.getElementById('curateControls');
-const _curateStatus = document.getElementById('curateStatus');
-const _curateSummary = document.getElementById('curateSummary');
-const _curateBtnApply = document.getElementById('btnCurateApply');
-const _curateBtnExport = document.getElementById('btnCurateExport');
-
-function _curateOpts() {
-    const sharpness = parseInt(document.getElementById('curateSharpness').value, 10);
-    const exposure = parseInt(document.getElementById('curateExposure').value, 10) / 100;
-    const dup = parseInt(document.getElementById('curateDup').value, 10);
-    const targetH = parseInt(document.getElementById('curateTargetH').value, 10);
-    const targetV = parseInt(document.getElementById('curateTargetV').value, 10);
-    const opts = {
-        minSharpness: sharpness,
-        minExposure: exposure,
-        dupThreshold: dup,
-    };
-    if (Number.isFinite(targetH) && targetH > 0) opts.targetH = targetH;
-    if (Number.isFinite(targetV) && targetV > 0) opts.targetV = targetV;
-    return opts;
-}
-
-// Live label updates so the user sees what their slider actually means.
-['curateSharpness', 'curateExposure', 'curateDup'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const lbl = document.getElementById(id + 'Val');
-    el.addEventListener('input', () => {
-        if (id === 'curateExposure') lbl.textContent = (el.value / 100).toFixed(2);
-        else lbl.textContent = el.value;
-    });
+// The curation panel (analyze / apply thresholds / export keepers) lives in
+// src/features/curation_ui.js (Phase 2 split).
+require('./features/curation_ui').createCurationUi({
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    on: (channel, listener) => require('electron').ipcRenderer.on(channel, listener),
+    off: (channel, listener) => require('electron').ipcRenderer.removeListener(channel, listener),
+    pickFolder: () => fs.getFolder(),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
 });
-
-if (_curateBtnAnalyze) {
-    _curateBtnAnalyze.addEventListener('click', async () => {
-        try {
-            const folder = await fs.getFolder();
-            if (!folder) return;
-            _curationState.folderPath = folder.nativePath;
-            _curateBtnAnalyze.disabled = true;
-            _curateStatus.textContent = 'Analyzing…';
-            const ipc = require('electron').ipcRenderer;
-
-            // Subscribe to progress events from main.
-            const onProgress = (_e, p) => {
-                _curateStatus.textContent = `Analyzing ${p.done}/${p.total}…`;
-            };
-            ipc.on('curation-progress', onProgress);
-
-            const t0 = performance.now();
-            const res = await ipc.invoke('curation-analyze', folder.nativePath);
-            ipc.removeListener('curation-progress', onProgress);
-            if (!res?.ok) {
-                _curateStatus.textContent = 'Analysis failed: ' + (res?.error || 'unknown');
-                return;
-            }
-            _curationState.features = res.features;
-            const ms = Math.round(performance.now() - t0);
-            _curateStatus.textContent = `Analyzed ${res.features.length} photos in ${(ms / 1000).toFixed(1)}s`;
-            _curateControls.style.display = 'flex';
-            await _runCurate();
-        } catch (e) {
-            _curateStatus.textContent = 'Error: ' + e.message;
-        } finally {
-            _curateBtnAnalyze.disabled = false;
-        }
-    });
-}
-
-async function _runCurate() {
-    if (!_curationState.features) return;
-    const ipc = require('electron').ipcRenderer;
-    const res = await ipc.invoke('curation-curate', _curationState.features, _curateOpts());
-    if (!res?.ok) {
-        _curateSummary.textContent = 'Curation failed: ' + (res?.error || '');
-        _curateSummary.style.display = 'block';
-        return;
-    }
-    _curationState.lastCurate = res;
-    const s = res.stats;
-    _curateSummary.style.display = 'block';
-    _curateSummary.innerHTML = `
-        <strong>${s.kept}</strong> keepers / ${s.total} total ·
-        ${s.droppedBlur} blurry ·
-        ${s.droppedExposure} exposure ·
-        ${s.droppedDuplicates} duplicates ·
-        ${s.droppedError} unreadable ·
-        ${s.clusters} unique scenes
-    `;
-    _curateBtnExport.disabled = s.kept === 0;
-}
-
-if (_curateBtnApply) _curateBtnApply.addEventListener('click', _runCurate);
-
-if (_curateBtnExport) {
-    _curateBtnExport.addEventListener('click', async () => {
-        if (!_curationState.lastCurate || !_curationState.folderPath) return;
-        _curateBtnExport.disabled = true;
-        const ipc = require('electron').ipcRenderer;
-        const res = await ipc.invoke(
-            'curation-export',
-            _curationState.lastCurate.keepers,
-            _curationState.folderPath
-        );
-        _curateBtnExport.disabled = false;
-        if (!res?.ok) {
-            toast('Export failed: ' + (res?.error || 'unknown'), 'error');
-            return;
-        }
-        notify(`Copied ${res.copied} photos → ${res.dest.split('/').pop()}/`, 'success', { duration: 6000 });
-        await ipc.invoke('open-external', 'file://' + res.dest);
-    });
-}
 
 // ==========================================
 // --- TIER 3.B: LIBRARY ---
@@ -1049,8 +814,8 @@ const { refreshLibraryView } =
         processWallpaperFolder: (folder, hrFolder, name, token, id) => processWallpaperFolder(folder, hrFolder, name, token, id),
         processPngFolder: (folder, token, id) => processPngFolder(folder, token, id),
         processMaskedFolder: (folder, token, id) => processMaskedFolder(folder, token, id),
-        generativeFolderId: _GENERATIVE_FOLDER_ID,
-        ensureGenerativeLoaded: async () => { if (!_generativeLoaded) await loadGenerativeTemplates(); },
+        generativeFolderId: require('./features/generative_ui').GENERATIVE_FOLDER_ID,
+        ensureGenerativeLoaded: () => ensureGenerativeLoaded(),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
