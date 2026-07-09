@@ -1,6 +1,5 @@
 const fs = require("./stubs/uxp").storage.localFileSystem;
-const { app, core } = require("./stubs/photoshop");
-const { batchPlay } = require("./stubs/photoshop").action;
+const { app } = require("./stubs/photoshop");
 
 // Pure, testable helpers extracted from this file (no DOM / no shared state).
 // See src/renderer_pure.js. Destructured here so every existing call site
@@ -259,9 +258,6 @@ function applyGlobalRotation(safeId, newRot) {
     });
 }
 
-async function forceEmbed() {
-    try { await batchPlay([{ "_obj": "placedLayerConvertToEmbedded" }], {}); } catch(e) {}
-}
 
 // HR source resolution (getTrueFile), EXIF capture-time sorting, and the
 // high-res map builder live in src/features/photo_sources.js (Phase 2 split).
@@ -592,143 +588,21 @@ updateAdjustPanel();
 
 
 // ── Spread Editor bridge ───────────────────────────────────────
-// Builds the payload the editor window needs (frame geometry + photo proxies
-// + current placement/adjust), opens the editor, and applies edits back.
-async function buildSpreadPayload(pageNum) {
-    const page = albumPages[pageNum];
-    if (!page || !page.template) return null;
-    const tpl = await ensureTemplateFrames(page.template);
-    if (!tpl || !tpl._frames || !tpl._canvas) return null;
-
-    // Same partition + ordering the renderer/JSX use: h photos → h frames,
-    // v photos → v frames, each sorted by frame name.
-    const hFrames = tpl._frames.filter(f => /toolkithframe/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name));
-    const vFrames = tpl._frames.filter(f => /toolkitvframe/i.test(f.name)).sort((a, b) => a.name.localeCompare(b.name));
-    const hPhotos = page.photos.filter(p => p.orient === 'h');
-    const vPhotos = page.photos.filter(p => p.orient === 'v');
-    const items = [];
-    const assign = (photos, frames, orient) => {
-        for (let i = 0; i < photos.length && i < frames.length; i++) {
-            const p = photos[i];
-            const c = photoCache[p.id];
-            items.push({
-                id: p.id,
-                url: (c && c.url) || p.url,
-                orient,
-                frame: frames[i],
-                rotation: projectData.imageRotations?.[p.id] || 0,
-                placement: projectData.imagePlacements?.[p.id] || null,
-                adjust: projectData.imageAdjustments?.[p.id] || null,
-            });
-        }
-    };
-    assign(hPhotos, hFrames, 'h');
-    assign(vPhotos, vFrames, 'v');
-
-    // Lightweight list of every editable spread so the editor's left rail can
-    // navigate between pages (full payload is fetched lazily per page).
-    const spreads = [];
-    for (let i = 1; i <= totalActivePages; i++) {
-        const pg = albumPages[i];
-        if (!pg || !pg.template || !(pg.photos && pg.photos.length)) continue;
-        spreads.push({ pageNum: i, backdropUrl: pg.template.url || null });
-    }
-
-    return {
-        pageNum,
-        canvasW: tpl._canvas.w,
-        canvasH: tpl._canvas.h,
-        backdropUrl: tpl.url || null,
-        items,
-        spreads,
-    };
-}
-
-const btnEditSpread = document.getElementById('btnEditSpread');
-if (btnEditSpread) {
-    btnEditSpread.addEventListener('click', async () => {
-        const page = albumPages[currentPage];
-        if (!page || !page.template || !(page.photos && page.photos.length)) {
-            toast('Add a template and photos to this page first', 'info');
-            return;
-        }
-        setStatus('Opening Spread Editor…');
-        const payload = await buildSpreadPayload(currentPage);
-        if (!payload) { toast('Could not read this page for editing', 'error'); return; }
-        try { await require('electron').ipcRenderer.invoke('editor-open', payload); }
-        catch (e) { toast('Could not open editor: ' + (e.message || e), 'error'); }
-        setStatus('');
-    });
-}
-
-// Editor → here: persist placement/adjustment edits and refresh the preview.
-require('electron').ipcRenderer.on('editor-changes', (_e, changes) => {
-    if (!changes) return;
-    if (!projectData.imagePlacements) projectData.imagePlacements = {};
-    if (!projectData.imageAdjustments) projectData.imageAdjustments = {};
-    if (changes.placements) {
-        for (const [id, pl] of Object.entries(changes.placements)) {
-            if (pl) projectData.imagePlacements[id] = pl; else delete projectData.imagePlacements[id];
-        }
-    }
-    if (changes.adjustments) {
-        for (const [id, adj] of Object.entries(changes.adjustments)) {
-            if (adj) projectData.imageAdjustments[id] = adj; else delete projectData.imageAdjustments[id];
-        }
-    }
-    try { saveStateToStorage(); } catch (_) {}
-    // Refresh the on-app live preview if the edited page is the current one.
-    if (!changes.pageNum || changes.pageNum === currentPage) {
-        if (typeof scheduleLivePreview === 'function') scheduleLivePreview();
-        updateAdjustPanel();
-    }
-    // The edited page's storyboard proof (Tab 7 / page_NNN.jpg) is now stale.
-    // Invalidate its cache and re-render it in the background (debounced) so
-    // the proof reflects the edit without a manual "Generate Proofs" pass.
-    if (changes.pageNum) _scheduleEditedPageReproof(changes.pageNum);
-});
-
-// _scheduleEditedPageReproof (debounced per-page re-proof after a Spread
-// Editor edit) lives in src/features/proofs.js (destructured above).
-
-// Editor → here: swap two photos between frames on a page. Photos keep their
-// own per-id placement/adjust (keyed by photo id), so each photo's crop and
-// colour travel with it into the new slot. We swap the two photos' positions
-// in albumPages[page].photos; since frames are assigned by orientation+order,
-// swapping two same-orientation photos swaps which frame each lands in.
-require('electron').ipcRenderer.on('editor-swap', (_e, msg) => {
-    if (!msg || !msg.aId || !msg.bId) return;
-    const page = albumPages[msg.pageNum];
-    if (!page || !page.photos) return;
-    const ia = page.photos.findIndex(p => p.id === msg.aId);
-    const ib = page.photos.findIndex(p => p.id === msg.bId);
-    if (ia === -1 || ib === -1 || ia === ib) return;
-    mutate('Swap photos', () => {
-        const a = page.photos[ia];
-        const b = page.photos[ib];
-        // Swap orientation too so cross-shape swaps re-derive the right frame
-        // assignment (frames are assigned by orientation + order). For
-        // same-orientation swaps this is a no-op and only the positions matter.
-        const ao = a.orient; a.orient = b.orient; b.orient = ao;
-        page.photos[ia] = b;
-        page.photos[ib] = a;
-    });
-    if (msg.pageNum === currentPage) {
-        if (typeof renderGreenBox === 'function') renderGreenBox();
-        if (typeof scheduleLivePreview === 'function') scheduleLivePreview();
-    }
-    // The swapped page's storyboard proof is now stale — refresh it too.
-    _scheduleEditedPageReproof(msg.pageNum);
-});
-
-// Editor → here: navigate the editor to a different page. Rebuild that page's
-// payload and push it to the editor window (single source of truth).
-require('electron').ipcRenderer.on('editor-goto', async (_e, msg) => {
-    if (!msg || !msg.pageNum) return;
-    try {
-        const payload = await buildSpreadPayload(msg.pageNum);
-        if (payload) await require('electron').ipcRenderer.invoke('editor-open', payload);
-    } catch (_) {}
+// The payload builder (buildSpreadPayload), the Edit Spread button, and the
+// editor-changes/swap/goto push handlers live in
+// src/features/spread_editor.js (Phase 2 split).
+require('./features/spread_editor').createSpreadEditor(store, {
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    on: (channel, listener) => require('electron').ipcRenderer.on(channel, listener),
+    ensureTemplateFrames: (tpl) => ensureTemplateFrames(tpl),
+    scheduleEditedPageReproof: (pageNum) => _scheduleEditedPageReproof(pageNum),
+    mutate: (label, fn) => mutate(label, fn),
+    saveState: () => saveStateToStorage(),
+    scheduleLivePreview: () => scheduleLivePreview(),
+    updateAdjustPanel: () => updateAdjustPanel(),
+    renderGreenBox: () => renderGreenBox(),
+    setStatus: (msg) => setStatus(msg),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
 });
 
 // ==========================================
@@ -736,54 +610,6 @@ require('electron').ipcRenderer.on('editor-goto', async (_e, msg) => {
 // ==========================================
 // The green-box composer and Smart Auto-Fill live in
 // src/features/album_pages.js (wired in the page-navigation section).
-
-// ==========================================
-// --- 8. THE MASTER PLACEMENT ENGINE ---
-// ==========================================
-async function buildDocumentLayers(doc, pageData) {
-    let hPhotos = pageData.photos.filter(p => p.orient === 'h');
-    let vPhotos = pageData.photos.filter(p => p.orient === 'v');
-    let hFramesData = [], vFramesData = [];
-
-    function findFrames(parent) { parent.layers.forEach(l => { const lowerName = l.name.toLowerCase(); if (lowerName.includes("toolkithframe")) hFramesData.push({id: l.id, name: l.name}); else if (lowerName.includes("toolkitvframe")) vFramesData.push({id: l.id, name: l.name}); if (l.layers && l.layers.length > 0) findFrames(l); }); }
-    findFrames(doc);
-    hFramesData.sort((a,b) => a.name.localeCompare(b.name));
-    vFramesData.sort((a,b) => a.name.localeCompare(b.name));
-
-    function getLayerById(id, parent=doc) { for(let l of parent.layers) { if (l.id === id) return l; if (l.layers && l.layers.length > 0) { let found = getLayerById(id, l); if (found) return found; } } return null; }
-
-    async function placeAndFit(photoObj, frameData) {
-        const cacheData = photoCache[photoObj.id]; if (!cacheData) return;
-        const fetchResult = await getTrueFile(cacheData);
-        const frameLayer = getLayerById(frameData.id); if (!frameLayer) return;
-        doc.activeLayers = [frameLayer];
-        const token = await fs.createSessionToken(fetchResult.file);
-        await batchPlay([{ "_obj": "placeEvent", "null": { "_path": token, "_kind": "local" }, "linked": false, "freeTransformCenterState": { "_enum": "quadCenterState", "_value": "QCSAverage" }, "offset": { "_obj": "offset", "horizontal": { "_unit": "pixelsUnit", "_value": 0 }, "vertical": { "_unit": "pixelsUnit", "_value": 0 } } }], {});
-        await forceEmbed();
-        const placedLayer = doc.activeLayers[0];
-        placedLayer.name = fetchResult.isHr ? cacheData.baseName + "_HighRes" : cacheData.baseName;
-        placedLayer.moveAbove(frameLayer);
-        await batchPlay([{ "_obj": "groupEvent", "_target": [{ "_ref": "layer", "_enum": "ordinal", "_value": "targetEnum" }] }], {});
-        const rotation = projectData.imageRotations[photoObj.id] || 0;
-        if (rotation !== 0) {
-            await core.executeAsModal(async () => {
-                await batchPlay([{ "_obj": "rotate", "_target": [{"_ref": "layer", "_id": placedLayer.id}], "angle": {"_unit": "angleUnit", "_value": rotation}, "freeTransformCenterState": {"_enum": "quadCenterState", "_value": "QCSAverage"} }], {});
-            }, {"commandName": "Apply Saved Rotation to High-Res"});
-        }
-        const fBounds = frameLayer.boundsNoEffects; const fWidth = fBounds.right - fBounds.left; const fHeight = fBounds.bottom - fBounds.top;
-        const pBounds = placedLayer.boundsNoEffects; const pWidth = pBounds.right - pBounds.left; const pHeight = pBounds.bottom - pBounds.top;
-        const scale = Math.max(fWidth / pWidth, fHeight / pHeight) * 100; await placedLayer.scale(scale, scale);
-        const newBounds = placedLayer.boundsNoEffects;
-        const frameCenterX = fBounds.left + (fWidth / 2); const frameCenterY = fBounds.top + (fHeight / 2);
-        const photoCenterX = newBounds.left + ((newBounds.right - newBounds.left) / 2);
-        const photoCenterY = newBounds.top + ((newBounds.bottom - newBounds.top) / 2);
-        await placedLayer.translate(frameCenterX - photoCenterX, frameCenterY - photoCenterY);
-    }
-
-    for (let i = 0; i < hPhotos.length && i < hFramesData.length; i++) await placeAndFit(hPhotos[i], hFramesData[i]);
-    for (let i = 0; i < vPhotos.length && i < vFramesData.length; i++) await placeAndFit(vPhotos[i], vFramesData[i]);
-    doc.activeLayers = [];
-}
 
 const btnAutoThis = document.getElementById("btnAutoThis");
 if (btnAutoThis) {
