@@ -138,8 +138,10 @@
     retired), `src/features/album_pages.js` (page navigation + green-box
     composer + Smart Auto-Fill — largest module of the split),
     `src/ui_feedback.js` (setStatus/toast/notify — DOM-owning, no
-    store/IPC deps; still injected into feature modules). main.js is
-    at ~2,471 lines (from 5,229). Remaining: tabs/UI glue + residual
-    helpers (spread editor, rotation, EXIF).
+    store/IPC deps; still injected into feature modules),
+    `src/features/photo_sources.js` (getTrueFile + HR-entries cache,
+    readExifDate, sortPhotosByExif, buildHighResMap; photoCache via
+    store). main.js is at ~2,259 lines (from 5,229). Remaining:
+    tabs/UI glue + residual helpers (spread editor, rotation).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
