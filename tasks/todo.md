@@ -136,8 +136,10 @@
     undoable cross-page move), `src/features/proofs.js` (fast proof
     renderer + live preview + client gallery; currentProjectPath accessor
     retired), `src/features/album_pages.js` (page navigation + green-box
-    composer + Smart Auto-Fill — largest module of the split). main.js is
-    at ~2,539 lines (from 5,229). Remaining: tabs/UI glue + residual
-    helpers (spread editor, rotation, EXIF, toast/status).
+    composer + Smart Auto-Fill — largest module of the split),
+    `src/ui_feedback.js` (setStatus/toast/notify — DOM-owning, no
+    store/IPC deps; still injected into feature modules). main.js is
+    at ~2,471 lines (from 5,229). Remaining: tabs/UI glue + residual
+    helpers (spread editor, rotation, EXIF).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
