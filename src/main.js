@@ -5,10 +5,8 @@ const { app } = require("./stubs/photoshop");
 // See src/renderer_pure.js. Destructured here so every existing call site
 // (escapeHtml(...), _generativePreviewSvg(...), etc.) resolves unchanged.
 const {
-    escapeHtml,
     _generativePreviewSvg,
     getPanelHeaderHTML,
-    getDisplayName,
     _hashPage,
     _proofTemplatePreviewPath,
     _isEditingTarget,
@@ -57,9 +55,7 @@ tabButtons.forEach(btn => {
    currentPage:writable, totalActivePages:writable,
    projectData:writable, renderQueue:writable, renderHashes:writable,
    renderActive:writable, renderStats:writable, photoCache:writable,
-   outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable,
-   activeWallpaperFolders:writable, activePngFolders:writable, activeMaskedFolders:writable,
-   globalHighResMap:writable, globalWpHighResMap:writable */
+   outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
@@ -170,93 +166,34 @@ const { toast, setStatus, notify } = require('./ui_feedback');
 
 // getPanelHeaderHTML moved to src/renderer_pure.js (required at top).
 
-// ⚡ Single source of truth for the per-folder row that lives inside a
-// .folder-rail__panel. The 5 processXxxFolder() functions used to inline
-// 4–5 lines of nearly-identical HTML each — this returns the fully-built
-// element so they all share the same DOM contract.
-function createFolderRow(displayName, folderId, token, count) {
-    const row = document.createElement('div');
-    row.className = 'folder-rail__row';
-
-    const label = document.createElement('label');
-    label.className = 'folder-rail__label';
-    label.title = displayName;
-
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = true;
-    cb.value = folderId;
-    cb.dataset.token = token || '';
-
-    // Full name (was truncated to 10 chars, which made similarly-named source
-    // folders impossible to tell apart). CSS ellipsis handles overflow, and
-    // the label `title` shows the full path on hover.
-    const name = document.createElement('span');
-    name.className = 'folder-rail__name';
-    name.textContent = '📁 ' + displayName;
-
-    // Optional count badge (e.g. number of photos in the folder).
-    const countEl = document.createElement('span');
-    countEl.className = 'folder-rail__count';
-    if (typeof count === 'number') countEl.textContent = String(count);
-    else countEl.style.display = 'none';
-
-    label.appendChild(cb);
-    label.appendChild(name);
-    label.appendChild(countEl);
-    row.appendChild(label);
-
-    return { row, checkbox: cb, countEl };
-}
+// The folder rail engine — the shared folder-row builder (createFolderRow),
+// global photo rotation, the remove-folders dialog, and the checked-folder
+// refresh engine — lives in src/features/folder_refresh.js (Phase 2 split).
+// The five processXxxFolder engines are injected via late-bound arrows (they
+// are created further down by photo_library / asset_library).
+const { createFolderRow, applyGlobalRotation } =
+    require('./features/folder_refresh').createFolderRefresh(store, {
+        mutate: (label, fn) => mutate(label, fn),
+        isTab6Rendered: () => tab6Rendered,
+        getPhotoPages: (photoId) => photoPageMap[photoId],
+        renderGreenBox: () => renderGreenBox(),
+        scheduleFilterUpdate: () => scheduleFilterUpdate(),
+        saveState: () => saveStateToStorage(),
+        syncViewToState: () => syncViewToState(),
+        getEntryForToken: (token) => fs.getEntryForPersistentToken(token),
+        buildHighResMap: (folder, mapObj) => buildHighResMap(folder, mapObj),
+        processImageFolder: (folder, hrFolder, token, id) => processImageFolder(folder, hrFolder, token, id),
+        processWallpaperFolder: (folder, hrFolder, name, token, id) => processWallpaperFolder(folder, hrFolder, name, token, id),
+        processTemplateFolder: (folder, token, id) => processTemplateFolder(folder, token, id),
+        processPngFolder: (folder, token, id) => processPngFolder(folder, token, id),
+        processMaskedFolder: (folder, token, id) => processMaskedFolder(folder, token, id),
+        setStatus: (msg) => setStatus(msg),
+        notify: (msg, kind, opts) => notify(msg, kind, opts),
+    });
 
 // getDisplayName moved to src/renderer_pure.js (required at top).
 
-// ⚡ FIX: Rotation only triggers renderGreenBox on orientation flip (h↔v).
-// Non-flip rotations (0→90→180→270 within same axis) update the CSS transform
-// directly and skip the full green box DOM rebuild entirely.
-// Uses photoPageMap reverse lookup instead of scanning all pages.
-function applyGlobalRotation(safeId, newRot) {
-    mutate('Rotate photo', () => {
-        const oldRot = projectData.imageRotations[safeId] || 0;
-        projectData.imageRotations[safeId] = newRot;
-        const isFlip = (Math.abs(newRot - oldRot) % 180) === 90;
-
-        // Update Tab 1 (redBox) thumbnail in-place
-        const img1 = document.getElementById(safeId);
-        if (img1) {
-            img1.style.transform = `rotate(${newRot}deg)`;
-            const badge1 = img1.parentElement && img1.parentElement.querySelector('.rot-badge');
-            if (badge1) { badge1.style.display = newRot === 0 ? "none" : "block"; badge1.innerText = newRot + "°"; }
-        }
-
-        if (tab6Rendered) {
-            const card6 = document.getElementById("pt_" + safeId);
-            if (card6) {
-                const img6 = card6.querySelector(".tab6-photo-img");
-                if (img6) img6.style.transform = `rotate(${newRot}deg)`;
-                const badge6 = card6.querySelector('.rot-badge');
-                if (badge6) { badge6.style.display = newRot === 0 ? "none" : "block"; badge6.innerText = newRot + "°"; }
-            }
-        }
-
-        if (isFlip) {
-            const pages = photoPageMap[safeId];
-            if (pages) {
-                pages.forEach(pageNum => {
-                    const page = albumPages[pageNum];
-                    if (page && page.photos) {
-                        const p = page.photos.find(x => x.id === safeId);
-                        if (p) p.orient = p.orient === 'h' ? 'v' : 'h';
-                    }
-                });
-            }
-            renderGreenBox();
-            scheduleFilterUpdate();
-        }
-
-    saveStateToStorage();
-    });
-}
+// applyGlobalRotation lives in src/features/folder_refresh.js (created above).
 
 
 // HR source resolution (getTrueFile), EXIF capture-time sorting, and the
@@ -300,135 +237,9 @@ const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
 // ==========================================
 // --- 2. FOLDER DIALOG & REFRESH ENGINE ---
 // ==========================================
-document.addEventListener('click', (e) => {
-    if (e.target && e.target.classList.contains('btn-remove-fld')) {
-        const type = e.target.dataset.type;
-        const listDiv = document.getElementById("removeDialogList");
-        listDiv.innerHTML = "";
-        let panelId = "";
-        if (type === "images") panelId = "redFolderPanel";
-        else if (type === "templates") panelId = "whiteFolderPanel";
-        else if (type === "wallpapers") panelId = "wpFolderPanel";
-        else if (type === "pngs") panelId = "pngFolderPanel";
-        else if (type === "masks") panelId = "maskedFolderPanel";
-
-        const panel = document.getElementById(panelId);
-        if (!panel) return;
-        const checkboxes = panel.querySelectorAll("input[type='checkbox']");
-        if (checkboxes.length === 0) {
-            listDiv.innerHTML = "<div class='dialog-empty'>No folders loaded.</div>";
-        } else {
-            checkboxes.forEach(cb => {
-                const labelText = cb.parentElement.innerText.replace("📁", "").replace("🗑️", "").replace("🔄", "").trim();
-                const folderId = cb.value;
-                const token = cb.dataset.token || "";
-                listDiv.innerHTML += `<label><input type="checkbox" class="dialog-fld-cb" value="${escapeHtml(folderId)}" data-type="${escapeHtml(type)}" data-token="${escapeHtml(token)}"> 📁 ${escapeHtml(labelText)}</label>`;
-            });
-        }
-        document.getElementById("removeFolderDialog").showModal();
-    }
-});
-
-const btnCancelRemove = document.getElementById("btnCancelRemove");
-if (btnCancelRemove) {
-    btnCancelRemove.addEventListener("click", (e) => {
-        e.preventDefault();
-        document.getElementById("removeFolderDialog").close();
-    });
-}
-
-const btnConfirmRemove = document.getElementById("btnConfirmRemove");
-if (btnConfirmRemove) {
-    btnConfirmRemove.addEventListener("click", (e) => {
-        e.preventDefault();
-        const checkboxes = document.querySelectorAll(".dialog-fld-cb:checked");
-        checkboxes.forEach(cb => {
-            const folderId = cb.value, type = cb.dataset.type, token = cb.dataset.token;
-            document.querySelectorAll(`input[value="${folderId}"]:not(.dialog-fld-cb)`).forEach(input => {
-                if (input.parentElement && input.parentElement.parentElement) input.parentElement.parentElement.remove();
-            });
-            if (type === "images") {
-                activeImageFolders.delete(folderId);
-                if (projectData.imageTokens) projectData.imageTokens = projectData.imageTokens.filter(t => t !== token);
-                if (projectData.highResTokens) projectData.highResTokens = projectData.highResTokens.filter(t => t !== token);
-                Array.from(redBox.querySelectorAll(`.img-wrapper-red[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-                Array.from(photosGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-            } else if (type === "templates") {
-                activeTemplateFolders.delete(folderId);
-                if (projectData.templateTokens) projectData.templateTokens = projectData.templateTokens.filter(t => t !== token);
-                templateLibrary = templateLibrary.filter(t => t.folderId !== folderId);
-                scheduleFilterUpdate();
-            } else if (type === "wallpapers") {
-                activeWallpaperFolders.delete(folderId);
-                if (projectData.wallpaperTokens) projectData.wallpaperTokens = projectData.wallpaperTokens.filter(t => t !== token);
-                if (projectData.wpHighResTokens) projectData.wpHighResTokens = projectData.wpHighResTokens.filter(t => t !== token);
-                Array.from(wallpaperGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-            } else if (type === "pngs") {
-                activePngFolders.delete(folderId);
-                if (projectData.pngTokens) projectData.pngTokens = projectData.pngTokens.filter(t => t !== token);
-                Array.from(pngGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-            } else if (type === "masks") {
-                activeMaskedFolders.delete(folderId);
-                if (projectData.maskTokens) projectData.maskTokens = projectData.maskTokens.filter(t => t !== token);
-                Array.from(maskedGrid.querySelectorAll(`.wp-card[data-folder-id="${folderId}"]`)).forEach(el => el.remove());
-            }
-        });
-        document.getElementById("removeFolderDialog").close();
-        saveStateToStorage();
-    });
-}
-
-async function refreshTab(type) {
-    setStatus("Refreshing checked folders…");
-    let panelId = "";
-    if (type === "images") panelId = "redFolderPanel";
-    else if (type === "templates") panelId = "whiteFolderPanel";
-    else if (type === "wallpapers") panelId = "wpFolderPanel";
-    else if (type === "pngs") panelId = "pngFolderPanel";
-    else if (type === "masks") panelId = "maskedFolderPanel";
-
-    const panel = document.getElementById(panelId); if (!panel) return;
-    const checkedBoxes = panel.querySelectorAll("input[type='checkbox']:checked");
-
-    for (const cb of checkedBoxes) {
-        const folderId = cb.value, token = cb.dataset.token;
-        if (!token) continue;
-        try {
-            const masterFolder = await fs.getEntryForPersistentToken(token);
-            let targetFolder = masterFolder, hrFolder = null;
-            if (type === "images" || type === "wallpapers") {
-                try { const thumbFolder = await masterFolder.getEntry("_Thumbnails"); if(thumbFolder.isFolder) { targetFolder = thumbFolder; hrFolder = masterFolder; } } catch(e){}
-                if (type === "images") {
-                    await buildHighResMap(masterFolder, globalHighResMap);
-                    await processImageFolder(targetFolder, hrFolder, token, folderId);
-                } else {
-                    await buildHighResMap(masterFolder, globalWpHighResMap);
-                    await processWallpaperFolder(targetFolder, hrFolder, getDisplayName(masterFolder), token, folderId);
-                }
-            } else if (type === "templates") {
-                await processTemplateFolder(masterFolder, token, folderId);
-            } else if (type === "pngs") {
-                await processPngFolder(masterFolder, token, folderId);
-            } else if (type === "masks") {
-                await processMaskedFolder(masterFolder, token, folderId);
-            }
-        } catch(e) { console.error("Failed to refresh folder", e); }
-    }
-
-    if (type === "images") {
-        syncViewToState();
-    } else if (type === "templates") {
-        Object.values(albumPages).forEach(page => { if (page.template) { const matchedTemp = templateLibrary.find(t => t.id === page.template.id); if (matchedTemp) page.template = matchedTemp; } });
-        scheduleFilterUpdate();
-    }
-    notify("Refresh complete!", "success");
-}
-
-document.addEventListener('click', async (e) => {
-    if (e.target && e.target.classList.contains('btn-reload-fld')) {
-        await refreshTab(e.target.dataset.type);
-    }
-});
+// The remove-folders dialog (.btn-remove-fld → #removeFolderDialog) and the
+// checked-folder refresh engine (refreshTab + .btn-reload-fld) live in
+// src/features/folder_refresh.js (created above).
 
 // ==========================================
 // --- 3. FILE LOADING (PHOTOS / TAB 6) ---
