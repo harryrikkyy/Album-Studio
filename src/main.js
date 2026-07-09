@@ -134,7 +134,7 @@ function syncViewToState() {
 
 const redBox = document.getElementById("redBox");
 const whiteBox = document.getElementById("whiteBox");
-const statusText = document.getElementById("statusText"), wallpaperGrid = document.getElementById("wallpaperGrid");
+const wallpaperGrid = document.getElementById("wallpaperGrid");
 const pngGrid = document.getElementById("pngGrid"), maskedGrid = document.getElementById("maskedGrid");
 const photosGrid = document.getElementById("photosGrid");
 const photosSlider = document.getElementById("photosSlider");
@@ -166,77 +166,9 @@ const { mutate, undo, redo } = require('./state/history').createHistory(store, {
 });
 
 // ─── TOAST + STATUS SYSTEM ─────────────────────────────────────
-// Replaces the previous pattern of writing every state change into
-// the 10px footer #statusText label that nobody reads. Now:
-//   setStatus(msg)              → footer only (transient progress)
-//   toast(msg, kind, opts)      → ephemeral toast in the corner
-//   notify(msg, kind, opts)     → BOTH: toast + footer
-//
-// kind ∈ 'info' | 'success' | 'warning' | 'error'.
-// `duration: 0` makes a toast sticky (user must close).
-const _toastIcons = { info: 'ℹ', success: '✓', warning: '⚠', error: '✕' };
-
-function _ensureToastStack() {
-    let stack = document.getElementById('toastStack');
-    if (!stack) {
-        stack = document.createElement('div');
-        stack.id = 'toastStack';
-        stack.className = 'toast-stack';
-        stack.setAttribute('role', 'status');
-        stack.setAttribute('aria-live', 'polite');
-        document.body.appendChild(stack);
-    }
-    return stack;
-}
-
-function toast(message, kind = 'info', { duration = 3500 } = {}) {
-    const stack = _ensureToastStack();
-    const el = document.createElement('div');
-    el.className = `toast toast--${kind}`;
-    if (kind === 'error') el.setAttribute('aria-live', 'assertive');
-
-    const icon = document.createElement('span');
-    icon.className = 'toast__icon';
-    icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = _toastIcons[kind] || _toastIcons.info;
-
-    const body = document.createElement('div');
-    body.className = 'toast__body';
-    body.textContent = message;
-
-    const close = document.createElement('button');
-    close.className = 'toast__close';
-    close.setAttribute('aria-label', 'Dismiss notification');
-    close.textContent = '×';
-
-    el.appendChild(icon);
-    el.appendChild(body);
-    el.appendChild(close);
-    stack.appendChild(el);
-
-    let timer = null;
-    const dismiss = () => {
-        if (!el.parentNode) return;
-        el.classList.add('is-leaving');
-        el.addEventListener('animationend', () => el.remove(), { once: true });
-        if (timer) clearTimeout(timer);
-    };
-    close.addEventListener('click', dismiss);
-    if (duration > 0) timer = setTimeout(dismiss, duration);
-
-    return { dismiss };
-}
-
-function setStatus(message) {
-    if (statusText) statusText.innerText = message || '';
-}
-
-// Both: surface to the toast stack AND keep the footer in sync. Use this
-// for any state change a user genuinely needs to know about.
-function notify(message, kind = 'info', opts = {}) {
-    setStatus(message);
-    toast(message, kind, opts);
-}
+// setStatus / toast / notify live in src/ui_feedback.js (Phase 2 split);
+// feature modules keep receiving them as injected deps below.
+const { toast, setStatus, notify } = require('./ui_feedback');
 
 // getPanelHeaderHTML moved to src/renderer_pure.js (required at top).
 
