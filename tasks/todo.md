@@ -155,8 +155,9 @@
     `src/features/generative_ui.js` (catalog load/unload + checkbox +
     generative-aware invoke interceptor; loaded-flag module-local),
     `src/features/curation_ui.js` (analyze/apply/export panel;
-    store-free). main.js is at ~1,389 lines (from 5,229). Remaining:
-    tabs/UI glue + residual helpers (plugins view, render badge,
-    newProject, tools bar, shortcut help, selection/drag glue).
+    store-free), `src/features/plugins_view.js` (plugins panel;
+    store-free). main.js is at ~1,334 lines (from 5,229). Remaining:
+    tabs/UI glue + residual helpers (render badge, newProject, tools
+    bar, shortcut help, selection/drag glue).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
