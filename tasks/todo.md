@@ -147,8 +147,13 @@
     — never called since the initial commit),
     `src/features/folder_refresh.js` (createFolderRow +
     applyGlobalRotation + remove-folders dialog + refreshTab; the
-    processXxxFolder engines injected late-bound). main.js is at
-    ~1,896 lines (from 5,229). Remaining: tabs/UI glue + residual
-    helpers (layout, generative/curation, library/plugins views).
+    processXxxFolder engines injected late-bound),
+    `src/ui_resizers.js` (setupResizer/setupHorizontalResizer + all
+    nine divider bindings; pure DOM), `src/features/library_view.js`
+    (library view + apply/remove/add + serializeCurrentLayout/
+    applySavedLayout; generative seam injected). main.js is at
+    ~1,624 lines (from 5,229). Remaining: tabs/UI glue + residual
+    helpers (generative/curation, plugins view, render badge,
+    newProject, tools bar).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
