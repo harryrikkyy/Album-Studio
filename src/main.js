@@ -823,67 +823,12 @@ const { refreshLibraryView } =
 // ==========================================
 // --- TIER 3.B: PLUGINS UI ---
 // ==========================================
-async function refreshPluginsView() {
-    const ipc = require('electron').ipcRenderer;
-    const res = await ipc.invoke('plugins-list');
-    const view = document.getElementById('pluginsView');
-    if (!view) return;
-    if (!res?.ok) { view.innerHTML = `<span class="u-text-secondary">Plugins unavailable</span>`; return; }
-    const list = res.plugins;
-    if (list.length === 0) {
-        view.innerHTML = `<div style="padding:8px 0;color:var(--txt-secondary);">
-            No plugins installed. Drop a plugin folder into <code>${res.dir}</code> and click Refresh.
-        </div>`;
-        return;
-    }
-    view.innerHTML = `
-        <table style="width:100%; border-collapse: collapse; font-size:12px;">
-            <thead><tr style="text-align:left; border-bottom:1px solid var(--border-main);">
-                <th style="padding:6px;">Plugin</th>
-                <th style="padding:6px;">Hooks</th>
-                <th style="padding:6px;">Source</th>
-                <th style="padding:6px;">Status</th>
-                <th style="padding:6px;"></th>
-            </tr></thead>
-            <tbody>
-                ${list.map(p => `
-                    <tr style="border-bottom:1px solid var(--border-main);">
-                        <td style="padding:6px;"><strong>${p.id}</strong> <span class="u-text-secondary">v${p.manifest?.version || '?'}</span></td>
-                        <td style="padding:6px;">${(p.manifest?.hooks || []).join(', ') || '—'}</td>
-                        <td style="padding:6px;">${p.builtin ? 'built-in' : 'user'}</td>
-                        <td style="padding:6px;">${p.error
-                            ? `<span style="color:var(--btn-red-bg)">error: ${p.error}</span>`
-                            : (p.disabled ? '<span class="u-text-secondary">disabled</span>' : '<span style="color:#4caf50;">active</span>')}</td>
-                        <td style="padding:6px;">${p.builtin
-                            ? '<span class="u-text-secondary">built-in</span>'
-                            : `<button class="btn btn--ghost" data-plugin="${p.id}" data-enable="${p.disabled ? 'true' : 'false'}">${p.disabled ? 'Enable' : 'Disable'}</button>`}</td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-    view.querySelectorAll('button[data-plugin]').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const id = btn.dataset.plugin;
-            const enable = btn.dataset.enable === 'true';
-            const r = await ipc.invoke('plugins-set-enabled', id, enable);
-            if (!r?.ok) { toast('Plugin toggle failed: ' + (r?.error || ''), 'error'); return; }
-            refreshPluginsView();
-        });
+// The plugins panel lives in src/features/plugins_view.js (Phase 2 split).
+const { refreshPluginsView } =
+    require('./features/plugins_view').createPluginsView({
+        invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+        toast: (msg, kind, opts) => toast(msg, kind, opts),
     });
-}
-
-document.getElementById('btnPluginsRefresh')?.addEventListener('click', async () => {
-    const ipc = require('electron').ipcRenderer;
-    await ipc.invoke('plugins-reload');
-    refreshPluginsView();
-});
-
-document.getElementById('btnOpenPluginsFolder')?.addEventListener('click', async () => {
-    const ipc = require('electron').ipcRenderer;
-    const res = await ipc.invoke('plugins-list');
-    if (res?.ok) await ipc.invoke('open-external', 'file://' + res.dir);
-});
 
 // First-paint of library + plugins panels when the user first visits Tab 5.
 const _origToolsTabBtn = document.querySelector('.tab-btn[data-target="tab-tools"]');
