@@ -135,7 +135,9 @@
     `src/features/storyboard.js` (Tab 7 cards + delegated DnD/selection +
     undoable cross-page move), `src/features/proofs.js` (fast proof
     renderer + live preview + client gallery; currentProjectPath accessor
-    retired). main.js is at ~3,126 lines (from 5,229). Remaining:
-    green-box/page engine, tabs/UI glue.
+    retired), `src/features/album_pages.js` (page navigation + green-box
+    composer + Smart Auto-Fill — largest module of the split). main.js is
+    at ~2,539 lines (from 5,229). Remaining: tabs/UI glue + residual
+    helpers (spread editor, rotation, EXIF, toast/status).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
