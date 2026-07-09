@@ -141,7 +141,11 @@
     store/IPC deps; still injected into feature modules),
     `src/features/photo_sources.js` (getTrueFile + HR-entries cache,
     readExifDate, sortPhotosByExif, buildHighResMap; photoCache via
-    store). main.js is at ~2,259 lines (from 5,229). Remaining:
-    tabs/UI glue + residual helpers (spread editor, rotation).
+    store), `src/features/spread_editor.js` (buildSpreadPayload +
+    Edit Spread button + editor-changes/swap/goto handlers; also
+    deleted the dead buildDocumentLayers/forceEmbed placement engine
+    — never called since the initial commit). main.js is at ~2,085
+    lines (from 5,229). Remaining: tabs/UI glue + residual helpers
+    (folder refresh, rotation, layout, library/plugins views).
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
