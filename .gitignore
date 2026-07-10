@@ -27,3 +27,6 @@ impeccable/
 # Playwright
 test-results/
 playwright-report/
+
+# License signing — the private key must never be committed
+server/license_signing_key.pem
