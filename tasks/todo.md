@@ -159,8 +159,22 @@
     store-free), `src/ui_shortcuts.js` (global keydown dispatcher +
     "?" help dialog; undo/redo/changePage/setPreview/renderStoryboard
     injected, currentPage/filteredTemplates via store, Cmd+S/O/E click
-    the real buttons; 8 unit tests with a document stub). main.js is
-    at ~951 lines (from 5,229). Remaining: tabs/UI glue + residual
-    helpers (render badge, newProject, tools bar, selection/drag glue).
+    the real buttons; 8 unit tests with a document stub),
+    `src/ui_tabs.js` (tab bar + lazy Tab 5/6 first paints + thumb-size
+    sliders + empty-state forwarder; owns the tab6Rendered flag,
+    isTab6Rendered/invalidateTab6 seams; 6 tests),
+    `src/state/render_hashes.js` + `src/ui_render_badge.js` (hash
+    seed/save + DOM progress badge; render-slice global accessors
+    retired — export E2E now uses __E2E__ resetRenderCache/renderState
+    seams; 7 tests), `src/ui_source_drag.js` (source-pool select/
+    double-click + native drag-out; dead in-app drag seams removed
+    from album_pages; 7 tests), `src/features/export_actions.js`
+    (build/export buttons + output pickers + J1 toggle, render queue
+    reads useAdjLayers() live; 7 tests),
+    `src/features/workspace_actions.js` (save/load buttons + save
+    split-menu + New Project flow; 5 tests). main.js is at ~669 lines
+    (from 5,229) — near-pure composition root; residual: store setup,
+    photoPageMap + syncViewToState, DOM refs, module wiring, project
+    save/load orchestration glue, E2E hook.
 - [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
 - [ ] **Extract fs/paths service** replacing the UXP stubs
