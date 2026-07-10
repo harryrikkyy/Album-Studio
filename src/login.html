@@ -349,7 +349,9 @@
 </div>
 
 <script>
-const { ipcRenderer } = require('electron');
+// All privileged calls go through the loginAPI contextBridge surface
+// (src/login_preload.js) — this window runs with contextIsolation and no
+// Node access.
 
 // Remember the last successfully-authenticated email so "Retry" can re-run
 // the license check after the owner activates the account — without forcing
@@ -377,10 +379,10 @@ function setLoading(loading, label) {
 async function checkAndProceed(email, name) {
   setStatus('Checking subscription...', 'checking');
   document.getElementById('statusMsg').innerHTML = '<span class="spinner"></span> Checking subscription...';
-  const licenseResult = await ipcRenderer.invoke('check-license', email);
+  const licenseResult = await loginAPI.checkLicense(email);
   if (licenseResult.allowed) {
     setStatus('✓ Access granted! Loading app...', '');
-    const launch = await ipcRenderer.invoke('launch-app', {
+    const launch = await loginAPI.launchApp({
       daysLeft: licenseResult.daysLeft,
       email,
       name: name || '',
@@ -402,7 +404,7 @@ async function signInWithGoogle() {
   setLoading(true);
   setStatus('Opening Google sign in...', 'checking');
   try {
-    const result = await ipcRenderer.invoke('google-sign-in');
+    const result = await loginAPI.googleSignIn();
     if (result.error) {
       setStatus(result.error, 'error');
       setLoading(false);
@@ -475,7 +477,7 @@ function showExpiredScreen(licenseResult, email) {
 }
 
 function openWhatsApp() {
-  require('electron').shell.openExternal('https://wa.me/8885640573?text=Hi, I need to activate Creative Hubb Album Toolkit Pro');
+  loginAPI.openWhatsApp();
 }
 
 // M1: switching account from the login screen just resets the view in place.
@@ -489,13 +491,13 @@ function switchAccount() {
   lastSignedInEmail = null;
   setLoading(false);
   setStatus('');
-  ipcRenderer.invoke('sign-out');
+  loginAPI.signOut();
 }
 
 // R7: the login window is frameless, so give the user an explicit way to quit
 // the app — essential when sign-in is impossible (e.g. no internet on first run).
 function quitApp() {
-  ipcRenderer.invoke('quit-app');
+  loginAPI.quitApp();
 }
 </script>
 </body>

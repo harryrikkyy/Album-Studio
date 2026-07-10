@@ -131,8 +131,9 @@ function createLoginWindow() {
     resizable: false,
     frame: false,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      preload: path.join(__dirname, 'src/login_preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true
     },
     title: 'Creative Hubb Album Toolkit Pro',
     icon: path.join(__dirname, 'assets/icon.icns')
