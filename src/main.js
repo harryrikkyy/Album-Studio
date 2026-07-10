@@ -39,14 +39,12 @@ const { isTab6Rendered, invalidateTab6 } = require('./ui_tabs').createTabs({
 // store until the module split rewrites them to explicit store access.
 /* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
    currentPage:writable, totalActivePages:writable,
-   projectData:writable, renderQueue:writable, renderHashes:writable,
-   renderActive:writable, renderStats:writable, photoCache:writable,
+   projectData:writable, photoCache:writable,
    outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
     'currentPage', 'totalActivePages', 'projectData',
-    'renderQueue', 'renderHashes', 'renderActive', 'renderStats',
     'photoCache', 'outputFolder',
     'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
     'activePngFolders', 'activeMaskedFolders',
@@ -208,7 +206,7 @@ const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
         scheduleLivePreview: () => scheduleLivePreview(),
         renderStoryboard: () => renderStoryboard(),
         clearProofs: () => _clearProofs(),
-        resetRenderHashes: () => { try { renderHashes = {}; _saveRenderHashes(); } catch (_) {} },
+        resetRenderHashes: () => { try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {} },
         sortPhotosByExif: (items) => sortPhotosByExif(items),
         updateAdjustPanel: () => updateAdjustPanel(),
         takeSourceDragItems: () => { const v = _sourceDragItems; _sourceDragItems = null; return v; },
@@ -577,65 +575,25 @@ const { buildExportData, bakeExportAdjustments } = require('./features/export_da
 // and "render took 4 seconds" on iterative work where the user changes 5
 // pages out of 200.
 
-const _RENDER_HASH_KEY = 'adt_render_hashes';
-// renderHashes lives in the state store (see the exposeOnGlobal block up
-// top); seed it from localStorage at boot so cache hits survive restarts.
-renderHashes = (() => {
-    try { return JSON.parse(localStorage.getItem(_RENDER_HASH_KEY) || '{}'); }
-    catch (_) { return {}; }
-})();
-function _saveRenderHashes() {
-    try { localStorage.setItem(_RENDER_HASH_KEY, JSON.stringify(renderHashes)); }
-    catch (_) {}
-}
+// Render-hash persistence lives in src/state/render_hashes.js and the DOM
+// progress badge in src/ui_render_badge.js (Phase 2 split). Seed the cache
+// from localStorage at boot so cache hits survive restarts.
+const { seedRenderHashes, saveRenderHashes } = require('./state/render_hashes');
+seedRenderHashes(store);
 // _hashPage moved to src/renderer_pure.js (required at top).
-
-// renderQueue / renderActive / renderStats live in the state store (see the
-// exposeOnGlobal block up top).
-
-function _updateRenderBadge() {
-    let badge = document.getElementById('renderBadge');
-    if (!renderQueue.length && !renderActive) {
-        if (badge) badge.remove();
-        return;
-    }
-    if (!badge) {
-        badge = document.createElement('div');
-        badge.id = 'renderBadge';
-        badge.className = 'render-badge';
-        const exportTb = document.querySelector('#tab-export .export-toolbar');
-        if (exportTb) exportTb.appendChild(badge);
-        else document.body.appendChild(badge);
-    }
-    const remaining = renderQueue.length + (renderActive ? 1 : 0);
-    const pct = renderStats.total > 0
-        ? Math.round((renderStats.done + renderStats.skipped) / renderStats.total * 100)
-        : 0;
-    badge.innerHTML = `
-        <div class="render-badge__bar"><div class="render-badge__fill" style="width:${pct}%"></div></div>
-        <div class="render-badge__text">
-            ${renderStats.done + renderStats.skipped} / ${renderStats.total}
-            ${renderStats.skipped ? `· <span class="u-text-secondary">${renderStats.skipped} cached</span>` : ''}
-            ${renderStats.failed ? `· <span style="color:var(--btn-red-bg)">${renderStats.failed} failed</span>` : ''}
-            <button class="render-badge__cancel" title="Cancel queue">×</button>
-        </div>`;
-    badge.querySelector('.render-badge__cancel').onclick = () => {
-        renderStats.cancelled = true;
-        renderQueue.length = 0;
-    };
-}
+const { updateBadge } = require('./ui_render_badge').createRenderBadge(store);
 
 // The render worker + queueRender live in src/features/render_queue.js
 // (Phase 2 split): chunking, cache partition, IPC dispatch, and stats via
-// explicit store access. The DOM badge, status/notify/toast, hash
-// persistence, and the adjustment bake stay here and are injected.
+// explicit store access. Status/notify/toast and the adjustment bake stay
+// here and are injected.
 const { queueRender } = require('./features/render_queue').createRenderQueue(store, {
     invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
-    updateBadge: () => _updateRenderBadge(),
+    updateBadge: () => updateBadge(),
     setStatus: (msg) => setStatus(msg),
     notify: (msg, kind, opts) => notify(msg, kind, opts),
     toast: (msg, kind, opts) => toast(msg, kind, opts),
-    persistHashes: () => _saveRenderHashes(),
+    persistHashes: () => saveRenderHashes(store),
     bakeAdjustments: (exportData) => bakeExportAdjustments(exportData),
     useAdjLayers: () => _useAdjLayers,
 });
@@ -755,7 +713,7 @@ const {
         invalidateTab6();  // ⚡ Force Tab 6 rebuild with fresh data on next visit
         updatePageDropdowns(); changePage(1);
     },
-    persistHashes: () => _saveRenderHashes(),
+    persistHashes: () => saveRenderHashes(store),
     setStatus: (msg) => setStatus(msg),
     notify: (msg, kind, opts) => notify(msg, kind, opts),
     toast: (msg, kind, opts) => toast(msg, kind, opts),
@@ -799,7 +757,7 @@ async function newProject() {
         projectData.imageRotations = {};
         projectData.imageAdjustments = {};
         projectData.imagePlacements = {};
-        try { renderHashes = {}; _saveRenderHashes(); } catch (_) {}
+        try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {}
         _clearProofs();
         syncViewToState();
         updatePageDropdowns();
@@ -901,5 +859,13 @@ if (process.argv.includes('--e2e')) {
         // IPC bridge). The main process mocks the Photoshop JSX job behind
         // the same test-mode guard and logs it to ALBUMSTUDIO_E2E_JSX_LOG.
         exportRange: (start, end) => queueRender(buildExportData(start, end)),
+        // The render slices have no global accessors anymore, so the export
+        // spec resets the cache and polls the queue through these seams.
+        resetRenderCache: () => { store.set('renderHashes', {}); saveRenderHashes(store); },
+        renderState: () => ({
+            active: store.get('renderActive'),
+            queued: store.get('renderQueue').length,
+            hashCount: Object.keys(store.get('renderHashes')).length,
+        }),
     };
 }

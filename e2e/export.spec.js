@@ -28,8 +28,7 @@ test('export reaches the mocked bridge once; the render cache skips unchanged pa
     // three complete pages sharing one (fake) PSD template, two photos each.
     // The bridge is mocked, so no file on any of these paths is ever opened.
     await win.evaluate((dir) => {
-      renderHashes = {} // no stale cache from a previous run's userData
-      localStorage.removeItem('adt_render_hashes')
+      window.__E2E__.resetRenderCache() // no stale cache from a previous run's userData
       outputFolder = { nativePath: dir }
       const tpl = { id: 'tpl-1', file: { nativePath: '/e2e/fake/template.psd' } }
       const cache = {}
@@ -45,8 +44,10 @@ test('export reaches the mocked bridge once; the render cache skips unchanged pa
     // First export: all 3 pages are fresh → exactly one batched bridge job
     // (consecutive pages share the template, so they chunk together).
     await win.evaluate(() => window.__E2E__.exportRange(1, 3))
-    await win.waitForFunction(() =>
-      renderActive === false && renderQueue.length === 0 && Object.keys(renderHashes).length === 3)
+    await win.waitForFunction(() => {
+      const s = window.__E2E__.renderState()
+      return !s.active && s.queued === 0 && s.hashCount === 3
+    })
 
     let jobs = fs.readFileSync(jsxLog, 'utf8').trim().split('\n').map(JSON.parse)
     expect(jobs).toHaveLength(1)
@@ -58,14 +59,14 @@ test('export reaches the mocked bridge once; the render cache skips unchanged pa
     // Second export, nothing changed: the cache must skip every page — the
     // bridge is never called again.
     await win.evaluate(() => window.__E2E__.exportRange(1, 3))
-    await win.waitForFunction(() => renderActive === false && renderQueue.length === 0)
+    await win.waitForFunction(() => { const s = window.__E2E__.renderState(); return !s.active && s.queued === 0 })
     expect(fs.readFileSync(jsxLog, 'utf8').trim().split('\n')).toHaveLength(1)
 
     // Rotate one photo on page 2 → its input hash changes → exactly page 2
     // re-renders; pages 1 and 3 still come from the cache.
     await win.evaluate(() => { projectData.imageRotations = { p3: 90 } })
     await win.evaluate(() => window.__E2E__.exportRange(1, 3))
-    await win.waitForFunction(() => renderActive === false && renderQueue.length === 0)
+    await win.waitForFunction(() => { const s = window.__E2E__.renderState(); return !s.active && s.queued === 0 })
     jobs = fs.readFileSync(jsxLog, 'utf8').trim().split('\n').map(JSON.parse)
     expect(jobs).toHaveLength(2)
     expect(jobs[1].data.pages.map(p => p.pageName)).toEqual(['002'])
