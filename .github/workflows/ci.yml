@@ -35,6 +35,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Fail the build on known high/critical vulns in production deps.
+      # Dev-only tooling vulns don't ship, so they warn via Dependabot instead.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Test (with coverage)
         run: npm run test:coverage
 
