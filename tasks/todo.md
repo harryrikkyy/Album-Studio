@@ -176,5 +176,19 @@
     (from 5,229) — near-pure composition root; residual: store setup,
     photoPageMap + syncViewToState, DOM refs, module wiring, project
     save/load orchestration glue, E2E hook.
-- [ ] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
-- [ ] **Extract fs/paths service** replacing the UXP stubs
+- [x] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
+  - Acceptance: src/bridge/ owns every JSX call — index.js (interface typedef
+    + platform factory + per-process singleton), macos.js (osascript impl
+    moved from src/photoshop.js: serializing queue, asar-safe temp round-trip,
+    cached app name, runJsxDataJob), mock.js (E2E recorder lifted out of
+    app.js; also covers direct executeJSX/File), temp.js (per-call temp
+    files). jsxString → src/jsx/escape.js. src/photoshop.js deleted; app.js +
+    tools_bar.js route through getBridge(). 5 unit tests; export E2E drives
+    the mock. ✅
+  - Files: src/bridge/*, src/jsx/escape.js, app.js, src/tools_bar.js
+- [x] **Extract fs/paths service** replacing the UXP stubs
+  - Acceptance: src/services/fs_paths.js (folderEntry keeps the loader-facing
+    entry shape; pickFolder over IPC; tokenForFolder/entryForToken — a token
+    stays the absolute path for saved-project compat). Dead stub file pickers
+    dropped; showAlert → ui_feedback; src/stubs/ deleted. 3 unit tests. ✅
+  - Files: src/services/fs_paths.js, src/ui_feedback.js, src/main.js
