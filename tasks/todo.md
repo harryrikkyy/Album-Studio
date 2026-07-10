@@ -213,7 +213,12 @@
   bundled public key (legacy HMAC kept for old licenses). 6 tests + server
   smoke. NEEDS OWNER: run keygen, deploy server/, point activation tool at it;
   then Firebase Auth + tighten firestore.rules off `read: if true`.
-- [ ] **Migrate the main window off nodeIntegration** — the big one: main.js +
-  renderer modules require() node/electron throughout (IPC already flows
-  through injected seams; fs_paths/photo_sources use node fs directly).
-  Needs an approach decision: bundler (esbuild) vs rich preload surface.
+- [x] **Migrate the main window off nodeIntegration** — esbuild bundle
+  (src/dist/renderer.bundle.js via prestart/pretest:e2e) + allowlisted
+  `native` bridge in src/main_preload.js; electron/fs/os/path aliased to
+  src/shims/* so existing require() sites work unchanged. EXIF parser is
+  byte-math (Uint8Array) now; ipc.spec invokes via window.native. All 10
+  E2E flows run through the isolated bundle.
+- [ ] **Phase 3 checkpoint** — live smoke-test with isolation+CSP on (real
+  Photoshop; also renamer + tools-bar manually — no E2E coverage there);
+  owner licensing actions (keygen, deploy server/, Firebase Auth + rules).
