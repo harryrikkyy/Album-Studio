@@ -192,3 +192,28 @@
     stays the absolute path for saved-project compat). Dead stub file pickers
     dropped; showAlert → ui_feedback; src/stubs/ deleted. 3 unit tests. ✅
   - Files: src/services/fs_paths.js, src/ui_feedback.js, src/main.js
+
+## Phase 3 — Security hardening + licensing backend
+- [x] **Isolate the small windows** (login, renamer, tools-bar) behind per-window
+  contextBridge preloads (login_preload/renamer_preload/tools_bar_preload),
+  contextIsolation:true + nodeIntegration:false — same pattern as the editor
+  pilot. Renamer preload also exposes the pure naming module.
+- [x] **CSP on every renderer HTML** — script-src 'self' (inline scripts moved to
+  ui_license_badge.js / login_renderer.js / tools_bar_renderer.js; login's five
+  inline onclick handlers → addEventListener; ui_shortcuts' innerHTML onclick →
+  listener), img/media allow file:/data:/blob:, login allows Google Fonts.
+  Boot + workspace E2E run login/index with CSP active.
+- [x] **IPC input validation** — src/ipc_guards.js (reqString/reqAbsPath/
+  reqBaseName/reqNumber/reqObject/reqArray/reqEnum) applied across all app.js
+  handlers; start-native-drag bails silently (ipcMain.on). 6 tests.
+- [x] **CI dependency scanning** — npm audit (prod, high+) gate + Dependabot
+  (npm weekly + github-actions, dev deps grouped).
+- [x] **License signing** — src/license_signing.js (Ed25519 over canonical
+  fields), server/ stateless signer + keygen, license.js verifies sig with the
+  bundled public key (legacy HMAC kept for old licenses). 6 tests + server
+  smoke. NEEDS OWNER: run keygen, deploy server/, point activation tool at it;
+  then Firebase Auth + tighten firestore.rules off `read: if true`.
+- [ ] **Migrate the main window off nodeIntegration** — the big one: main.js +
+  renderer modules require() node/electron throughout (IPC already flows
+  through injected seams; fs_paths/photo_sources use node fs directly).
+  Needs an approach decision: bundler (esbuild) vs rich preload surface.
