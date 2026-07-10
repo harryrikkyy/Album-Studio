@@ -209,8 +209,6 @@ const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
         resetRenderHashes: () => { try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {} },
         sortPhotosByExif: (items) => sortPhotosByExif(items),
         updateAdjustPanel: () => updateAdjustPanel(),
-        takeSourceDragItems: () => { const v = _sourceDragItems; _sourceDragItems = null; return v; },
-        hasSourceDragItems: () => !!_sourceDragItems,
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
@@ -230,68 +228,15 @@ const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
 
 // scanFolderRecursive moved to src/features/asset_library.js (its only caller).
 
-// ⚡ Per-image click state map for event-delegated double-click detection
-const _redClickState = {};
-
-// ⚡ FIX: Single event-delegated listener on redBox instead of one listener per image.
-// With 500+ images this eliminates 500+ live event listeners and their memory overhead.
-redBox.addEventListener('pointerup', (e) => {
-    if (e.target.closest('.btn-rotate-red')) return;
-    const wrapper = e.target.closest('.img-wrapper-red');
-    if (!wrapper) return;
-    const img = wrapper.querySelector('.thumb-red');
-    if (!img) return;
-    const safeId = img.id;
-
-    if (!_redClickState[safeId]) _redClickState[safeId] = { count: 0, timer: null };
-    const state = _redClickState[safeId];
-    state.count++;
-
-    if (state.count === 1) {
-        state.timer = setTimeout(() => {
-            state.count = 0;
-            img.classList.toggle("selected");
-            setActiveMatchPanel('source'); // B2: working in the source panel
-            scheduleFilterUpdate(); // selection drives template matching
-        }, 300);
-    } else if (state.count === 2) {
-        clearTimeout(state.timer);
-        state.count = 0;
-        prepareAndMove([{ id: img.id, url: img.src }]);
-    }
+// Source-pool selection clicks + native drag-out (source pool and Photos
+// tab) live in src/ui_source_drag.js (Phase 2 split).
+require('./ui_source_drag').createSourceDrag({
+    prepareAndMove: (items) => prepareAndMove(items),
+    setActiveMatchPanel: (panel) => setActiveMatchPanel(panel),
+    scheduleFilterUpdate: () => scheduleFilterUpdate(),
+    photoNativePath: (id) => photoNativePath(id),
+    startNativeDrag: (paths) => require('electron').ipcRenderer.send('start-native-drag', paths),
 });
-
-// ── Source → Photoshop native drag-out ──────────────────────────────────
-// Dragging a source thumbnail now starts a NATIVE OS file drag carrying the
-// ORIGINAL high-res file, so dropping onto Photoshop (or Finder) behaves just
-// like dragging from Finder. Multi-selection drags the whole selected set.
-// (In-app placement still works via double-click and Auto-Fill.)
-let _sourceDragItems = null;
-redBox.addEventListener('dragstart', (e) => {
-    const img = e.target.closest('.thumb-red');
-    if (!img) return;
-    const selected = Array.from(redBox.querySelectorAll('.thumb-red.selected'));
-    const ids = (img.classList.contains('selected') && selected.length > 0)
-        ? selected.map(el => el.id)
-        : [img.id];
-    const paths = ids.map(id => photoNativePath(id)).filter(Boolean);
-    if (paths.length === 0) return;
-    e.preventDefault(); // cancel the default thumbnail (proxy) drag
-    require('electron').ipcRenderer.send('start-native-drag', paths);
-});
-
-// Photos tab (Tab 6) → Photoshop native drag-out (original file).
-if (photosGrid) {
-    photosGrid.addEventListener('dragstart', (e) => {
-        const card = e.target.closest('.wp-card');
-        if (!card) return;
-        const id = card.dataset.photoId;
-        const p = id ? photoNativePath(id) : null;
-        if (!p) return;
-        e.preventDefault();
-        require('electron').ipcRenderer.send('start-native-drag', [p]);
-    });
-}
 
 // ⚡ FIX: processImageFolder only builds Tab 1 (redBox) DOM now.
 // Tab 6 is built lazily via renderPhotosGrid() the first time the user opens that tab.

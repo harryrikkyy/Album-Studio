@@ -46,8 +46,6 @@ function _errMessage(e) {
  * @param {() => void} deps.resetRenderHashes  wipe the final-render cache
  * @param {(items: any[]) => Promise<void>} deps.sortPhotosByExif  in-place chronological sort
  * @param {() => void} deps.updateAdjustPanel
- * @param {() => any[] | null} deps.takeSourceDragItems  claim (and clear) an in-app source drag payload
- * @param {() => boolean} deps.hasSourceDragItems
  * @param {(msg: string) => void} deps.setStatus
  * @param {(msg: string, kind?: string, opts?: { duration?: number }) => void} deps.toast
  * @param {(msg: string, kind?: string, opts?: { duration?: number }) => void} deps.notify
@@ -373,15 +371,7 @@ function createAlbumPages(store, deps) {
         });
 
         greenBox.addEventListener('dragover', (e) => {
-            if (!dragging) {
-                // Source-pool photo being dragged in: accept a drop anywhere on
-                // the page (it appends, like double-click / PULL).
-                if (deps.hasSourceDragItems()) {
-                    e.preventDefault();
-                    try { /** @type {DataTransfer} */ (e.dataTransfer).dropEffect = 'copy'; } catch (_) {}
-                }
-                return;
-            }
+            if (!dragging) return;
             const c = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (e.target).closest('.img-container'));
             if (!c || c === dragging) return;
             e.preventDefault();
@@ -409,16 +399,7 @@ function createAlbumPages(store, deps) {
         });
 
         greenBox.addEventListener('drop', (e) => {
-            if (!dragging) {
-                // Source-pool drop → add the dragged photo(s) to the current page.
-                const items = deps.takeSourceDragItems();
-                if (items) {
-                    e.preventDefault();
-                    greenBox.classList.remove('dropzone--active');
-                    prepareAndMove(items);
-                }
-                return;
-            }
+            if (!dragging) return;
             e.preventDefault();
             const target = /** @type {HTMLElement | null} */ (/** @type {HTMLElement} */ (e.target).closest('.img-container'));
             if (!target || target === dragging) {
