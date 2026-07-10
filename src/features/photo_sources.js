@@ -80,19 +80,27 @@ function createPhotoSources(store, deps) {
     async function readExifDate(filePath) {
         if (_exifCache.has(filePath)) return _exifCache.get(filePath);
         try {
+            // Read up to 256 KB — covers the APP1 marker comfortably. In the
+            // bundled renderer `fs` is the preload-bridge shim, which exposes
+            // readFileSlice directly; under node (unit tests) fall back to
+            // open/read/close.
             const nodefs = require('fs').promises;
-            // Read up to 256 KB — covers the APP1 marker comfortably.
-            const handle = await nodefs.open(filePath, 'r');
-            try {
-                const buf = Buffer.alloc(256 * 1024);
-                const { bytesRead } = await handle.read(buf, 0, buf.length, 0);
-                const slice = buf.subarray(0, bytesRead);
-                const ts = _parseExifDateFromBuffer(slice);
-                _exifCache.set(filePath, ts);
-                return ts;
-            } finally {
-                await handle.close();
+            let slice;
+            if (/** @type {any} */ (nodefs).readFileSlice) {
+                slice = await /** @type {any} */ (nodefs).readFileSlice(filePath, 256 * 1024);
+            } else {
+                const handle = await nodefs.open(filePath, 'r');
+                try {
+                    const buf = Buffer.alloc(256 * 1024);
+                    const { bytesRead } = await handle.read(buf, 0, buf.length, 0);
+                    slice = buf.subarray(0, bytesRead);
+                } finally {
+                    await handle.close();
+                }
             }
+            const ts = _parseExifDateFromBuffer(slice);
+            _exifCache.set(filePath, ts);
+            return ts;
         } catch (_) {
             _exifCache.set(filePath, null);
             return null;

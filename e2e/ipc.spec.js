@@ -11,7 +11,7 @@ const { _electron: electron } = require('playwright-core')
 // Invoke a main-process IPC channel from the renderer and return its result.
 function invoke(win, channel, ...args) {
   return win.evaluate(
-    ({ channel, args }) => require('electron').ipcRenderer.invoke(channel, ...args),
+    ({ channel, args }) => window.native.invoke(channel, ...args),
     { channel, args }
   )
 }

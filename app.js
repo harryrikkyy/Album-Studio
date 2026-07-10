@@ -155,8 +155,13 @@ function createMainWindow(licenseInfo = {}) {
     width: 1400,
     height: 900,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      // The renderer runs bundled (src/dist/renderer.bundle.js) against the
+      // allowlisted `native` bridge. sandbox:false because the preload needs
+      // node's fs for the renderer's file-system slice.
+      preload: path.join(__dirname, 'src/main_preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
       additionalArguments
     },
     title: 'Creative Hubb Album Toolkit Pro',

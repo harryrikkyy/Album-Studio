@@ -639,7 +639,7 @@ require('./ui_shortcuts').createShortcuts(store, {
 // never exists in a shipped build. Gives the Playwright suite a dialog-free way
 // to load a project and to inspect + drive the real undo/redo history system,
 // so the stateful core is covered before the Phase 2 refactor touches it.
-if (process.argv.includes('--e2e')) {
+if (window.native && window.native.isE2E) {
     window.__E2E__ = {
         loadProject: (data) => restoreWorkspace(data),
         state: () => ({

@@ -30,3 +30,6 @@ playwright-report/
 
 # License signing — the private key must never be committed
 server/license_signing_key.pem
+
+# Renderer bundle (built by npm run build:renderer)
+src/dist/

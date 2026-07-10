@@ -28,10 +28,10 @@ function setLoading(loading, label) {
 async function checkAndProceed(email, name) {
   setStatus('Checking subscription...', 'checking');
   document.getElementById('statusMsg').innerHTML = '<span class="spinner"></span> Checking subscription...';
-  const licenseResult = await loginAPI.checkLicense(email);
+  const licenseResult = await window.loginAPI.checkLicense(email);
   if (licenseResult.allowed) {
     setStatus('✓ Access granted! Loading app...', '');
-    const launch = await loginAPI.launchApp({
+    const launch = await window.loginAPI.launchApp({
       daysLeft: licenseResult.daysLeft,
       email,
       name: name || '',
@@ -53,7 +53,7 @@ async function signInWithGoogle() {
   setLoading(true);
   setStatus('Opening Google sign in...', 'checking');
   try {
-    const result = await loginAPI.googleSignIn();
+    const result = await window.loginAPI.googleSignIn();
     if (result.error) {
       setStatus(result.error, 'error');
       setLoading(false);
@@ -126,7 +126,7 @@ function showExpiredScreen(licenseResult, email) {
 }
 
 function openWhatsApp() {
-  loginAPI.openWhatsApp();
+  window.loginAPI.openWhatsApp();
 }
 
 // M1: switching account from the login screen just resets the view in place.
@@ -140,13 +140,13 @@ function switchAccount() {
   lastSignedInEmail = null;
   setLoading(false);
   setStatus('');
-  loginAPI.signOut();
+  window.loginAPI.signOut();
 }
 
 // R7: the login window is frameless, so give the user an explicit way to quit
 // the app — essential when sign-in is impossible (e.g. no internet on first run).
 function quitApp() {
-  loginAPI.quitApp();
+  window.loginAPI.quitApp();
 }
 
 // Buttons are wired here (not via inline onclick) so the page satisfies a

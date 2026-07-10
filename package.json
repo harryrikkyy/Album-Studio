@@ -15,7 +15,10 @@
     "typecheck": "tsc --noEmit",
     "prebuild:mac": "npm run typecheck && npm run lint",
     "build:mac": "electron-builder --mac",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "build:renderer": "esbuild src/renderer_entry.js --bundle --format=iife --platform=browser --sourcemap --outfile=src/dist/renderer.bundle.js --alias:electron=./src/shims/electron.js --alias:fs=./src/shims/fs.js --alias:os=./src/shims/os.js --alias:path=./src/shims/path.js",
+    "prestart": "npm run build:renderer",
+    "pretest:e2e": "npm run build:renderer"
   },
   "build": {
     "appId": "com.creativehubb.albumtoolkit",
@@ -102,6 +105,7 @@
     "electron": "^36.0.0",
     "electron-builder": "^26.8.1",
     "electron-reloader": "^1.2.3",
+    "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.2.10",

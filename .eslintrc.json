@@ -8,12 +8,25 @@
     "ecmaVersion": 2022,
     "sourceType": "script"
   },
-  "extends": ["eslint:recommended"],
+  "extends": [
+    "eslint:recommended"
+  ],
   "rules": {
     "no-redeclare": "error",
     "no-undef": "error",
-    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
-    "no-empty": ["warn", { "allowEmptyCatch": true }],
+    "no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
+    "no-empty": [
+      "warn",
+      {
+        "allowEmptyCatch": true
+      }
+    ],
     "no-prototype-builtins": "off",
     "no-inner-declarations": "off",
     "no-extra-semi": "off",
@@ -24,6 +37,7 @@
     "dist",
     "scripts/**/*.jsx",
     "src/index.html",
-    "src/login.html"
+    "src/login.html",
+    "src/dist/"
   ]
 }

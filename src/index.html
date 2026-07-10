@@ -655,12 +655,8 @@
     </dialog>
 
     <!-- theme.js MUST load before main.js -->
-    <script src="theme.js"></script>
-    <script src="main.js"></script>
-    <script src="ui_tilt.js"></script>
-    <script src="ui_layout.js"></script>
-    <script src="ui_folders.js"></script>
-
-    <script src="ui_license_badge.js"></script>
+    <!-- Built by `npm run build:renderer` (esbuild) — the renderer runs
+         bundled with no Node access; see src/renderer_entry.js. -->
+    <script src="dist/renderer.bundle.js"></script>
 </body>
  </html>
