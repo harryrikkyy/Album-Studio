@@ -36,8 +36,9 @@ function openRenamerWindow() {
     title: 'Renamer — Album Toolkit',
     backgroundColor: '#0b0c20',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, 'renamer_preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   })
   _win.loadFile(path.join(__dirname, 'renamer.html'))

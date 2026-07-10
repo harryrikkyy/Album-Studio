@@ -1,11 +1,11 @@
 // renamer_renderer.js
 //
-// Renderer for the Renamer window (renamer.html). nodeIntegration is on, so
-// we require Node + Electron modules directly. All file I/O goes through IPC
-// to the main process (src/renamer.js); naming is the shared pure module.
+// Renderer for the Renamer window (renamer.html). Runs with contextIsolation
+// and no Node access: all file I/O goes through the renamerAPI contextBridge
+// surface (src/renamer_preload.js), which also exposes the pure naming module.
 
-const { ipcRenderer } = require('electron')
-const naming = require('./renamer_naming')
+const api = window.renamerAPI
+const naming = api.naming
 
 // ── Configurable lists (edit to taste) ───────────────────────
 const LAMINATIONS = ['Standard', 'Matte', 'Glossy', 'Velvet', 'Luster']
@@ -328,7 +328,7 @@ document.addEventListener('keydown', (e) => {
 })
 
 async function pickFolder() {
-  const chosen = await ipcRenderer.invoke('renamer-pick-folder')
+  const chosen = await api.pickFolder()
   if (!chosen) return
   // Chosen folder becomes the tree root. Auto-expand it and load its images
   // if it directly contains sheets.
@@ -352,7 +352,7 @@ refreshBtn.addEventListener('click', async () => {
 // ── Folder tree ───────────────────────────────────────────────
 async function ensureChildren(dirPath) {
   if (childrenCache.has(dirPath)) return
-  const res = await ipcRenderer.invoke('renamer-list-dir', dirPath)
+  const res = await api.listDir(dirPath)
   childrenCache.set(dirPath, res && res.ok ? res.folders : [])
 }
 
@@ -431,7 +431,7 @@ function buildNode(node, depth) {
 
 async function loadFolder(p) {
   folderLabel.textContent = 'Loading…'
-  const res = await ipcRenderer.invoke('renamer-list-images', p)
+  const res = await api.listImages(p)
   if (!res || !res.ok) {
     toast('Could not read folder: ' + ((res && res.error) || 'unknown'), 'error')
     folderLabel.textContent = 'No folder selected'
@@ -461,7 +461,7 @@ async function renameAll() {
   const ops = naming.computeRenames(namingInput())
   if (ops.length === 0) { toast('Nothing to rename'); return }
   btnRenameAll.disabled = true
-  const res = await ipcRenderer.invoke('renamer-apply-renames', { folderPath, ops })
+  const res = await api.applyRenames({ folderPath, ops })
   if (!res || !res.ok) {
     toast('Rename failed: ' + ((res && res.error) || 'unknown'), 'error')
     btnRenameAll.disabled = false
