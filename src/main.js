@@ -37,10 +37,7 @@ const { isTab6Rendered, invalidateTab6 } = require('./ui_tabs').createTabs({
 // exposeOnGlobal surfaces each migrated slice as an accessor property on
 // globalThis, so every bare reference below transparently reads/writes the
 // store until the module split rewrites them to explicit store access.
-/* global albumPages:writable, templateLibrary:writable, filteredTemplates:writable,
-   currentPage:writable, totalActivePages:writable,
-   projectData:writable, photoCache:writable,
-   outputFolder:writable, activeImageFolders:writable, activeTemplateFolders:writable */
+/* global albumPages:writable, currentPage:writable, totalActivePages:writable */
 const store = require('./state/store').createStore();
 require('./state/store').exposeOnGlobal(store, [
     'albumPages', 'templateLibrary', 'filteredTemplates',
@@ -113,7 +110,6 @@ const redBox = document.getElementById("redBox");
 const whiteBox = document.getElementById("whiteBox");
 const wallpaperGrid = document.getElementById("wallpaperGrid");
 const pngGrid = document.getElementById("pngGrid"), maskedGrid = document.getElementById("maskedGrid");
-const photosGrid = document.getElementById("photosGrid");
 
 // Live preview state lives in src/features/proofs.js (wired below).
 
@@ -602,105 +598,24 @@ const {
     toast: (msg, kind, opts) => toast(msg, kind, opts),
 });
 
-// New Project: keep the reusable library (templates/wallpapers/assets/output +
-// settings); clear the project-specific source photos, Photos tab, and album
-// layout; then save to a freshly named/created file. Confirmed first so it's
-// never a silent data loss.
-async function newProject() {
-    const ok = confirm(
-        'Start a new project?\n\n' +
-        'Your loaded source photos, the Photos tab, and the current album layout will be cleared. ' +
-        'Loaded templates, wallpapers, other assets, the output folder, and settings stay. ' +
-        'Save your current project first if you need it.'
-    );
-    if (!ok) return;
-    const ipc = require('electron').ipcRenderer;
-    const target = await ipc.invoke('project-pick-save', 'New Album Project');
-    if (!target) return;
-    try {
-        // Clear source images + Photos tab.
-        photoCache = {};
-        activeImageFolders.clear();
-        projectData.imageTokens = [];
-        if (projectData.highResTokens) projectData.highResTokens = [];
-        redBox.innerHTML = `<div class="empty-state">
-            <div class="empty-state__icon">🖼️</div>
-            <div class="empty-state__title">No photos loaded</div>
-            <div class="empty-state__hint">Load a folder of photos to build your source pool, then drag or auto-fill them onto pages.</div>
-            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
-        </div>`;
-        if (photosGrid) photosGrid.innerHTML = "";
-        invalidateTab6();
-        const rfp = document.getElementById('redFolderPanel'); if (rfp) rfp.innerHTML = getPanelHeaderHTML('images');
-        const pfp = document.getElementById('photosFolderPanel'); if (pfp) pfp.innerHTML = getPanelHeaderHTML('images');
-        // Reset the album to a single blank page + per-photo edit maps.
-        albumPages = { 1: { photos: [], template: null } };
-        totalActivePages = 1; currentPage = 1;
-        Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]);
-        projectData.imageRotations = {};
-        projectData.imageAdjustments = {};
-        projectData.imagePlacements = {};
-        try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {}
-        _clearProofs();
-        syncViewToState();
-        updatePageDropdowns();
-        renderGreenBox();
-        changePage(1);
-    } catch (e) {
-        console.error('New Project clear failed:', e);
-        toast('New Project: clearing failed — ' + e.message, 'error');
-        return;
-    }
-    store.set('currentProjectPath', target);
-    await saveProject(false);
-}
-
-const btnSaveWorkspace = document.getElementById("btnSaveWorkspace");
-if (btnSaveWorkspace) {
-    btnSaveWorkspace.addEventListener("click", () => { saveProject(false); });
-}
-
-// Save split-button menu (Save As / New Project). Reparented to <body> and
-// fixed-positioned from the button (same approach as the theme dropdown) so it
-// can't be clipped or painted under the tab content / stacking contexts.
-const btnSaveMenuBtn = document.getElementById("btnSaveMenuBtn");
-const saveMenu = document.getElementById("saveMenu");
-if (btnSaveMenuBtn && saveMenu) {
-    let _saveMenuReparented = false;
-    const positionSaveMenu = () => {
-        if (!_saveMenuReparented) { document.body.appendChild(saveMenu); _saveMenuReparented = true; }
-        const r = btnSaveMenuBtn.getBoundingClientRect();
-        saveMenu.style.position = 'fixed';
-        saveMenu.style.top = (r.bottom + 4) + 'px';
-        saveMenu.style.left = 'auto';
-        saveMenu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
-        saveMenu.style.zIndex = '100000';
-    };
-    const closeSaveMenu = () => { saveMenu.classList.remove('open'); btnSaveMenuBtn.setAttribute('aria-expanded', 'false'); };
-    btnSaveMenuBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (saveMenu.classList.contains('open')) { closeSaveMenu(); return; }
-        positionSaveMenu();
-        saveMenu.classList.add('open');
-        btnSaveMenuBtn.setAttribute('aria-expanded', 'true');
-    });
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.save-split') && !e.target.closest('#saveMenu')) closeSaveMenu();
-    });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSaveMenu(); });
-    window.addEventListener('resize', () => { if (saveMenu.classList.contains('open')) positionSaveMenu(); });
-    const btnSaveAs = document.getElementById("btnSaveAs");
-    if (btnSaveAs) btnSaveAs.addEventListener("click", () => { closeSaveMenu(); saveProject(true); });
-    const btnNewProject = document.getElementById("btnNewProject");
-    if (btnNewProject) btnNewProject.addEventListener("click", () => { closeSaveMenu(); newProject(); });
-}
-
+// The Save/Load workspace buttons, the save split-menu, and the New Project
+// flow live in src/features/workspace_actions.js (Phase 2 split).
 // restoreWorkspace lives in src/features/project_io.js (wired above).
-
-const btnLoadWorkspace = document.getElementById("btnLoadWorkspace");
-if (btnLoadWorkspace) {
-    btnLoadWorkspace.addEventListener("click", () => { loadProjectFromDisk(); });
-}
+require('./features/workspace_actions').createWorkspaceActions(store, {
+    confirmDialog: (msg) => confirm(msg),
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    saveProject: (saveAs) => saveProject(saveAs),
+    loadProjectFromDisk: () => loadProjectFromDisk(),
+    clearPhotoPageMap: () => { Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]); },
+    resetRenderHashes: () => { try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {} },
+    clearProofs: () => _clearProofs(),
+    syncViewToState: () => syncViewToState(),
+    updatePageDropdowns: () => updatePageDropdowns(),
+    renderGreenBox: () => renderGreenBox(),
+    changePage: (pageNum) => changePage(pageNum),
+    invalidateTab6: () => invalidateTab6(),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+});
 
 window.addEventListener("DOMContentLoaded", () => { bootRestore(); });
 
