@@ -17,29 +17,16 @@ const {
 // ==========================================
 // --- TAB SWITCHING LOGIC ---
 // ==========================================
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabPanes = document.querySelectorAll('.tab-pane');
-
-// ⚡ Lazy Tab 6 flag — photosGrid is only built when the user first opens Tab 6
-let tab6Rendered = false;
-
-tabButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        tabButtons.forEach(b => b.classList.remove('active'));
-        tabPanes.forEach(p => p.classList.remove('active'));
-        btn.classList.add('active');
-        const targetId = btn.getAttribute('data-target');
-        const targetPane = document.getElementById(targetId);
-        if (targetPane) targetPane.classList.add('active');
-
-        if (targetId === 'tab-export') renderStoryboard();
-
-        // ⚡ Lazy render: build Tab 6 grid only on first visit
-        if (targetId === 'tab-photos' && !tab6Rendered) {
-            tab6Rendered = true;
-            renderPhotosGrid();
-        }
-    });
+// The tab bar (pane switching + lazy per-tab first paints), the thumb-size
+// sliders, and the empty-state action forwarder live in src/ui_tabs.js
+// (Phase 2 split). It owns the lazy Tab 6 flag; isTab6Rendered/
+// invalidateTab6 are the seams the photo library and project restore use.
+const { isTab6Rendered, invalidateTab6 } = require('./ui_tabs').createTabs({
+    renderStoryboard: () => renderStoryboard(),
+    renderPhotosGrid: () => renderPhotosGrid(),
+    refreshToolsBarStatus: () => refreshToolsBarStatus(),
+    refreshLibraryView: () => refreshLibraryView(),
+    refreshPluginsView: () => refreshPluginsView(),
 });
 
 // ==========================================
@@ -130,7 +117,6 @@ const whiteBox = document.getElementById("whiteBox");
 const wallpaperGrid = document.getElementById("wallpaperGrid");
 const pngGrid = document.getElementById("pngGrid"), maskedGrid = document.getElementById("maskedGrid");
 const photosGrid = document.getElementById("photosGrid");
-const photosSlider = document.getElementById("photosSlider");
 
 // Live preview state lives in src/features/proofs.js (wired below).
 
@@ -173,7 +159,7 @@ const { toast, setStatus, notify } = require('./ui_feedback');
 const { createFolderRow, applyGlobalRotation } =
     require('./features/folder_refresh').createFolderRefresh(store, {
         mutate: (label, fn) => mutate(label, fn),
-        isTab6Rendered: () => tab6Rendered,
+        isTab6Rendered: () => isTab6Rendered(),
         getPhotoPages: (photoId) => photoPageMap[photoId],
         renderGreenBox: () => renderGreenBox(),
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
@@ -331,18 +317,8 @@ const { processImageFolder, renderPhotosGrid } =
         notify: (msg, kind, opts) => notify(msg, kind, opts),
         applyGlobalRotation: (safeId, newRot) => applyGlobalRotation(safeId, newRot),
         renderGreenBox: () => renderGreenBox(),
-        invalidateTab6: () => { if (tab6Rendered) tab6Rendered = false; },
+        invalidateTab6: () => invalidateTab6(),
     });
-
-// Empty-state action buttons: a single delegated listener forwards a click on
-// any `.empty-state__action[data-load]` to the real load button it names, so
-// the empty states are actionable without duplicating the load handlers.
-document.addEventListener('click', (e) => {
-    const btn = e.target.closest('.empty-state__action[data-load]');
-    if (!btn) return;
-    const target = document.getElementById(btn.dataset.load);
-    if (target) target.click();
-});
 
 // ==========================================
 // --- 4. TEMPLATES ENGINE ---
@@ -451,17 +427,7 @@ if (btnAutoThis) {
 // ==========================================
 // --- 9. UI SLIDERS & RESIZERS ---
 // ==========================================
-const redSlider = document.getElementById("redSlider"); if (redSlider) redSlider.oninput = (e) => document.documentElement.style.setProperty('--red-thumb-size', e.target.value + "px");
-const greenSlider = document.getElementById("greenSlider"); if (greenSlider) greenSlider.oninput = (e) => document.documentElement.style.setProperty('--green-thumb-size', e.target.value + "px");
-const whiteSlider = document.getElementById("whiteSlider"); if (whiteSlider) whiteSlider.oninput = (e) => document.documentElement.style.setProperty('--white-thumb-size', e.target.value + "px");
-const yellowSlider = document.getElementById("yellowSlider"); if (yellowSlider) yellowSlider.oninput = (e) => document.documentElement.style.setProperty('--yellow-thumb-size', e.target.value + "px");
-const wallpaperSlider = document.getElementById("wallpaperSlider"); if (wallpaperSlider) wallpaperSlider.oninput = (e) => document.documentElement.style.setProperty('--wp-thumb-size', e.target.value + "px");
-const pngSlider = document.getElementById("pngSlider"); if (pngSlider) pngSlider.oninput = (e) => document.documentElement.style.setProperty('--wp-thumb-size', e.target.value + "px");
-const maskedSlider = document.getElementById("maskedSlider"); if (maskedSlider) maskedSlider.oninput = (e) => document.documentElement.style.setProperty('--wp-thumb-size', e.target.value + "px");
-if (photosSlider) photosSlider.oninput = (e) => document.documentElement.style.setProperty('--wp-thumb-size', e.target.value + "px");
-const storyboardSlider = document.getElementById("storyboardSlider");
-if (storyboardSlider) storyboardSlider.oninput = (e) => document.documentElement.style.setProperty('--sb-thumb-size', e.target.value + "px");
-
+// The thumb-size sliders live in src/ui_tabs.js (Phase 2 split).
 // The draggable panel dividers (setupResizer/setupHorizontalResizer + all
 // bindings) live in src/ui_resizers.js (Phase 2 split).
 require('./ui_resizers').initResizers();
@@ -579,20 +545,8 @@ const { refreshPluginsView } =
         toast: (msg, kind, opts) => toast(msg, kind, opts),
     });
 
-// First-paint of library + plugins panels when the user first visits Tab 5.
-const _origToolsTabBtn = document.querySelector('.tab-btn[data-target="tab-tools"]');
-if (_origToolsTabBtn) {
-    let _toolsPainted = false;
-    _origToolsTabBtn.addEventListener('click', () => {
-        // Status pills should always reflect current state, even after the
-        // first paint, so refresh tools-bar status on every visit.
-        refreshToolsBarStatus();
-        if (_toolsPainted) return;
-        _toolsPainted = true;
-        // Defer to next tick so the tab is visible first.
-        setTimeout(() => { refreshLibraryView(); refreshPluginsView(); }, 50);
-    });
-}
+// Tab 5's status refresh + first paint of the library/plugins panels is
+// handled by src/ui_tabs.js (wired at the top of this file).
 
 // ==========================================
 // --- 13. EXPORT & OUTPUT (TAB 1 FALLBACK) ---
@@ -798,7 +752,7 @@ const {
     afterRestore: () => {
         syncViewToState();
         rebuildPhotoPageMap(); // ⚡ Initialize reverse lookup from loaded album state
-        tab6Rendered = false;  // ⚡ Force Tab 6 rebuild with fresh data on next visit
+        invalidateTab6();  // ⚡ Force Tab 6 rebuild with fresh data on next visit
         updatePageDropdowns(); changePage(1);
     },
     persistHashes: () => _saveRenderHashes(),
@@ -835,7 +789,7 @@ async function newProject() {
             <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
         </div>`;
         if (photosGrid) photosGrid.innerHTML = "";
-        tab6Rendered = false;
+        invalidateTab6();
         const rfp = document.getElementById('redFolderPanel'); if (rfp) rfp.innerHTML = getPanelHeaderHTML('images');
         const pfp = document.getElementById('photosFolderPanel'); if (pfp) pfp.innerHTML = getPanelHeaderHTML('images');
         // Reset the album to a single blank page + per-photo edit maps.
