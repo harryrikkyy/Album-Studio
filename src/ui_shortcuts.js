@@ -47,9 +47,13 @@ function showShortcutHelp() {
                     ).join('')}
                 </div>
                 <div class="dialog-actions">
-                    <button class="btn btn--ghost" onclick="this.closest('dialog').close()">Close</button>
+                    <button class="btn btn--ghost">Close</button>
                 </div>
             </div>`;
+        // Wired as a listener (not an inline onclick attribute) so the dialog
+        // works under a script-src 'self' CSP.
+        /** @type {HTMLElement} */ (dlg.querySelector('.dialog-actions .btn'))
+            .addEventListener('click', () => /** @type {HTMLDialogElement} */ (dlg).close());
         document.body.appendChild(dlg);
     }
     dlg.showModal();

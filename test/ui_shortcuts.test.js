@@ -30,7 +30,11 @@ function makeDocumentStub() {
       return sel === 'dialog[open]' ? stub.openDialogs : []
     },
     createElement() {
-      const el = { id: '', innerHTML: '', shown: 0, showModal() { el.shown++ } }
+      const el = {
+        id: '', innerHTML: '', shown: 0, showModal() { el.shown++ },
+        closeBtn: { addEventListener() {} },
+        querySelector: () => el.closeBtn,
+      }
       return el
     },
     body: { appendChild() {} },
