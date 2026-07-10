@@ -63,9 +63,9 @@ let _psName = null
 function getPSName() {
   if (_psName) return _psName
   try {
-    // Reuse the existing helper from photoshop.js so we always pick the same
-    // PS variant the rest of the bridge talks to.
-    _psName = require('./photoshop').getPhotoshopAppName()
+    // Ask the shared bridge so we always pick the same PS variant the rest
+    // of the process talks to.
+    _psName = require('./bridge').getBridge().getPhotoshopAppName()
   } catch {
     _psName = null
   }

@@ -38,12 +38,10 @@ function loadDotEnv() {
 }
 loadDotEnv()
 
-const {
-  executeJSX,
-  executeJSXFile,
-  writeJsonData,
-  getPhotoshopAppName
-} = require('./src/photoshop')
+// Every JSX call goes through the PhotoshopBridge (src/bridge): macOS
+// osascript impl, or a recording mock in E2E runs.
+const bridge = require('./src/bridge').getBridge()
+const { writeJsonData } = require('./src/bridge/temp')
 const jsxTemplates = require('./src/jsx/templates')
 const proofRenderer = require('./src/proof_renderer')
 const telemetry = require('./src/telemetry')
@@ -114,29 +112,6 @@ function safeJsonParse(str, fallback = null) {
   try { return JSON.parse(str) } catch (_) { return fallback }
 }
 
-// Run a scripts/*.jsx file with a per-call data JSON injected as __DATA_PATH__,
-// guaranteeing the temp data file is cleaned up afterwards. Centralizes the
-// write-data / run / unlink dance that every simple JSX handler repeated
-// verbatim. Returns whatever executeJSXFile resolves to.
-async function runJsxDataJob(scriptName, data, timeoutMs) {
-  // E2E test-mode (env flag AND non-packaged, the same double guard as the
-  // auth bypass): never drive Photoshop. Record the job to the manifest file
-  // the test asserts on, and report success.
-  if (process.env.ALBUMSTUDIO_E2E === '1' && !app.isPackaged) {
-    const log = process.env.ALBUMSTUDIO_E2E_JSX_LOG
-    if (log) {
-      try { fs.appendFileSync(log, JSON.stringify({ scriptName, data }) + '\n') } catch (_) {}
-    }
-    return { success: true, mocked: true }
-  }
-  const dataPath = writeJsonData(data)
-  const jsxPath = path.join(__dirname, 'scripts', scriptName)
-  try {
-    return await executeJSXFile(jsxPath, timeoutMs, { DATA_PATH: dataPath })
-  } finally {
-    try { fs.unlinkSync(dataPath) } catch (_) {}
-  }
-}
 
 let mainWindow = null
 let loginWindow = null
@@ -729,27 +704,27 @@ ipcMain.handle('project-read', async (event, pathInput) => {
 
 // ── OPEN IN PHOTOSHOP ─────────────────────────────────────
 ipcMain.handle('open-in-photoshop', async (event, filePath) => {
-  return executeJSX(jsxTemplates.openInPhotoshop(filePath))
+  return bridge.executeJSX(jsxTemplates.openInPhotoshop(filePath))
 })
 
 // ── RUN JSX ───────────────────────────────────────────────
 ipcMain.handle('run-jsx', async (event, jsxCode) => {
-  return executeJSX(jsxCode)
+  return bridge.executeJSX(jsxCode)
 })
 
 // ── PLACE WALLPAPER ───────────────────────────────────────
 ipcMain.handle('place-wallpaper', async (event, filePath, isHr) => {
-  return executeJSX(jsxTemplates.placeWallpaper(filePath, isHr))
+  return bridge.executeJSX(jsxTemplates.placeWallpaper(filePath, isHr))
 })
 
 // ── PLACE PNG FRAME ───────────────────────────────────────
 ipcMain.handle('place-png-frame', async (event, filePath, layerName) => {
-  return executeJSX(jsxTemplates.placePngFrame(filePath, layerName))
+  return bridge.executeJSX(jsxTemplates.placePngFrame(filePath, layerName))
 })
 
 // ── PLACE MASKED FRAME ────────────────────────────────────
 ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) => {
-  return executeJSX(jsxTemplates.placeMaskedFrame(filePath, layerName, isJpg))
+  return bridge.executeJSX(jsxTemplates.placeMaskedFrame(filePath, layerName, isJpg))
 })
 
 // ── PLACE IMAGE CLIPPED (B1) ──────────────────────────────
@@ -757,7 +732,7 @@ ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) =
 // currently selected layer (clipping mask). Used by the Source-panel
 // right-click → "Place".
 ipcMain.handle('place-clipped', async (event, filePath) => {
-  return executeJSX(jsxTemplates.placeClipped(filePath))
+  return bridge.executeJSX(jsxTemplates.placeClipped(filePath))
 })
 
 // ── NATIVE FILE DRAG-OUT ──────────────────────────────────
@@ -790,7 +765,7 @@ ipcMain.on('start-native-drag', (event, filePaths) => {
 // ── SWAP IMAGES ───────────────────────────────────────────
 ipcMain.handle('swap-images', async () => {
   const jsxPath = path.join(__dirname, 'scripts', 'Swap_Clipped_Images.jsx')
-  return executeJSXFile(jsxPath)
+  return bridge.executeJSXFile(jsxPath)
 })
 
 // ── EXPORT ALBUM ──────────────────────────────────────────
@@ -798,12 +773,12 @@ ipcMain.handle('swap-images', async () => {
 // concurrent invocations could stomp. We now write to a per-call randomized
 // path and inject it into the JSX via __DATA_PATH__ substitution.
 ipcMain.handle('export-album', async (event, exportData) => {
-  return runJsxDataJob('export_album.jsx', exportData, 600000)
+  return bridge.runJsxDataJob('export_album.jsx', exportData, 600000)
 })
 
 // ── BUILD PAGE ────────────────────────────────────────────
 ipcMain.handle('build-page', async (event, pageData) => {
-  return runJsxDataJob('build_page.jsx', pageData, 300000)
+  return bridge.runJsxDataJob('build_page.jsx', pageData, 300000)
 })
 
 // ── EXTRACT TEMPLATE FRAMES ────────────────────────────────
@@ -822,7 +797,7 @@ ipcMain.handle('extract-template-frames', async (event, templatePath) => {
   const jsxPath = path.join(__dirname, 'scripts', 'extract_frames.jsx')
   const t0 = Date.now()
   try {
-    await executeJSXFile(jsxPath, 120000, { DATA_PATH: dataPayload })
+    await bridge.executeJSXFile(jsxPath, 120000, { DATA_PATH: dataPayload })
     if (!fs.existsSync(payload.outputPath)) {
       return { ok: false, error: 'frame extraction produced no output' }
     }
@@ -1415,7 +1390,7 @@ ipcMain.handle('actions-list', async (event, opts) => {
   const dataPath = writeJsonData({ outputPath })
   const jsxPath = path.join(__dirname, 'scripts', 'list_actions.jsx')
   try {
-    await executeJSXFile(jsxPath, 60_000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 60_000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'list_actions produced no output' }
     }
@@ -1486,7 +1461,7 @@ ipcMain.handle('jpeg-export', async (event, sourceFolder) => {
   try {
     // Generous timeout — wedding albums of 200 pages with heavy PSDs can
     // take 10+ minutes. Cap at 1 hour.
-    await executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'jpeg_export produced no output' }
     }
@@ -1544,7 +1519,7 @@ ipcMain.handle('resize-psds', async (event, sourceFolder, mode) => {
   }, 500)
 
   try {
-    await executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'resize_psds produced no output' }
     }
@@ -1579,7 +1554,7 @@ ipcMain.handle('inject-photo', async (event, payload) => {
   const dataPath = writeJsonData({ ...payload, outputPath })
   const jsxPath = path.join(__dirname, 'scripts', 'inject_photo.jsx')
   try {
-    await executeJSXFile(jsxPath, 120000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 120000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'inject produced no output' }
     }
@@ -1608,7 +1583,7 @@ ipcMain.handle('export-open-docs', async (event, scope) => {
   const dataPath = writeJsonData({ outputPath, scope: scope === 'active' ? 'active' : 'all' })
   const jsxPath = path.join(__dirname, 'scripts', 'export_open_docs.jsx')
   try {
-    await executeJSXFile(jsxPath, 30 * 60 * 1000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 30 * 60 * 1000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'export produced no output' }
     }
@@ -1638,7 +1613,7 @@ ipcMain.handle('actions-run', async (event, payload) => {
   const jsxPath = path.join(__dirname, 'scripts', 'run_action.jsx')
   const t0 = Date.now()
   try {
-    await executeJSXFile(jsxPath, 600_000, { DATA_PATH: dataPath })
+    await bridge.executeJSXFile(jsxPath, 600_000, { DATA_PATH: dataPath })
     if (!fs.existsSync(outputPath)) {
       return { ok: false, error: 'run_action produced no output' }
     }
@@ -1666,12 +1641,12 @@ ipcMain.handle('build-pages-batch', async (event, batch) => {
   // batch = { templatePath, outputPath, pages: [{ pageName, photos }] }
   // Generous timeout: 30s per page, capped at 30 minutes.
   const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
-  return runJsxDataJob('build_pages_batch.jsx', batch, ms)
+  return bridge.runJsxDataJob('build_pages_batch.jsx', batch, ms)
 })
 
 // ── BATCH THUMBNAILS (legacy: all through Photoshop) ──────
 ipcMain.handle('batch-thumbnails', async (event, folderPath) => {
-  return runJsxDataJob('batch_thumbnails.jsx', { folderPath }, 600000)
+  return bridge.runJsxDataJob('batch_thumbnails.jsx', { folderPath }, 600000)
 })
 
 // ── BATCH THUMBNAILS (fast hybrid) ────────────────────────
@@ -1714,7 +1689,7 @@ ipcMain.handle('thumbnails-generate', async (event, folderPath) => {
       } catch (_) {}
     }, 500)
     try {
-      await executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
+      await bridge.executeJSXFile(jsxPath, 60 * 60 * 1000, { DATA_PATH: dataPath })
       if (fs.existsSync(outputPath)) {
         const r = JSON.parse(fs.readFileSync(outputPath, 'utf8'))
         rawProcessed = r.processed || 0
@@ -1782,7 +1757,7 @@ app.whenReady().then(async () => {
 
   // Resolve Photoshop name once at startup so the first IPC call is fast.
   // Wrapped because running on a machine without Photoshop should not crash boot.
-  try { getPhotoshopAppName() } catch (_) {}
+  try { bridge.getPhotoshopAppName() } catch (_) {}
 
   const { loadLicense } = require('./src/license')
 

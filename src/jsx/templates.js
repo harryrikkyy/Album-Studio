@@ -14,7 +14,7 @@
  * strings are escaped via `jsxString` to make injection impossible.
  */
 
-const { jsxString } = require('../photoshop')
+const { jsxString } = require('./escape')
 
 /**
  * Open a PSD/PSB/JPG and immediately duplicate to a "_Safe" working document.
