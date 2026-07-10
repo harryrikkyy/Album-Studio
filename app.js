@@ -41,6 +41,7 @@ loadDotEnv()
 // Every JSX call goes through the PhotoshopBridge (src/bridge): macOS
 // osascript impl, or a recording mock in E2E runs.
 const bridge = require('./src/bridge').getBridge()
+const guards = require('./src/ipc_guards')
 const { writeJsonData } = require('./src/bridge/temp')
 const jsxTemplates = require('./src/jsx/templates')
 const proofRenderer = require('./src/proof_renderer')
@@ -540,13 +541,14 @@ async function verifyLicense(email) {
   }
 }
 
-ipcMain.handle('check-license', (event, email) => verifyLicense(email))
+ipcMain.handle('check-license', (event, email) => verifyLicense(guards.reqString(email, 'email', 'check-license', { max: 320 })))
 
 // ── LAUNCH MAIN APP ────────────────────────────────────────
 // R4: don't blindly trust the renderer's licenseInfo (it could be forged by
 // a tampered renderer). check-license always persists a verified license on
 // success, so re-validate against that saved file here before opening the app.
 ipcMain.handle('launch-app', async (event, licenseInfo) => {
+  licenseInfo = licenseInfo === undefined || licenseInfo === null ? {} : guards.reqObject(licenseInfo, 'licenseInfo', 'launch-app')
   try {
     const { machineId } = require('node-machine-id')
     const { validateOfflineLicense } = require('./src/license')
@@ -628,6 +630,7 @@ ipcMain.handle('pick-folder', async () => {
 
 // ── FILE SAVE/OPEN ────────────────────────────────────────
 ipcMain.handle('pick-file-save', async (event, defaultName) => {
+  if (defaultName !== undefined && defaultName !== null) defaultName = guards.reqBaseName(defaultName, 'defaultName', 'pick-file-save')
   const result = await dialog.showSaveDialog({
     defaultPath: defaultName,
     filters: [{ name: 'JSON', extensions: ['json'] }]
@@ -651,6 +654,7 @@ ipcMain.handle('pick-file-open', async () => {
 // still load through the legacy `pick-file-open` path (which the renderer
 // auto-detects).
 ipcMain.handle('project-pick-save', async (event, suggestedName) => {
+  if (suggestedName !== undefined && suggestedName !== null) suggestedName = guards.reqBaseName(suggestedName, 'suggestedName', 'project-pick-save')
   const result = await dialog.showSaveDialog({
     defaultPath: suggestedName || 'New Album Project',
     properties: ['createDirectory'],
@@ -671,6 +675,7 @@ ipcMain.handle('project-pick-open', async () => {
 })
 
 ipcMain.handle('project-write', async (event, projectPath, payload) => {
+  projectPath = guards.reqAbsPath(projectPath, 'projectPath', 'project-write'); payload = guards.reqObject(payload, 'payload', 'project-write')
   const fsx = require('fs')
   const px = require('path')
   fsx.mkdirSync(projectPath, { recursive: true })
@@ -684,6 +689,7 @@ ipcMain.handle('project-write', async (event, projectPath, payload) => {
 })
 
 ipcMain.handle('project-read', async (event, pathInput) => {
+  pathInput = guards.reqAbsPath(pathInput, 'pathInput', 'project-read')
   const fsx = require('fs')
   const px = require('path')
   let projectFile = pathInput
@@ -705,26 +711,31 @@ ipcMain.handle('project-read', async (event, pathInput) => {
 
 // ── OPEN IN PHOTOSHOP ─────────────────────────────────────
 ipcMain.handle('open-in-photoshop', async (event, filePath) => {
+  filePath = guards.reqAbsPath(filePath, 'filePath', 'open-in-photoshop')
   return bridge.executeJSX(jsxTemplates.openInPhotoshop(filePath))
 })
 
 // ── RUN JSX ───────────────────────────────────────────────
 ipcMain.handle('run-jsx', async (event, jsxCode) => {
+  jsxCode = guards.reqString(jsxCode, 'jsxCode', 'run-jsx', { max: 262144 })
   return bridge.executeJSX(jsxCode)
 })
 
 // ── PLACE WALLPAPER ───────────────────────────────────────
 ipcMain.handle('place-wallpaper', async (event, filePath, isHr) => {
+  filePath = guards.reqAbsPath(filePath, 'filePath', 'place-wallpaper')
   return bridge.executeJSX(jsxTemplates.placeWallpaper(filePath, isHr))
 })
 
 // ── PLACE PNG FRAME ───────────────────────────────────────
 ipcMain.handle('place-png-frame', async (event, filePath, layerName) => {
+  filePath = guards.reqAbsPath(filePath, 'filePath', 'place-png-frame'); layerName = guards.reqString(layerName, 'layerName', 'place-png-frame', { max: 256 })
   return bridge.executeJSX(jsxTemplates.placePngFrame(filePath, layerName))
 })
 
 // ── PLACE MASKED FRAME ────────────────────────────────────
 ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) => {
+  filePath = guards.reqAbsPath(filePath, 'filePath', 'place-masked-frame'); layerName = guards.reqString(layerName, 'layerName', 'place-masked-frame', { max: 256 })
   return bridge.executeJSX(jsxTemplates.placeMaskedFrame(filePath, layerName, isJpg))
 })
 
@@ -733,6 +744,7 @@ ipcMain.handle('place-masked-frame', async (event, filePath, layerName, isJpg) =
 // currently selected layer (clipping mask). Used by the Source-panel
 // right-click → "Place".
 ipcMain.handle('place-clipped', async (event, filePath) => {
+  filePath = guards.reqAbsPath(filePath, 'filePath', 'place-clipped')
   return bridge.executeJSX(jsxTemplates.placeClipped(filePath))
 })
 
@@ -753,7 +765,9 @@ function getDragIcon() {
   return _dragIcon
 }
 ipcMain.on('start-native-drag', (event, filePaths) => {
-  if (!Array.isArray(filePaths) || filePaths.length === 0) return
+  // .on has no promise to reject, so invalid input bails silently.
+  if (!Array.isArray(filePaths) || filePaths.length === 0 || filePaths.length > 1000) return
+  if (filePaths.some(p => typeof p !== 'string' || p.includes('\0') || !path.isAbsolute(p))) return
   const existing = filePaths.filter(p => { try { return fs.existsSync(p) } catch (_) { return false } })
   if (existing.length === 0) return
   const icon = getDragIcon()
@@ -774,11 +788,13 @@ ipcMain.handle('swap-images', async () => {
 // concurrent invocations could stomp. We now write to a per-call randomized
 // path and inject it into the JSX via __DATA_PATH__ substitution.
 ipcMain.handle('export-album', async (event, exportData) => {
+  exportData = guards.reqObject(exportData, 'exportData', 'export-album')
   return bridge.runJsxDataJob('export_album.jsx', exportData, 600000)
 })
 
 // ── BUILD PAGE ────────────────────────────────────────────
 ipcMain.handle('build-page', async (event, pageData) => {
+  pageData = guards.reqObject(pageData, 'pageData', 'build-page')
   return bridge.runJsxDataJob('build_page.jsx', pageData, 300000)
 })
 
@@ -789,6 +805,7 @@ ipcMain.handle('build-page', async (event, pageData) => {
 // — once we have the frames, every subsequent proof render is pure libvips
 // and never touches Photoshop again.
 ipcMain.handle('extract-template-frames', async (event, templatePath) => {
+  templatePath = guards.reqAbsPath(templatePath, 'templatePath', 'extract-template-frames')
   const dataPayload = writeJsonData({
     templatePath,
     outputPath: path.join(require('os').tmpdir(),
@@ -823,6 +840,7 @@ ipcMain.handle('extract-template-frames', async (event, templatePath) => {
 // stays free for UI work — sharp runs natively in the main process. Returns
 // per-job results so the renderer can update Tab 7 cards as they complete.
 ipcMain.handle('render-proof', async (event, job) => {
+  job = guards.reqObject(job, 'job', 'render-proof')
   const result = await proofRenderer.renderPageProof(job)
   telemetry.event('proof_render', {
     ok: result.ok,
@@ -834,6 +852,7 @@ ipcMain.handle('render-proof', async (event, job) => {
 })
 
 ipcMain.handle('render-proofs-batch', async (event, jobs) => {
+  jobs = guards.reqArray(jobs, 'jobs', 'render-proofs-batch', { max: 5000 })
   const t0 = Date.now()
   const results = await proofRenderer.renderProofBatch(jobs, (r, idx, total) => {
     // Stream progress to the renderer that requested the batch. Best-effort —
@@ -853,6 +872,7 @@ ipcMain.handle('render-proofs-batch', async (event, jobs) => {
 // when it sees a page whose template is a generative one (templatePath null
 // or starts with 'gen_').
 ipcMain.handle('render-final-composite', async (event, job) => {
+  job = guards.reqObject(job, 'job', 'render-final-composite')
   const result = await proofRenderer.renderFinalComposite(job)
   telemetry.event('final_composite', {
     ok: result.ok,
@@ -870,6 +890,7 @@ ipcMain.handle('render-final-composite', async (event, job) => {
 // (withMetadata, no rotate/autoOrient here) so Photoshop treats the copy
 // exactly like the original — colour ops are orientation-invariant.
 ipcMain.handle('bake-adjusted-source', async (event, payload) => {
+  payload = guards.reqObject(payload, 'payload', 'bake-adjusted-source')
   const { srcPath, adjust, outDir } = payload || {}
   if (!srcPath || !adjust) return { ok: false, error: 'missing srcPath/adjust' }
   try {
@@ -898,6 +919,7 @@ ipcMain.handle('bake-adjusted-source', async (event, payload) => {
 //   - Approve / Comment per page, persisted to feedback.json
 //   - "Export feedback" button that downloads the JSON for the photographer
 ipcMain.handle('export-proof-gallery', async (event, payload) => {
+  payload = guards.reqObject(payload, 'payload', 'export-proof-gallery')
   // payload = { projectPath, pages: [{ pageNum, proofPath, label }], albumName }
   const galleryDir = path.join(payload.projectPath, 'proofs', 'gallery')
   fs.mkdirSync(galleryDir, { recursive: true })
@@ -1093,6 +1115,7 @@ ipcMain.handle('telemetry-paths', () => {
 // Optional step 3:
 //   3. `curation-export`   — copy keepers into <folder>/_Selected.
 ipcMain.handle('curation-analyze', async (event, folderPath) => {
+  folderPath = guards.reqAbsPath(folderPath, 'folderPath', 'curation-analyze')
   const t0 = Date.now()
   try {
     const features = await curation.analyzeFolder(folderPath, (p) => {
@@ -1236,6 +1259,7 @@ ipcMain.handle('tools-bar-status', () => {
 // renderer asks for extra space when opening the action search dropdown
 // and releases it when the dropdown closes.
 ipcMain.handle('tools-bar-set-height', (event, height) => {
+  height = guards.reqNumber(height, 'height', 'tools-bar-set-height', { min: 0, max: 4000 })
   try { toolsBar.setBarHeight(height); return { ok: true } }
   catch (e) { return { ok: false, error: e.message } }
 })
@@ -1335,6 +1359,7 @@ ipcMain.handle('renamer-pick-folder', async () => {
 })
 
 ipcMain.handle('renamer-list-images', async (event, folderPath) => {
+  folderPath = guards.reqAbsPath(folderPath, 'folderPath', 'renamer-list-images')
   if (!folderPath || typeof folderPath !== 'string') {
     return { ok: false, error: 'no folder', images: [] }
   }
@@ -1345,6 +1370,7 @@ ipcMain.handle('renamer-list-images', async (event, folderPath) => {
 // List immediate subdirectories of a folder (for the Renamer's folder
 // navigator). Returns the parent path too so the UI can offer an "up" row.
 ipcMain.handle('renamer-list-dir', (event, dirPath) => {
+  dirPath = guards.reqAbsPath(dirPath, 'dirPath', 'renamer-list-dir')
   if (!dirPath || typeof dirPath !== 'string') return { ok: false, error: 'no path' }
   try {
     const entries = fs.readdirSync(dirPath, { withFileTypes: true })
@@ -1366,6 +1392,9 @@ ipcMain.handle('renamer-list-dir', (event, dirPath) => {
 })
 
 ipcMain.handle('renamer-apply-renames', async (event, payload) => {
+  payload = guards.reqObject(payload, 'payload', 'renamer-apply-renames')
+  if (payload.folderPath) payload.folderPath = guards.reqAbsPath(payload.folderPath, 'payload.folderPath', 'renamer-apply-renames')
+  if (payload.ops !== undefined) guards.reqArray(payload.ops, 'payload.ops', 'renamer-apply-renames', { max: 10000 })
   const folderPath = payload && payload.folderPath
   const ops = (payload && payload.ops) || []
   if (!folderPath) return { ok: false, error: 'no folder', renamed: 0 }
@@ -1423,6 +1452,7 @@ ipcMain.handle('actions-list', async (event, opts) => {
 // returns — so we can't ipcMain.send mid-execution. Polling a small JSON
 // file every 500 ms is the simplest workable channel.
 ipcMain.handle('jpeg-export', async (event, sourceFolder) => {
+  sourceFolder = guards.reqAbsPath(sourceFolder, 'sourceFolder', 'jpeg-export')
   const t0 = Date.now()
   // Output folder layout: siblings of the source folder (NOT children),
   // matching the user's requested structure:
@@ -1496,6 +1526,7 @@ ipcMain.handle('jpeg-export', async (event, sourceFolder) => {
 // original (mode "overwrite") or into a sibling `Resized/` subfolder
 // (mode "copy"). Same progress-polling pattern as jpeg-export.
 ipcMain.handle('resize-psds', async (event, sourceFolder, mode) => {
+  sourceFolder = guards.reqAbsPath(sourceFolder, 'sourceFolder', 'resize-psds'); mode = guards.reqString(mode, 'mode', 'resize-psds', { max: 64 })
   const t0 = Date.now()
   const tmpDir = require('os').tmpdir()
   const tag = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
@@ -1549,6 +1580,7 @@ ipcMain.handle('resize-psds', async (event, sourceFolder, mode) => {
 // app.activeDocument there is a fake that only knows about docs the app
 // itself opened, which is why "open a PSD first" fired even with a doc open).
 ipcMain.handle('inject-photo', async (event, payload) => {
+  payload = guards.reqObject(payload, 'payload', 'inject-photo'); guards.reqAbsPath(payload.filePath, 'payload.filePath', 'inject-photo'); guards.reqString(payload.layerName, 'payload.layerName', 'inject-photo', { max: 256 })
   // payload = { filePath, layerName }
   const outputPath = path.join(require('os').tmpdir(),
     `albumstudio_inject_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.json`)
@@ -1607,6 +1639,7 @@ ipcMain.handle('export-open-docs', async (event, scope) => {
 })
 
 ipcMain.handle('actions-run', async (event, payload) => {
+  payload = guards.reqObject(payload, 'payload', 'actions-run'); guards.reqString(payload.setName, 'payload.setName', 'actions-run', { max: 256 }); guards.reqString(payload.actionName, 'payload.actionName', 'actions-run', { max: 256 })
   // payload = { setName, actionName }
   const outputPath = path.join(require('os').tmpdir(),
     `albumstudio_action_run_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.json`)
@@ -1639,6 +1672,7 @@ ipcMain.handle('actions-run', async (event, payload) => {
 // closes for each page in the batch. Saves the per-page open-template cost
 // when the render queue feeds N consecutive pages with the same template.
 ipcMain.handle('build-pages-batch', async (event, batch) => {
+  batch = guards.reqObject(batch, 'batch', 'build-pages-batch')
   // batch = { templatePath, outputPath, pages: [{ pageName, photos }] }
   // Generous timeout: 30s per page, capped at 30 minutes.
   const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
@@ -1647,6 +1681,7 @@ ipcMain.handle('build-pages-batch', async (event, batch) => {
 
 // ── BATCH THUMBNAILS (legacy: all through Photoshop) ──────
 ipcMain.handle('batch-thumbnails', async (event, folderPath) => {
+  folderPath = guards.reqAbsPath(folderPath, 'folderPath', 'batch-thumbnails')
   return bridge.runJsxDataJob('batch_thumbnails.jsx', { folderPath }, 600000)
 })
 
@@ -1657,6 +1692,7 @@ ipcMain.handle('batch-thumbnails', async (event, folderPath) => {
 //   2. Photoshop lane — ONLY the RAW files that genuinely need Camera Raw.
 // Progress for both lanes streams to the renderer via 'thumbs-progress'.
 ipcMain.handle('thumbnails-generate', async (event, folderPath) => {
+  folderPath = guards.reqAbsPath(folderPath, 'folderPath', 'thumbnails-generate')
   const t0 = Date.now()
   // Lane 1: sharp. Runs immediately, reports incremental progress.
   const sharpResult = await thumbnailer.generateThumbnails(folderPath, (p) => {
