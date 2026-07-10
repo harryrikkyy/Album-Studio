@@ -5,11 +5,18 @@
 const path = require('path')
 const fs = require('fs')
 const crypto = require('crypto')
-const { app } = require('electron')
+
+// Electron's temp path when running inside the app; plain os.tmpdir() when
+// required outside Electron (unit tests; CI skips the Electron binary via
+// ELECTRON_SKIP_BINARY_DOWNLOAD, which makes require('electron') throw).
+function tempDir() {
+  try { return require('electron').app.getPath('temp') }
+  catch (_) { return require('os').tmpdir() }
+}
 
 function tmpJsxPath() {
   return path.join(
-    app.getPath('temp'),
+    tempDir(),
     `albumstudio_${process.pid}_${crypto.randomBytes(6).toString('hex')}.jsx`
   )
 }
@@ -22,7 +29,7 @@ function tmpJsxPath() {
  */
 function writeJsonData(data, filename) {
   const fname = filename || `albumstudio_${process.pid}_${crypto.randomBytes(6).toString('hex')}.json`
-  const dataPath = path.join(app.getPath('temp'), fname)
+  const dataPath = path.join(tempDir(), fname)
   fs.writeFileSync(dataPath, JSON.stringify(data))
   return dataPath
 }
