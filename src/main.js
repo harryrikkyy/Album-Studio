@@ -52,9 +52,8 @@ require('./state/store').exposeOnGlobal(store, [
 ]);
 // Template sync state (_syncTemplates / _activeMatchPanel) lives in
 // src/features/template_filter.js.
-// J1: render colour as editable clipped adjustment layers instead of baking
-// pixels. EXPERIMENTAL — off by default (the bake path stays the safe default).
-let _useAdjLayers = (() => { try { return localStorage.getItem('adt_adj_layers') === '1'; } catch (_) { return false; } })();
+// The J1 adjustment-layers flag lives in src/features/export_actions.js
+// (wired in the export section below).
 // photoCache / wallpaperCache / pngCache / maskedCache / outputFolder live in
 // the state store (see the exposeOnGlobal block above).
 
@@ -340,32 +339,8 @@ require('./features/spread_editor').createSpreadEditor(store, {
 // The green-box composer and Smart Auto-Fill live in
 // src/features/album_pages.js (wired in the page-navigation section).
 
-const btnAutoThis = document.getElementById("btnAutoThis");
-if (btnAutoThis) {
-    btnAutoThis.addEventListener("click", async () => {
-        const pageData = albumPages[currentPage];
-        if (!pageData || pageData.photos.length === 0) return app.showAlert("Pull photos into Green Box first!");
-        if (!pageData.template) return app.showAlert("Select a template from PSD Library!");
-        try {
-            setStatus(`Building Page ${currentPage}…`);
-            const exportData = buildExportData(currentPage, currentPage);
-            const pageEntry = exportData.pages[currentPage];
-            if (!pageEntry) return app.showAlert("Could not resolve page data!");
-            // Bake per-photo adjustments so the built PSD reflects the preview —
-            // UNLESS J1 (editable adjustment layers) is on, which places
-            // originals + adds clipped adjustment layers in the JSX instead.
-            if (!_useAdjLayers) await bakeExportAdjustments(exportData);
-            const payload = {
-                templatePath: pageEntry.templatePath,
-                pageName: String(currentPage).padStart(3, '0'),
-                photos: pageEntry.photos,
-                useAdjustmentLayers: _useAdjLayers
-            };
-            await require('electron').ipcRenderer.invoke('build-page', payload);
-            notify(`Page ${currentPage} built successfully`, "success");
-        } catch(err) { app.showAlert("Build Error: " + err.message); }
-    });
-}
+// The Build-This-Page button lives in src/features/export_actions.js
+// (wired in the export section below).
 
 // ==========================================
 // --- 9. UI SLIDERS & RESIZERS ---
@@ -414,20 +389,6 @@ const { refreshToolsBarStatus } =
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
-
-// J1 toggle: editable adjustment layers on render (experimental, persisted).
-const chkAdjLayers = document.getElementById('chkAdjLayers');
-if (chkAdjLayers) {
-    chkAdjLayers.checked = _useAdjLayers;
-    chkAdjLayers.addEventListener('change', () => {
-        _useAdjLayers = chkAdjLayers.checked;
-        try { localStorage.setItem('adt_adj_layers', _useAdjLayers ? '1' : '0'); } catch (_) {}
-        toast(_useAdjLayers
-            ? 'Renders will use editable adjustment layers (experimental)'
-            : 'Renders will bake colour into pixels (exact preview match)', 'info');
-    });
-}
-
 
 // Generative templates (virtual layouts, the checkbox loader, and the
 // generative-aware HR render interceptor that diverts build-page(s) to the
@@ -494,15 +455,22 @@ const { refreshPluginsView } =
 // ==========================================
 // --- 13. EXPORT & OUTPUT (TAB 1 FALLBACK) ---
 // ==========================================
-const btnOutput = document.getElementById("btnOutput");
-if (btnOutput) {
-    btnOutput.addEventListener("click", async () => {
-        const folder = await fs.getFolder(); if (!folder) return;
-        outputFolder = folder; projectData.outputToken = await fs.createPersistentToken(folder); saveStateToStorage();
-        notify(`Output folder set: ${folder.name}`, 'success');
-        const ftxt = document.getElementById("finalOutputText"); if(ftxt) ftxt.innerText = folder.name;
-    });
-}
+// The build/export buttons, output-folder pickers, and the J1 toggle live
+// in src/features/export_actions.js (Phase 2 split). The render queue reads
+// the live J1 flag through exportActions.useAdjLayers().
+const exportActions = require('./features/export_actions').createExportActions(store, {
+    buildExportData: (start, end) => buildExportData(start, end),
+    bakeExportAdjustments: (exportData) => bakeExportAdjustments(exportData),
+    queueRender: (exportData) => queueRender(exportData),
+    invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
+    pickFolder: () => fs.getFolder(),
+    createToken: (folder) => fs.createPersistentToken(folder),
+    saveState: () => saveStateToStorage(),
+    setStatus: (msg) => setStatus(msg),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+    showAlert: (msg) => app.showAlert(msg),
+});
 
 // Export-data assembly lives in src/features/export_data.js (Phase 2 split):
 // page range → render payload (HR path upgrade, per-photo edits, generative
@@ -540,21 +508,10 @@ const { queueRender } = require('./features/render_queue').createRenderQueue(sto
     toast: (msg, kind, opts) => toast(msg, kind, opts),
     persistHashes: () => saveRenderHashes(store),
     bakeAdjustments: (exportData) => bakeExportAdjustments(exportData),
-    useAdjLayers: () => _useAdjLayers,
+    useAdjLayers: () => exportActions.useAdjLayers(),
 });
 
-const btnExport = document.getElementById("btnExport");
-if (btnExport) {
-    btnExport.addEventListener("click", () => {
-        if (!outputFolder) return app.showAlert("Please select an Output Folder first!");
-        const start = parseInt(document.getElementById("exportStart").value);
-        const end = parseInt(document.getElementById("exportEnd").value);
-        if (isNaN(start) || isNaN(end) || start > end) return app.showAlert("Invalid Start/End pages.");
-        const exportData = buildExportData(start, end);
-        if (Object.keys(exportData.pages).length === 0) return app.showAlert("No complete pages in range!");
-        queueRender(exportData);
-    });
-}
+// btnExport is wired by src/features/export_actions.js (created above).
 
 // ==========================================
 // --- 14. TAB 7: VIRTUAL STORYBOARD ENGINE ---
@@ -576,28 +533,9 @@ const { renderStoryboard } = require('./features/storyboard').createStoryboard(s
 // The fast proof renderer + client gallery live in src/features/proofs.js
 // (wired in the live-preview section above).
 
-const btnSetFinalOutput = document.getElementById("btnSetFinalOutput");
-if (btnSetFinalOutput) {
-    btnSetFinalOutput.addEventListener("click", async () => {
-        const folder = await fs.getFolder(); if (!folder) return;
-        outputFolder = folder;
-        projectData.outputToken = await fs.createPersistentToken(folder);
-        saveStateToStorage();
-        document.getElementById("finalOutputText").innerText = folder.name;
-    });
-}
-
+// btnSetFinalOutput and btnRenderFinalAlbum are wired by
+// src/features/export_actions.js (created in the export section above).
 // (buildExportData defined once above — duplicate removed)
-
-const btnRenderFinalAlbum = document.getElementById("btnRenderFinalAlbum");
-if (btnRenderFinalAlbum) {
-    btnRenderFinalAlbum.addEventListener("click", () => {
-        if (!outputFolder) return app.showAlert("Please SET OUTPUT FOLDER first!");
-        const exportData = buildExportData(1, totalActivePages);
-        if (Object.keys(exportData.pages).length === 0) return app.showAlert("Storyboard is empty!");
-        queueRender(exportData);
-    });
-}
 
 // ==========================================
 // --- 15. GLOBAL SAVE / LOAD WORKSPACE ---
