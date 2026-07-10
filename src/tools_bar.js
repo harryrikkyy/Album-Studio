@@ -457,8 +457,9 @@ function openToolsBar() {
     show: false,
     acceptFirstMouse: true,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, 'tools_bar_preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
     },
     title: 'Album Studio Tools',
   })

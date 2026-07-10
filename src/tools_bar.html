@@ -275,7 +275,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const { ipcRenderer } = require('electron');
+// All privileged calls go through the toolsBarAPI contextBridge surface
+// (src/tools_bar_preload.js) — this window runs with contextIsolation and no
+// Node access.
+const api = window.toolsBarAPI;
 
 const toastEl     = document.getElementById('toast');
 const dropdown    = document.getElementById('dropdown');
@@ -330,10 +333,10 @@ function positionDropdown() {
 
 async function expandWindow() {
   // Add some padding so the dropdown's drop shadow doesn't get clipped.
-  await ipcRenderer.invoke('tools-bar-set-height', dropdownHeight() + 12);
+  await api.setHeight(dropdownHeight() + 12);
 }
 async function collapseWindow() {
-  await ipcRenderer.invoke('tools-bar-set-height', 0);
+  await api.setHeight(0);
 }
 
 async function loadActions(force) {
@@ -342,7 +345,7 @@ async function loadActions(force) {
   searchInput.disabled = true;
   searchInput.placeholder = 'Loading actions…';
   try {
-    const res = await ipcRenderer.invoke('actions-list', { force: !!force });
+    const res = await api.listActions({ force: !!force });
     if (!res || !res.ok) {
       showToast('Could not load actions: ' + (res && res.error || 'unknown'), 4000);
       allActions = [];
@@ -554,7 +557,7 @@ async function runAction(item) {
   searchInput.blur();
   showToast(`Running: ${item.name}…`, 1500);
   try {
-    const res = await ipcRenderer.invoke('actions-run', {
+    const res = await api.runAction({
       setName: item.set,
       actionName: item.name,
     });
@@ -584,7 +587,7 @@ btnRefresh.addEventListener('click', async () => {
 btnSwap.addEventListener('click', async () => {
   btnSwap.disabled = true;
   try {
-    const result = await ipcRenderer.invoke('swap-images');
+    const result = await api.swapImages();
     showToast(typeof result === 'string' ? result : 'Swap complete');
   } catch (e) {
     showToast('Swap failed: ' + (e.message || e));
@@ -600,7 +603,7 @@ async function _runExportOpen(btn, scope) {
   const original = labelSpan.textContent;
   labelSpan.textContent = 'Exporting…';
   try {
-    const r = await ipcRenderer.invoke('export-open-docs', scope);
+    const r = await api.exportOpenDocs(scope);
     if (!r || !r.ok) {
       showToast('Export failed: ' + ((r && r.error) || 'unknown'), 4500);
     } else if (r.empty || r.total === 0) {
@@ -626,7 +629,7 @@ btnExportOpen.addEventListener('click', () => _runExportOpen(btnExportOpen, 'act
 btnExportOpenAll.addEventListener('click', () => _runExportOpen(btnExportOpenAll, 'all'));
 
 btnHide.addEventListener('click', () => {
-  ipcRenderer.invoke('tools-bar-close');
+  api.close();
 });
 
 // Keep the dropdown glued to the search input when the bar's window
@@ -651,7 +654,7 @@ let _interactive = false;
 function setInteractive(interactive) {
   if (interactive === _interactive) return;
   _interactive = interactive;
-  ipcRenderer.invoke('tools-bar-set-interactive', interactive);
+  api.setInteractive(interactive);
 }
 
 function isOverChrome(x, y) {
