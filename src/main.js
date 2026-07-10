@@ -1,5 +1,7 @@
-const fs = require("./stubs/uxp").storage.localFileSystem;
-const { app } = require("./stubs/photoshop");
+// Folder picking + persisted-token resolution live in the fs/paths service
+// (src/services/fs_paths.js), which replaced the old UXP stubs (Phase 2).
+const fsPaths = require("./services/fs_paths").createFsPaths(
+    (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args));
 
 // Pure, testable helpers extracted from this file (no DOM / no shared state).
 // See src/renderer_pure.js. Destructured here so every existing call site
@@ -140,7 +142,7 @@ const { mutate, undo, redo } = require('./state/history').createHistory(store, {
 // ─── TOAST + STATUS SYSTEM ─────────────────────────────────────
 // setStatus / toast / notify live in src/ui_feedback.js (Phase 2 split);
 // feature modules keep receiving them as injected deps below.
-const { toast, setStatus, notify } = require('./ui_feedback');
+const { toast, setStatus, notify, showAlert } = require('./ui_feedback');
 
 // getPanelHeaderHTML moved to src/renderer_pure.js (required at top).
 
@@ -158,7 +160,7 @@ const { createFolderRow, applyGlobalRotation } =
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
         saveState: () => saveStateToStorage(),
         syncViewToState: () => syncViewToState(),
-        getEntryForToken: (token) => fs.getEntryForPersistentToken(token),
+        getEntryForToken: (token) => fsPaths.entryForToken(token),
         buildHighResMap: (folder, mapObj) => buildHighResMap(folder, mapObj),
         processImageFolder: (folder, hrFolder, token, id) => processImageFolder(folder, hrFolder, token, id),
         processWallpaperFolder: (folder, hrFolder, name, token, id) => processWallpaperFolder(folder, hrFolder, name, token, id),
@@ -207,7 +209,7 @@ const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
-        showAlert: (msg) => app.showAlert(msg),
+        showAlert: (msg) => showAlert(msg),
     });
 
 // ==========================================
@@ -246,9 +248,9 @@ const { processImageFolder, renderPhotosGrid } =
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
         createFolderRow,
         getTrueFile,
-        pickFolder: () => fs.getFolder(),
-        createToken: (folder) => fs.createPersistentToken(folder),
-        showAlert: (msg) => app.showAlert(msg),
+        pickFolder: () => fsPaths.pickFolder(),
+        createToken: (folder) => fsPaths.tokenForFolder(folder),
+        showAlert: (msg) => showAlert(msg),
         saveState: () => saveStateToStorage(),
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
@@ -297,7 +299,7 @@ const {
     setStatus: (msg) => setStatus(msg),
     toast: (msg, kind, opts) => toast(msg, kind, opts),
     notify: (msg, kind, opts) => notify(msg, kind, opts),
-    showAlert: (msg) => app.showAlert(msg),
+    showAlert: (msg) => showAlert(msg),
 });
 
 // ── Per-photo adjustments ──────────────────────────────────────
@@ -359,9 +361,9 @@ const { processWallpaperFolder, processPngFolder, processMaskedFolder, processTe
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
         createFolderRow,
         getTrueFile,
-        pickFolder: () => fs.getFolder(),
-        createToken: (folder) => fs.createPersistentToken(folder),
-        showAlert: (msg) => app.showAlert(msg),
+        pickFolder: () => fsPaths.pickFolder(),
+        createToken: (folder) => fsPaths.tokenForFolder(folder),
+        showAlert: (msg) => showAlert(msg),
         saveState: () => saveStateToStorage(),
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
@@ -379,8 +381,8 @@ const { refreshToolsBarStatus } =
     require('./features/tools_tab').createToolsTab({
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
         on: (channel, listener) => require('electron').ipcRenderer.on(channel, listener),
-        pickFolder: () => fs.getFolder(),
-        showAlert: (msg) => app.showAlert(msg),
+        pickFolder: () => fsPaths.pickFolder(),
+        showAlert: (msg) => showAlert(msg),
         setStatus: (msg) => setStatus(msg),
         toast: (msg, kind, opts) => toast(msg, kind, opts),
         notify: (msg, kind, opts) => notify(msg, kind, opts),
@@ -404,7 +406,7 @@ require('./features/curation_ui').createCurationUi({
     invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
     on: (channel, listener) => require('electron').ipcRenderer.on(channel, listener),
     off: (channel, listener) => require('electron').ipcRenderer.removeListener(channel, listener),
-    pickFolder: () => fs.getFolder(),
+    pickFolder: () => fsPaths.pickFolder(),
     toast: (msg, kind, opts) => toast(msg, kind, opts),
     notify: (msg, kind, opts) => notify(msg, kind, opts),
 });
@@ -424,7 +426,7 @@ const { refreshLibraryView } =
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
         renderStoryboard: () => renderStoryboard(),
         saveState: () => saveStateToStorage(),
-        pickFolder: () => fs.getFolder(),
+        pickFolder: () => fsPaths.pickFolder(),
         processTemplateFolder: (folder, token, id) => processTemplateFolder(folder, token, id),
         processWallpaperFolder: (folder, hrFolder, name, token, id) => processWallpaperFolder(folder, hrFolder, name, token, id),
         processPngFolder: (folder, token, id) => processPngFolder(folder, token, id),
@@ -459,13 +461,13 @@ const exportActions = require('./features/export_actions').createExportActions(s
     bakeExportAdjustments: (exportData) => bakeExportAdjustments(exportData),
     queueRender: (exportData) => queueRender(exportData),
     invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
-    pickFolder: () => fs.getFolder(),
-    createToken: (folder) => fs.createPersistentToken(folder),
+    pickFolder: () => fsPaths.pickFolder(),
+    createToken: (folder) => fsPaths.tokenForFolder(folder),
     saveState: () => saveStateToStorage(),
     setStatus: (msg) => setStatus(msg),
     notify: (msg, kind, opts) => notify(msg, kind, opts),
     toast: (msg, kind, opts) => toast(msg, kind, opts),
-    showAlert: (msg) => app.showAlert(msg),
+    showAlert: (msg) => showAlert(msg),
 });
 
 // Export-data assembly lives in src/features/export_data.js (Phase 2 split):
@@ -556,7 +558,7 @@ const {
 } = require('./features/project_io').createProjectIO(store, {
     invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
     storage: localStorage,
-    getEntryForToken: (t) => fs.getEntryForPersistentToken(t),
+    getEntryForToken: (t) => fsPaths.entryForToken(t),
     processors: {
         image: (folder, hrFolder, token) => processImageFolder(folder, hrFolder, token),
         template: (folder, token) => processTemplateFolder(folder, token),
