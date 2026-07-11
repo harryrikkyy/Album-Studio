@@ -39,6 +39,10 @@ function openRenamerWindow() {
       preload: path.join(__dirname, 'renamer_preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
+      // The preload requires ./renamer_naming — a sandboxed preload can only
+      // require electron built-ins, so it would throw, kill the preload, and
+      // leave window.renamerAPI undefined (every button dead).
+      sandbox: false,
     },
   })
   _win.loadFile(path.join(__dirname, 'renamer.html'))
