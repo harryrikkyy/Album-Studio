@@ -655,6 +655,8 @@ if (window.native && window.native.isE2E) {
         }),
         undo: () => undo(),
         redo: () => redo(),
+        // Real page navigation — the Phase 4 bench times this.
+        changePage: (pageNum) => changePage(pageNum),
         // Drive the real export path (queue → chunking → render cache →
         // IPC bridge). The main process mocks the Photoshop JSX job behind
         // the same test-mode guard and logs it to ALBUMSTUDIO_E2E_JSX_LOG.
