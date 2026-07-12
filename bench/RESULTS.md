@@ -40,7 +40,35 @@ gitignored.
 - Store/DOM operations (load, nav, storyboard) are already well inside
   frame budget on 200 pages — no virtualization needed at this size.
 - The proof renderer is the one real compute cost (~22 s for 200 pages).
-  `sharp` pixel work runs on the libvips threadpool (off the main JS
-  thread), so the open question for the worker-offload task is whether the
-  JS orchestration between ops is enough to jank the UI — to be measured
-  before committing to that change.
+
+## Scale test (500 pages / 5000 source photos)
+
+| Metric | Value |
+| --- | --- |
+| 500-page project load | 4 ms |
+| 500-page storyboard build | 12 ms |
+| 500-page total app memory | 688 MB |
+| 5000 source-pool wrappers, DOM build | 14 ms |
+| 5000 source-pool wrappers, renderer mem | 321 MB (684 MB total) |
+
+## Decisions (evidence-based)
+
+- **Worker-thread sharp offload — NOT done.** During a 20-page proof batch,
+  a 20 ms interval fired at 21 ms median / 21.5 ms p95 / 48.7 ms max, with
+  **zero gaps over 50 ms**. `sharp` already runs its pixel work on the
+  libvips threadpool, off the main JS thread, and the JS orchestration
+  between ops does not block the event loop. A `worker_thread` would add
+  serialization overhead for no measured responsiveness gain.
+- **Grid virtualization — NOT needed at the target scale.** Pages/storyboard
+  handle 500 pages in single-digit ms; Tab 6 (Photos) is already virtualized
+  with an IntersectionObserver; the Tab 1 source pool builds 5000 wrappers in
+  14 ms and stays within memory budget. (Caveat: the 5000-photo test cycles
+  ~400 unique thumbnails, so Chromium dedupes decodes — with fully-unique
+  images the decode-cache working set is larger but bounded by Chromium's
+  off-screen LRU eviction. If a real large shoot ever shows memory pressure,
+  the source pool is the place to add the same IntersectionObserver pattern
+  Tab 6 uses.)
+- **Finer proof invalidation / thumbnail-cache reuse — NOT pursued.** The
+  render cache already skips unchanged pages (Phase 1 `partitionByRenderCache`),
+  and proof latency (106 ms/page) is well inside target, so there is no
+  measured problem to solve here.
