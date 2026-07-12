@@ -222,3 +222,21 @@
 - [ ] **Phase 3 checkpoint** — live smoke-test with isolation+CSP on (real
   Photoshop; also renamer + tools-bar manually — no E2E coverage there);
   owner licensing actions (keygen, deploy server/, Firebase Auth + rules).
+
+## Phase 4 — Performance + scalability
+- [x] **Benchmark harness + baselines** — bench/ (make_fixture.js, proof_bench.js,
+  app_bench.js) + RESULTS.md. Baselines all inside target: startup 1.1s, 200-page
+  load 3ms, page nav 0.1ms, storyboard 6ms, proof render 106ms/page, 685MB.
+- [x] **Startup/robustness fix** — the "~4s startup" was DOM-storage LevelDB lock
+  contention from a second instance sharing the userData profile. Added a
+  single-instance lock (app.js) + isolated test/bench profiles
+  (ALBUMSTUDIO_USER_DATA). Startup 4.9s→1.1s; E2E suite 20s→5s.
+- [x] **Worker-thread offload — assessed, NOT done.** Event loop never blocks
+  during a proof batch (0 gaps >50ms); sharp pixel work is already off the main
+  JS thread on the libvips pool. A worker would add overhead for no gain.
+- [x] **Virtualization — assessed, NOT needed.** 500 pages load/build in
+  single-digit ms; Tab 6 already virtualized; source pool builds 5000 wrappers
+  in 14ms within memory budget. Documented the source-pool IntersectionObserver
+  path as the place to go if a real large-unique-photo shoot ever shows pressure.
+- [ ] **Phase 4 checkpoint** — every metric meets target with no regression; the
+  large fixture stays responsive and within the RSS bound. ✅ (See bench/RESULTS.md.)
