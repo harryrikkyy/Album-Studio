@@ -3,15 +3,11 @@
 // require('./renamer_naming') threw in a (default-)sandboxed preload, killing
 // the whole bridge — window.renamerAPI stayed undefined and every button in
 // the window was dead (the folder picker being the visible symptom).
-const path = require('path')
 const { test, expect } = require('@playwright/test')
-const { _electron: electron } = require('playwright-core')
+const { launchApp } = require('./launch')
 
 test('renamer window boots with a working preload bridge', async () => {
-  const app = await electron.launch({
-    args: [path.join(__dirname, '..')],
-    env: { ...process.env, ALBUMSTUDIO_E2E: '1' },
-  })
+  const app = await launchApp()
   try {
     const main = await app.firstWindow()
     await expect(main.locator('.tablist')).toBeVisible()

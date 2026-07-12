@@ -8,7 +8,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const { test, expect } = require('@playwright/test')
-const { _electron: electron } = require('playwright-core')
+const { launchApp } = require('./launch')
 
 test('export reaches the mocked bridge once; the render cache skips unchanged pages', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'albumstudio-e2e-export-'))
@@ -16,10 +16,7 @@ test('export reaches the mocked bridge once; the render cache skips unchanged pa
   const outDir = path.join(tmp, 'exports')
   fs.mkdirSync(outDir)
 
-  const app = await electron.launch({
-    args: [path.join(__dirname, '..')],
-    env: { ...process.env, ALBUMSTUDIO_E2E: '1', ALBUMSTUDIO_E2E_JSX_LOG: jsxLog },
-  })
+  const app = await launchApp({ ALBUMSTUDIO_E2E_JSX_LOG: jsxLog })
   try {
     const win = await app.firstWindow()
     await win.waitForFunction(() => !!window.__E2E__)

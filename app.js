@@ -116,6 +116,26 @@ function safeJsonParse(str, fallback = null) {
 
 let mainWindow = null
 let loginWindow = null
+
+// Isolated profile for tests/benches (guarded like the E2E bypass): keeps
+// parallel runs from fighting the developer's live profile over the DOM-
+// storage LevelDB lock — a second instance sharing the profile stalls the
+// renderer ~3.7s on its first synchronous localStorage read.
+if (process.env.ALBUMSTUDIO_USER_DATA && !app.isPackaged) {
+  app.setPath('userData', process.env.ALBUMSTUDIO_USER_DATA)
+}
+
+// Single instance per profile: a second launch focuses the running app
+// instead of silently sharing (and fighting over) the same profile.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = (mainWindow && !mainWindow.isDestroyed()) ? mainWindow
+      : (loginWindow && !loginWindow.isDestroyed()) ? loginWindow : null
+    if (win) { if (win.isMinimized()) win.restore(); win.focus() }
+  })
+}
 let currentUser = null
 let currentLicense = null
 
@@ -1784,16 +1804,19 @@ app.whenReady().then(async () => {
   // the ALBUMSTUDIO_E2E env flag (only set by the test runner) AND a non-packaged
   // build (app.isPackaged is true in any distributed DMG). The env flag alone is
   // inert in a real build.
+  // Companion flag: force the login screen regardless of any saved license, so
+  // the login-path E2E is deterministic on any machine (incl. a licensed dev box).
+  // Checked BEFORE the bypass so a login-path test can share the same launcher
+  // (which always sets ALBUMSTUDIO_E2E for the isolated profile) and still land
+  // on login — the explicit login flag is the more specific intent.
+  if (process.env.ALBUMSTUDIO_E2E_LOGIN === '1' && !app.isPackaged) {
+    createLoginWindow()
+    return
+  }
   if (process.env.ALBUMSTUDIO_E2E === '1' && !app.isPackaged) {
     currentLicense = { allowed: true, daysLeft: 999, email: 'e2e@test.local', offline: true }
     currentUser = { email: 'e2e@test.local' }
     createMainWindow(currentLicense)
-    return
-  }
-  // Companion flag: force the login screen regardless of any saved license, so
-  // the login-path E2E is deterministic on any machine (incl. a licensed dev box).
-  if (process.env.ALBUMSTUDIO_E2E_LOGIN === '1' && !app.isPackaged) {
-    createLoginWindow()
     return
   }
 

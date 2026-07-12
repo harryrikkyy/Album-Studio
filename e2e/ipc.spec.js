@@ -6,7 +6,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 const { test, expect } = require('@playwright/test')
-const { _electron: electron } = require('playwright-core')
+const { launchApp } = require('./launch')
 
 // Invoke a main-process IPC channel from the renderer and return its result.
 function invoke(win, channel, ...args) {
@@ -20,10 +20,7 @@ test.describe('main-process IPC handlers', () => {
   let app, win
 
   test.beforeAll(async () => {
-    app = await electron.launch({
-      args: [path.join(__dirname, '..')],
-      env: { ...process.env, ALBUMSTUDIO_E2E: '1' },
-    })
+    app = await launchApp()
     win = await app.firstWindow()
     await expect(win.locator('.tablist')).toBeVisible()
   })

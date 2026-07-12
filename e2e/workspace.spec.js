@@ -2,15 +2,11 @@
 // workspace. This drives the actual renderer — proving the main window loads
 // past the license handoff and that a real UI interaction (tab switching) works.
 // No Photoshop and no valid credentials are needed.
-const path = require('path')
 const { test, expect } = require('@playwright/test')
-const { _electron: electron } = require('playwright-core')
+const { launchApp } = require('./launch')
 
 test('test-mode boots into the workspace and tab switching works', async () => {
-  const app = await electron.launch({
-    args: [path.join(__dirname, '..')],
-    env: { ...process.env, ALBUMSTUDIO_E2E: '1' }, // guarded bypass (dev build only)
-  })
+  const app = await launchApp()
   try {
     const win = await app.firstWindow()
 

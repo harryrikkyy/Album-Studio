@@ -5,7 +5,7 @@
 const fs = require('fs')
 const path = require('path')
 const { test, expect } = require('@playwright/test')
-const { _electron: electron } = require('playwright-core')
+const { launchApp } = require('./launch')
 
 const FIXTURE = path.join(__dirname, 'fixtures', 'sample-project.json')
 
@@ -13,10 +13,7 @@ test('loads the sample album and undo/redo restore page state exactly', async ()
   const project = JSON.parse(fs.readFileSync(FIXTURE, 'utf8'))
   const expectedPages = Object.keys(project.albumPages).length // 15
 
-  const app = await electron.launch({
-    args: [path.join(__dirname, '..')],
-    env: { ...process.env, ALBUMSTUDIO_E2E: '1' },
-  })
+  const app = await launchApp()
   try {
     const win = await app.firstWindow()
     await expect(win.locator('.tablist')).toBeVisible()
