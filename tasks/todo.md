@@ -240,3 +240,17 @@
   path as the place to go if a real large-unique-photo shoot ever shows pressure.
 - [ ] **Phase 4 checkpoint** — every metric meets target with no regression; the
   large fixture stays responsive and within the RSS bound. ✅ (See bench/RESULTS.md.)
+
+## Phase 5 — Accessibility
+- [x] **axe-core a11y gate (WCAG 2.1 A/AA)** — e2e/a11y.spec.js scans the
+  workspace + login windows via @axe-core/playwright, gating on serious/critical
+  violations only. Electron can't spawn axe's default runPartial assembly page
+  (CDP Target.createTarget "Not supported"), so the scan runs in legacyMode.
+  Fixed the 3 violations it caught on the main window: missing `<title>` +
+  `<html lang>` (src/index.html), and muted-text contrast — lightened
+  `--txt-muted` in all 5 themes to ≥4.5:1 (nebula/obsidian/synthwave/glass/
+  glass-dark), preserving hue. ✅ local 2/2.
+  - Files: e2e/a11y.spec.js, src/index.html, src/style.css, package.json
+- [ ] **Phase 5 checkpoint** — a11y gate green in CI; the muted-contrast bump
+  reviewed against the design system across all 5 themes (only nebula is
+  exercised by the automated scan today).

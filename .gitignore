@@ -24,6 +24,9 @@ __pycache__/
 # Impeccable design tool (separate checkout)
 impeccable/
 
+# Serena MCP tool metadata (per-developer, not project state)
+.serena/
+
 # Playwright
 test-results/
 playwright-report/
