@@ -35,6 +35,15 @@ test('any tampered signed field invalidates the signature', () => {
   assert.equal(verifyLicenseSignature(extended, sig, publicKey), false)
 })
 
+test('machineId is intentionally NOT signed (device binds after activation)', () => {
+  const { publicKey, privateKey } = keys()
+  const sig = signLicense(LICENSE, privateKey)
+  // The signer cannot know the customer's device at activation time, so a
+  // changed machineId must NOT invalidate the signature — machine-lock is
+  // enforced separately (saved-vs-device compare + the Firestore binding).
+  assert.equal(verifyLicenseSignature({ ...LICENSE, machineId: 'different-device' }, sig, publicKey), true)
+})
+
 test('unsigned bookkeeping fields (savedAt) do not affect verification', () => {
   const { publicKey, privateKey } = keys()
   const sig = signLicense(LICENSE, privateKey)

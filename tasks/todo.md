@@ -208,11 +208,17 @@
   handlers; start-native-drag bails silently (ipcMain.on). 6 tests.
 - [x] **CI dependency scanning** — npm audit (prod, high+) gate + Dependabot
   (npm weekly + github-actions, dev deps grouped).
-- [x] **License signing** — src/license_signing.js (Ed25519 over canonical
-  fields), server/ stateless signer + keygen, license.js verifies sig with the
-  bundled public key (legacy HMAC kept for old licenses). 6 tests + server
-  smoke. NEEDS OWNER: run keygen, deploy server/, point activation tool at it;
-  then Firebase Auth + tighten firestore.rules off `read: if true`.
+- [x] **License signing — wired end-to-end (fully local, macOS-only)** —
+  src/license_signing.js signs canonical fields activatedOn/email/expiresOn/name
+  (machineId intentionally UNSIGNED: the device binds after activation, so the
+  signer can't know it; machine-lock stays enforced separately). server/index.js
+  runs the signer LOCALLY (127.0.0.1:8791, loopback-only, CORS for the local
+  panel). Keys generated + public key bundled/committed. app.js reads sig +
+  exact signed strings (licExpiresOn/licActivatedOn) so Firestore timestamp
+  formatting can't drift the signature. The admin panel (~/Desktop/admin-panel)
+  Activate + Extend now call the signer and store sig + lic* on each user doc.
+  Round-trip test proves panel-signed → app-verify; forged expiry/email rejected.
+  8 tests. No cloud/Blaze. Hosting the signer online = future, if ever.
 - [x] **Migrate the main window off nodeIntegration** — esbuild bundle
   (src/dist/renderer.bundle.js via prestart/pretest:e2e) + allowlisted
   `native` bridge in src/main_preload.js; electron/fs/os/path aliased to
@@ -221,7 +227,8 @@
   E2E flows run through the isolated bundle.
 - [ ] **Phase 3 checkpoint** — live smoke-test with isolation+CSP on (real
   Photoshop; also renamer + tools-bar manually — no E2E coverage there);
-  owner licensing actions (keygen, deploy server/, Firebase Auth + rules).
+  deploy firestore.rules to live project (Part B); Firebase Auth + tighten
+  `read: if true` remains deferred (privacy-only, needs real app sign-in).
 
 ## Phase 4 — Performance + scalability
 - [x] **Benchmark harness + baselines** — bench/ (make_fixture.js, proof_bench.js,
@@ -254,3 +261,11 @@
 - [ ] **Phase 5 checkpoint** — a11y gate green in CI; the muted-contrast bump
   reviewed against the design system across all 5 themes (only nebula is
   exercised by the automated scan today).
+
+## Scope note (2026-07-13)
+- **Product is macOS-only for now.** Windows support (the "Phase 7 — Windows
+  PhotoshopBridge impl" referenced in the Phase 2 bridge item) is **deferred
+  indefinitely** by owner decision. Do not start it without a fresh go-ahead.
+- **There is no Phase 6.** The "Phase 7" label was a forward reference written
+  into the PhotoshopBridge item before phases 4/5 were planned; the numbering
+  simply skipped 6. No work is hiding behind that gap.

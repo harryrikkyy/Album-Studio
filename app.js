@@ -536,12 +536,20 @@ async function verifyLicense(email) {
         const daysLeft = getDaysRemaining(expiresOn)
 
         // ── Save license locally ────────────────────────
+        // When the owner's activation stamped this record with an Ed25519
+        // signature, save the exact signed strings (licExpiresOn/licActivatedOn)
+        // so the offline verifier checks the same bytes that were signed —
+        // Firestore's own timestamp formatting must not drift the signature.
+        // Unsigned (legacy) records fall back to the timestamp fields.
+        const sig = doc.fields.sig?.stringValue
+        const savedActivatedOn = doc.fields.activatedOn?.timestampValue || new Date().toISOString()
         saveLicense({
           email,
           name: doc.fields.name?.stringValue || '',
           machineId: currentMachineId,
-          expiresOn,
-          activatedOn: doc.fields.activatedOn?.timestampValue || new Date().toISOString()
+          expiresOn: sig ? (doc.fields.licExpiresOn?.stringValue || expiresOn) : expiresOn,
+          activatedOn: sig ? (doc.fields.licActivatedOn?.stringValue || savedActivatedOn) : savedActivatedOn,
+          sig
         })
 
         return { allowed: true, daysLeft, email }

@@ -7,8 +7,12 @@
 const crypto = require('crypto')
 
 // The exact fields covered by a signature, in canonical order. savedAt and
-// other local bookkeeping are deliberately NOT signed.
-const SIGNED_FIELDS = /** @type {const} */ (['activatedOn', 'email', 'expiresOn', 'machineId', 'name'])
+// other local bookkeeping are deliberately NOT signed. machineId is also NOT
+// signed: at activation time the customer's device is not bound yet, so the
+// signer cannot know it. Machine-lock is still enforced separately — the app
+// compares the saved machineId to the current device, and Firestore holds the
+// authoritative binding — it just is not part of the cryptographic proof.
+const SIGNED_FIELDS = /** @type {const} */ (['activatedOn', 'email', 'expiresOn', 'name'])
 
 /**
  * Canonical byte representation of a license: the signed fields only, in
