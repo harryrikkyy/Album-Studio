@@ -94,6 +94,18 @@ function firestorePath(suffix, mask = []) {
   return `${FIRESTORE_BASE}${suffix}?key=${FIREBASE_API_KEY}${m}`
 }
 
+// Firebase Auth session — turns the Google sign-in into an authenticated
+// Firestore session so the security rules can scope each read to its own user.
+// Returns {} when there is no valid session (e.g. offline), letting callers
+// degrade to the offline license path instead of firing an unauthed request.
+const fbAuth = require('./src/firebase_auth')
+async function firestoreAuthHeaders() {
+  try {
+    const token = await fbAuth.getValidIdToken(FIREBASE_API_KEY)
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  } catch (_) { return {} }
+}
+
 // R3: derive the Firestore document id from an email in ONE place. Previously
 // the `email.replace(/\./g, '_')` transform was copy-pasted in three spots,
 // so any future change risked them drifting apart and looking up different
@@ -307,7 +319,7 @@ ipcMain.handle('google-sign-in', async () => {
       `client_id=${CLIENT_ID}&` +
       `redirect_uri=${encodeURIComponent(REDIRECT_URI)}&` +
       `response_type=code&` +
-      `scope=${encodeURIComponent('email profile')}&` +
+      `scope=${encodeURIComponent('openid email profile')}&` +
       `prompt=select_account`
 
     authWindow = new BrowserWindow({
@@ -399,6 +411,19 @@ async function handleOAuthRedirect(code, clientId, clientSecret, redirectUri) {
 
   if (!userInfo.email) { return { error: 'Could not read your Google profile. Please try again.' } }
 
+  // ── Establish a real Firebase session ───────────────────────────────
+  // Exchange the Google id_token (openid scope) for a Firebase idToken +
+  // refreshToken so every Firestore request below is authenticated. Without
+  // this, request.auth is null and the tightened rules would refuse the read.
+  if (!tokenRes.id_token) {
+    return { error: 'Sign-in did not return the expected credentials. Please try again.' }
+  }
+  try {
+    fbAuth.setSession(await fbAuth.exchangeGoogleIdToken(tokenRes.id_token, FIREBASE_API_KEY))
+  } catch (_) {
+    return { error: 'Could not establish a secure session with the server. Please try again.' }
+  }
+
   // ── Upsert the user doc WITHOUT ever resetting `activated`. ──────────
   // C3: the previous code sent `activated:false` on every login and relied
   // solely on the updateMask to protect it — one wrong mask would have
@@ -408,8 +433,9 @@ async function handleOAuthRedirect(code, clientId, clientSecret, redirectUri) {
 
   let docExists = false
   try {
+    const authHeaders = await firestoreAuthHeaders()
     const existing = await new Promise((res) => {
-      https.get({ hostname: 'firestore.googleapis.com', path: firestorePath(`/users/${userKey}`) }, (r) => {
+      https.get({ hostname: 'firestore.googleapis.com', path: firestorePath(`/users/${userKey}`), headers: authHeaders }, (r) => {
         let d = ''; r.on('data', c => d += c); r.on('end', () => res(safeJsonParse(d, null)))
       }).on('error', () => res(null))
     })
@@ -430,13 +456,14 @@ async function handleOAuthRedirect(code, clientId, clientSecret, redirectUri) {
     mask.push('activated')
   }
   const userData = JSON.stringify({ fields })
+  const writeHeaders = await firestoreAuthHeaders()
 
   await new Promise((res) => {
     const req = https.request({
       hostname: 'firestore.googleapis.com',
       path: firestorePath(`/users/${userKey}`, mask),
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(userData) }
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(userData), ...writeHeaders }
     }, (response) => {
       let data = ''
       response.on('data', chunk => data += chunk)
@@ -466,14 +493,19 @@ async function verifyLicense(email) {
     try {
       const https = require('https')
       const userKey = emailToUserKey(email)
+      const authHeaders = await firestoreAuthHeaders()
 
-      const doc = await new Promise((resolve) => {
-        https.get({ hostname: 'firestore.googleapis.com', path: firestorePath(`/users/${userKey}`) }, (res) => {
+      // No valid Firebase session (offline, or refresh token gone) → skip the
+      // online read and fall through to the offline license check, rather than
+      // firing an unauthenticated request the tightened rules would reject and
+      // mis-read as "not activated".
+      const doc = authHeaders.Authorization ? await new Promise((resolve) => {
+        https.get({ hostname: 'firestore.googleapis.com', path: firestorePath(`/users/${userKey}`), headers: authHeaders }, (res) => {
           let data = ''
           res.on('data', chunk => data += chunk)
           res.on('end', () => resolve(safeJsonParse(data, null)))
         }).on('error', () => resolve(null))
-      })
+      }) : null
 
       if (doc && doc.fields) {
         const activated = doc.fields.activated?.booleanValue
@@ -522,7 +554,7 @@ async function verifyLicense(email) {
               hostname: 'firestore.googleapis.com',
               path: firestorePath(`/users/${userKey}`, ['machineId', 'machineName']),
               method: 'PATCH',
-              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(updateData) }
+              headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(updateData), ...authHeaders }
             }, (response) => {
               let data = ''
               response.on('data', chunk => data += chunk)

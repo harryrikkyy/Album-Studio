@@ -219,6 +219,17 @@
   Activate + Extend now call the signer and store sig + lic* on each user doc.
   Round-trip test proves panel-signed → app-verify; forged expiry/email rejected.
   8 tests. No cloud/Blaze. Hosting the signer online = future, if ever.
+- [x] **Real Firebase Auth in the app + per-user read rules (privacy gap CLOSED)** —
+  the desktop app now exchanges its Google id_token for a Firebase session
+  (src/firebase_auth.js: signInWithIdp → idToken/refreshToken, hourly refresh via
+  securetoken, refresh token persisted to ~/.ch_toolkit_session) and sends it as a
+  Bearer on every Firestore call (app.js). Boot/offline with no session degrades to
+  the offline license instead of firing an unauthed request. firestore.rules
+  tightened OFF `read: if true`: get = own doc or owner, list = owner only (kills
+  bulk customer-list harvesting), create/update require auth + email match and
+  cannot touch activated/expiresOn/sig/lic*. FIREBASE_API_KEY set (public web key).
+  Deployed + validated end-to-end 2026-07-16 (deactivate → login shows
+  not-activated → owner activates → retry → opens). 7 auth unit tests; 187 total.
 - [x] **Migrate the main window off nodeIntegration** — esbuild bundle
   (src/dist/renderer.bundle.js via prestart/pretest:e2e) + allowlisted
   `native` bridge in src/main_preload.js; electron/fs/os/path aliased to
@@ -226,9 +237,10 @@
   byte-math (Uint8Array) now; ipc.spec invokes via window.native. All 10
   E2E flows run through the isolated bundle.
 - [ ] **Phase 3 checkpoint** — live smoke-test with isolation+CSP on (real
-  Photoshop; also renamer + tools-bar manually — no E2E coverage there);
-  deploy firestore.rules to live project (Part B); Firebase Auth + tighten
-  `read: if true` remains deferred (privacy-only, needs real app sign-in).
+  Photoshop; also renamer + tools-bar manually — no E2E coverage there).
+  firestore.rules deployed 2026-07-14 and tightened to per-user auth
+  2026-07-16 ✅. The `read: if true` privacy gap is now CLOSED — see the
+  Firebase Auth item above.
 
 ## Phase 4 — Performance + scalability
 - [x] **Benchmark harness + baselines** — bench/ (make_fixture.js, proof_bench.js,
