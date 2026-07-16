@@ -236,11 +236,11 @@
   src/shims/* so existing require() sites work unchanged. EXIF parser is
   byte-math (Uint8Array) now; ipc.spec invokes via window.native. All 10
   E2E flows run through the isolated bundle.
-- [ ] **Phase 3 checkpoint** — live smoke-test with isolation+CSP on (real
-  Photoshop; also renamer + tools-bar manually — no E2E coverage there).
-  firestore.rules deployed 2026-07-14 and tightened to per-user auth
-  2026-07-16 ✅. The `read: if true` privacy gap is now CLOSED — see the
-  Firebase Auth item above.
+- [x] **Phase 3 checkpoint — COMPLETE 2026-07-16** — manual smoke-test PASSED
+  with isolation+CSP on: real Photoshop export renders + outputs correctly, and
+  the renamer + tools-bar windows work. 13/13 E2E green alongside. firestore.rules
+  deployed 2026-07-14 and tightened to per-user auth 2026-07-16 ✅; the
+  `read: if true` privacy gap is CLOSED.
 
 ## Phase 4 — Performance + scalability
 - [x] **Benchmark harness + baselines** — bench/ (make_fixture.js, proof_bench.js,
