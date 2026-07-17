@@ -91,7 +91,9 @@ function createToolsTab(deps) {
             if (!jpegProgressEl) return;
             jpegProgressEl.style.display = 'flex';
             const pct = p.total > 0 ? Math.round((p.done / p.total) * 100) : 0;
-            if (jpegProgressFill) jpegProgressFill.style.width = pct + '%';
+            // scaleX, not width: compositor-only, no layout per progress tick
+            // (pairs with .jpeg-progress__fill in style.css).
+            if (jpegProgressFill) jpegProgressFill.style.transform = `scaleX(${pct / 100})`;
             if (jpegProgressText) {
                 jpegProgressText.textContent = `${p.done}/${p.total}`;
             }
@@ -106,7 +108,7 @@ function createToolsTab(deps) {
                 if (!folder) return;
                 btnJpegExport.disabled = true;
                 if (jpegProgressEl) jpegProgressEl.style.display = 'flex';
-                if (jpegProgressFill) jpegProgressFill.style.width = '0%';
+                if (jpegProgressFill) jpegProgressFill.style.transform = 'scaleX(0)';
                 if (jpegProgressText) jpegProgressText.textContent = 'Starting…';
                 if (jpegStatusEl) jpegStatusEl.textContent = 'Scanning PSDs…';
                 deps.setStatus('Exporting JPEGs from ' + folder.name + '…');
@@ -124,7 +126,7 @@ function createToolsTab(deps) {
                     return;
                 }
                 // Final "100%" tick in case the last progress write didn't land.
-                if (jpegProgressFill) jpegProgressFill.style.width = '100%';
+                if (jpegProgressFill) jpegProgressFill.style.transform = 'scaleX(1)';
                 if (jpegProgressText) jpegProgressText.textContent = `${res.processed}/${res.total}`;
                 const seconds = (res.durationMs / 1000).toFixed(1);
                 const summary = `Exported ${res.processed} of ${res.total}` +

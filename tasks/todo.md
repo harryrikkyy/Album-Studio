@@ -352,5 +352,19 @@
   - spread_editor ×2: silent autosave failure after editor apply; silent
     dead nav arrows on editor-goto payload-build failure
   - Verified: 196 unit, 13/13 E2E, typecheck clean, lint 0 errors.
-- [ ] **style.css cleanup** — single ~3k-line file; known design-hook findings
-  (side-tab borders, layout-property transitions) pending owner decision.
+- [x] **style.css cleanup (design-hook findings)** — resolved by category:
+  - `.jpeg-progress__fill`: converted `transition: width` → compositor-only
+    `transform: scaleX()` (full-width bar scaled by fraction; tools_tab.js
+    driver updated incl. the 0%/100% reset/complete writes).
+  - `.render-badge__fill`: transition removed — the badge is rebuilt via
+    innerHTML every queue tick, so the width transition could never
+    interpolate across the recreated element (inert dead code).
+  - `.panel-progress` block: deleted — zero references in any JS/HTML
+    (dead CSS from the C.4 sketch).
+  - Folder-rail width transitions (×2): **intentional** — collapsing a rail
+    must reflow its neighbours; that reflow is the feature. 0.18s, fires on
+    user click only. Classified false positive, left as-is.
+  - Toast/badge `border-left` accent borders: **intentional shipped design**;
+    left unchanged (owner may waive the hook rule if desired).
+  - Verified: 196 unit, 13/13 E2E (incl. all-theme a11y scans), typecheck
+    clean, lint 0 errors.

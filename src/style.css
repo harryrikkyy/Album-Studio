@@ -2540,9 +2540,14 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
 }
 .jpeg-progress__fill {
     height: 100%;
-    width: 0%;
+    /* Compositor-only fill animation: full-width bar scaled by progress
+       (tools_tab.js sets transform: scaleX(fraction)), instead of animating
+       `width`, which forces layout every progress tick. */
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
     background: linear-gradient(90deg, var(--accent), #b07bff);
-    transition: width 0.25s ease;
+    transition: transform 0.25s ease;
 }
 .jpeg-progress__text {
     font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -2683,7 +2688,9 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
 .render-badge__fill {
     height: 100%;
     background: var(--accent);
-    transition: width 0.25s ease;
+    /* No transition: the badge is rebuilt via innerHTML on every queue tick,
+       so a width transition could never interpolate across the recreated
+       element — it was inert (and a layout-animation lint hit). */
 }
 .render-badge__text {
     display: inline-flex;
@@ -2951,36 +2958,6 @@ select:focus-visible {
 .empty-state__hint  { font-size: var(--fs-sm); color: var(--txt-muted); max-width: 320px; line-height: 1.5; }
 .empty-state__action { margin-top: var(--space-3); }
 
-/* ── Inline panel progress bar (C.4) — reused across long ops ── */
-.panel-progress {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2) var(--space-5);
-    background: var(--bg-panel);
-    border-bottom: 1px solid var(--border-main);
-    flex-shrink: 0;
-}
-.panel-progress__bar {
-    flex: 1;
-    height: 4px;
-    background: var(--bg-inset);
-    border-radius: 999px;
-    overflow: hidden;
-}
-.panel-progress__fill {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--accent), var(--accent-hover));
-    transition: width var(--dur-ui) var(--ease-ui);
-}
-.panel-progress__text {
-    font-size: var(--fs-xs);
-    color: var(--txt-secondary);
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    min-width: 80px;
-    text-align: right;
-}
 @media (prefers-reduced-motion: reduce) {
     .skeleton::after { animation: none; }
 }
