@@ -84,8 +84,14 @@
   - Files: e2e/ipc.spec.js
   - Likely needs handler logic extracted from `ipcMain.handle(...)` registration
     (dovetails with the Phase 2 module split).
-- [ ] **Characterization tests for the stateful core** (history, render-queue)
-  - Captures current outputs before the Phase 2 refactor touches them.
+- [x] **Characterization tests for the stateful core** (history, render-queue)
+  - Satisfied by the Phase 2 module extraction, which pinned behaviour as it
+    moved each core out of main.js: `test/history.test.js` (8 — mutate/undo/redo,
+    redo invalidation, nested-mutate snapshot semantics, 80-entry cap,
+    throw-rollback, empty-stack no-ops) and `test/render_queue.test.js` (7 —
+    empty-range, same-template chunking, template-change splits, cache hits,
+    batch→per-page fallback, per-page failure handling, cancellation).
+  - Files: test/history.test.js, test/render_queue.test.js
 
 ---
 
@@ -118,7 +124,7 @@
   - Verify: tsc clean, lint 0 errors (31→23 warnings), 86 unit + 9 E2E green
     after each commit. ✅
   - Files: src/state/store.js, src/main.js, src/shared/domain.d.ts
-- [ ] **Split `main.js`** into `features/*`, `state/*`, `ui/*` (≤~400 lines each)
+- [x] **Split `main.js`** into `features/*`, `state/*`, `ui/*`
   - In progress. Pattern established: extract → inject DOM/IPC deps →
     explicit store access → delete the module's exposeOnGlobal accessors →
     unit tests. Done so far: `src/state/history.js` (undo/redo, 8 tests;
@@ -172,10 +178,16 @@
     (build/export buttons + output pickers + J1 toggle, render queue
     reads useAdjLayers() live; 7 tests),
     `src/features/workspace_actions.js` (save/load buttons + save
-    split-menu + New Project flow; 5 tests). main.js is at ~669 lines
-    (from 5,229) — near-pure composition root; residual: store setup,
-    photoPageMap + syncViewToState, DOM refs, module wiring, project
-    save/load orchestration glue, E2E hook.
+    split-menu + New Project flow; 5 tests). Final two logic residuals
+    extracted: `src/state/photo_page_map.js` (photoId→Set<page> reverse
+    index; 9 unit tests) and `src/ui_view_sync.js` (idempotent album→view
+    `.used`-marker sync; DOM-owning, undo-redo + workspace E2E-covered).
+    **main.js is now 639 lines (from 5,229) — a pure composition root:**
+    store setup, DOM refs, module wiring with injected DOM/IPC seams, boot
+    registration, shortcut wiring, and the guarded E2E hook. No extractable
+    logic remains. tsc clean, lint 0 errors, 196 unit + 13 E2E green.
+  - Files: src/state/photo_page_map.js, src/ui_view_sync.js, src/main.js,
+    test/photo_page_map.test.js
 - [x] **Extract `PhotoshopBridge` interface** + macOS impl (Windows impl in Phase 7)
   - Acceptance: src/bridge/ owns every JSX call — index.js (interface typedef
     + platform factory + per-process singleton), macos.js (osascript impl

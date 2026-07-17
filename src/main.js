@@ -65,48 +65,14 @@ require('./state/store').exposeOnGlobal(store, [
 // autoHighResFolder / globalHighResMap / globalWpHighResMap live in the state
 // store.
 
-// ⚡ Reverse lookup: photoId → Set<pageNumber>
-// Eliminates the O(n×m) scan in applyGlobalRotation and other places.
-const photoPageMap = {};
-function addToPageMap(photoId, pageNum) {
-    if (!photoPageMap[photoId]) photoPageMap[photoId] = new Set();
-    photoPageMap[photoId].add(pageNum);
-}
-function removeFromPageMap(photoId, pageNum) {
-    if (photoPageMap[photoId]) photoPageMap[photoId].delete(pageNum);
-}
-function rebuildPhotoPageMap() {
-    Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]);
-    Object.entries(albumPages).forEach(([pageNum, page]) => {
-        if (page && page.photos) {
-            page.photos.forEach(p => addToPageMap(p.id, parseInt(pageNum)));
-        }
-    });
-}
-
-// ⚡ Task 2.3: single idempotent "apply album state → view" function.
-// Rebuilds the `.used` markers (and clears stale opacity) on Tab 1 source
-// thumbnails and Tab 6 photo cards purely from albumPages. Previously this
-// 6-line loop was copy-pasted at ~6 call sites (history apply, refreshTab,
-// clear-album, restore, etc.) and the partial copies drifted, causing
-// stale-marker bugs. Every mutation path now funnels through this.
-function syncViewToState() {
-    // 1. Clear every source thumbnail (Tab 1) + photo card (Tab 6).
-    document.querySelectorAll('.thumb-red').forEach(img => {
-        img.classList.remove('used');
-        img.style.opacity = '1';
-    });
-    document.querySelectorAll('#photosGrid .wp-card').forEach(c => c.classList.remove('used'));
-
-    // 2. Re-mark everything currently placed in the album.
-    Object.values(albumPages).forEach(page => {
-        if (!page || !page.photos) return;
-        page.photos.forEach(p => {
-            const r = document.getElementById(p.id); if (r) r.classList.add('used');
-            const c = document.getElementById('pt_' + p.id); if (c) c.classList.add('used');
-        });
-    });
-}
+// ⚡ Reverse lookup photoId → Set<pageNumber>, and the idempotent album→view
+// `.used`-marker sync — both extracted from this file in the Phase 2 split
+// (see src/state/photo_page_map.js and src/ui_view_sync.js). The album source
+// of truth still lives in the store; these own only the derived index and the
+// view markers, and are injected into the feature modules below just as the
+// inline versions were.
+const photoPageMap = require('./state/photo_page_map').createPhotoPageMap(store);
+const { syncViewToState } = require('./ui_view_sync').createViewSync(store);
 
 const redBox = document.getElementById("redBox");
 const whiteBox = document.getElementById("whiteBox");
@@ -127,7 +93,7 @@ const pngGrid = document.getElementById("pngGrid"), maskedGrid = document.getEle
 // persistence, toasts — are injected here.
 const { mutate, undo, redo } = require('./state/history').createHistory(store, {
     afterApply: () => {
-        rebuildPhotoPageMap();
+        photoPageMap.rebuild();
         if (typeof updatePageDropdowns === 'function') updatePageDropdowns();
         if (typeof renderGreenBox === 'function') renderGreenBox();
         if (typeof scheduleFilterUpdate === 'function') scheduleFilterUpdate();
@@ -155,7 +121,7 @@ const { createFolderRow, applyGlobalRotation } =
     require('./features/folder_refresh').createFolderRefresh(store, {
         mutate: (label, fn) => mutate(label, fn),
         isTab6Rendered: () => isTab6Rendered(),
-        getPhotoPages: (photoId) => photoPageMap[photoId],
+        getPhotoPages: (photoId) => photoPageMap.get(photoId),
         renderGreenBox: () => renderGreenBox(),
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
         saveState: () => saveStateToStorage(),
@@ -194,10 +160,10 @@ const { getTrueFile, sortPhotosByExif, buildHighResMap } =
 const { updatePageDropdowns, changePage, renderGreenBox, prepareAndMove } =
     require('./features/album_pages').createAlbumPages(store, {
         mutate: (label, fn) => mutate(label, fn),
-        addToPageMap: (photoId, pageNum) => addToPageMap(photoId, pageNum),
-        removeFromPageMap: (photoId, pageNum) => removeFromPageMap(photoId, pageNum),
-        rebuildPhotoPageMap: () => rebuildPhotoPageMap(),
-        clearPhotoPageMap: () => { Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]); },
+        addToPageMap: (photoId, pageNum) => photoPageMap.add(photoId, pageNum),
+        removeFromPageMap: (photoId, pageNum) => photoPageMap.remove(photoId, pageNum),
+        rebuildPhotoPageMap: () => photoPageMap.rebuild(),
+        clearPhotoPageMap: () => photoPageMap.clear(),
         syncViewToState: () => syncViewToState(),
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
         scheduleLivePreview: () => scheduleLivePreview(),
@@ -420,7 +386,7 @@ const { refreshLibraryView } =
     require('./features/library_view').createLibraryView(store, {
         invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
         mutate: (label, fn) => mutate(label, fn),
-        rebuildPhotoPageMap: () => rebuildPhotoPageMap(),
+        rebuildPhotoPageMap: () => photoPageMap.rebuild(),
         updatePageDropdowns: () => updatePageDropdowns(),
         renderGreenBox: () => renderGreenBox(),
         scheduleFilterUpdate: () => scheduleFilterUpdate(),
@@ -521,8 +487,8 @@ const { queueRender } = require('./features/render_queue').createRenderQueue(sto
 // injected from the proofs module (wired in the live-preview section).
 const { renderStoryboard } = require('./features/storyboard').createStoryboard(store, {
     mutate: (label, fn) => mutate(label, fn),
-    addToPageMap: (photoId, pageNum) => addToPageMap(photoId, pageNum),
-    removeFromPageMap: (photoId, pageNum) => removeFromPageMap(photoId, pageNum),
+    addToPageMap: (photoId, pageNum) => photoPageMap.add(photoId, pageNum),
+    removeFromPageMap: (photoId, pageNum) => photoPageMap.remove(photoId, pageNum),
     renderGreenBox: () => renderGreenBox(),
     scheduleFilterUpdate: () => scheduleFilterUpdate(),
     reapplyProofs: () => _reapplyProofs(),
@@ -590,7 +556,7 @@ const {
     },
     afterRestore: () => {
         syncViewToState();
-        rebuildPhotoPageMap(); // ⚡ Initialize reverse lookup from loaded album state
+        photoPageMap.rebuild(); // ⚡ Initialize reverse lookup from loaded album state
         invalidateTab6();  // ⚡ Force Tab 6 rebuild with fresh data on next visit
         updatePageDropdowns(); changePage(1);
     },
@@ -608,7 +574,7 @@ require('./features/workspace_actions').createWorkspaceActions(store, {
     invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
     saveProject: (saveAs) => saveProject(saveAs),
     loadProjectFromDisk: () => loadProjectFromDisk(),
-    clearPhotoPageMap: () => { Object.keys(photoPageMap).forEach(k => delete photoPageMap[k]); },
+    clearPhotoPageMap: () => photoPageMap.clear(),
     resetRenderHashes: () => { try { store.set('renderHashes', {}); saveRenderHashes(store); } catch (_) {} },
     clearProofs: () => _clearProofs(),
     syncViewToState: () => syncViewToState(),
