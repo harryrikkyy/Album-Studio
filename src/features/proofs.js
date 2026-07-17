@@ -461,7 +461,12 @@ function createProofs(store, deps) {
             try {
                 const r = await _generateProofForPage(pageNum);
                 if (r && r.ok) swapProofIntoStoryboard(pageNum);
-            } catch (_) {}
+            } catch (e) {
+                // Silent failure here leaves a STALE proof in the storyboard
+                // after an edit — worth a breadcrumb even though the next full
+                // proof pass will heal it.
+                console.warn(`Re-proof of page ${pageNum} failed (storyboard shows stale proof):`, _errMessage(e));
+            }
         }, 450);
     }
 

@@ -45,7 +45,13 @@ function createPhotoSources(store, deps) {
                 if (!idx.has(base)) idx.set(base, []);
                 idx.get(base).push(e);
             }
-        } catch (_) {}
+        } catch (e) {
+            // A failed listing leaves the index EMPTY, which silently downgrades
+            // every placement/export for this folder to the low-res proxy — a
+            // quality bug the user only notices in the delivered album. Leave a
+            // breadcrumb (once per folder — the empty index is cached below).
+            console.warn('HR folder listing failed — exports will use proxies:', e instanceof Error ? e.message : String(e));
+        }
         _hrEntriesCache.set(hrFolder, idx);
         return idx;
     }

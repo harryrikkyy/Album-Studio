@@ -16,13 +16,23 @@ function seedRenderHashes(store) {
     catch (_) { store.set('renderHashes', {}); }
 }
 
+let _warnedSaveFailure = false;
+
 /**
- * Persist store.renderHashes to localStorage (best-effort).
+ * Persist store.renderHashes to localStorage (best-effort — but not silent:
+ * a quota failure here means dirty-tracking is lost and the NEXT export
+ * re-renders every page, which looks like a mystery slowdown. Warn once so
+ * the symptom is diagnosable without spamming per-page saves).
  * @param {Store} store
  */
 function saveRenderHashes(store) {
     try { localStorage.setItem(RENDER_HASH_KEY, JSON.stringify(store.get('renderHashes'))); }
-    catch (_) {}
+    catch (e) {
+        if (!_warnedSaveFailure) {
+            _warnedSaveFailure = true;
+            console.warn('render-hash save failed — next export will re-render all pages:', e instanceof Error ? e.message : String(e));
+        }
+    }
 }
 
 module.exports = { seedRenderHashes, saveRenderHashes };

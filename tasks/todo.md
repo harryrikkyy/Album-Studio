@@ -339,8 +339,18 @@
     script/preload paths corrected for the new location. Verified: 196 unit,
     13/13 E2E (boots the real split main process; ipc.spec drives handlers
     directly), typecheck clean, lint 0 errors.
-- [ ] **Audit the 65 bare `catch (_) {}` swallows in src/** — keep the
-  legitimate ones (localStorage probes, best-effort sends), add electron-log
-  breadcrumbs where a real failure could hide.
+- [x] **Audit the bare `catch (_) {}` swallows in src/** — reviewed all ~90
+  sites by category. The overwhelming majority are legitimate best-effort:
+  temp-file/fd cleanup, localStorage probes, pointer-capture/dataTransfer,
+  progress/telemetry sends, window-lifecycle teardown, sharp tuning knobs.
+  Five were hiding real user-visible failures and now warn:
+  - photo_sources: HR folder listing failure silently downgraded every
+    export to low-res proxies (quality bug in the delivered album)
+  - render_hashes: localStorage quota failure silently dropped dirty-
+    tracking → next export re-renders all pages (warn-once)
+  - proofs: failed re-proof left a stale storyboard proof after an edit
+  - spread_editor ×2: silent autosave failure after editor apply; silent
+    dead nav arrows on editor-goto payload-build failure
+  - Verified: 196 unit, 13/13 E2E, typecheck clean, lint 0 errors.
 - [ ] **style.css cleanup** — single ~3k-line file; known design-hook findings
   (side-tab borders, layout-property transitions) pending owner decision.

@@ -127,7 +127,10 @@ function createSpreadEditor(store, deps) {
                 if (adj) projectData.imageAdjustments[id] = adj; else delete projectData.imageAdjustments[id];
             }
         }
-        try { deps.saveState(); } catch (_) {}
+        // The edit is applied in-memory either way; only the autosave is
+        // best-effort. But a silently failing autosave means editor changes
+        // are lost on crash — leave a breadcrumb.
+        try { deps.saveState(); } catch (e) { console.warn('Autosave after editor apply failed:', e instanceof Error ? e.message : String(e)); }
         // Refresh the on-app live preview if the edited page is the current one.
         if (!changes.pageNum || changes.pageNum === store.get('currentPage')) {
             deps.scheduleLivePreview();
@@ -177,7 +180,11 @@ function createSpreadEditor(store, deps) {
         try {
             const payload = await buildSpreadPayload(msg.pageNum);
             if (payload) await deps.invoke('editor-open', payload);
-        } catch (_) {}
+        } catch (e) {
+            // Swallowing leaves the editor's nav arrows silently dead —
+            // breadcrumb so a payload-build bug is diagnosable.
+            console.warn(`Editor goto page ${msg.pageNum} failed:`, e instanceof Error ? e.message : String(e));
+        }
     });
 
     return { buildSpreadPayload };
