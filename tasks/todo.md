@@ -310,3 +310,37 @@
 - **There is no Phase 6.** The "Phase 7" label was a forward reference written
   into the PhotoshopBridge item before phases 4/5 were planned; the numbering
   simply skipped 6. No work is hiding behind that gap.
+
+## Review follow-ups (2026-07-17 whole-app review, rated 8.5/10)
+- [x] **Remove unused headroom-ai production dependency** — never required
+  anywhere; pure supply-chain surface. Prod deps now exactly the four in use:
+  electron-log, exifr, node-machine-id, sharp. (commit 5742944)
+- [x] **Split app.js (main process) into src/main/* modules** — app.js was a
+  1,907-line monolith (71 IPC handlers + windows + auth/license + gallery
+  HTML inline). Now a **190-line composition root** (.env loader, service
+  init, profile/single-instance setup, registrar wiring, boot flow), mirroring
+  the renderer's src/main.js pattern. Modules (each owns its ipcMain
+  registrations; all ≤~400 lines):
+  - `session.js` — window refs + currentUser/currentLicense accessors
+  - `firestore_rest.js` — Firestore REST helpers; env read lazily per call so
+    require-order vs. the .env loader can never yield an empty API key
+  - `auth_flow.js` — Google OAuth loopback flow (port 9842) + Firestore upsert
+  - `license_flow.js` — verifyLicense (exported for boot re-verify) +
+    check-license/launch-app/get-license/sign-out/quit-app
+  - `file_handlers.js` — shell/pickers/project folder I/O/native drag-out
+  - `ps_place_handlers.js` — direct bridge calls (place/swap/build/export)
+  - `ps_jobs_handlers.js` — temp-file JSX jobs (extract-frames, actions,
+    jpeg-export, resize-psds, inject, export-open-docs, hybrid thumbnails)
+  - `proof_handlers.js` — sharp/libvips lane (proofs, final composite, bake)
+  - `gallery_export.js` — client proof gallery + inline HTML template
+  - `service_handlers.js` — telemetry/curation/generative/plugins/library
+  - `aux_windows.js` — tools-bar/renamer delegates + Spread Editor relay
+  - Mechanical moves only (no behaviour rewrites); __dirname-relative asset/
+    script/preload paths corrected for the new location. Verified: 196 unit,
+    13/13 E2E (boots the real split main process; ipc.spec drives handlers
+    directly), typecheck clean, lint 0 errors.
+- [ ] **Audit the 65 bare `catch (_) {}` swallows in src/** — keep the
+  legitimate ones (localStorage probes, best-effort sends), add electron-log
+  breadcrumbs where a real failure could hide.
+- [ ] **style.css cleanup** — single ~3k-line file; known design-hook findings
+  (side-tab borders, layout-property transitions) pending owner decision.
