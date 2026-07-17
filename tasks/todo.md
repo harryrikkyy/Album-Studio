@@ -257,8 +257,9 @@
   single-digit ms; Tab 6 already virtualized; source pool builds 5000 wrappers
   in 14ms within memory budget. Documented the source-pool IntersectionObserver
   path as the place to go if a real large-unique-photo shoot ever shows pressure.
-- [ ] **Phase 4 checkpoint** — every metric meets target with no regression; the
-  large fixture stays responsive and within the RSS bound. ✅ (See bench/RESULTS.md.)
+- [x] **Phase 4 checkpoint — SIGNED OFF 2026-07-16** — every metric meets target
+  (startup 1.08s/<2.5s, load 3ms, nav 0.1ms, proof 106ms/page, mem 685MB); 500-page
+  scale test holds; evidence-based no-op decisions recorded. See bench/RESULTS.md.
 
 ## Phase 5 — Accessibility
 - [x] **axe-core a11y gate (WCAG 2.1 A/AA)** — e2e/a11y.spec.js scans the
@@ -270,9 +271,25 @@
   `--txt-muted` in all 5 themes to ≥4.5:1 (nebula/obsidian/synthwave/glass/
   glass-dark), preserving hue. ✅ local 2/2.
   - Files: e2e/a11y.spec.js, src/index.html, src/style.css, package.json
-- [ ] **Phase 5 checkpoint** — a11y gate green in CI; the muted-contrast bump
-  reviewed against the design system across all 5 themes (only nebula is
-  exercised by the automated scan today).
+- [x] **Multi-theme a11y scan — all 5 themes gated** — e2e/a11y.spec.js now
+  iterates every shipped theme on the main window (via `window.ADTTheme.apply`),
+  not just the nebula default. Freezes CSS transitions/animations before each
+  scan so axe samples steady-state colours (the `.tab-btn` 0.2s colour fade was
+  producing phantom mid-transition contrast failures). The all-theme scan caught
+  real steady-state WCAG-AA failures the nebula-only gate missed, all now fixed:
+  - obsidian `.btn--destructive` outline text (#8A3B2E → #D2694A; was 2.2:1)
+  - synthwave `.chip--accent` text (theme-scoped → --accent-hover; was 3.7:1)
+  - glass (light theme) accent-blue text everywhere (--accent #0A84FF → #0057C7)
+    + active-tab tokens, chip, page title, template-match, sign-out
+  - glass license-badge status colours (green/amber/red) — hoisted to theme-aware
+    `--status-ok/warn/danger` tokens (:root defaults; glass darkens to clear AA)
+  - glass-dark active-tab (used --accent #409CFF on its dark pill = 3.7:1 →
+    switched to --tab-active-color #64B0FF)
+  - Files: e2e/a11y.spec.js, src/style.css, src/ui_license_badge.js
+- [x] **Phase 5 checkpoint — SIGNED OFF 2026-07-17** — a11y gate runs green in
+  CI (e2e job, macos-latest, via `npm run test:e2e`); muted-contrast bump plus
+  all accent/status colours now reviewed AND auto-gated across all 5 themes, not
+  just nebula. 13/13 E2E + 187/187 unit green; typecheck clean; lint 0 errors.
 
 ## Scope note (2026-07-13)
 - **Product is macOS-only for now.** Windows support (the "Phase 7 — Windows

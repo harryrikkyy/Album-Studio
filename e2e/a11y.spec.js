@@ -19,6 +19,17 @@ function buildAxe(win) {
   return new AxeBuilder({ page: win }).setLegacyMode(true).withTags(TAGS)
 }
 
+// Kill transitions/animations for the scan. .tab-btn (and others) animate
+// `color` over 0.2s, so scanning right after a theme switch would sample a
+// colour interpolated between the old and new palette — a phantom contrast
+// failure that isn't the steady state. Freezing motion makes every scan
+// deterministic and measures the real end-state colours.
+async function freezeMotion(win) {
+  await win.addStyleTag({
+    content: '*,*::before,*::after{transition:none!important;animation:none!important}',
+  })
+}
+
 function gateViolations(results) {
   const blocking = results.violations.filter(
     (v) => v.impact === 'serious' || v.impact === 'critical')
@@ -30,14 +41,34 @@ function gateViolations(results) {
   }))
 }
 
-test('workspace (main window) has no serious/critical a11y violations', async () => {
+// Every shipped theme, scanned. The app defaults to nebula, but the other
+// four re-map every colour token (notably --txt-muted against the lighter
+// --bg-* surfaces), so a contrast regression could hide in a theme the
+// default scan never renders. axe's `color-contrast` rule is serious-impact
+// and lives inside the WCAG AA tags above, so this catches it per theme.
+const THEMES = ['nebula', 'obsidian', 'synthwave', 'glass', 'glass-dark']
+
+test('workspace (main window) has no serious/critical a11y violations — all themes', async () => {
   const app = await launchApp()
   try {
     const win = await app.firstWindow()
     await win.waitForSelector('.tablist', { state: 'visible' })
-    const results = await buildAxe(win).analyze()
-    const blocking = gateViolations(results)
-    expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([])
+    await freezeMotion(win)
+
+    // Sanity-check the theme hook is present before we rely on it, so a
+    // renamed/removed API fails loudly instead of silently scanning nebula ×5.
+    const ids = await win.evaluate(() => window.ADTTheme && window.ADTTheme.themes.map((t) => t.id))
+    expect(ids, 'window.ADTTheme.themes must expose the shipped theme ids').toEqual(THEMES)
+
+    for (const theme of THEMES) {
+      await win.evaluate((id) => window.ADTTheme.apply(id), theme)
+      // Confirm the switch landed on <html data-theme> before scanning.
+      await win.waitForFunction(
+        (id) => document.documentElement.getAttribute('data-theme') === id, theme)
+      const results = await buildAxe(win).analyze()
+      const blocking = gateViolations(results)
+      expect(blocking, `[${theme}] ${JSON.stringify(blocking, null, 2)}`).toEqual([])
+    }
   } finally {
     await app.close()
   }
@@ -48,6 +79,7 @@ test('login window has no serious/critical a11y violations', async () => {
   try {
     const win = await app.firstWindow()
     await win.waitForSelector('#btnGoogle', { state: 'visible' })
+    await freezeMotion(win)
     const results = await buildAxe(win).analyze()
     const blocking = gateViolations(results)
     expect(blocking, JSON.stringify(blocking, null, 2)).toEqual([])

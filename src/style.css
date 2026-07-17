@@ -59,6 +59,16 @@
     /* Motion: one curve, one default duration for UI transitions. */
     --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
     --dur-ui: 180ms;
+
+    /* ── STATUS COLOURS ─────────────────────────────────────
+       License-badge state (ok / warning / danger). These bright
+       values read fine on the dark themes; the light glass theme
+       overrides them (see [data-theme="glass"]) because they fail
+       WCAG AA as text on near-white surfaces. Consumed by
+       src/ui_license_badge.js via var(). */
+    --status-ok:     #22c55e;
+    --status-warn:   #f59e0b;
+    --status-danger: #e31c1c;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -181,7 +191,12 @@
     --btn-blue-txt:   #F6EFDD;
     --btn-yellow-bg:  #E8C07D;
     --btn-yellow-txt: #0B0A08;
-    --btn-red-bg:     #8A3B2E;
+    /* Terracotta, not the old dark brick #8A3B2E: this token is the *text*
+       colour for outlined destructive buttons (.btn--destructive) and every
+       danger accent (error-toast icon, danger menu items) on obsidian's dark
+       chrome, where #8A3B2E fell to ~2.2:1 and failed WCAG AA. #D2694A clears
+       AA (≥4.6:1) on every surface while still reading as warm danger. */
+    --btn-red-bg:     #D2694A;
     --btn-red-txt:    #FFFFFF;
 
     --resizer-bg:         #1B1810;
@@ -303,8 +318,12 @@
     --border-folder: #FF6961;
     --border-tpl:    #0A84FF;
 
-    /* Apple system blue */
-    --accent:        #0A84FF;
+    /* Apple system blue, darkened for AA. #0A84FF is only ~3.1–3.4:1 as *text*
+       on this theme's near-white surfaces (fails WCAG AA); #0057C7 clears AA
+       (≥4.5:1) everywhere including the blue-tinted --accent-dim chip fill,
+       while white-on-accent fills improve to 6.6:1. Button fills use the
+       separate --btn-blue-bg token, so this only affects blue text/borders. */
+    --accent:        #0057C7;
     --accent-hover:  #0060DF;
     --accent-dim:    rgba(10, 132, 255, 0.14);
     --accent-glow:   rgba(10, 132, 255, 0.32);
@@ -314,9 +333,9 @@
     --txt-muted:     #656577;
     --txt-dim:       #A6A6B8;
 
-    --tab-active-color:  #0A84FF;
+    --tab-active-color:  #0057C7;
     --tab-active-border: #0A84FF;
-    --tab-export-color:  #0A84FF;
+    --tab-export-color:  #0057C7;
 
     --btn-load-bg:    rgba(10, 132, 255, 0.92);
     --btn-load-txt:   #ffffff;
@@ -344,6 +363,13 @@
     --theme-dd-bg:     rgba(255, 255, 255, 0.72);
     --theme-dd-bdr:    rgba(255, 255, 255, 0.65);
     --theme-opt-hover: rgba(10, 132, 255, 0.12);
+
+    /* Darker status colours: the bright defaults (#22c55e / #f59e0b / #e31c1c)
+       are 2.0–4.4:1 as text on this theme's near-white badge — below WCAG AA.
+       These clear AA (≥4.5:1) while keeping green/amber/red semantics. */
+    --status-ok:     #15803d;
+    --status-warn:   #b45309;
+    --status-danger: #c81e1e;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -906,7 +932,10 @@
 }
 [data-theme="glass-dark"] .tab-btn.active {
     background: rgba(64, 70, 90, 0.85);
-    color: var(--accent);
+    /* --tab-active-color (#64B0FF), not --accent (#409CFF): on this dark pill
+       the accent is only 3.7:1, below WCAG AA; the lighter active-tab token
+       clears it (~4.6:1). Glass (light) keeps --accent — it reads dark there. */
+    color: var(--tab-active-color);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 10px rgba(64,156,255,0.3);
 }
 
@@ -2870,6 +2899,11 @@ select:focus-visible {
     border-color: color-mix(in srgb, var(--accent) 45%, transparent);
     color: var(--accent);
 }
+/* Synthwave's neon pink accent (#FF2E97) is too dark as chip *text* on its own
+   dim-pink fill over --bg-panel — ~3.7:1, below WCAG AA. The theme's lighter
+   hover pink clears AA (~5:1) there. Scoped to synthwave: a blanket switch to
+   --accent-hover would *lower* contrast on the light glass theme. */
+[data-theme="synthwave"] .chip--accent { color: var(--accent-hover); }
 .chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ── Skeleton: shimmer placeholder while thumbnails decode ── */

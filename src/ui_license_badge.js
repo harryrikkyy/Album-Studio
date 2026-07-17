@@ -26,19 +26,19 @@
       const text = document.getElementById('licenseText')
       const dot = document.getElementById('licenseDot')
 
-      // Status colors
+      // Status colours resolve from theme tokens (see --status-* in style.css)
+      // so the light glass theme can darken them to meet WCAG AA contrast.
+      const setStatus = (token, label) => {
+        dot.style.color = `var(${token})`
+        text.style.color = `var(${token})`
+        text.textContent = label
+      }
       if (license.daysLeft > 7) {
-        dot.style.color = '#22c55e'
-        text.style.color = '#22c55e'
-        text.textContent = license.daysLeft + ' days remaining'
+        setStatus('--status-ok', license.daysLeft + ' days remaining')
       } else if (license.daysLeft > 3) {
-        dot.style.color = '#f59e0b'
-        text.style.color = '#f59e0b'
-        text.textContent = license.daysLeft + ' days remaining ⚠'
+        setStatus('--status-warn', license.daysLeft + ' days remaining ⚠')
       } else {
-        dot.style.color = '#e31c1c'
-        text.style.color = '#e31c1c'
-        text.textContent = license.daysLeft + ' days remaining !'
+        setStatus('--status-danger', license.daysLeft + ' days remaining !')
       }
 
       if (license.offline) text.textContent += ' (offline)'
