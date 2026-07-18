@@ -67,7 +67,7 @@
   {
     "source": "CreateBlemishRemovalLayer.jsx",
     "module": "$._ext_CREATEBLEMISHREMOVALLAYER",
-    "script": "CreateBlemishRemovalLayer/AutumnEffect.jsx"
+    "script": "CreateBlemishRemovalLayer/CreateBlemishRemovalLayer.jsx"
   },
   {
     "source": "CreateBlushonLayer.jsx",
