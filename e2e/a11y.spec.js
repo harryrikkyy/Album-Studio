@@ -41,12 +41,11 @@ function gateViolations(results) {
   }))
 }
 
-// Every shipped theme, scanned. The app defaults to nebula, but the other
-// four re-map every colour token (notably --txt-muted against the lighter
-// --bg-* surfaces), so a contrast regression could hide in a theme the
-// default scan never renders. axe's `color-contrast` rule is serious-impact
-// and lives inside the WCAG AA tags above, so this catches it per theme.
-const THEMES = ['nebula', 'obsidian', 'synthwave', 'glass', 'glass-dark']
+// Every shipped theme, scanned. The light theme re-maps every colour token,
+// so a contrast regression could hide in the theme the default scan never
+// renders. axe's `color-contrast` rule is serious-impact and lives inside
+// the WCAG AA tags above, so this catches it per theme.
+const THEMES = ['studio-dark', 'studio-light']
 
 test('workspace (main window) has no serious/critical a11y violations — all themes', async () => {
   const app = await launchApp()

@@ -10,11 +10,14 @@
 const api = window.editorAPI
 
 // Theme (shared via file:// localStorage), opaque for this non-transparent window.
+// Saved ids from the retired 5-theme system fall back to studio-dark.
 ;(function () {
-  let t = 'nebula'
-  try { t = localStorage.getItem('adt_theme') || 'nebula' } catch (_) {}
+  const KNOWN = ['studio-dark', 'studio-light']
+  let t = 'studio-dark'
+  try { t = localStorage.getItem('adt_theme') || 'studio-dark' } catch (_) {}
+  if (!KNOWN.includes(t)) t = 'studio-dark'
   document.documentElement.setAttribute('data-theme', t)
-  document.documentElement.style.colorScheme = t === 'glass' ? 'light' : 'dark'
+  document.documentElement.style.colorScheme = t === 'studio-light' ? 'light' : 'dark'
 })()
 
 const el = (id) => document.getElementById(id)

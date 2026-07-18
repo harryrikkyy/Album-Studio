@@ -257,29 +257,6 @@
      opaque values for the glass themes so the structure is always visible.
      Dark non-glass themes already use opaque hex, so they're untouched. */
   body::before, body::after { display: none !important; content: none !important; }
-  [data-theme="glass"] {
-    --bg-base:    #EDF1F8;
-    --bg-nav:     #FFFFFF;
-    --bg-card:    #FFFFFF;
-    --bg-elevated:#FFFFFF;
-    --bg-inset:   #EEF2F8;
-    --bg-surface: #E6ECF5;
-  }
-  [data-theme="glass-dark"] {
-    --bg-base:    #0F1117;
-    --bg-nav:     #191C24;
-    --bg-card:    #171A22;
-    --bg-elevated:#1E222B;
-    --bg-inset:   #0B0D12;
-    --bg-surface: #242833;
-  }
-  /* Glass button/control styles rely on backdrop-filter over a transparent
-     window; here they sit on opaque cards, so give them a plain surface. */
-  [data-theme="glass"] .btn, [data-theme="glass-dark"] .btn,
-  [data-theme="glass"] .rn-custom-input, [data-theme="glass-dark"] .rn-custom-input,
-  [data-theme="glass"] .rn-select, [data-theme="glass-dark"] .rn-select {
-    -webkit-backdrop-filter: none; backdrop-filter: none;
-  }
 </style>
 </head>
 <body>

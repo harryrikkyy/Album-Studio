@@ -8,41 +8,23 @@
 
     const STORAGE_KEY = 'adt_theme';
 
+    // Two flagship themes (2026-07 redesign). Saved ids from the retired
+    // 5-theme system (nebula/obsidian/synthwave/glass/glass-dark) fall back
+    // to THEMES[0] via the applyTheme lookup below — no migration needed.
     const THEMES = [
         {
-            id:      'nebula',
-            label:   'Nebula',
-            sub:     '3D · Cosmic',
-            dotClass: 'nebula',
-            accent:  '#8B7BFF'
+            id:      'studio-dark',
+            label:   'Studio',
+            sub:     'Dark',
+            dotClass: 'studio-dark',
+            accent:  '#A08FFF'
         },
         {
-            id:      'obsidian',
-            label:   'Obsidian Gold',
-            sub:     '3D · Luxury',
-            dotClass: 'obsidian',
-            accent:  '#E8C07D'
-        },
-        {
-            id:      'synthwave',
-            label:   'Synthwave',
-            sub:     '3D · Neon',
-            dotClass: 'synthwave',
-            accent:  '#FF2E97'
-        },
-        {
-            id:      'glass',
-            label:   'Glass',
-            sub:     'Apple Tahoe 26',
-            dotClass: 'glass',
-            accent:  '#0A84FF'
-        },
-        {
-            id:      'glass-dark',
-            label:   'Glass (Dark)',
-            sub:     'Apple Tahoe 26',
-            dotClass: 'glass-dark',
-            accent:  '#409CFF'
+            id:      'studio-light',
+            label:   'Studio',
+            sub:     'Light',
+            dotClass: 'studio-light',
+            accent:  '#5646C8'
         }
     ];
 

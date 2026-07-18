@@ -21,13 +21,16 @@ let armedMode = null    // 'first' | 'last' | 'cover' | null
 let dragIndex = -1
 
 // ── Theme (shared with the main window via file:// localStorage) ──
+// Saved ids from the retired 5-theme system fall back to studio-dark.
 ;(function applySavedTheme() {
-  let saved = 'nebula'
-  try { saved = localStorage.getItem('adt_theme') || 'nebula' } catch (_) {}
+  const KNOWN = ['studio-dark', 'studio-light']
+  let saved = 'studio-dark'
+  try { saved = localStorage.getItem('adt_theme') || 'studio-dark' } catch (_) {}
+  if (!KNOWN.includes(saved)) saved = 'studio-dark'
   document.documentElement.setAttribute('data-theme', saved)
   // Native controls (select, radios, scrollbars) need color-scheme to render
-  // legibly. Only the plain "glass" theme is light; everything else is dark.
-  document.documentElement.style.colorScheme = saved === 'glass' ? 'light' : 'dark'
+  // legibly under the theme.
+  document.documentElement.style.colorScheme = saved === 'studio-light' ? 'light' : 'dark'
 })()
 
 // ── DOM refs ──────────────────────────────────────────────────

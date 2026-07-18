@@ -60,1092 +60,197 @@
     --ease-ui: cubic-bezier(0.2, 0.8, 0.2, 1);
     --dur-ui: 180ms;
 
-    /* ── STATUS COLOURS ─────────────────────────────────────
-       License-badge state (ok / warning / danger). These bright
-       values read fine on the dark themes; the light glass theme
-       overrides them (see [data-theme="glass"]) because they fail
-       WCAG AA as text on near-white surfaces. Consumed by
+    /* ── STATUS COLOURS (fallback) ──────────────────────────
+       License-badge state (ok / warning / danger). Each studio theme
+       defines AA-verified values in its own token block; these :root
+       fallbacks only cover a missing/unknown data-theme. Consumed by
        src/ui_license_badge.js via var(). */
-    --status-ok:     #22c55e;
-    --status-warn:   #f59e0b;
-    --status-danger: #e31c1c;
+    --status-ok:     #5BC777;
+    --status-warn:   #E5B25A;
+    --status-danger: #F07A72;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   THEME 1 — NEBULA  (default · animated 3D · cosmic)
-   Deep-space base · violet/cyan/magenta nebula · parallax starfield
-   ──────────────────────────────────────────────────────────────
-   - Drifting multi-layer nebula clouds on a fixed body backdrop
-   - Twinkling starfield (CSS-only, GPU-cheap)
-   - 3D tilt + lift on cards, glowing CTA, animated slider tracks
-   - All motion is disabled under prefers-reduced-motion (see end)
+   STUDIO DARK  (default · the app's identity)
+   Pro-studio near-black: neutral surfaces with a whisper of violet
+   so photographs carry the color. ONE accent (violet — the app's
+   equity) doing real work: selection, primary action, progress.
+   Every text/surface pair below is WCAG-AA verified (≥4.5:1).
 ══════════════════════════════════════════════════════════════ */
 :root,
-[data-theme="nebula"] {
-    --bg-base:       #06060F;
-    --bg-nav:        #0A0A1A;
-    --bg-panel:      #0D0E20;
-    --bg-card:       #10122A;
-    --bg-surface:    #141634;
-    --bg-elevated:   #191C42;
-    --bg-inset:      #04040C;
-    --bg-red-box:    #110F26;
-    --bg-green-box:  #0C1228;
-    --bg-white-box:  #10122A;
-    --bg-yellow-box: #130F28;
-    --bg-grid:       #0B0C20;
+[data-theme="studio-dark"] {
+    --bg-base:       #131318;
+    --bg-nav:        #17171D;
+    --bg-panel:      #1A1A21;
+    --bg-card:       #1E1E26;
+    --bg-surface:    #22222B;
+    --bg-elevated:   #2A2A35;
+    --bg-inset:      #0E0E12;
+    /* The four workspace quadrants share ONE quiet surface — the old
+       per-box tints (and the pink/cyan pool borders) made the chrome
+       louder than the photos. Panel identity now comes from headers. */
+    --bg-red-box:    #1A1A21;
+    --bg-green-box:  #17171D;
+    --bg-white-box:  #1A1A21;
+    --bg-yellow-box: #17171D;
+    --bg-grid:       #16161C;
 
-    --border-main:   #232861;
-    --border-subtle: rgba(139, 123, 255, 0.08);
-    --border-folder: #FF6CC8;
-    --border-tpl:    #5BE0FF;
+    --border-main:   rgba(255, 255, 255, 0.10);
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-folder: rgba(255, 255, 255, 0.10);
+    --border-tpl:    rgba(255, 255, 255, 0.10);
 
-    --accent:        #8B7BFF;
-    --accent-hover:  #6E5BFF;
-    --accent-dim:    rgba(139, 123, 255, 0.18);
-    --accent-glow:   rgba(139, 123, 255, 0.45);
+    --accent:        #A08FFF;
+    --accent-hover:  #B4A6FF;
+    --accent-dim:    rgba(160, 143, 255, 0.14);
+    --accent-glow:   rgba(160, 143, 255, 0.30);
+    /* Solid fill for primary buttons — white text ≥4.8:1. */
+    --accent-fill:   #6C5CE7;
+    --accent-fill-hover: #7B6CF0;
 
-    --txt-primary:   #ECE9FF;
-    --txt-secondary: #A6A2D8;
-    --txt-muted:     #827EAB;
-    --txt-dim:       #383760;
+    --txt-primary:   #ECECF2;
+    --txt-secondary: #A8A8B6;
+    --txt-muted:     #9494A4;
+    --txt-dim:       #4A4A58;
 
-    --tab-active-color:  #8B7BFF;
-    --tab-active-border: #8B7BFF;
-    --tab-export-color:  #5BE0FF;
+    --tab-active-color:  #A08FFF;
+    --tab-active-border: #A08FFF;
+    --tab-export-color:  #A08FFF;
 
-    --btn-load-bg:    #2A2580;
-    --btn-load-txt:   #ECE9FF;
-    --btn-save-bg:    #8B7BFF;
-    --btn-save-txt:   #06060F;
-    --btn-blue-bg:    #2A2580;
-    --btn-blue-txt:   #ECE9FF;
-    --btn-yellow-bg:  #FFC15B;
-    --btn-yellow-txt: #2A1A05;
-    --btn-red-bg:     #FF6CC8;
+    /* Legacy button tokens, mapped onto the new two-level hierarchy:
+       load/blue → primary (accent fill), save/yellow → secondary
+       (quiet surface), red → destructive. The candy toolbar dies here. */
+    --btn-load-bg:    #6C5CE7;
+    --btn-load-txt:   #FFFFFF;
+    --btn-save-bg:    #2A2A35;
+    --btn-save-txt:   #ECECF2;
+    --btn-blue-bg:    #6C5CE7;
+    --btn-blue-txt:   #FFFFFF;
+    --btn-yellow-bg:  #2A2A35;
+    --btn-yellow-txt: #ECECF2;
+    --btn-red-bg:     #F07A72;
+    --btn-red-txt:    #131318;
+
+    --resizer-bg:         #1E1E26;
+    --resizer-hover:      #A08FFF;
+    --slider-track:       #2A2A35;
+    --slider-thumb:       #4A4A58;
+    --slider-thumb-hover: #A08FFF;
+    --slider-thumb-act:   #B4A6FF;
+
+    --card-hover-border:  #A08FFF;
+
+    --theme-btn-bg:    #1E1E26;
+    --theme-btn-txt:   #A8A8B6;
+    --theme-btn-bdr:   rgba(255, 255, 255, 0.10);
+    --theme-dd-bg:     #1A1A21;
+    --theme-dd-bdr:    rgba(255, 255, 255, 0.10);
+    --theme-opt-hover: #22222B;
+
+    --status-ok:     #5BC777;
+    --status-warn:   #E5B25A;
+    --status-danger: #F07A72;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STUDIO LIGHT
+   True off-white at ~zero chroma (no cream drift); same violet
+   accent family, deepened for AA as text on white surfaces.
+══════════════════════════════════════════════════════════════ */
+[data-theme="studio-light"] {
+    --bg-base:       #F2F2F5;
+    --bg-nav:        #FAFAFC;
+    --bg-panel:      #FFFFFF;
+    --bg-card:       #FAFAFC;
+    --bg-surface:    #F5F5F8;
+    --bg-elevated:   #EDEDF2;
+    --bg-inset:      #E8E8EE;
+    --bg-red-box:    #FFFFFF;
+    --bg-green-box:  #FAFAFC;
+    --bg-white-box:  #FFFFFF;
+    --bg-yellow-box: #FAFAFC;
+    --bg-grid:       #F5F5F8;
+
+    --border-main:   rgba(28, 28, 36, 0.14);
+    --border-subtle: rgba(28, 28, 36, 0.08);
+    --border-folder: rgba(28, 28, 36, 0.14);
+    --border-tpl:    rgba(28, 28, 36, 0.14);
+
+    --accent:        #5646C8;
+    --accent-hover:  #4636B8;
+    --accent-dim:    rgba(86, 70, 200, 0.10);
+    --accent-glow:   rgba(86, 70, 200, 0.25);
+    --accent-fill:   #5646C8;
+    --accent-fill-hover: #4636B8;
+
+    --txt-primary:   #1C1C24;
+    --txt-secondary: #4A4A58;
+    --txt-muted:     #63636F;
+    --txt-dim:       #A2A2AE;
+
+    --tab-active-color:  #5646C8;
+    --tab-active-border: #5646C8;
+    --tab-export-color:  #5646C8;
+
+    --btn-load-bg:    #5646C8;
+    --btn-load-txt:   #FFFFFF;
+    --btn-save-bg:    #EDEDF2;
+    --btn-save-txt:   #1C1C24;
+    --btn-blue-bg:    #5646C8;
+    --btn-blue-txt:   #FFFFFF;
+    --btn-yellow-bg:  #EDEDF2;
+    --btn-yellow-txt: #1C1C24;
+    --btn-red-bg:     #C0362F;
     --btn-red-txt:    #FFFFFF;
 
-    --resizer-bg:         #14163A;
-    --resizer-hover:      #8B7BFF;
-    --slider-track:       #232861;
-    --slider-thumb:       #2A2580;
-    --slider-thumb-hover: #8B7BFF;
-    --slider-thumb-act:   #6E5BFF;
+    --resizer-bg:         #EDEDF2;
+    --resizer-hover:      #5646C8;
+    --slider-track:       #DEDEE6;
+    --slider-thumb:       #FFFFFF;
+    --slider-thumb-hover: #5646C8;
+    --slider-thumb-act:   #4636B8;
 
-    --card-hover-border:  #8B7BFF;
+    --card-hover-border:  #5646C8;
 
-    --theme-btn-bg:    #10122A;
-    --theme-btn-txt:   #A6A2D8;
-    --theme-btn-bdr:   #232861;
-    --theme-dd-bg:     #0D0E20;
-    --theme-dd-bdr:    #232861;
-    --theme-opt-hover: #141634;
+    --theme-btn-bg:    #FFFFFF;
+    --theme-btn-txt:   #4A4A58;
+    --theme-btn-bdr:   rgba(28, 28, 36, 0.14);
+    --theme-dd-bg:     #FFFFFF;
+    --theme-dd-bdr:    rgba(28, 28, 36, 0.14);
+    --theme-opt-hover: #F5F5F8;
+
+    --status-ok:     #1B6E37;
+    --status-warn:   #8A5A00;
+    --status-danger: #C0362F;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   THEME 2 — OBSIDIAN GOLD  (animated 3D · luxury)
-   Near-black obsidian · champagne-gold accent · light-sweep sheen
-   ──────────────────────────────────────────────────────────────
-   - Slow floating gold-dust particles on the backdrop
-   - Diagonal light sweep across the top nav
-   - Metallic shimmer on the Render CTA, gold rim on 3D card lift
-══════════════════════════════════════════════════════════════ */
-[data-theme="obsidian"] {
-    --bg-base:       #0B0A08;
-    --bg-nav:        #11100C;
-    --bg-panel:      #141209;
-    --bg-card:       #16140D;
-    --bg-surface:    #1B1810;
-    --bg-elevated:   #221E14;
-    --bg-inset:      #070603;
-    --bg-red-box:    #14120B;
-    --bg-green-box:  #12110A;
-    --bg-white-box:  #15130C;
-    --bg-yellow-box: #16130A;
-    --bg-grid:       #100E08;
-
-    --border-main:   #3A3320;
-    --border-subtle: rgba(232, 192, 125, 0.08);
-    --border-folder: #E8C07D;
-    --border-tpl:    #C9A24B;
-
-    --accent:        #E8C07D;
-    --accent-hover:  #F5D89A;
-    --accent-dim:    rgba(232, 192, 125, 0.16);
-    --accent-glow:   rgba(232, 192, 125, 0.40);
-
-    --txt-primary:   #F6EFDD;
-    --txt-secondary: #B8A883;
-    --txt-muted:     #8E805D;
-    --txt-dim:       #423A28;
-
-    --tab-active-color:  #E8C07D;
-    --tab-active-border: #E8C07D;
-    --tab-export-color:  #F5D89A;
-
-    --btn-load-bg:    #2A2414;
-    --btn-load-txt:   #F6EFDD;
-    --btn-save-bg:    #E8C07D;
-    --btn-save-txt:   #0B0A08;
-    --btn-blue-bg:    #2A2414;
-    --btn-blue-txt:   #F6EFDD;
-    --btn-yellow-bg:  #E8C07D;
-    --btn-yellow-txt: #0B0A08;
-    /* Terracotta, not the old dark brick #8A3B2E: this token is the *text*
-       colour for outlined destructive buttons (.btn--destructive) and every
-       danger accent (error-toast icon, danger menu items) on obsidian's dark
-       chrome, where #8A3B2E fell to ~2.2:1 and failed WCAG AA. #D2694A clears
-       AA (≥4.6:1) on every surface while still reading as warm danger. */
-    --btn-red-bg:     #D2694A;
-    --btn-red-txt:    #FFFFFF;
-
-    --resizer-bg:         #1B1810;
-    --resizer-hover:      #E8C07D;
-    --slider-track:       #3A3320;
-    --slider-thumb:       #5A4E30;
-    --slider-thumb-hover: #E8C07D;
-    --slider-thumb-act:   #C9A24B;
-
-    --card-hover-border:  #E8C07D;
-
-    --theme-btn-bg:    #16140D;
-    --theme-btn-txt:   #B8A883;
-    --theme-btn-bdr:   #3A3320;
-    --theme-dd-bg:     #141209;
-    --theme-dd-bdr:    #3A3320;
-    --theme-opt-hover: #1B1810;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   THEME 3 — SYNTHWAVE  (animated 3D · neon retro-future)
-   Midnight-purple base · magenta + cyan neon · perspective grid floor
-   ──────────────────────────────────────────────────────────────
-   - Animated neon grid horizon scrolling toward the viewer
-   - Scanline overlay + neon text glow
-   - Chromatic 3D card tilt, pulsing neon CTA
-══════════════════════════════════════════════════════════════ */
-[data-theme="synthwave"] {
-    --bg-base:       #120024;
-    --bg-nav:        #1A0B2E;
-    --bg-panel:      #1E0E38;
-    --bg-card:       #23123F;
-    --bg-surface:    #2A1650;
-    --bg-elevated:   #341B60;
-    --bg-inset:      #0C0018;
-    --bg-red-box:    #200A38;
-    --bg-green-box:  #1C0E38;
-    --bg-white-box:  #23123F;
-    --bg-yellow-box: #260A40;
-    --bg-grid:       #190A30;
-
-    --border-main:   #43216F;
-    --border-subtle: rgba(255, 46, 151, 0.10);
-    --border-folder: #FF2E97;
-    --border-tpl:    #05D9E8;
-
-    --accent:        #FF2E97;
-    --accent-hover:  #FF5CB0;
-    --accent-dim:    rgba(255, 46, 151, 0.18);
-    --accent-glow:   rgba(255, 46, 151, 0.50);
-
-    --txt-primary:   #FDEBFF;
-    --txt-secondary: #C49AE0;
-    --txt-muted:     #9D7CBD;
-    --txt-dim:       #4A2E6B;
-
-    --tab-active-color:  #05D9E8;
-    --tab-active-border: #FF2E97;
-    --tab-export-color:  #05D9E8;
-
-    --btn-load-bg:    #2A1650;
-    --btn-load-txt:   #05D9E8;
-    --btn-save-bg:    #FF2E97;
-    --btn-save-txt:   #120024;
-    --btn-blue-bg:    #07303A;
-    --btn-blue-txt:   #05D9E8;
-    --btn-yellow-bg:  #FEE440;
-    --btn-yellow-txt: #2A1A05;
-    --btn-red-bg:     #FF2E97;
-    --btn-red-txt:    #FFFFFF;
-
-    --resizer-bg:         #1E0E38;
-    --resizer-hover:      #FF2E97;
-    --slider-track:       #43216F;
-    --slider-thumb:       #2A1650;
-    --slider-thumb-hover: #FF2E97;
-    --slider-thumb-act:   #05D9E8;
-
-    --card-hover-border:  #FF2E97;
-
-    --theme-btn-bg:    #23123F;
-    --theme-btn-txt:   #C49AE0;
-    --theme-btn-bdr:   #43216F;
-    --theme-dd-bg:     #1E0E38;
-    --theme-dd-bdr:    #43216F;
-    --theme-opt-hover: #2A1650;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   THEME 4 — GLASS  (Apple macOS Tahoe 26 · "Liquid Glass")
-   Light, translucent, frosted. Backdrop blur + saturation on every
-   surface, hairline specular borders, soft depth, system-blue accent.
-   ──────────────────────────────────────────────────────────────
-   Design intent: should feel like a native macOS Tahoe app — surfaces
-   are panes of frosted glass floating over a soft tinted gradient
-   wallpaper; nothing is flat black, nothing has a hard 1px #333 border.
-   The glassmorphism itself (blur/saturate/translucency) is applied in a
-   dedicated [data-theme="glass"] section further below.
-══════════════════════════════════════════════════════════════ */
-[data-theme="glass"] {
-    /* Base "desktop" sits behind translucent panes; panes are rgba so the
-       gradient shows through. The hex values here are the *fallback* solid
-       colors for any surface that doesn't get the glass treatment. */
-    --bg-base:       #EEF1F7;
-    --bg-nav:        rgba(255, 255, 255, 0.55);
-    --bg-panel:      rgba(255, 255, 255, 0.45);
-    --bg-card:       rgba(255, 255, 255, 0.50);
-    --bg-surface:    rgba(255, 255, 255, 0.42);
-    --bg-elevated:   rgba(255, 255, 255, 0.62);
-    --bg-inset:      rgba(255, 255, 255, 0.30);
-    --bg-red-box:    rgba(255, 255, 255, 0.38);
-    --bg-green-box:  rgba(255, 255, 255, 0.38);
-    --bg-white-box:  rgba(255, 255, 255, 0.40);
-    --bg-yellow-box: rgba(255, 255, 255, 0.38);
-    --bg-grid:       rgba(255, 255, 255, 0.34);
-
-    --border-main:   rgba(255, 255, 255, 0.55);
-    --border-subtle: rgba(255, 255, 255, 0.35);
-    --border-folder: #FF6961;
-    --border-tpl:    #0A84FF;
-
-    /* Apple system blue, darkened for AA. #0A84FF is only ~3.1–3.4:1 as *text*
-       on this theme's near-white surfaces (fails WCAG AA); #0057C7 clears AA
-       (≥4.5:1) everywhere including the blue-tinted --accent-dim chip fill,
-       while white-on-accent fills improve to 6.6:1. Button fills use the
-       separate --btn-blue-bg token, so this only affects blue text/borders. */
-    --accent:        #0057C7;
-    --accent-hover:  #0060DF;
-    --accent-dim:    rgba(10, 132, 255, 0.14);
-    --accent-glow:   rgba(10, 132, 255, 0.32);
-
-    --txt-primary:   #1C1C2E;
-    --txt-secondary: #4A4A5E;
-    --txt-muted:     #656577;
-    --txt-dim:       #A6A6B8;
-
-    --tab-active-color:  #0057C7;
-    --tab-active-border: #0A84FF;
-    --tab-export-color:  #0057C7;
-
-    --btn-load-bg:    rgba(10, 132, 255, 0.92);
-    --btn-load-txt:   #ffffff;
-    --btn-save-bg:    rgba(255, 255, 255, 0.65);
-    --btn-save-txt:   #1C1C2E;
-    --btn-blue-bg:    rgba(10, 132, 255, 0.92);
-    --btn-blue-txt:   #ffffff;
-    --btn-yellow-bg:  #FFD60A;
-    --btn-yellow-txt: #1C1C2E;
-    --btn-red-bg:     #FF453A;
-    --btn-red-txt:    #ffffff;
-
-    --resizer-bg:         rgba(120, 120, 140, 0.18);
-    --resizer-hover:      #0A84FF;
-    --slider-track:       rgba(120, 120, 140, 0.22);
-    --slider-thumb:       rgba(255, 255, 255, 0.92);
-    --slider-thumb-hover: #0A84FF;
-    --slider-thumb-act:   #0060DF;
-
-    --card-hover-border:  rgba(10, 132, 255, 0.55);
-
-    --theme-btn-bg:    rgba(255, 255, 255, 0.55);
-    --theme-btn-txt:   #1C1C2E;
-    --theme-btn-bdr:   rgba(255, 255, 255, 0.65);
-    --theme-dd-bg:     rgba(255, 255, 255, 0.72);
-    --theme-dd-bdr:    rgba(255, 255, 255, 0.65);
-    --theme-opt-hover: rgba(10, 132, 255, 0.12);
-
-    /* Darker status colours: the bright defaults (#22c55e / #f59e0b / #e31c1c)
-       are 2.0–4.4:1 as text on this theme's near-white badge — below WCAG AA.
-       These clear AA (≥4.5:1) while keeping green/amber/red semantics. */
-    --status-ok:     #15803d;
-    --status-warn:   #b45309;
-    --status-danger: #c81e1e;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   THEME 5 — GLASS DARK  (Apple macOS Tahoe 26 · "Liquid Glass" dark)
-   The dark companion to Glass. Same frosted-glass language, but the
-   panes are dark translucent graphite over a deep tinted wallpaper,
-   with bright system-blue accents and luminous specular edges.
-══════════════════════════════════════════════════════════════ */
-[data-theme="glass-dark"] {
-    --bg-base:       #0B0D12;
-    --bg-nav:        rgba(30, 32, 42, 0.55);
-    --bg-panel:      rgba(28, 30, 40, 0.48);
-    --bg-card:       rgba(34, 36, 48, 0.52);
-    --bg-surface:    rgba(30, 32, 42, 0.46);
-    --bg-elevated:   rgba(44, 46, 60, 0.62);
-    --bg-inset:      rgba(18, 20, 28, 0.45);
-    --bg-red-box:    rgba(28, 30, 40, 0.42);
-    --bg-green-box:  rgba(28, 30, 40, 0.42);
-    --bg-white-box:  rgba(30, 32, 42, 0.44);
-    --bg-yellow-box: rgba(28, 30, 40, 0.42);
-    --bg-grid:       rgba(24, 26, 34, 0.40);
-
-    --border-main:   rgba(255, 255, 255, 0.14);
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-folder: #FF6961;
-    --border-tpl:    #64A8FF;
-
-    /* Apple system blue, brightened for dark ground */
-    --accent:        #409CFF;
-    --accent-hover:  #64B0FF;
-    --accent-dim:    rgba(64, 156, 255, 0.18);
-    --accent-glow:   rgba(64, 156, 255, 0.38);
-
-    --txt-primary:   #F2F4FA;
-    --txt-secondary: #B4B8C6;
-    --txt-muted:     #888B9C;
-    --txt-dim:       #4A4E5E;
-
-    --tab-active-color:  #64B0FF;
-    --tab-active-border: #409CFF;
-    --tab-export-color:  #64B0FF;
-
-    --btn-load-bg:    rgba(64, 156, 255, 0.92);
-    --btn-load-txt:   #ffffff;
-    --btn-save-bg:    rgba(255, 255, 255, 0.14);
-    --btn-save-txt:   #F2F4FA;
-    --btn-blue-bg:    rgba(64, 156, 255, 0.92);
-    --btn-blue-txt:   #ffffff;
-    --btn-yellow-bg:  #FFD60A;
-    --btn-yellow-txt: #1C1C2E;
-    --btn-red-bg:     #FF453A;
-    --btn-red-txt:    #ffffff;
-
-    --resizer-bg:         rgba(255, 255, 255, 0.10);
-    --resizer-hover:      #409CFF;
-    --slider-track:       rgba(255, 255, 255, 0.16);
-    --slider-thumb:       rgba(255, 255, 255, 0.92);
-    --slider-thumb-hover: #409CFF;
-    --slider-thumb-act:   #64B0FF;
-
-    --card-hover-border:  rgba(64, 156, 255, 0.55);
-
-    --theme-btn-bg:    rgba(44, 46, 60, 0.55);
-    --theme-btn-txt:   #F2F4FA;
-    --theme-btn-bdr:   rgba(255, 255, 255, 0.16);
-    --theme-dd-bg:     rgba(30, 32, 42, 0.80);
-    --theme-dd-bdr:    rgba(255, 255, 255, 0.16);
-    --theme-opt-hover: rgba(64, 156, 255, 0.18);
-}
 
 /* ══════════════════════════════════════════════════════════════
    THEME DOTS — picker swatches
 ══════════════════════════════════════════════════════════════ */
-.theme-dot.nebula {
-    background: conic-gradient(from 200deg, #8B7BFF, #5BE0FF, #FF6CC8, #8B7BFF);
-    border-color: rgba(139, 123, 255, 0.5);
+.theme-dot.studio-dark {
+    background: #1A1A21;
+    border-color: #A08FFF;
 }
-.theme-dot.obsidian {
-    background: linear-gradient(135deg, #3A3320 0%, #E8C07D 50%, #F5D89A 100%);
-    border-color: rgba(232, 192, 125, 0.55);
+.theme-dot.studio-light {
+    background: #FAFAFC;
+    border-color: #5646C8;
 }
-.theme-dot.synthwave {
-    background: linear-gradient(135deg, #FF2E97 0%, #b026ff 50%, #05D9E8 100%);
-    border-color: rgba(255, 46, 151, 0.55);
-}
-.theme-dot.glass {
-    background: linear-gradient(135deg, rgba(255,255,255,0.85), rgba(10,132,255,0.55));
-    border-color: rgba(255, 255, 255, 0.8);
-    box-shadow: inset 0 0 3px rgba(255,255,255,0.9);
-}
-.theme-dot.glass-dark {
-    background: linear-gradient(135deg, rgba(60,64,82,0.95), rgba(64,156,255,0.7));
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: inset 0 0 3px rgba(120,160,255,0.7);
-}
-
 /* ══════════════════════════════════════════════════════════════
-   SHARED 3D / MOTION PRIMITIVES (apply to all animated themes)
-   Cards lift and tilt in 3D; the lift transition is shared, only the
-   glow color differs per theme below.
-══════════════════════════════════════════════════════════════ */
-[data-theme="nebula"] .thumb-card,
-[data-theme="nebula"] .wp-card,
-[data-theme="nebula"] .sb-page-card,
-[data-theme="nebula"] .tools-card,
-[data-theme="obsidian"] .thumb-card,
-[data-theme="obsidian"] .wp-card,
-[data-theme="obsidian"] .sb-page-card,
-[data-theme="obsidian"] .tools-card,
-[data-theme="synthwave"] .thumb-card,
-[data-theme="synthwave"] .wp-card,
-[data-theme="synthwave"] .sb-page-card,
-[data-theme="synthwave"] .tools-card {
-    transform-style: preserve-3d;
-    perspective: 900px;
-    transition:
-        transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1),
-        box-shadow 0.35s ease,
-        border-color 0.2s;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset,
-                0 6px 18px rgba(0, 0, 0, 0.35);
-    will-change: transform;
-}
-
-/* Top-nav + tab panes get a stacking context so backdrops sit behind. */
-[data-theme="nebula"] .top-nav,    [data-theme="nebula"] .tab-pane,
-[data-theme="obsidian"] .top-nav,  [data-theme="obsidian"] .tab-pane,
-[data-theme="synthwave"] .top-nav, [data-theme="synthwave"] .tab-pane { position: relative; }
-[data-theme="nebula"] .tab-pane,
-[data-theme="obsidian"] .tab-pane,
-[data-theme="synthwave"] .tab-pane { z-index: 1; }
-
-/* ══════════════════════════════════════════════════════════════
-   NEBULA — backdrop, starfield, glow
-══════════════════════════════════════════════════════════════ */
-[data-theme="nebula"] body { position: relative; }
-[data-theme="nebula"] body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background:
-        radial-gradient(1200px 800px at 15% 10%, rgba(139,123,255,0.22), transparent 60%),
-        radial-gradient(1000px 700px at 85% 90%, rgba(91,224,255,0.16),  transparent 60%),
-        radial-gradient(800px 600px  at 55% 45%, rgba(255,108,200,0.14), transparent 65%);
-    background-size: 200% 200%, 200% 200%, 200% 200%;
-    animation: nebula-drift 32s ease-in-out infinite alternate;
-}
-/* Twinkling starfield — two layered radial-gradient star sheets. */
-[data-theme="nebula"] body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-        radial-gradient(1.5px 1.5px at 20% 30%,  rgba(255,255,255,0.9), transparent),
-        radial-gradient(1px 1px   at 70% 65%,  rgba(255,255,255,0.7), transparent),
-        radial-gradient(1.5px 1.5px at 40% 80%,  rgba(200,220,255,0.8), transparent),
-        radial-gradient(1px 1px   at 85% 20%,  rgba(255,255,255,0.6), transparent),
-        radial-gradient(1px 1px   at 10% 70%,  rgba(255,255,255,0.7), transparent),
-        radial-gradient(1.5px 1.5px at 60% 40%,  rgba(220,200,255,0.8), transparent);
-    background-repeat: repeat;
-    background-size: 320px 320px;
-    animation: nebula-twinkle 5s ease-in-out infinite alternate;
-    opacity: 0.6;
-}
-@keyframes nebula-drift {
-    0%   { background-position:   0% 0%,   100% 100%, 50% 50%; }
-    50%  { background-position: 100% 30%,    0% 70%, 70% 20%; }
-    100% { background-position:  30% 100%,  70% 30%, 30% 80%; }
-}
-@keyframes nebula-twinkle {
-    0%   { opacity: 0.35; }
-    100% { opacity: 0.7; }
-}
-[data-theme="nebula"] .top-nav {
-    background: linear-gradient(180deg, #0A0A1A 0%, #050510 100%);
-    box-shadow: 0 1px 0 rgba(139,123,255,0.18) inset, 0 0 0 1px rgba(139,123,255,0.06);
-}
-[data-theme="nebula"] .top-nav::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(139,123,255,0.7) 50%, rgba(91,224,255,0) 90%, transparent 100%);
-    background-size: 200% 100%;
-    animation: scan-x 6s linear infinite;
-    pointer-events: none;
-}
-[data-theme="nebula"] .tab-btn          { transition: color .2s, text-shadow .2s, background .2s; }
-[data-theme="nebula"] .tab-btn:hover    { text-shadow: 0 0 12px rgba(139,123,255,0.55); }
-[data-theme="nebula"] .tab-btn.active   { text-shadow: 0 0 14px rgba(139,123,255,0.75); }
-[data-theme="nebula"] .thumb-card:hover,
-[data-theme="nebula"] .wp-card:hover,
-[data-theme="nebula"] .sb-page-card:hover,
-[data-theme="nebula"] .tools-card:hover {
-    transform: translateY(-3px) rotateX(4deg) rotateY(-4deg) scale(1.015);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 36px rgba(0,0,0,0.55),
-                0 0 0 1px rgba(139,123,255,0.35), 0 0 28px rgba(139,123,255,0.30);
-    border-color: var(--accent);
-}
-[data-theme="nebula"] .btn--render {
-    background: linear-gradient(135deg, #6E5BFF 0%, #8B7BFF 50%, #5BE0FF 100%);
-    background-size: 200% 200%;
-    animation: shimmer-x 6s ease-in-out infinite;
-    border-color: transparent;
-}
-[data-theme="nebula"] .btn--render:hover {
-    box-shadow: 0 0 24px rgba(139,123,255,0.55), 0 0 48px rgba(91,224,255,0.35);
-    transform: translateY(-1px);
-}
-
-/* ══════════════════════════════════════════════════════════════
-   OBSIDIAN GOLD — gold dust, light sweep, metallic CTA
-══════════════════════════════════════════════════════════════ */
-[data-theme="obsidian"] body { position: relative; }
-[data-theme="obsidian"] body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background:
-        radial-gradient(900px 700px at 80% 15%, rgba(232,192,125,0.10), transparent 60%),
-        radial-gradient(700px 600px at 15% 85%, rgba(201,162,75,0.08),  transparent 60%);
-    background-size: 200% 200%, 200% 200%;
-    animation: nebula-drift 40s ease-in-out infinite alternate;
-}
-/* Floating gold-dust motes */
-[data-theme="obsidian"] body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-        radial-gradient(1.5px 1.5px at 25% 20%, rgba(232,192,125,0.9), transparent),
-        radial-gradient(1px 1px   at 65% 55%, rgba(245,216,154,0.7), transparent),
-        radial-gradient(2px 2px   at 45% 75%, rgba(232,192,125,0.6), transparent),
-        radial-gradient(1px 1px   at 80% 30%, rgba(245,216,154,0.7), transparent);
-    background-repeat: repeat;
-    background-size: 360px 360px;
-    animation: gold-rise 14s linear infinite;
-    opacity: 0.5;
-}
-@keyframes gold-rise {
-    0%   { background-position: 0 0,   0 0,   0 0,   0 0; }
-    100% { background-position: 0 -360px, 0 -300px, 0 -420px, 0 -340px; }
-}
-[data-theme="obsidian"] .top-nav {
-    background: linear-gradient(180deg, #11100C 0%, #070603 100%);
-    box-shadow: 0 1px 0 rgba(232,192,125,0.18) inset, 0 0 0 1px rgba(232,192,125,0.06);
-    overflow: hidden;
-}
-/* Diagonal sheen sweeping across the nav */
-[data-theme="obsidian"] .top-nav::before {
-    content: ''; position: absolute; top: -50%; bottom: -50%; left: -30%; width: 30%;
-    background: linear-gradient(105deg, transparent, rgba(245,216,154,0.18), transparent);
-    transform: skewX(-18deg);
-    animation: gold-sweep 7s ease-in-out infinite;
-    pointer-events: none;
-}
-@keyframes gold-sweep {
-    0%   { left: -30%; }
-    55%  { left: 130%; }
-    100% { left: 130%; }
-}
-[data-theme="obsidian"] .tab-btn:hover   { text-shadow: 0 0 10px rgba(232,192,125,0.55); }
-[data-theme="obsidian"] .tab-btn.active  { text-shadow: 0 0 12px rgba(232,192,125,0.7); }
-[data-theme="obsidian"] .thumb-card:hover,
-[data-theme="obsidian"] .wp-card:hover,
-[data-theme="obsidian"] .sb-page-card:hover,
-[data-theme="obsidian"] .tools-card:hover {
-    transform: translateY(-3px) rotateX(3deg) rotateY(-3deg) scale(1.012);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 36px rgba(0,0,0,0.6),
-                0 0 0 1px rgba(232,192,125,0.45), 0 0 26px rgba(232,192,125,0.28);
-    border-color: var(--accent);
-}
-[data-theme="obsidian"] .btn--render {
-    background: linear-gradient(135deg, #C9A24B 0%, #E8C07D 45%, #F5D89A 55%, #C9A24B 100%);
-    background-size: 250% 100%;
-    color: #0B0A08;
-    animation: shimmer-x 5s linear infinite;
-    border-color: transparent;
-    font-weight: 700;
-}
-[data-theme="obsidian"] .btn--render:hover {
-    box-shadow: 0 0 22px rgba(232,192,125,0.6), 0 0 44px rgba(245,216,154,0.3);
-    transform: translateY(-1px);
-}
-
-/* ══════════════════════════════════════════════════════════════
-   SYNTHWAVE — neon grid horizon, scanlines, chromatic glow
-══════════════════════════════════════════════════════════════ */
-[data-theme="synthwave"] body { position: relative; }
-/* Perspective neon grid floor scrolling toward the viewer */
-[data-theme="synthwave"] body::before {
-    content: '';
-    position: fixed;
-    left: 0; right: 0; bottom: 0; height: 55%;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-        linear-gradient(rgba(255,46,151,0.5) 2px, transparent 2px),
-        linear-gradient(90deg, rgba(5,217,232,0.4) 2px, transparent 2px);
-    background-size: 60px 60px, 60px 60px;
-    transform: perspective(420px) rotateX(62deg);
-    transform-origin: center bottom;
-    animation: grid-scroll 2.2s linear infinite;
-    opacity: 0.5;
-    mask-image: linear-gradient(to top, #000 0%, transparent 90%);
-    -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 90%);
-}
-/* Glowing sun + scanline veil */
-[data-theme="synthwave"] body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background:
-        radial-gradient(600px 380px at 50% 12%, rgba(255,46,151,0.18), transparent 70%),
-        repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,0.10) 3px, rgba(0,0,0,0) 4px);
-}
-@keyframes grid-scroll {
-    0%   { background-position: 0 0, 0 0; }
-    100% { background-position: 0 60px, 60px 0; }
-}
-[data-theme="synthwave"] .top-nav {
-    background: linear-gradient(180deg, #1A0B2E 0%, #0C0018 100%);
-    box-shadow: 0 1px 0 rgba(255,46,151,0.22) inset, 0 0 0 1px rgba(5,217,232,0.06);
-}
-[data-theme="synthwave"] .top-nav::after {
-    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, #FF2E97 35%, #05D9E8 65%, transparent);
-    background-size: 200% 100%;
-    animation: scan-x 4s linear infinite;
-    box-shadow: 0 0 10px rgba(255,46,151,0.7);
-    pointer-events: none;
-}
-[data-theme="synthwave"] .tab-btn:hover  { text-shadow: 0 0 10px rgba(5,217,232,0.7); color: #05D9E8; }
-[data-theme="synthwave"] .tab-btn.active { text-shadow: 0 0 12px rgba(255,46,151,0.8), 0 0 4px rgba(5,217,232,0.6); }
-[data-theme="synthwave"] .thumb-card:hover,
-[data-theme="synthwave"] .wp-card:hover,
-[data-theme="synthwave"] .sb-page-card:hover,
-[data-theme="synthwave"] .tools-card:hover {
-    transform: translateY(-3px) rotateX(5deg) rotateY(-5deg) scale(1.018);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset, 0 18px 40px rgba(0,0,0,0.6),
-                -4px 0 18px rgba(255,46,151,0.35), 4px 0 18px rgba(5,217,232,0.35);
-    border-color: var(--accent);
-}
-[data-theme="synthwave"] .btn--render {
-    background: linear-gradient(135deg, #FF2E97 0%, #b026ff 50%, #05D9E8 100%);
-    background-size: 220% 220%;
-    animation: shimmer-x 4s ease-in-out infinite;
-    border-color: transparent;
-    text-shadow: 0 0 6px rgba(0,0,0,0.4);
-}
-[data-theme="synthwave"] .btn--render:hover {
-    box-shadow: 0 0 24px rgba(255,46,151,0.6), 0 0 48px rgba(5,217,232,0.4);
-    transform: translateY(-1px);
-}
-
-/* ══════════════════════════════════════════════════════════════
-   SHARED KEYFRAMES + selection / slider / toast polish (all 3 themes)
-══════════════════════════════════════════════════════════════ */
-@keyframes scan-x    { 0% { background-position: -50% 0; } 100% { background-position: 150% 0; } }
-@keyframes shimmer-x { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-[data-theme="nebula"] .thumb-card.is-selected,
-[data-theme="obsidian"] .thumb-card.is-selected,
-[data-theme="synthwave"] .thumb-card.is-selected {
-    box-shadow: 0 0 0 2px var(--accent), 0 0 28px var(--accent-glow);
-}
-
-[data-theme="nebula"] input[type="range"]::-webkit-slider-runnable-track,
-[data-theme="obsidian"] input[type="range"]::-webkit-slider-runnable-track,
-[data-theme="synthwave"] input[type="range"]::-webkit-slider-runnable-track {
-    background: linear-gradient(90deg, var(--slider-thumb), var(--accent), var(--tab-export-color));
-    background-size: 200% 100%;
-    animation: shimmer-x 8s linear infinite;
-}
-[data-theme="nebula"] input[type="range"]::-webkit-slider-thumb,
-[data-theme="obsidian"] input[type="range"]::-webkit-slider-thumb,
-[data-theme="synthwave"] input[type="range"]::-webkit-slider-thumb {
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-}
-
-[data-theme="nebula"] .toast,
-[data-theme="obsidian"] .toast,
-[data-theme="synthwave"] .toast {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.55), 0 0 0 1px var(--accent-dim);
-}
-
-[data-theme="nebula"] .folder-rail--accent-images,
-[data-theme="obsidian"] .folder-rail--accent-images,
-[data-theme="synthwave"] .folder-rail--accent-images { border-color: var(--border-folder); }
-[data-theme="nebula"] .folder-rail--accent-templates,
-[data-theme="obsidian"] .folder-rail--accent-templates,
-[data-theme="synthwave"] .folder-rail--accent-templates { border-color: var(--border-tpl); }
-
-[data-theme="nebula"] .sb-page-header,
-[data-theme="obsidian"] .sb-page-header,
-[data-theme="synthwave"] .sb-page-header {
-    color: var(--accent);
-    text-shadow: 0 0 14px var(--accent-glow);
-}
-
-/* ══════════════════════════════════════════════════════════════
-   GLASS — Apple macOS Tahoe 26 "Liquid Glass"
-   ──────────────────────────────────────────────────────────────
-   Every major surface becomes a pane of frosted glass: translucent
-   white, heavy backdrop-blur + saturation (the signature Tahoe look),
-   a hairline specular top-edge highlight, soft ambient shadow for
-   float, and generous rounded corners. Sits over a slowly drifting
-   tinted gradient "wallpaper".
-══════════════════════════════════════════════════════════════ */
-
-/* The soft tinted desktop wallpaper that all the glass floats over. */
-[data-theme="glass"] body {
-    position: relative;
-    background: #EEF1F7;
-}
-[data-theme="glass-dark"] body {
-    position: relative;
-    background: #0B0D12;
-}
-[data-theme="glass"] body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(1200px 800px at 12% 8%,  rgba(10,132,255,0.18),  transparent 60%),
-        radial-gradient(1000px 760px at 88% 18%, rgba(191,90,242,0.16),  transparent 60%),
-        radial-gradient(1100px 820px at 70% 92%, rgba(48,209,158,0.16),  transparent 62%),
-        radial-gradient(900px 700px  at 25% 88%, rgba(255,159,10,0.12),  transparent 60%),
-        linear-gradient(180deg, #EFF3FA 0%, #E7ECF5 100%);
-    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation: glass-wallpaper 36s ease-in-out infinite alternate;
-}
-/* Dark variant: deeper, moodier tints over near-black. */
-[data-theme="glass-dark"] body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(1200px 800px at 12% 8%,  rgba(64,156,255,0.20),  transparent 60%),
-        radial-gradient(1000px 760px at 88% 18%, rgba(150,70,255,0.18),  transparent 60%),
-        radial-gradient(1100px 820px at 70% 92%, rgba(40,200,160,0.16),  transparent 62%),
-        radial-gradient(900px 700px  at 25% 88%, rgba(255,120,80,0.12),  transparent 60%),
-        linear-gradient(180deg, #0C0E14 0%, #070810 100%);
-    background-size: 200% 200%, 200% 200%, 200% 200%, 200% 200%, 100% 100%;
-    animation: glass-wallpaper 36s ease-in-out infinite alternate;
-}
-@keyframes glass-wallpaper {
-    0%   { background-position:   0% 0%,  100% 0%,  70% 100%, 25% 90%, 0 0; }
-    50%  { background-position:  60% 40%,  40% 30%, 30% 60%,  70% 40%, 0 0; }
-    100% { background-position: 100% 100%,  0% 80%, 100% 0%,  0% 10%, 0 0; }
-}
-[data-theme="glass"] .top-nav,
-[data-theme="glass"] .tab-pane,
-[data-theme="glass-dark"] .top-nav,
-[data-theme="glass-dark"] .tab-pane { position: relative; z-index: 1; }
-
-/* ── Frosted glass mixin via shared declarations ─────────────── */
-/* NOTE: `.cmd-bar` is intentionally NOT frosted. backdrop-filter creates a
-   new stacking context, which traps the Clear-album overflow dropdown behind
-   the page content below the command bar (it comes later in the DOM), so the
-   menu was unclickable in the glass themes only. Plain `.row` rows elsewhere
-   still get the frost. */
-[data-theme="glass"] .top-nav,
-[data-theme="glass"] .toolbar,
-[data-theme="glass"] .row:not(.cmd-bar),
-[data-theme="glass"] .folder-rail,
-[data-theme="glass"] .folder-rail__panel,
-[data-theme="glass"] .tools-card,
-[data-theme="glass"] .thumb-card,
-[data-theme="glass"] .wp-card,
-[data-theme="glass"] .sb-page-card,
-[data-theme="glass"] .toast,
-[data-theme="glass"] #themeDropdown,
-[data-theme="glass"] dialog,
-[data-theme="glass"] .render-badge,
-[data-theme="glass"] .license-badge {
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
-    background-color: rgba(255, 255, 255, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),     /* specular top edge */
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.5),
-        0 8px 30px rgba(20, 30, 60, 0.12);          /* soft ambient float */
-}
-/* Dark variant: graphite glass, luminous (not white) specular edge. */
-[data-theme="glass-dark"] .top-nav,
-[data-theme="glass-dark"] .toolbar,
-[data-theme="glass-dark"] .row:not(.cmd-bar),
-[data-theme="glass-dark"] .folder-rail,
-[data-theme="glass-dark"] .folder-rail__panel,
-[data-theme="glass-dark"] .tools-card,
-[data-theme="glass-dark"] .thumb-card,
-[data-theme="glass-dark"] .wp-card,
-[data-theme="glass-dark"] .sb-page-card,
-[data-theme="glass-dark"] .toast,
-[data-theme="glass-dark"] #themeDropdown,
-[data-theme="glass-dark"] dialog,
-[data-theme="glass-dark"] .render-badge,
-[data-theme="glass-dark"] .license-badge {
-    -webkit-backdrop-filter: blur(28px) saturate(180%);
-    backdrop-filter: blur(28px) saturate(180%);
-    background-color: rgba(34, 36, 48, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),    /* luminous top edge */
-        inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
-        0 8px 30px rgba(0, 0, 0, 0.45);             /* deep ambient float */
-}
-
-/* Top nav: brighter, thinner, hairline divider instead of hard border. */
-[data-theme="glass"] .top-nav {
-    background-color: rgba(255, 255, 255, 0.62);
-    border: none;
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.7);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 1px 12px rgba(20,30,60,0.06);
-}
-[data-theme="glass-dark"] .top-nav {
-    background-color: rgba(30, 32, 42, 0.62);
-    border: none;
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 1px 12px rgba(0,0,0,0.4);
-}
-
-/* Tabs: pill-style active state, the Tahoe signature. */
-[data-theme="glass"] .tab-btn,
-[data-theme="glass-dark"] .tab-btn {
-    color: var(--txt-secondary);
-    border-bottom: none;
-    border-radius: 9px;
-    margin: 5px 2px;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-}
-[data-theme="glass"] .tab-btn:hover {
-    background: rgba(10, 132, 255, 0.08);
-    color: var(--txt-primary);
-}
-[data-theme="glass-dark"] .tab-btn:hover {
-    background: rgba(64, 156, 255, 0.14);
-    color: var(--txt-primary);
-}
-[data-theme="glass"] .tab-btn.active {
-    background: rgba(255, 255, 255, 0.85);
-    color: var(--accent);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 2px 8px rgba(10,132,255,0.18);
-}
-[data-theme="glass-dark"] .tab-btn.active {
-    background: rgba(64, 70, 90, 0.85);
-    /* --tab-active-color (#64B0FF), not --accent (#409CFF): on this dark pill
-       the accent is only 3.7:1, below WCAG AA; the lighter active-tab token
-       clears it (~4.6:1). Glass (light) keeps --accent — it reads dark there. */
-    color: var(--tab-active-color);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 2px 10px rgba(64,156,255,0.3);
-}
-
-/* Buttons: glassy, rounded, with a primary system-blue variant. */
-[data-theme="glass"] .btn {
-    border-radius: 9px;
-    border: 0.5px solid rgba(255,255,255,0.6);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    background-color: rgba(255, 255, 255, 0.6);
-    color: var(--txt-primary);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 4px rgba(20,30,60,0.08);
-    transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-[data-theme="glass-dark"] .btn {
-    border-radius: 9px;
-    border: 0.5px solid rgba(255,255,255,0.14);
-    -webkit-backdrop-filter: blur(12px) saturate(160%);
-    backdrop-filter: blur(12px) saturate(160%);
-    background-color: rgba(54, 58, 74, 0.6);
-    color: var(--txt-primary);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 1px 4px rgba(0,0,0,0.3);
-    transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-[data-theme="glass"] .btn:hover {
-    background-color: rgba(255, 255, 255, 0.78);
-    transform: translateY(-1px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), 0 4px 12px rgba(20,30,60,0.14);
-}
-[data-theme="glass-dark"] .btn:hover {
-    background-color: rgba(66, 70, 88, 0.78);
-    transform: translateY(-1px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 4px 14px rgba(0,0,0,0.4);
-}
-[data-theme="glass"] .btn:active,
-[data-theme="glass-dark"] .btn:active { transform: translateY(0); }
-[data-theme="glass"] .btn--primary,
-[data-theme="glass"] .btn--render,
-[data-theme="glass-dark"] .btn--primary,
-[data-theme="glass-dark"] .btn--render {
-    background: linear-gradient(180deg, #3D9BFF 0%, #0A84FF 100%);
-    color: #fff;
-    border-color: rgba(255,255,255,0.4);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 4px 14px rgba(10,132,255,0.35);
-}
-[data-theme="glass"] .btn--primary:hover,
-[data-theme="glass"] .btn--render:hover,
-[data-theme="glass-dark"] .btn--primary:hover,
-[data-theme="glass-dark"] .btn--render:hover {
-    background: linear-gradient(180deg, #57A8FF 0%, #1E8FFF 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 6px 20px rgba(10,132,255,0.45);
-}
-[data-theme="glass"] .btn--destructive,
-[data-theme="glass-dark"] .btn--destructive {
-    background: linear-gradient(180deg, #FF6961 0%, #FF453A 100%);
-    color: #fff; border-color: rgba(255,255,255,0.35);
-}
-
-/* Cards float on hover with a gentle 3D lift — subtle, not flashy. */
-[data-theme="glass"] .thumb-card,
-[data-theme="glass"] .wp-card,
-[data-theme="glass"] .sb-page-card,
-[data-theme="glass"] .tools-card,
-[data-theme="glass-dark"] .thumb-card,
-[data-theme="glass-dark"] .wp-card,
-[data-theme="glass-dark"] .sb-page-card,
-[data-theme="glass-dark"] .tools-card {
-    border-radius: 14px;
-    transform-style: preserve-3d;
-    perspective: 1000px;
-    transition: transform 0.32s cubic-bezier(0.2,0.8,0.2,1), box-shadow 0.32s ease, border-color 0.2s;
-}
-[data-theme="glass"] .thumb-card:hover,
-[data-theme="glass"] .wp-card:hover,
-[data-theme="glass"] .sb-page-card:hover,
-[data-theme="glass"] .tools-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    border-color: rgba(10,132,255,0.5);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.95),
-        0 18px 40px rgba(20,30,60,0.20),
-        0 0 0 1px rgba(10,132,255,0.18);
-}
-[data-theme="glass-dark"] .thumb-card:hover,
-[data-theme="glass-dark"] .wp-card:hover,
-[data-theme="glass-dark"] .sb-page-card:hover,
-[data-theme="glass-dark"] .tools-card:hover {
-    transform: translateY(-4px) scale(1.02);
-    border-color: rgba(64,156,255,0.55);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,0.18),
-        0 18px 44px rgba(0,0,0,0.55),
-        0 0 0 1px rgba(64,156,255,0.30);
-}
-
-/* Inputs / selects: frosted pills. */
-[data-theme="glass"] input[type="number"],
-[data-theme="glass"] input[type="text"],
-[data-theme="glass"] select,
-[data-theme="glass"] textarea {
-    background-color: rgba(255,255,255,0.6);
-    border: 0.5px solid rgba(255,255,255,0.7);
-    border-radius: 8px;
-    color: var(--txt-primary);
-    box-shadow: inset 0 1px 2px rgba(20,30,60,0.06);
-}
-[data-theme="glass-dark"] input[type="number"],
-[data-theme="glass-dark"] input[type="text"],
-[data-theme="glass-dark"] select,
-[data-theme="glass-dark"] textarea {
-    background-color: rgba(54, 58, 74, 0.6);
-    border: 0.5px solid rgba(255,255,255,0.14);
-    border-radius: 8px;
-    color: var(--txt-primary);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
-}
-[data-theme="glass"] input:focus,
-[data-theme="glass"] select:focus,
-[data-theme="glass"] textarea:focus,
-[data-theme="glass-dark"] input:focus,
-[data-theme="glass-dark"] select:focus,
-[data-theme="glass-dark"] textarea:focus {
-    outline: none;
-    border-color: rgba(64,156,255,0.7);
-    box-shadow: 0 0 0 3px rgba(64,156,255,0.22);
-}
-
-/* Sliders: track translucent, thumb a glossy white pill. */
-[data-theme="glass"] input[type="range"]::-webkit-slider-runnable-track,
-[data-theme="glass-dark"] input[type="range"]::-webkit-slider-runnable-track {
-    background: var(--slider-track);
-    border-radius: 999px;
-}
-[data-theme="glass"] input[type="range"]::-webkit-slider-thumb,
-[data-theme="glass-dark"] input[type="range"]::-webkit-slider-thumb {
-    background: #ffffff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4), inset 0 0 0 0.5px rgba(0,0,0,0.06);
-}
-
-/* Boxes: let the wallpaper glow through with a faint frost. */
-[data-theme="glass"] .box,
-[data-theme="glass"] .grid-box {
-    background-color: rgba(255,255,255,0.28);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
-    backdrop-filter: blur(18px) saturate(150%);
-}
-[data-theme="glass-dark"] .box,
-[data-theme="glass-dark"] .grid-box {
-    background-color: rgba(20, 22, 30, 0.34);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
-    backdrop-filter: blur(18px) saturate(150%);
-}
-
-/* Folder rails: rounded frosted side panels. */
-[data-theme="glass"] .folder-rail--boxed,
-[data-theme="glass-dark"] .folder-rail--boxed { border-radius: 14px; }
-
-/* Resizers: subtle, become blue on hover. */
-[data-theme="glass"] .resizer:hover,
-[data-theme="glass"] .resizer-h:hover,
-[data-theme="glass-dark"] .resizer:hover,
-[data-theme="glass-dark"] .resizer-h:hover { background: var(--accent); }
-
-/* Toasts + dialogs: rounded glass with deep ambient shadow. */
-[data-theme="glass"] .toast,
-[data-theme="glass"] dialog,
-[data-theme="glass"] #themeDropdown,
-[data-theme="glass-dark"] .toast,
-[data-theme="glass-dark"] dialog,
-[data-theme="glass-dark"] #themeDropdown {
-    border-radius: 14px;
-}
-
-/* Storyboard header text in calm ink, no neon glow here. */
-[data-theme="glass"] .sb-page-header,
-[data-theme="glass-dark"] .sb-page-header { color: var(--accent); }
-
-/* Footer + status text legible on light ground. */
-[data-theme="glass"] .footer { background-color: rgba(255,255,255,0.5); }
-[data-theme="glass-dark"] .footer { background-color: rgba(28, 30, 40, 0.55); }
-
-/* Photo letterbox cells: a soft neutral instead of near-black so they read
-   as glass rather than dark slabs on the light wallpaper. */
-[data-theme="glass"] { --photo-cell-bg: rgba(120, 120, 140, 0.16); }
-[data-theme="glass-dark"] { --photo-cell-bg: rgba(10, 12, 18, 0.55); }
-
-/* ══════════════════════════════════════════════════════════════
-   ACCESSIBILITY — honor reduced-motion: kill every animation above.
+   ACCESSIBILITY — honor reduced-motion for theme-level chrome.
+   (Component-level animations have their own reduce rules below.)
 ══════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
-    [data-theme="nebula"] body::before,
-    [data-theme="nebula"] body::after,
-    [data-theme="obsidian"] body::before,
-    [data-theme="obsidian"] body::after,
-    [data-theme="obsidian"] .top-nav::before,
-    [data-theme="synthwave"] body::before,
-    [data-theme="glass"] body::before,
-    [data-theme="glass-dark"] body::before,
-    [data-theme="synthwave"] .top-nav::after,
-    [data-theme="nebula"] .top-nav::after,
-    [data-theme*=""] .btn--render,
-    [data-theme*=""] input[type="range"]::-webkit-slider-runnable-track {
+    body::before,
+    body::after,
+    .top-nav::before,
+    .top-nav::after,
+    .btn--render,
+    input[type="range"]::-webkit-slider-runnable-track {
         animation: none !important;
     }
-    [data-theme="nebula"] .thumb-card,
-    [data-theme="obsidian"] .thumb-card,
-    [data-theme="synthwave"] .thumb-card,
-    [data-theme="nebula"] .wp-card,
-    [data-theme="obsidian"] .wp-card,
-    [data-theme="synthwave"] .wp-card { transition: none !important; }
+    .thumb-card,
+    .wp-card { transition: none !important; }
 }
 
 
@@ -2185,9 +1290,12 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     opacity: 1;
 }
 .btn--render {
-    --_btn-bg: var(--accent);
+    /* --accent-fill, not --accent: the accent is tuned as TEXT on dark
+       surfaces (light violet) and can't carry white text ≥4.5:1. The fill
+       token is the deep variant reserved for solid primary surfaces. */
+    --_btn-bg: var(--accent-fill);
     --_btn-fg: #fff;
-    --_btn-bd: var(--accent);
+    --_btn-bd: var(--accent-fill);
     height: 30px;
     padding: 0 var(--space-6);
     font-size: var(--fs-md);
@@ -2906,11 +2014,6 @@ select:focus-visible {
     border-color: color-mix(in srgb, var(--accent) 45%, transparent);
     color: var(--accent);
 }
-/* Synthwave's neon pink accent (#FF2E97) is too dark as chip *text* on its own
-   dim-pink fill over --bg-panel — ~3.7:1, below WCAG AA. The theme's lighter
-   hover pink clears AA (~5:1) there. Scoped to synthwave: a blanket switch to
-   --accent-hover would *lower* contrast on the light glass theme. */
-[data-theme="synthwave"] .chip--accent { color: var(--accent-hover); }
 .chip__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* ── Skeleton: shimmer placeholder while thumbnails decode ── */
@@ -3276,8 +2379,6 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
 .save-menu.open { display: block; }
 /* Opaque background — the glass themes' --bg-card is translucent, which made
    the menu see-through and hard to read over content. */
-[data-theme="glass"] .save-menu { background: #FFFFFF; }
-[data-theme="glass-dark"] .save-menu { background: #1E222B; }
 .save-menu__item {
     display: block; width: 100%; text-align: left;
     background: transparent; border: none; color: var(--txt-primary);
@@ -3359,8 +2460,6 @@ dialog::backdrop { background: rgba(0,0,0,0.6); }
     box-shadow: var(--elev-hover);
     padding: var(--space-1);
 }
-[data-theme="glass"] .app-ctx-menu { background: #FFFFFF; }
-[data-theme="glass-dark"] .app-ctx-menu { background: #1E222B; }
 .app-ctx-menu__item {
     display: block; width: 100%; text-align: left;
     background: transparent; border: none; color: var(--txt-primary);
