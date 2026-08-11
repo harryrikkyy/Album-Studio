@@ -188,6 +188,7 @@ function buildScene() {
     bd.className = 'ed-stage__backdrop'
     bd.src = spread.backdropUrl
     bd.draggable = false
+    bd.alt = ''   // decorative: the template's own artwork
     stage.appendChild(bd)
   }
   for (const item of items) {
@@ -197,6 +198,9 @@ function buildScene() {
     const img = document.createElement('img')
     img.src = item.url
     img.draggable = false
+    // Presentational: the photo is an object being manipulated, not content
+    // to be read out. Its frame is named and reachable via the panel instead.
+    img.alt = ''
     img.style.filter = cssFilter(item.adjust)
     f.appendChild(img)
     const vig = document.createElement('div')
@@ -629,15 +633,23 @@ function buildLayerList() {
     if (selectedOverlayIds.includes(L.id)) row.classList.add('selected')
     if (L.hidden) row.classList.add('is-hidden')
 
-    const name = document.createElement('span')
+    // A real button, not a clickable div: this is the keyboard route to
+    // selecting a layer, since the drag handles on the stage are pointer-only.
+    const name = document.createElement('button')
     name.className = 'ed-layer__name'
     name.textContent = layerLabel(L)
+    name.setAttribute('aria-pressed', String(selectedOverlayIds.includes(L.id)))
+    name.addEventListener('click', () => selectOverlay(L.id, false))
     row.appendChild(name)
 
     const mkBtn = (icon, title, fn) => {
       const b = document.createElement('button')
       b.className = 'ed-layer__btn'
       b.title = title
+      // The glyph is aria-hidden, so `title` alone would leave the button with
+      // no accessible name. Include the layer it acts on — a rail of six
+      // identical "Hide layer" buttons is useless read aloud.
+      b.setAttribute('aria-label', `${title}: ${layerLabel(L)}`)
       b.innerHTML = window.ADTIcons.icn(icon)
       b.addEventListener('click', (e) => { e.stopPropagation(); fn() })
       row.appendChild(b)
@@ -656,7 +668,6 @@ function buildLayerList() {
       renderOverlays(); buildLayerList(); updatePanel(); pushHistory(); scheduleApply()
     })
 
-    row.addEventListener('click', () => selectOverlay(L.id, false))
     wrap.appendChild(row)
   }
 }
@@ -1052,19 +1063,23 @@ function buildRail() {
     : [{ pageNum: spread.pageNum, backdropUrl: spread.backdropUrl }]
   for (const sp of list) {
     const isCurrent = sp.pageNum === spread.pageNum
-    const t = document.createElement('div')
+    const label = 'Page ' + String(sp.pageNum).padStart(3, '0')
+    // Button rather than a clickable div so page navigation is reachable by
+    // keyboard and announced with its page number.
+    const t = document.createElement('button')
     t.className = 'ed-thumb' + (isCurrent ? ' active' : '')
+    t.setAttribute('aria-label', isCurrent ? `${label} (current)` : `Go to ${label}`)
+    if (isCurrent) t.setAttribute('aria-current', 'true')
     if (sp.backdropUrl) {
-      const im = document.createElement('img'); im.src = sp.backdropUrl; im.draggable = false
+      const im = document.createElement('img')
+      im.src = sp.backdropUrl; im.draggable = false; im.alt = ''
       t.appendChild(im)
     }
-    const cap = document.createElement('div'); cap.className = 'ed-thumb__cap'
-    cap.textContent = 'Page ' + String(sp.pageNum).padStart(3, '0')
+    const cap = document.createElement('span'); cap.className = 'ed-thumb__cap'
+    cap.textContent = label
     t.appendChild(cap)
-    if (!isCurrent) {
-      t.style.cursor = 'pointer'
-      t.addEventListener('click', () => gotoSpread(sp.pageNum))
-    }
+    t.disabled = isCurrent
+    if (!isCurrent) t.addEventListener('click', () => gotoSpread(sp.pageNum))
     wrap.appendChild(t)
   }
 }

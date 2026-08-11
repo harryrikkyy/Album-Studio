@@ -73,6 +73,81 @@ test('workspace (main window) has no serious/critical a11y violations — all th
   }
 })
 
+// The Page Editor is opened with a spread payload rather than from project
+// state, so it can be scanned with a synthetic page — no template PSD, photo
+// folder or Photoshop needed. The payload exercises every panel: a photo
+// (Photo panel), a text layer and a shape (Text/Shape panels), plus the layers
+// rail and the spreads rail.
+const EDITOR_SPREAD = {
+  pageNum: 2,
+  canvasW: 3000,
+  canvasH: 2000,
+  backdropUrl: null,
+  items: [{
+    id: 'p1', url: '', orient: 'h', rotation: 0, placement: null, adjust: null,
+    frame: { name: 'toolkithframe1', x: 150, y: 150, w: 1250, h: 850 },
+  }],
+  spreads: [{ pageNum: 1, backdropUrl: null }, { pageNum: 2, backdropUrl: null }],
+  overlays: [
+    {
+      id: 'ov_t', type: 'text', x: 0.1, y: 0.6, w: 0.8, h: 0.15,
+      text: 'Sarah & James', font: 'Georgia', size: 0.08, weight: 400,
+      color: '#222222', align: 'center', valign: 'middle',
+    },
+    { id: 'ov_s', type: 'rect', x: 0.4, y: 0.8, w: 0.2, h: 0.05, fill: '#b08d57' },
+  ],
+  pageBackground: '#f5f2ec',
+}
+
+test('page editor has no serious/critical a11y violations — all themes', async () => {
+  const app = await launchApp()
+  try {
+    const main = await app.firstWindow()
+    await expect(main.locator('.tablist')).toBeVisible()
+
+    const editorPromise = app.waitForEvent('window')
+    await main.evaluate((s) => window.native.invoke('editor-open', s), EDITOR_SPREAD)
+    const editor = await editorPromise
+    await editor.waitForLoadState('domcontentloaded')
+    await editor.waitForSelector('#edLayers .ed-layer', { state: 'attached' })
+    await freezeMotion(editor)
+
+    for (const theme of THEMES) {
+      // The editor reads its theme once at load from localStorage; set the
+      // attribute directly so both palettes get scanned without a reload.
+      await editor.evaluate((id) => {
+        document.documentElement.setAttribute('data-theme', id)
+        document.documentElement.style.colorScheme = id === 'studio-light' ? 'light' : 'dark'
+      }, theme)
+
+      // Scan each contextual panel, not just the default one — the Photo, Text
+      // and Shape panels are display:none until something is selected, and axe
+      // skips hidden subtrees, so a violation in them would never be seen.
+      // Selection goes through the real layer-rail buttons (topmost first, so
+      // the shape is row 0 and the text row 1) rather than a test-only hook.
+      const rail = editor.locator('#edLayers .ed-layer__name')
+      const panels = [
+        ['page', null],
+        ['shape', 0],
+        ['text', 1],
+      ]
+      for (const [what, row] of panels) {
+        if (row === null) await editor.locator('.ed-stage-wrap').click({ position: { x: 5, y: 5 } })
+        else await rail.nth(row).click()
+        await expect(editor.locator(
+          what === 'page' ? '#edPagePanel' : what === 'text' ? '#edTextPanel' : '#edShapePanel'
+        )).toBeVisible()
+
+        const results = await buildAxe(editor).analyze()
+        const blocking = gateViolations(results)
+        expect(blocking, `[${theme}/${what}] ${JSON.stringify(blocking, null, 2)}`).toEqual([])
+      }
+    }
+  } finally {
+    await app.close()
+  }
+})
+
 test('login window has no serious/critical a11y violations', async () => {
   const app = await launchApp({ ALBUMSTUDIO_E2E_LOGIN: '1' })
   try {
