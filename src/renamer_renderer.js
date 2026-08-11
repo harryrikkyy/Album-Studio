@@ -7,6 +7,10 @@
 const api = window.renamerAPI
 const naming = api.naming
 
+// <i data-icn> markers → inline SVGs (ui_icons.js is loaded just before us;
+// scripts run at end of body, so the DOM is ready).
+window.ADTIcons.hydrate(document)
+
 // ── Configurable lists (edit to taste) ───────────────────────
 const LAMINATIONS = ['Standard', 'Matte', 'Glossy', 'Velvet', 'Luster']
 const SIZES = ['12x36', '12x30', '12x24', '10x30', '10x24', '8x24', '12x18', '10x20']
@@ -392,13 +396,13 @@ function buildNode(node, depth) {
 
   const arrow = document.createElement('span')
   arrow.className = 'rn-node__arrow' + (isOpen ? ' open' : '') + (isLeaf ? ' leaf' : '')
-  arrow.textContent = '▶'
+  arrow.innerHTML = window.ADTIcons.icn('chevron-right')
   arrow.addEventListener('click', (e) => { e.stopPropagation(); toggleNode(node.path) })
   row.appendChild(arrow)
 
   const icon = document.createElement('span')
   icon.className = 'rn-node__icon'
-  icon.textContent = isOpen ? '📂' : '📁'
+  icon.innerHTML = window.ADTIcons.icn(isOpen ? 'folder-open' : 'folder')
   row.appendChild(icon)
 
   const name = document.createElement('span')
@@ -409,7 +413,7 @@ function buildNode(node, depth) {
   if (folderPath === node.path) {
     const chk = document.createElement('span')
     chk.className = 'rn-node__check'
-    chk.textContent = '✓'
+    chk.innerHTML = window.ADTIcons.icn('check')
     row.appendChild(chk)
   }
 

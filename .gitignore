@@ -21,8 +21,9 @@ dist/
 __pycache__/
 *.pyc
 
-# Impeccable design tool (separate checkout)
+# Impeccable design tool (separate checkout) and its per-run scratch
 impeccable/
+.impeccable/
 
 # Serena MCP tool metadata (per-developer, not project state)
 .serena/

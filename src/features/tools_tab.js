@@ -244,7 +244,8 @@ function createToolsTab(deps) {
             toolsBarStatusEl.classList.toggle('tools-card__pill--active', open);
             toolsBarStatusEl.classList.toggle('tools-card__pill--neutral', !open);
             if (btnOpenToolsBar) {
-                btnOpenToolsBar.textContent = open ? '🪄 TOOLS BAR ACTIVE' : '🪄 OPEN TOOLS BAR';
+                const { icn } = require('../ui_icons');
+                btnOpenToolsBar.innerHTML = icn('wand') + (open ? ' Tools Bar active' : ' Open Tools Bar');
             }
         } catch (_) {}
     }

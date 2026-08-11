@@ -76,7 +76,8 @@ function createFolderRefresh(store, deps) {
         // the label `title` shows the full path on hover.
         const name = document.createElement('span');
         name.className = 'folder-rail__name';
-        name.textContent = '📁 ' + displayName;
+        // Icon via SVG + escaped display name (user-controlled folder names).
+        name.innerHTML = require('../ui_icons').icn('folder') + ' ' + escapeHtml(displayName);
 
         // Optional count badge (e.g. number of photos in the folder).
         const countEl = document.createElement('span');
@@ -162,10 +163,12 @@ function createFolderRefresh(store, deps) {
                 listDiv.innerHTML = "<div class='dialog-empty'>No folders loaded.</div>";
             } else {
                 checkboxes.forEach(cb => {
-                    const labelText = /** @type {HTMLElement} */ (cb.parentElement).innerText.replace("📁", "").replace("🗑️", "").replace("🔄", "").trim();
+                    // innerText no longer contains icon glyphs (SVGs don't
+                    // serialize to text), so the label is the folder name as-is.
+                    const labelText = /** @type {HTMLElement} */ (cb.parentElement).innerText.trim();
                     const folderId = cb.value;
                     const token = cb.dataset.token || "";
-                    listDiv.innerHTML += `<label><input type="checkbox" class="dialog-fld-cb" value="${escapeHtml(folderId)}" data-type="${escapeHtml(type)}" data-token="${escapeHtml(token)}"> 📁 ${escapeHtml(labelText)}</label>`;
+                    listDiv.innerHTML += `<label><input type="checkbox" class="dialog-fld-cb" value="${escapeHtml(folderId)}" data-type="${escapeHtml(type)}" data-token="${escapeHtml(token)}"> ${require('../ui_icons').icn('folder')} ${escapeHtml(labelText)}</label>`;
                 });
             }
             /** @type {HTMLDialogElement} */ (document.getElementById("removeFolderDialog")).showModal();

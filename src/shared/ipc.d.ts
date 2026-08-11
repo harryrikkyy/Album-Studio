@@ -80,6 +80,7 @@ export interface IpcInvokeMap {
   'render-proof': Loose
   'render-proofs-batch': Loose
   'resize-psds': Loose
+  'retouch-run': Loose
   'run-jsx': Loose
   'sign-out': Loose
   'swap-images': Loose

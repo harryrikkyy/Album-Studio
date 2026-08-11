@@ -19,6 +19,7 @@
             <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-tools">5. Tools</button>
             <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-photos">6. Photos</button>
             <button class="tab-btn u-text-export" role="tab" aria-selected="false" data-target="tab-export">7. Export Studio</button>
+            <button class="tab-btn"        role="tab" aria-selected="false" data-target="tab-retouch">8. Retouch</button>
         </div>
 
         <div class="nav-actions">
@@ -33,10 +34,10 @@
                 </div>
             </div>
 
-            <button id="btnLoadWorkspace" class="btn btn--primary">📂 LOAD</button>
+            <button id="btnLoadWorkspace" class="btn btn--primary"><i data-icn="folder"></i> Load</button>
             <div class="save-split">
-                <button id="btnSaveWorkspace" class="btn btn--secondary">💾 SAVE</button>
-                <button id="btnSaveMenuBtn" class="btn btn--secondary save-split__caret" aria-haspopup="true" aria-expanded="false" aria-label="More save options" title="Save options">▾</button>
+                <button id="btnSaveWorkspace" class="btn btn--secondary"><i data-icn="save"></i> Save</button>
+                <button id="btnSaveMenuBtn" class="btn btn--secondary save-split__caret" aria-haspopup="true" aria-expanded="false" aria-label="More save options" title="Save options"><i data-icn="chevron-down"></i></button>
                 <div id="saveMenu" class="save-menu" role="menu">
                     <button id="btnSaveAs" class="save-menu__item" role="menuitem">Save As…</button>
                     <button id="btnNewProject" class="save-menu__item" role="menuitem">New Project…</button>
@@ -50,14 +51,14 @@
     ═══════════════════════════════════════════════ -->
     <div id="tab-album" class="tab-pane active" role="tabpanel" aria-labelledby="tab-album-trigger">
         <div id="automationBar" class="automation-bar">
-            <span class="automation-bar__label">⚡ ALBUM AUTOMATION</span>
+            <span class="automation-bar__label"><i data-icn="zap"></i> Album automation</span>
             <span class="automation-bar__hint">Pick photos and a template to build pages fast.</span>
             <button id="btnAutomationExit" class="btn btn--secondary btn--sm">Open full workspace ›</button>
         </div>
         <div class="row cmd-bar">
             <div class="cmd-group" role="group" aria-label="Generate">
-                <button id="btnAutoAll" class="btn btn--secondary">AUTO FILL (ALL PAGES)</button>
-                <button id="btnAutoThis" class="btn btn--ghost">AUTO FILL THIS PAGE</button>
+                <button id="btnAutoAll" class="btn btn--secondary"><i data-icn="wand"></i> Auto-fill all pages</button>
+                <button id="btnAutoThis" class="btn btn--ghost">Auto-fill this page</button>
                 <div class="input-group">
                     <span>Min</span><input type="number" value="4" id="minImgs" aria-label="Minimum photos per page">
                     <span>Max</span><input type="number" value="6" id="maxImgs" aria-label="Maximum photos per page">
@@ -76,20 +77,20 @@
             <div class="cmd-divider" aria-hidden="true"></div>
 
             <div class="cmd-group page-controls" role="group" aria-label="Page navigation">
-                <button id="btnPrev" class="btn btn--ghost btn--sm">PREV PAGE</button>
+                <button id="btnPrev" class="btn btn--ghost btn--sm">Previous</button>
                 <select id="pageSelect" aria-label="Current page"></select>
-                <button id="btnNext" class="btn btn--ghost btn--sm">NEXT PAGE</button>
-                <button id="btnAddPage" class="btn btn--primary btn--sm">➕ ADD PAGE</button>
-                <button id="btnRemovePage" class="btn btn--destructive btn--sm">➖ DEL PAGE</button>
+                <button id="btnNext" class="btn btn--ghost btn--sm">Next</button>
+                <button id="btnAddPage" class="btn btn--primary btn--sm"><i data-icn="plus"></i> Add page</button>
+                <button id="btnRemovePage" class="btn btn--destructive btn--sm"><i data-icn="trash"></i> Delete page</button>
                 <span id="pageTrackerText" class="page-tracker">Total: 1</span>
             </div>
 
             <div class="cmd-spacer"></div>
 
             <div class="cmd-group" role="group" aria-label="View">
-                <button id="btnAutomationEnter" class="btn btn--ghost btn--sm" title="Switch to Album Automation — a streamlined Source + Templates view for fast building.">⚡ Automation</button>
+                <button id="btnAutomationEnter" class="btn btn--ghost btn--sm" title="Switch to Album Automation — a streamlined Source + Templates view for fast building."><i data-icn="zap"></i> Automation</button>
                 <button id="btnLayoutToggle" class="btn btn--ghost btn--sm" aria-pressed="false" title="Toggle Stage layout — Source and Templates become side rails with the page as the centre stage. Your 2×2 layout stays available.">
-                    <span aria-hidden="true">⊞</span> <span class="lt-label">Stage view</span>
+                    <i data-icn="columns"></i> <span class="lt-label">Stage view</span>
                 </button>
                 <div class="cmd-group stage-only seg-group" role="group" aria-label="Stage focus">
                     <button id="btnCenterBoth"    class="btn btn--ghost btn--sm seg is-active" data-center="both"    title="Show both the compose page and the preview">Both</button>
@@ -100,9 +101,9 @@
 
             <!-- Overflow: destructive / rare actions kept away from Auto Fill -->
             <div class="cmd-overflow">
-                <button id="btnCmdOverflow" class="btn btn--ghost btn--sm" aria-label="More actions" aria-haspopup="true" aria-expanded="false" title="More actions">⋯</button>
+                <button id="btnCmdOverflow" class="btn btn--ghost btn--sm" aria-label="More actions" aria-haspopup="true" aria-expanded="false" title="More actions"><i data-icn="more-horizontal"></i></button>
                 <div id="cmdOverflowMenu" class="cmd-overflow__menu" role="menu">
-                    <button id="btnClearAlbum" class="cmd-overflow__item cmd-overflow__item--danger" role="menuitem" title="Clear every page's template and photos so you can start over. Undoable with Cmd+Z.">🧹 Clear album</button>
+                    <button id="btnClearAlbum" class="cmd-overflow__item cmd-overflow__item--danger" role="menuitem" title="Clear every page's template and photos so you can start over. Undoable with Cmd+Z."><i data-icn="eraser"></i> Clear album</button>
                 </div>
             </div>
         </div>
@@ -113,12 +114,12 @@
                     <span id="greenBoxTitle" class="greenbox-title">Page 001</span>
                     <span id="pageMatchChip" class="chip chip--accent" title="Photo orientation signature on this page and how many templates match it">0H 0V</span>
                     <div class="u-row u-row--gap-1">
-                        <button id="btnPull" class="btn btn--primary btn--sm">⬆️ PULL</button>
-                        <button id="btnEditSpread" class="btn btn--render btn--sm" title="Open the Spread Editor — reposition, zoom, and colour-grade photos directly on the page.">🎨 EDIT SPREAD</button>
-                        <button id="btnSortPage" class="btn btn--secondary btn--sm" title="Sort this page's photos chronologically by capture time (EXIF). Cmd+Z to undo.">🔁 SORT</button>
-                        <button id="btnRemoveSelected" class="btn btn--destructive btn--sm">❌ REMOVE</button>
+                        <button id="btnPull" class="btn btn--primary btn--sm"><i data-icn="arrow-up"></i> Pull</button>
+                        <button id="btnEditSpread" class="btn btn--render btn--sm" title="Open the Spread Editor — reposition, zoom, and colour-grade photos directly on the page."><i data-icn="edit"></i> Edit spread</button>
+                        <button id="btnSortPage" class="btn btn--secondary btn--sm" title="Sort this page's photos chronologically by capture time (EXIF). Cmd+Z to undo."><i data-icn="repeat"></i> Sort</button>
+                        <button id="btnRemoveSelected" class="btn btn--destructive btn--sm"><i data-icn="x"></i> Remove</button>
                         <select id="teleportTargetPage" class="select--sm" aria-label="Teleport target page"></select>
-                        <button id="btnTeleportGlobal" class="btn btn--warning btn--sm">🚀 TELEPORT</button>
+                        <button id="btnTeleportGlobal" class="btn btn--warning btn--sm"><i data-icn="send"></i> Teleport</button>
                         <input type="range" id="greenSlider" class="slider--sm" min="40" max="250" value="70" aria-label="Green box thumbnail size">
                     </div>
                 </div>
@@ -130,7 +131,7 @@
                     <span>Preview</span>
                     <label class="u-row u-row--gap-1 u-fs-xs u-text-secondary" title="Show a live composited preview of the current page (photos placed in the template), rendered with the same engine as the final export. Off = show the bare template.">
                         <input type="checkbox" id="chkLivePreview">
-                        <span>🪄 Live</span>
+                        <span><i data-icn="wand"></i> Live</span>
                     </label>
                     <input type="range" id="yellowSlider" class="slider--sm" min="100" max="600" value="250" aria-label="Preview size">
                 </div>
@@ -145,9 +146,9 @@
         <div class="box-row" id="bottomRow">
             <div class="box-wrapper box-wrapper--half" id="redWrapper">
                 <div class="toolbar">
-                    <button id="btnCollapseLeft" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Source rail" aria-label="Collapse source rail" aria-pressed="false">‹</button>
+                    <button id="btnCollapseLeft" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Source rail" aria-label="Collapse source rail" aria-pressed="false"><i data-icn="chevron-left"></i></button>
                     <span>Source Pool</span>
-                    <button id="btnLoadPhotos" class="btn btn--primary btn--sm">📂 LOAD PHOTOS</button>
+                    <button id="btnLoadPhotos" class="btn btn--primary btn--sm"><i data-icn="folder"></i> Load photos</button>
                     <input type="range" id="redSlider" class="slider--md" min="40" max="250" value="70" aria-label="Source pool thumbnail size">
                 </div>
                 <div id="redFolderContainer" class="folder-rail folder-rail--boxed folder-rail--accent-images">
@@ -155,18 +156,18 @@
                         <div class="folder-rail__header">
                             <span>Folders:</span>
                             <div class="folder-rail__actions">
-                                <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh image folders" tabindex="0">🔄</span>
-                                <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove image folders" tabindex="0">🗑️</span>
+                                <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh image folders" tabindex="0"><i data-icn="refresh"></i></span>
+                                <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove image folders" tabindex="0"><i data-icn="trash"></i></span>
                             </div>
                         </div>
                     </div>
                     <div id="redFolderResizer" class="rail__resizer"></div>
                     <div class="box red-box box--seamless" id="redBox">
                         <div class="empty-state">
-                            <div class="empty-state__icon">🖼️</div>
+                            <div class="empty-state__icon"><i data-icn="image"></i></div>
                             <div class="empty-state__title">No photos loaded</div>
                             <div class="empty-state__hint">Load a folder of photos to build your source pool, then drag or auto-fill them onto pages.</div>
-                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
+                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos"><i data-icn="folder"></i> Load photos</button>
                         </div>
                     </div>
                 </div>
@@ -176,14 +177,14 @@
 
             <div class="box-wrapper box-wrapper--fill" id="whiteWrapper">
                 <div class="toolbar">
-                    <button id="btnCollapseRight" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Templates rail" aria-label="Collapse templates rail" aria-pressed="false">›</button>
+                    <button id="btnCollapseRight" class="rail-collapse-btn btn btn--ghost btn--sm" title="Collapse the Templates rail" aria-label="Collapse templates rail" aria-pressed="false"><i data-icn="chevron-right"></i></button>
                     <span>Templates</span>
                     <label class="switch" id="syncSwitch" title="Sync templates to the panel you're working in (Source selection or Pages). Off = show all templates.">
                         <input type="checkbox" id="chkTemplateSync">
                         <span class="switch__track"><span class="switch__knob"></span></span>
                         <span class="switch__label">Sync</span>
                     </label>
-                    <button id="btnLPT" class="btn btn--primary btn--sm">📂 LOAD TEMPLATES</button>
+                    <button id="btnLPT" class="btn btn--primary btn--sm"><i data-icn="folder"></i> Load templates</button>
                     <input type="range" id="whiteSlider" class="slider--md" min="40" max="250" value="100" aria-label="Template thumbnail size">
                 </div>
                 <div id="whiteFolderContainer" class="folder-rail folder-rail--boxed folder-rail--accent-templates">
@@ -191,18 +192,18 @@
                         <div class="folder-rail__header">
                             <span>Folders:</span>
                             <div class="folder-rail__actions">
-                                <span class="btn-reload-fld folder-rail__action" data-type="templates" title="Refresh Folders" role="button" aria-label="Refresh template folders" tabindex="0">🔄</span>
-                                <span class="btn-remove-fld folder-rail__action" data-type="templates" title="Remove Folders" role="button" aria-label="Remove template folders" tabindex="0">🗑️</span>
+                                <span class="btn-reload-fld folder-rail__action" data-type="templates" title="Refresh Folders" role="button" aria-label="Refresh template folders" tabindex="0"><i data-icn="refresh"></i></span>
+                                <span class="btn-remove-fld folder-rail__action" data-type="templates" title="Remove Folders" role="button" aria-label="Remove template folders" tabindex="0"><i data-icn="trash"></i></span>
                             </div>
                         </div>
                     </div>
                     <div id="whiteFolderResizer" class="rail__resizer"></div>
                     <div class="box white-box box--seamless" id="whiteBox">
                         <div class="empty-state">
-                            <div class="empty-state__icon">🗂️</div>
+                            <div class="empty-state__icon"><i data-icn="layers"></i></div>
                             <div class="empty-state__title">No templates loaded</div>
                             <div class="empty-state__hint">Load a folder of PSD templates to match against each page's photo orientation.</div>
-                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLPT">📂 Load templates</button>
+                            <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLPT"><i data-icn="folder"></i> Load templates</button>
                         </div>
                     </div>
                 </div>
@@ -225,7 +226,7 @@
     ═══════════════════════════════════════════════ -->
     <div id="tab-wallpapers" class="tab-pane" role="tabpanel">
         <div class="row u-row--between">
-            <button id="btnLoadWallpapers" class="btn btn--primary">📂 LOAD WALLPAPERS FOLDER</button>
+            <button id="btnLoadWallpapers" class="btn btn--primary"><i data-icn="folder"></i> Load wallpapers folder</button>
             <div class="u-row u-row--gap-3">
                 <span class="u-fs-md u-text-secondary">Zoom:</span>
                 <input type="range" id="wallpaperSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Wallpaper grid zoom">
@@ -237,8 +238,8 @@
                     <div class="folder-rail__header">
                         <span>Folders:</span>
                         <div class="folder-rail__actions">
-                            <span class="btn-reload-fld folder-rail__action" data-type="wallpapers" title="Refresh Folders" role="button" aria-label="Refresh wallpaper folders" tabindex="0">🔄</span>
-                            <span class="btn-remove-fld folder-rail__action" data-type="wallpapers" title="Remove Folders" role="button" aria-label="Remove wallpaper folders" tabindex="0">🗑️</span>
+                            <span class="btn-reload-fld folder-rail__action" data-type="wallpapers" title="Refresh Folders" role="button" aria-label="Refresh wallpaper folders" tabindex="0"><i data-icn="refresh"></i></span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="wallpapers" title="Remove Folders" role="button" aria-label="Remove wallpaper folders" tabindex="0"><i data-icn="trash"></i></span>
                         </div>
                     </div>
                 </div>
@@ -247,10 +248,10 @@
             <div class="box-wrapper box-wrapper--fill">
                 <div class="box grid-box" id="wallpaperGrid">
                     <div class="empty-state">
-                        <div class="empty-state__icon">🖼️</div>
+                        <div class="empty-state__icon"><i data-icn="image"></i></div>
                         <div class="empty-state__title">No wallpapers loaded</div>
                         <div class="empty-state__hint">Load a folder of wallpaper images to browse and place them onto your pages.</div>
-                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadWallpapers">📂 Load wallpapers</button>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadWallpapers"><i data-icn="folder"></i> Load wallpapers</button>
                     </div>
                 </div>
             </div>
@@ -262,7 +263,7 @@
     ═══════════════════════════════════════════════ -->
     <div id="tab-png" class="tab-pane" role="tabpanel">
         <div class="row u-row--between">
-            <button id="btnLoadPng" class="btn btn--primary">📂 LOAD PNG FRAMES FOLDER</button>
+            <button id="btnLoadPng" class="btn btn--primary"><i data-icn="folder"></i> Load PNG frames folder</button>
             <div class="u-row u-row--gap-3">
                 <span class="u-fs-md u-text-secondary">Zoom:</span>
                 <input type="range" id="pngSlider" class="slider--lg" min="50" max="400" value="150" aria-label="PNG grid zoom">
@@ -274,8 +275,8 @@
                     <div class="folder-rail__header">
                         <span>Folders:</span>
                         <div class="folder-rail__actions">
-                            <span class="btn-reload-fld folder-rail__action" data-type="pngs" title="Refresh Folders" role="button" aria-label="Refresh PNG folders" tabindex="0">🔄</span>
-                            <span class="btn-remove-fld folder-rail__action" data-type="pngs" title="Remove Folders" role="button" aria-label="Remove PNG folders" tabindex="0">🗑️</span>
+                            <span class="btn-reload-fld folder-rail__action" data-type="pngs" title="Refresh Folders" role="button" aria-label="Refresh PNG folders" tabindex="0"><i data-icn="refresh"></i></span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="pngs" title="Remove Folders" role="button" aria-label="Remove PNG folders" tabindex="0"><i data-icn="trash"></i></span>
                         </div>
                     </div>
                 </div>
@@ -284,10 +285,10 @@
             <div class="box-wrapper box-wrapper--fill">
                 <div class="box grid-box" id="pngGrid">
                     <div class="empty-state">
-                        <div class="empty-state__icon">🪟</div>
+                        <div class="empty-state__icon"><i data-icn="window"></i></div>
                         <div class="empty-state__title">No PNG frames loaded</div>
                         <div class="empty-state__hint">Load a folder of transparent PNG frames to overlay onto your album pages.</div>
-                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPng">📂 Load PNG frames</button>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPng"><i data-icn="folder"></i> Load PNG frames</button>
                     </div>
                 </div>
             </div>
@@ -299,7 +300,7 @@
     ═══════════════════════════════════════════════ -->
     <div id="tab-masked" class="tab-pane" role="tabpanel">
         <div class="row u-row--between">
-            <button id="btnLoadMasked" class="btn btn--primary">📂 LOAD MASKED FRAMES FOLDER</button>
+            <button id="btnLoadMasked" class="btn btn--primary"><i data-icn="folder"></i> Load masked frames folder</button>
             <div class="u-row u-row--gap-3">
                 <span class="u-fs-md u-text-secondary">Zoom:</span>
                 <input type="range" id="maskedSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Masked frames zoom">
@@ -311,8 +312,8 @@
                     <div class="folder-rail__header">
                         <span>Folders:</span>
                         <div class="folder-rail__actions">
-                            <span class="btn-reload-fld folder-rail__action" data-type="masks" title="Refresh Folders" role="button" aria-label="Refresh mask folders" tabindex="0">🔄</span>
-                            <span class="btn-remove-fld folder-rail__action" data-type="masks" title="Remove Folders" role="button" aria-label="Remove mask folders" tabindex="0">🗑️</span>
+                            <span class="btn-reload-fld folder-rail__action" data-type="masks" title="Refresh Folders" role="button" aria-label="Refresh mask folders" tabindex="0"><i data-icn="refresh"></i></span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="masks" title="Remove Folders" role="button" aria-label="Remove mask folders" tabindex="0"><i data-icn="trash"></i></span>
                         </div>
                     </div>
                 </div>
@@ -321,10 +322,10 @@
             <div class="box-wrapper box-wrapper--fill">
                 <div class="box grid-box" id="maskedGrid">
                     <div class="empty-state">
-                        <div class="empty-state__icon">🎭</div>
+                        <div class="empty-state__icon"><i data-icn="mask"></i></div>
                         <div class="empty-state__title">No masked frames loaded</div>
                         <div class="empty-state__hint">Load a folder of masked frame assets to clip photos into custom shapes.</div>
-                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadMasked">📂 Load masked frames</button>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadMasked"><i data-icn="folder"></i> Load masked frames</button>
                     </div>
                 </div>
             </div>
@@ -341,7 +342,7 @@
                 <p class="tools-hero__subtitle">Curation, generative layouts, library, plugins, and the floating Tools Bar that docks to Photoshop.</p>
             </div>
             <div class="tools-hero__actions">
-                <button id="btnOpenToolsBar" class="btn btn--render" title="Open the floating Tools Bar — a thin dock that sits under Photoshop and follows it around.">🪄 OPEN TOOLS BAR</button>
+                <button id="btnOpenToolsBar" class="btn btn--render" title="Open the floating Tools Bar — a thin dock that sits under Photoshop and follows it around."><i data-icn="wand"></i> Open Tools Bar</button>
             </div>
         </div>
 
@@ -350,14 +351,14 @@
             <!-- ─── CARD: UTILITIES ───────────────────────────── -->
             <section class="tools-card">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">🛠️</span>
+                    <span class="tools-card__icon"><i data-icn="wrench"></i></span>
                     <div>
                         <div class="tools-card__title">Utilities</div>
                         <div class="tools-card__hint">One-click batch helpers and the Photoshop floating dock.</div>
                     </div>
                 </header>
                 <div class="tools-card__body">
-                    <button id="btnGenerateThumbs" class="btn btn--primary tools-card__cta">⚡ Batch generate thumbnails</button>
+                    <button id="btnGenerateThumbs" class="btn btn--primary tools-card__cta"><i data-icn="zap"></i> Batch generate thumbnails</button>
                     <p class="tools-card__detail">
                         Pick a folder of high-res images. They get downscaled and saved into a
                         new <code>_Thumbnails</code> subfolder. Use the proxies in the Red Box for
@@ -366,7 +367,7 @@
 
                     <div class="tools-card__divider"></div>
 
-                    <button id="btnJpegExport" class="btn btn--secondary tools-card__cta">📸 JPEG Export</button>
+                    <button id="btnJpegExport" class="btn btn--secondary tools-card__cta"><i data-icn="camera"></i> JPEG export</button>
                     <p class="tools-card__detail">
                         Pick a folder of PSDs. Every file gets exported twice — once at
                         quality&nbsp;12 into <code>JPEG-High-Res/</code> and once at
@@ -398,7 +399,8 @@
                     </div>
                     <p class="tools-card__detail">
                         The floating Tools Bar attaches to Photoshop, follows its window, and
-                        hides when Photoshop minimizes. Drop quick-access tools into it.
+                        hides when Photoshop minimizes. Swap images, export JPEGs, run actions,
+                        and open the Retouch panel — dodge &amp; burn, skin, and makeup layers.
                     </p>
                 </div>
             </section>
@@ -406,7 +408,7 @@
             <!-- ─── CARD: PSD RESIZER ───────────────────────── -->
             <section class="tools-card">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">📐</span>
+                    <span class="tools-card__icon"><i data-icn="ruler"></i></span>
                     <div>
                         <div class="tools-card__title">PSD Resizer</div>
                         <div class="tools-card__hint">Resize a folder of PSDs to 12&nbsp;in tall @ 300&nbsp;ppi (proportional).</div>
@@ -417,7 +419,7 @@
                         <input type="checkbox" id="chkResizeOverwrite">
                         <span>Overwrite originals (off = save copies into a <code>Resized/</code> subfolder)</span>
                     </label>
-                    <button id="btnResizePsds" class="btn btn--primary tools-card__cta">📐 Choose folder &amp; resize</button>
+                    <button id="btnResizePsds" class="btn btn--primary tools-card__cta"><i data-icn="ruler"></i> Choose folder &amp; resize</button>
                     <p class="tools-card__detail">
                         Every <code>.psd</code> is resized proportionally to 12&nbsp;inches tall at
                         300&nbsp;ppi (3600&nbsp;px). Choose overwrite or save copies above.
@@ -433,14 +435,14 @@
             <!-- ─── CARD: RENAMER ───────────────────────────── -->
             <section class="tools-card">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">🏷️</span>
+                    <span class="tools-card__icon"><i data-icn="tag"></i></span>
                     <div>
                         <div class="tools-card__title">Renamer</div>
                         <div class="tools-card__hint">Rename an order folder to the print naming convention.</div>
                     </div>
                 </header>
                 <div class="tools-card__body">
-                    <button id="btnOpenRenamer" class="btn btn--primary tools-card__cta">🏷️ Open Renamer</button>
+                    <button id="btnOpenRenamer" class="btn btn--primary tools-card__cta"><i data-icn="tag"></i> Open Renamer</button>
                     <p class="tools-card__detail">
                         A drag-and-drop workspace for an order folder. Pick the first
                         (<code>00</code>), last (<code>zz</code>), and cover sheets by clicking;
@@ -454,7 +456,7 @@
             <!-- ─── CARD: GENERATIVE TEMPLATES ───────────────── -->
             <section class="tools-card">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">⚙️</span>
+                    <span class="tools-card__icon"><i data-icn="gear"></i></span>
                     <div>
                         <div class="tools-card__title">Generative Templates</div>
                         <div class="tools-card__hint">14 procedural layouts. No PSD authoring.</div>
@@ -476,7 +478,7 @@
             <!-- ─── CARD: CURATION ──────────────────────────── -->
             <section class="tools-card tools-card--wide">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">✨</span>
+                    <span class="tools-card__icon"><i data-icn="sparkles"></i></span>
                     <div>
                         <div class="tools-card__title">Photo Curation</div>
                         <div class="tools-card__hint">Trim a 2,000-photo shoot to 250 keepers.</div>
@@ -484,7 +486,7 @@
                 </header>
                 <div class="tools-card__body">
                     <div class="tools-card__row">
-                        <button id="btnCurateAnalyze" class="btn btn--primary">📂 Analyze folder</button>
+                        <button id="btnCurateAnalyze" class="btn btn--primary"><i data-icn="folder"></i> Analyze folder</button>
                         <span id="curateStatus" class="tools-card__detail tools-card__detail--mono"></span>
                     </div>
 
@@ -530,7 +532,7 @@
             <!-- ─── CARD: LIBRARY ──────────────────────────── -->
             <section class="tools-card tools-card--wide">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">📚</span>
+                    <span class="tools-card__icon"><i data-icn="book"></i></span>
                     <div>
                         <div class="tools-card__title">Library</div>
                         <div class="tools-card__hint">Per-user catalog of templates and saved layouts.</div>
@@ -538,12 +540,12 @@
                 </header>
                 <div class="tools-card__body">
                     <div class="tools-card__row tools-card__row--wrap">
-                        <button id="btnLibraryRefresh" class="btn btn--secondary btn--sm">🔄 Refresh</button>
+                        <button id="btnLibraryRefresh" class="btn btn--secondary btn--sm"><i data-icn="refresh"></i> Refresh</button>
                         <button id="btnLibraryAddTemplates" class="btn btn--ghost btn--sm">+ Templates</button>
                         <button id="btnLibraryAddWallpapers" class="btn btn--ghost btn--sm">+ Wallpapers</button>
                         <button id="btnLibraryAddPngs" class="btn btn--ghost btn--sm">+ PNG Frames</button>
                         <button id="btnLibraryAddMasks" class="btn btn--ghost btn--sm">+ Masks</button>
-                        <button id="btnSaveLayout" class="btn btn--ghost btn--sm">💾 Save current layout</button>
+                        <button id="btnSaveLayout" class="btn btn--ghost btn--sm"><i data-icn="save"></i> Save current layout</button>
                         <button id="btnOpenLibraryFolder" class="btn btn--ghost btn--sm">Open folder</button>
                     </div>
                     <div id="libraryView" class="tools-card__view"></div>
@@ -553,7 +555,7 @@
             <!-- ─── CARD: PLUGINS ──────────────────────────── -->
             <section class="tools-card tools-card--wide">
                 <header class="tools-card__head">
-                    <span class="tools-card__icon">🧩</span>
+                    <span class="tools-card__icon"><i data-icn="grid"></i></span>
                     <div>
                         <div class="tools-card__title">Plugins</div>
                         <div class="tools-card__hint">Built-in extensions plus anything you drop in your plugins folder.</div>
@@ -561,7 +563,7 @@
                 </header>
                 <div class="tools-card__body">
                     <div class="tools-card__row">
-                        <button id="btnPluginsRefresh" class="btn btn--secondary btn--sm">🔄 Refresh</button>
+                        <button id="btnPluginsRefresh" class="btn btn--secondary btn--sm"><i data-icn="refresh"></i> Refresh</button>
                         <button id="btnOpenPluginsFolder" class="btn btn--ghost btn--sm">Open plugins folder</button>
                     </div>
                     <div id="pluginsView" class="tools-card__view"></div>
@@ -576,7 +578,7 @@
     ═══════════════════════════════════════════════ -->
     <div id="tab-photos" class="tab-pane" role="tabpanel">
         <div class="row u-row--between">
-            <button id="btnLoadPhotosTab" class="btn btn--primary">📂 LOAD PHOTOS FOLDER</button>
+            <button id="btnLoadPhotosTab" class="btn btn--primary"><i data-icn="folder"></i> Load photos folder</button>
             <div class="u-row u-row--gap-3">
                 <span class="u-fs-md u-text-secondary">Zoom:</span>
                 <input type="range" id="photosSlider" class="slider--lg" min="50" max="400" value="150" aria-label="Photos grid zoom">
@@ -588,8 +590,8 @@
                     <div class="folder-rail__header">
                         <span>Folders:</span>
                         <div class="folder-rail__actions">
-                            <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh photo folders" tabindex="0">🔄</span>
-                            <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove photo folders" tabindex="0">🗑️</span>
+                            <span class="btn-reload-fld folder-rail__action" data-type="images" title="Refresh Folders" role="button" aria-label="Refresh photo folders" tabindex="0"><i data-icn="refresh"></i></span>
+                            <span class="btn-remove-fld folder-rail__action" data-type="images" title="Remove Folders" role="button" aria-label="Remove photo folders" tabindex="0"><i data-icn="trash"></i></span>
                         </div>
                     </div>
                 </div>
@@ -598,10 +600,10 @@
             <div class="box-wrapper box-wrapper--fill">
                 <div class="box grid-box" id="photosGrid">
                     <div class="empty-state">
-                        <div class="empty-state__icon">📷</div>
+                        <div class="empty-state__icon"><i data-icn="camera"></i></div>
                         <div class="empty-state__title">No photos loaded</div>
                         <div class="empty-state__hint">Load a photos folder to browse your full library and inject shots into open Photoshop layers.</div>
-                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotosTab">📂 Load photos folder</button>
+                        <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotosTab"><i data-icn="folder"></i> Load photos folder</button>
                     </div>
                 </div>
             </div>
@@ -615,16 +617,16 @@
     <div id="tab-export" class="tab-pane" role="tabpanel">
         <div class="row u-row--between export-toolbar">
             <div class="u-row u-row--gap-3">
-                <button id="btnSetFinalOutput" class="btn btn--primary">📂 SET OUTPUT FOLDER</button>
+                <button id="btnSetFinalOutput" class="btn btn--primary"><i data-icn="folder"></i> Set output folder</button>
                 <span id="finalOutputText" class="export-path">No folder selected...</span>
             </div>
             <div class="u-row u-row--gap-3">
-                <button id="btnRefreshStoryboard" class="btn btn--ghost">🔄 REFRESH STORYBOARD</button>
-                <button id="btnGenerateProofs" class="btn btn--ghost" title="Render fast composite previews using sharp/libvips (no Photoshop)">⚡ GENERATE PROOFS</button>
-                <button id="btnExportGallery" class="btn btn--ghost" title="Export a self-contained HTML gallery for client review">🌐 CLIENT GALLERY</button>
+                <button id="btnRefreshStoryboard" class="btn btn--ghost"><i data-icn="refresh"></i> Refresh storyboard</button>
+                <button id="btnGenerateProofs" class="btn btn--ghost" title="Render fast composite previews using sharp/libvips (no Photoshop)"><i data-icn="zap"></i> Generate proofs</button>
+                <button id="btnExportGallery" class="btn btn--ghost" title="Export a self-contained HTML gallery for client review"><i data-icn="globe"></i> Client gallery</button>
                 <span class="u-fs-md u-text-secondary">Zoom:</span>
                 <input type="range" id="storyboardSlider" class="slider--md" min="40" max="120" value="56" aria-label="Storyboard photo size">
-                <button id="btnRenderFinalAlbum" class="btn btn--render">🚀 RENDER FINAL HIGH-RES ALBUM</button>
+                <button id="btnRenderFinalAlbum" class="btn btn--render">Render final album</button>
             </div>
         </div>
         <div class="export-hint">
@@ -633,11 +635,191 @@
         <div class="storyboard-canvas">
             <div id="storyboardGrid" class="storyboard-grid">
                 <div class="empty-state">
-                    <div class="empty-state__icon">🎞️</div>
+                    <div class="empty-state__icon"><i data-icn="film"></i></div>
                     <div class="empty-state__title">Storyboard is empty</div>
                     <div class="empty-state__hint">Run Auto-Fill in the Album tab, then refresh the storyboard to review your spread before rendering.</div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         TAB 8 · RETOUCH — the full CreativeHubb Retouch Pro panel,
+         ported non-destructively. Every card acts on the ACTIVE
+         Photoshop document and builds on a stamped copy (no flatten).
+         ═══════════════════════════════════════════════ -->
+    <div id="tab-retouch" class="tab-pane" role="tabpanel">
+        <div class="row u-row--between retouch-toolbar">
+            <div class="retouch-toolbar__copy">
+                <h2 class="retouch-toolbar__title">Retouch</h2>
+                <p class="retouch-toolbar__hint">The full Retouch Pro toolkit, non-destructive. It runs on the active Photoshop document, and your layers stay intact under a stamped working layer.</p>
+            </div>
+            <div class="u-row u-row--gap-3 retouch-toolbar__controls">
+                <label class="retouch-intensity" title="Set the active (top) layer's opacity, i.e. the effect/retouch intensity">
+                    <span>Intensity</span>
+                    <input type="range" id="retouchIntensity" class="slider--md" min="10" max="100" step="10" value="100" aria-label="Active layer opacity">
+                    <output id="retouchIntensityOut">100%</output>
+                </label>
+                <div class="u-row u-row--gap-2" role="group" aria-label="Compare before and after">
+                    <button class="btn btn--ghost" data-tool="compare-before" title="Hide the top layer to reveal the original">Before</button>
+                    <button class="btn btn--ghost" data-tool="compare-after" title="Show the top layer again">After</button>
+                </div>
+            </div>
+        </div>
+        <div id="retouchStatus" class="retouch-status" role="status" aria-live="polite"></div>
+
+        <div class="retouch-sections">
+
+            <!-- RETOUCHING -->
+            <section class="tools-card retouch-section">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon"><i data-icn="wand"></i></span>
+                    <div>
+                        <div class="tools-card__title">Retouching</div>
+                        <div class="tools-card__hint">Skin layers, blemishes, dodge &amp; burn, teeth, eyes.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="retouch-grid">
+                        <button class="retouch-action" data-tool="advanced-retouch">Advanced skin layer</button>
+                        <button class="retouch-action" data-tool="retouch-basic">Basic skin layer</button>
+                        <button class="retouch-action" data-tool="blemish-layer">Blemish layer</button>
+                        <button class="retouch-action" data-tool="remove-blemishes">Remove blemishes</button>
+                        <button class="retouch-action" data-tool="dnb-auto">Auto dodge &amp; burn</button>
+                        <button class="retouch-action" data-tool="dnb-manual">Manual dodge &amp; burn</button>
+                        <button class="retouch-action" data-tool="dnb-finish">Finish D&amp;B pass</button>
+                        <button class="retouch-action" data-tool="dodge">Dodge</button>
+                        <button class="retouch-action" data-tool="burn">Burn</button>
+                        <button class="retouch-action" data-tool="teeth-whitening">Teeth whitening</button>
+                        <button class="retouch-action" data-tool="eyes-enhance">Eyes enhancement</button>
+                    </div>
+                    <div class="retouch-sub">
+                        <div class="retouch-sub__label">Skin smoothing <span class="retouch-sub__note">(select the retouching layer first)</span></div>
+                        <div class="retouch-pills" role="group" aria-label="Skin smoothing intensity">
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="low">Low</button>
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="low-plus">Low+</button>
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="medium">Med</button>
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="high">High</button>
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="high-plus">High+</button>
+                            <button class="retouch-pill" data-tool="skin-smoothing" data-level="insane">Max</button>
+                        </div>
+                    </div>
+                    <div class="retouch-sub">
+                        <div class="retouch-sub__label">Skin texture <span class="retouch-sub__note">(select the retouching layer first)</span></div>
+                        <div class="retouch-pills" role="group" aria-label="Skin texture intensity">
+                            <button class="retouch-pill" data-tool="skin-texture" data-level="low">Low</button>
+                            <button class="retouch-pill" data-tool="skin-texture" data-level="low-plus">Low+</button>
+                            <button class="retouch-pill" data-tool="skin-texture" data-level="medium">Med</button>
+                            <button class="retouch-pill" data-tool="skin-texture" data-level="high">High</button>
+                            <button class="retouch-pill" data-tool="skin-texture" data-level="high-plus">High+</button>
+                        </div>
+                    </div>
+                    <div class="retouch-sub retouch-sub--sliders">
+                        <label class="retouch-intensity" title="Dodge layer opacity (Manual dodge &amp; burn)">
+                            <span>Dodge</span>
+                            <input type="range" id="retouchDodgeOpacity" class="slider--md" min="10" max="100" step="10" value="50" aria-label="Dodge layer opacity">
+                            <output id="retouchDodgeOpacityOut">50%</output>
+                        </label>
+                        <label class="retouch-intensity" title="Burn layer opacity (Manual dodge &amp; burn)">
+                            <span>Burn</span>
+                            <input type="range" id="retouchBurnOpacity" class="slider--md" min="10" max="100" step="10" value="50" aria-label="Burn layer opacity">
+                            <output id="retouchBurnOpacityOut">50%</output>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MAKEUP & LIPS -->
+            <section class="tools-card retouch-section">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon"><i data-icn="sparkles"></i></span>
+                    <div>
+                        <div class="tools-card__title">Makeup &amp; lips</div>
+                        <div class="tools-card__hint">Color-mode paint layers. Pick a color, then paint.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="retouch-grid">
+                        <button class="retouch-action" data-tool="blushon">Blush-on</button>
+                        <button class="retouch-action" data-tool="eye-color">Eye color</button>
+                        <button class="retouch-action" data-tool="eyeshade">Eyeshade</button>
+                        <button class="retouch-action" data-tool="hair-color">Hair color</button>
+                        <button class="retouch-action" data-tool="lipstick">Lipstick</button>
+                        <button class="retouch-action" data-tool="lip-gloss">Lip gloss</button>
+                        <button class="retouch-action" data-tool="lip-colorboost">Natural lip boost</button>
+                        <button class="retouch-action" data-tool="color-changer" title="Select the History Brush to paint the changed color">Color changer</button>
+                        <button class="retouch-action" data-tool="eraser" title="Select the Eraser to clean up overspill"><i data-icn="eraser"></i> Eraser</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SKIN LOOKS -->
+            <section class="tools-card retouch-section">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon"><i data-icn="image"></i></span>
+                    <div>
+                        <div class="tools-card__title">Skin looks</div>
+                        <div class="tools-card__hint">One-click stylised skin grades.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="retouch-grid">
+                        <button class="retouch-action" data-tool="skinlook-candy">Candy skin</button>
+                        <button class="retouch-action" data-tool="skinlook-gritty">Gritty skin</button>
+                        <button class="retouch-action" data-tool="skinlook-highkey">High-key skin</button>
+                        <button class="retouch-action" data-tool="skinlook-tan">Tan skin</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- EFFECTS -->
+            <section class="tools-card retouch-section retouch-section--wide">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon"><i data-icn="camera"></i></span>
+                    <div>
+                        <div class="tools-card__title">Effects</div>
+                        <div class="tools-card__hint">Cinematic grades &amp; film looks. Dial back with Intensity above.</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="retouch-grid">
+                        <button class="retouch-action" data-tool="effect-autumn">Autumn</button>
+                        <button class="retouch-action" data-tool="effect-bleached">Bleached</button>
+                        <button class="retouch-action" data-tool="effect-camerafilm01">Camera Film 01</button>
+                        <button class="retouch-action" data-tool="effect-camerafilm02">Camera Film 02</button>
+                        <button class="retouch-action" data-tool="effect-camerafilm03">Camera Film 03</button>
+                        <button class="retouch-action" data-tool="effect-camerafilm04">Camera Film 04</button>
+                        <button class="retouch-action" data-tool="effect-camerafilm05">Camera Film 05</button>
+                        <button class="retouch-action" data-tool="effect-chilling">Chilling</button>
+                        <button class="retouch-action" data-tool="effect-cinematic">Cinematic</button>
+                        <button class="retouch-action" data-tool="effect-duality">Duality</button>
+                        <button class="retouch-action" data-tool="effect-hazynight">Hazy Night</button>
+                        <button class="retouch-action" data-tool="effect-noblue">No Blue</button>
+                        <button class="retouch-action" data-tool="effect-sepia">Sepia Toning</button>
+                        <button class="retouch-action" data-tool="effect-sunset">Sunset</button>
+                        <button class="retouch-action" data-tool="effect-triad">Triad</button>
+                        <button class="retouch-action" data-tool="effect-warmlight">Warm Light</button>
+                        <button class="retouch-action" data-tool="effect-warmth">Warmth</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- POST-PROCESSING -->
+            <section class="tools-card retouch-section">
+                <header class="tools-card__head">
+                    <span class="tools-card__icon"><i data-icn="layers"></i></span>
+                    <div>
+                        <div class="tools-card__title">Post-processing</div>
+                        <div class="tools-card__hint">Full tone &amp; color finishing stack (macOS-adapted curve).</div>
+                    </div>
+                </header>
+                <div class="tools-card__body">
+                    <div class="retouch-grid">
+                        <button class="retouch-action" data-tool="post-process">Post-process</button>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </div>
 

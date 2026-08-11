@@ -354,6 +354,16 @@ const { refreshToolsBarStatus } =
         notify: (msg, kind, opts) => notify(msg, kind, opts),
     });
 
+// Tab 8 (Retouch): the full ported CreativeHubb Retouch Pro panel — Effects,
+// Skin Looks, Retouching, Makeup/Lips, Post — each card round-trips to the
+// `retouch-run` handler (scripts/retouch.jsx) against the active PS document.
+require('./features/retouch_tab').createRetouchTab({
+    invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
+    toast: (msg, kind, opts) => toast(msg, kind, opts),
+    notify: (msg, kind, opts) => notify(msg, kind, opts),
+    setStatus: (msg) => setStatus(msg),
+});
+
 // Generative templates (virtual layouts, the checkbox loader, and the
 // generative-aware HR render interceptor that diverts build-page(s) to the
 // JS-only composite) live in src/features/generative_ui.js (Phase 2 split).

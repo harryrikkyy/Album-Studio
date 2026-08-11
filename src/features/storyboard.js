@@ -186,7 +186,7 @@ function createStoryboard(store, deps) {
         storyboardGrid.appendChild(hasPages ? frag
             : Object.assign(document.createElement("div"), {
                 className: "empty-state",
-                innerHTML: `<div class="empty-state__icon">🎞️</div>
+                innerHTML: `<div class="empty-state__icon">${require('../ui_icons').icn('film')}</div>
                     <div class="empty-state__title">Storyboard is empty</div>
                     <div class="empty-state__hint">Run Auto-Fill in the Album tab, then refresh the storyboard to review your spread before rendering.</div>`
             })

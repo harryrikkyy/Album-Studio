@@ -280,6 +280,85 @@ function registerPsJobsHandlers() {
     }
   })
 
+  // ── RETOUCHING TOOLKIT (tools-bar Retouch panel) ──────────
+  // Runs one of the ported CEP-panel retouching actions (scripts/retouch.jsx)
+  // against the active Photoshop document. The tool id is allowlisted here and
+  // re-checked in the JSX dispatcher; levels map to the recorded filter radii.
+  const RETOUCH_TOOLS = new Set([
+    // Core toolkit (dodge & burn, skin, makeup layers).
+    'dnb-auto', 'dnb-manual', 'dnb-finish', 'dodge', 'burn',
+    'dodge-intensity', 'burn-intensity', 'skin-smoothing', 'skin-texture',
+    'advanced-retouch', 'blemish-layer',
+    'blushon', 'eye-color', 'eyeshade', 'hair-color', 'lipstick',
+    // Shared leaf-page controls.
+    'layer-opacity', 'compare-before', 'compare-after', 'eraser', 'color-changer',
+    // Retouching extras.
+    'retouch-basic', 'remove-blemishes', 'teeth-whitening', 'eyes-enhance',
+    // Makeup / lips extras.
+    'lip-gloss', 'lip-colorboost',
+    // Skin looks.
+    'skinlook-candy', 'skinlook-gritty', 'skinlook-highkey', 'skinlook-tan',
+    // Post-processing.
+    'post-process',
+    // Effects.
+    'effect-autumn', 'effect-bleached',
+    'effect-camerafilm01', 'effect-camerafilm02', 'effect-camerafilm03',
+    'effect-camerafilm04', 'effect-camerafilm05',
+    'effect-chilling', 'effect-cinematic', 'effect-duality', 'effect-hazynight',
+    'effect-noblue', 'effect-sepia', 'effect-sunset', 'effect-triad',
+    'effect-warmlight', 'effect-warmth',
+  ])
+  // High Pass radius per smoothing level / Gaussian Blur radius per texture
+  // level — the constants the original 11 recorded variants differed by.
+  const SMOOTHING_RADII = { low: 1, 'low-plus': 3, medium: 5, high: 7, 'high-plus': 10, insane: 20 }
+  const TEXTURE_RADII = { low: 1, 'low-plus': 3, medium: 5, high: 7, 'high-plus': 10 }
+
+  ipcMain.handle('retouch-run', async (event, payload) => {
+    payload = guards.reqObject(payload, 'payload', 'retouch-run')
+    const tool = guards.reqString(payload.tool, 'payload.tool', 'retouch-run', { max: 64 })
+    if (!RETOUCH_TOOLS.has(tool)) return { ok: false, error: `unknown retouch tool: ${tool}` }
+
+    const jsxParams = { tool }
+    if (tool === 'dodge-intensity' || tool === 'burn-intensity' || tool === 'layer-opacity') {
+      const opacity = Math.round(Number(payload.opacity))
+      if (!Number.isFinite(opacity) || opacity < 1 || opacity > 100) {
+        return { ok: false, error: 'opacity must be between 1 and 100' }
+      }
+      jsxParams.opacity = opacity
+    } else if (tool === 'skin-smoothing' || tool === 'skin-texture') {
+      const radii = tool === 'skin-smoothing' ? SMOOTHING_RADII : TEXTURE_RADII
+      const radius = radii[payload.level]
+      if (!radius) return { ok: false, error: `unknown ${tool} level: ${payload.level}` }
+      jsxParams.radius = radius
+    }
+
+    const outputPath = path.join(os.tmpdir(),
+      `albumstudio_retouch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.json`)
+    const dataPath = writeJsonData({ ...jsxParams, outputPath })
+    const jsxPath = path.join(SCRIPTS_DIR, 'retouch.jsx')
+    const t0 = Date.now()
+    try {
+      await bridge.executeJSXFile(jsxPath, 120000, { DATA_PATH: dataPath })
+      if (!fs.existsSync(outputPath)) {
+        return { ok: false, error: 'retouch produced no output' }
+      }
+      const result = JSON.parse(fs.readFileSync(outputPath, 'utf8'))
+      telemetry.event('retouch_run', {
+        ok: result.ok,
+        tool,
+        level: payload.level || null,
+        opacity: jsxParams.opacity || null,
+        durationMs: Date.now() - t0,
+      })
+      return result
+    } catch (e) {
+      return { ok: false, error: e.message }
+    } finally {
+      try { fs.unlinkSync(dataPath) } catch (_) {}
+      try { fs.unlinkSync(outputPath) } catch (_) {}
+    }
+  })
+
   // ── EXPORT OPEN DOCS (TARGETED JPEG EXPORT) ───────────────
   // Exports Photoshop documents that are currently OPEN — the targeted
   // counterpart to the bulk folder export. After re-editing sheets, this

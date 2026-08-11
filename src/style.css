@@ -16,12 +16,14 @@
     /* ── TYPE SCALE ─────────────────────────────────────────
        Single source of truth for font sizes. Replaces the
        8/9/10/11/12/13/14/16/20/32/42px mix that was inlined. */
-    --fs-2xs: 9px;    /* meta labels, badges */
-    --fs-xs:  10px;   /* secondary chrome, folder rows */
-    --fs-sm:  11px;   /* default UI / tabs / buttons */
-    --fs-md:  12px;   /* standard body text */
-    --fs-lg:  14px;   /* dialog titles, emphasized */
-    --fs-xl:  16px;   /* big tool buttons */
+    /* 2026-07 redesign: one step up across the scale — the old 9–11px core
+       sat below macOS comfort. Density still comes from spacing, not squint. */
+    --fs-2xs: 10px;   /* meta labels, badges */
+    --fs-xs:  11px;   /* secondary chrome, folder rows */
+    --fs-sm:  12px;   /* default UI / tabs / buttons */
+    --fs-md:  13px;   /* standard body text (macOS body) */
+    --fs-lg:  15px;   /* dialog titles, emphasized */
+    --fs-xl:  17px;   /* big tool buttons */
 
     /* ── SPACING SCALE ──────────────────────────────────────
        4px base. Use these instead of arbitrary inline padding/gap. */
@@ -73,8 +75,8 @@
 /* ══════════════════════════════════════════════════════════════
    STUDIO DARK  (default · the app's identity)
    Pro-studio near-black: neutral surfaces with a whisper of violet
-   so photographs carry the color. ONE accent (violet — the app's
-   equity) doing real work: selection, primary action, progress.
+   so photographs carry the color. ONE accent (signal red — the
+   app's equity) doing real work: selection, primary action, progress.
    Every text/surface pair below is WCAG-AA verified (≥4.5:1).
 ══════════════════════════════════════════════════════════════ */
 :root,
@@ -100,31 +102,31 @@
     --border-folder: rgba(255, 255, 255, 0.10);
     --border-tpl:    rgba(255, 255, 255, 0.10);
 
-    --accent:        #A08FFF;
-    --accent-hover:  #B4A6FF;
-    --accent-dim:    rgba(160, 143, 255, 0.14);
-    --accent-glow:   rgba(160, 143, 255, 0.30);
-    /* Solid fill for primary buttons — white text ≥4.8:1. */
-    --accent-fill:   #6C5CE7;
-    --accent-fill-hover: #7B6CF0;
+    --accent:        #FF6B5E;
+    --accent-hover:  #FF8A80;
+    --accent-dim:    rgba(255, 107, 94,0.14);
+    --accent-glow:   rgba(255, 107, 94,0.30);
+    /* Solid fill for primary buttons — white text ≥4.9:1. */
+    --accent-fill:   #CC3A30;
+    --accent-fill-hover: #D6382E;
 
     --txt-primary:   #ECECF2;
     --txt-secondary: #A8A8B6;
     --txt-muted:     #9494A4;
     --txt-dim:       #4A4A58;
 
-    --tab-active-color:  #A08FFF;
-    --tab-active-border: #A08FFF;
-    --tab-export-color:  #A08FFF;
+    --tab-active-color:  #FF6B5E;
+    --tab-active-border: #FF6B5E;
+    --tab-export-color:  #FF6B5E;
 
     /* Legacy button tokens, mapped onto the new two-level hierarchy:
        load/blue → primary (accent fill), save/yellow → secondary
        (quiet surface), red → destructive. The candy toolbar dies here. */
-    --btn-load-bg:    #6C5CE7;
+    --btn-load-bg:    #CC3A30;
     --btn-load-txt:   #FFFFFF;
     --btn-save-bg:    #2A2A35;
     --btn-save-txt:   #ECECF2;
-    --btn-blue-bg:    #6C5CE7;
+    --btn-blue-bg:    #CC3A30;
     --btn-blue-txt:   #FFFFFF;
     --btn-yellow-bg:  #2A2A35;
     --btn-yellow-txt: #ECECF2;
@@ -132,13 +134,13 @@
     --btn-red-txt:    #131318;
 
     --resizer-bg:         #1E1E26;
-    --resizer-hover:      #A08FFF;
+    --resizer-hover:      #FF6B5E;
     --slider-track:       #2A2A35;
     --slider-thumb:       #4A4A58;
-    --slider-thumb-hover: #A08FFF;
-    --slider-thumb-act:   #B4A6FF;
+    --slider-thumb-hover: #FF6B5E;
+    --slider-thumb-act:   #FF8A80;
 
-    --card-hover-border:  #A08FFF;
+    --card-hover-border:  #FF6B5E;
 
     --theme-btn-bg:    #1E1E26;
     --theme-btn-txt:   #A8A8B6;
@@ -154,7 +156,7 @@
 
 /* ══════════════════════════════════════════════════════════════
    STUDIO LIGHT
-   True off-white at ~zero chroma (no cream drift); same violet
+   True off-white at ~zero chroma (no cream drift); same signal-red
    accent family, deepened for AA as text on white surfaces.
 ══════════════════════════════════════════════════════════════ */
 [data-theme="studio-light"] {
@@ -176,27 +178,27 @@
     --border-folder: rgba(28, 28, 36, 0.14);
     --border-tpl:    rgba(28, 28, 36, 0.14);
 
-    --accent:        #5646C8;
-    --accent-hover:  #4636B8;
-    --accent-dim:    rgba(86, 70, 200, 0.10);
-    --accent-glow:   rgba(86, 70, 200, 0.25);
-    --accent-fill:   #5646C8;
-    --accent-fill-hover: #4636B8;
+    --accent:        #AD2A20;
+    --accent-hover:  #96231B;
+    --accent-dim:    rgba(173, 42, 32,0.10);
+    --accent-glow:   rgba(173, 42, 32,0.25);
+    --accent-fill:   #AD2A20;
+    --accent-fill-hover: #96231B;
 
     --txt-primary:   #1C1C24;
     --txt-secondary: #4A4A58;
     --txt-muted:     #63636F;
     --txt-dim:       #A2A2AE;
 
-    --tab-active-color:  #5646C8;
-    --tab-active-border: #5646C8;
-    --tab-export-color:  #5646C8;
+    --tab-active-color:  #AD2A20;
+    --tab-active-border: #AD2A20;
+    --tab-export-color:  #AD2A20;
 
-    --btn-load-bg:    #5646C8;
+    --btn-load-bg:    #AD2A20;
     --btn-load-txt:   #FFFFFF;
     --btn-save-bg:    #EDEDF2;
     --btn-save-txt:   #1C1C24;
-    --btn-blue-bg:    #5646C8;
+    --btn-blue-bg:    #AD2A20;
     --btn-blue-txt:   #FFFFFF;
     --btn-yellow-bg:  #EDEDF2;
     --btn-yellow-txt: #1C1C24;
@@ -204,13 +206,13 @@
     --btn-red-txt:    #FFFFFF;
 
     --resizer-bg:         #EDEDF2;
-    --resizer-hover:      #5646C8;
+    --resizer-hover:      #AD2A20;
     --slider-track:       #DEDEE6;
     --slider-thumb:       #FFFFFF;
-    --slider-thumb-hover: #5646C8;
-    --slider-thumb-act:   #4636B8;
+    --slider-thumb-hover: #AD2A20;
+    --slider-thumb-act:   #96231B;
 
-    --card-hover-border:  #5646C8;
+    --card-hover-border:  #AD2A20;
 
     --theme-btn-bg:    #FFFFFF;
     --theme-btn-txt:   #4A4A58;
@@ -230,11 +232,11 @@
 ══════════════════════════════════════════════════════════════ */
 .theme-dot.studio-dark {
     background: #1A1A21;
-    border-color: #A08FFF;
+    border-color: #FF6B5E;
 }
 .theme-dot.studio-light {
     background: #FAFAFC;
-    border-color: #5646C8;
+    border-color: #AD2A20;
 }
 /* ══════════════════════════════════════════════════════════════
    ACCESSIBILITY — honor reduced-motion for theme-level chrome.
@@ -268,9 +270,19 @@ body {
     height: 100vh;
     margin: 0;
     overflow: hidden;
-    letter-spacing: 0.05em;
     transition: background-color 0.25s, color 0.25s;
 }
+
+/* ── ICONS (src/ui_icons.js) ──────────────────────────────────
+   Stroke SVGs inherit currentColor and scale with font-size, so an
+   icon inside a button matches its label automatically. */
+.icn {
+    width: 1.15em;
+    height: 1.15em;
+    flex-shrink: 0;
+    vertical-align: -0.2em;
+}
+.empty-state__icon .icn { width: 1em; height: 1em; vertical-align: baseline; }
 
 /* ══════════════════════════════════════════════════════════════
    TOP NAVIGATION
@@ -302,9 +314,7 @@ body {
     padding: 8px 14px;
     cursor: pointer;
     font-weight: 500;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
+    font-size: var(--fs-sm);
     transition: color 0.2s, background 0.2s, border-color 0.2s;
     outline: none;
     white-space: nowrap;
@@ -1004,11 +1014,9 @@ body {
     box-shadow: 0 4px 10px rgba(0,0,0,0.35);
 }
 .sb-page-header {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--tab-export-color);
+    color: var(--txt-secondary);
     text-align: center;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--border-main);
@@ -1510,10 +1518,8 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     align-items: center;
     padding: 3px 10px;
     border-radius: 999px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
 }
 .tools-card__pill--neutral {
     background: rgba(255, 255, 255, 0.05);
@@ -1551,6 +1557,122 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
 }
 .tools-card__view:empty { display: none; }
 
+/* ─── Retouch tab (Tab 8) ──────────────────────────────────
+   The full ported Retouch Pro panel. Sections reuse .tools-card; the grids
+   below are compact action buttons that each run one JSX tool on the active
+   Photoshop document. */
+.retouch-toolbar {
+    padding: var(--space-6) var(--space-8) var(--space-3);
+    gap: var(--space-5);
+    align-items: flex-end;
+}
+.retouch-toolbar__copy { min-width: 0; }
+.retouch-toolbar__title { font-size: var(--fs-md); font-weight: 600; margin: 0 0 2px; }
+.retouch-toolbar__hint {
+    color: var(--txt-secondary);
+    font-size: var(--fs-xs);
+    line-height: 1.45;
+    max-width: 60ch;
+    margin: 0;
+}
+.retouch-toolbar__controls { flex-shrink: 0; align-items: center; }
+.retouch-intensity {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--txt-secondary);
+}
+.retouch-intensity > span { white-space: nowrap; }
+.retouch-intensity input[type="range"] { width: 130px; accent-color: var(--accent); }
+.retouch-intensity output {
+    width: 40px;
+    text-align: right;
+    color: var(--txt-primary);
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+}
+
+.retouch-status {
+    min-height: 18px;
+    padding: 0 var(--space-8) var(--space-3);
+    font-size: var(--fs-xs);
+    color: var(--txt-muted);
+}
+.retouch-status--run { color: var(--txt-secondary); }
+.retouch-status--ok { color: var(--accent); }
+.retouch-status--error { color: var(--btn-red-bg, #e0555f); }
+
+.retouch-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-5);
+    padding: 0 var(--space-8) var(--space-10);
+    align-items: start;
+}
+.retouch-section--wide { grid-column: 1 / -1; }
+
+/* While a tool runs the whole tab is inert (the PS bridge is serial). */
+#tab-retouch.is-busy .retouch-sections,
+#tab-retouch.is-busy .retouch-toolbar__controls {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.retouch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-2);
+}
+.retouch-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-sm);
+    color: var(--txt-primary);
+    font: inherit;
+    font-size: var(--fs-xs);
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.14s var(--ease-ui), background 0.14s var(--ease-ui), transform 0.08s var(--ease-ui);
+}
+.retouch-action:hover { border-color: var(--accent); background: var(--accent-dim); }
+.retouch-action:active { transform: scale(0.97); }
+.retouch-action:focus-visible { outline: 2px solid var(--select-ring); outline-offset: 1px; }
+.retouch-action .icn { width: 1.05em; height: 1.05em; }
+
+.retouch-sub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding-top: var(--space-1);
+}
+.retouch-sub--sliders { flex-direction: row; flex-wrap: wrap; gap: var(--space-4); }
+.retouch-sub__label { font-size: var(--fs-xs); color: var(--txt-secondary); font-weight: 500; }
+.retouch-sub__note { color: var(--txt-muted); font-weight: 400; }
+.retouch-pills { display: flex; gap: var(--space-1); flex-wrap: wrap; }
+.retouch-pill {
+    flex: 1 1 auto;
+    min-width: 46px;
+    padding: 5px 4px;
+    text-align: center;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    border-radius: var(--radius-sm);
+    color: var(--txt-secondary);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: border-color 0.14s var(--ease-ui), background 0.14s var(--ease-ui);
+}
+.retouch-pill:hover { border-color: var(--accent); background: var(--accent-dim); color: var(--txt-primary); }
+.retouch-pill:focus-visible { outline: 2px solid var(--select-ring); outline-offset: 1px; }
+
 /* ─── Curation control grid ──────────────────────────────── */
 .curate-controls {
     display: grid;
@@ -1569,10 +1691,8 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
 }
 .curate-control--narrow { max-width: 110px; }
 .curate-control label {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--txt-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
     font-weight: 600;
 }
 .curate-control__row {
@@ -1744,7 +1864,6 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     padding: 0 var(--space-3);
     background: var(--bg-panel);
     border: 1px solid var(--border-main);
-    border-left: 3px solid var(--btn-red-bg);
     border-radius: var(--radius-md);
     font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace;
     font-size: var(--fs-xs);
@@ -1843,7 +1962,6 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     background: var(--bg-panel);
     color: var(--txt-primary);
     border: 1px solid var(--border-main);
-    border-left: 3px solid var(--accent);
     border-radius: var(--radius-md);
     padding: var(--space-3) var(--space-5);
     font-size: var(--fs-sm);
@@ -1858,20 +1976,18 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
 }
 .toast.is-leaving { animation: toast-out 0.18s ease-in forwards; }
 
-.toast--info     { border-left-color: var(--btn-blue-bg); }
-.toast--success  { border-left-color: var(--accent); }
-.toast--warning  { border-left-color: var(--btn-yellow-bg); }
-.toast--error    { border-left-color: var(--btn-red-bg); }
-
+/* Kind is carried by the icon color alone (semantic status tokens,
+   not the accent — a red accent must never make "success" look like
+   an error). */
 .toast__icon {
     flex-shrink: 0;
     font-size: var(--fs-md);
     line-height: 1.2;
 }
-.toast--info    .toast__icon { color: var(--btn-blue-bg); }
-.toast--success .toast__icon { color: var(--accent); }
-.toast--warning .toast__icon { color: var(--btn-yellow-bg); }
-.toast--error   .toast__icon { color: var(--btn-red-bg); }
+.toast--info    .toast__icon { color: var(--accent); }
+.toast--success .toast__icon { color: var(--status-ok); }
+.toast--warning .toast__icon { color: var(--status-warn); }
+.toast--error   .toast__icon { color: var(--status-danger); }
 
 .toast__body { flex: 1; word-break: break-word; }
 .toast__close {

@@ -49,10 +49,10 @@ function createWorkspaceActions(store, deps) {
             if (projectData.highResTokens) projectData.highResTokens = [];
             const redBox = /** @type {HTMLElement} */ (document.getElementById('redBox'));
             redBox.innerHTML = `<div class="empty-state">
-                <div class="empty-state__icon">🖼️</div>
+                <div class="empty-state__icon">${require('../ui_icons').icn('image')}</div>
                 <div class="empty-state__title">No photos loaded</div>
                 <div class="empty-state__hint">Load a folder of photos to build your source pool, then drag or auto-fill them onto pages.</div>
-                <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">📂 Load photos</button>
+                <button class="btn btn--primary btn--sm empty-state__action" data-load="btnLoadPhotos">${require('../ui_icons').icn('folder')} Load photos</button>
             </div>`;
             const photosGrid = document.getElementById('photosGrid');
             if (photosGrid) photosGrid.innerHTML = "";

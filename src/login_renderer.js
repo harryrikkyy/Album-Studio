@@ -2,6 +2,10 @@
 // (src/login_preload.js) — this window runs with contextIsolation and no
 // Node access.
 
+// <i data-icn> markers → inline SVGs (ui_icons.js is loaded just before us;
+// scripts run at end of body, so the DOM is ready).
+window.ADTIcons.hydrate(document);
+
 // Remember the last successfully-authenticated email so "Retry" can re-run
 // the license check after the owner activates the account — without forcing
 // a full re-sign-in (the rough edge users hit).
@@ -30,7 +34,7 @@ async function checkAndProceed(email, name) {
   document.getElementById('statusMsg').innerHTML = '<span class="spinner"></span> Checking subscription...';
   const licenseResult = await window.loginAPI.checkLicense(email);
   if (licenseResult.allowed) {
-    setStatus('✓ Access granted! Loading app...', '');
+    setStatus('Access granted — loading app…', '');
     const launch = await window.loginAPI.launchApp({
       daysLeft: licenseResult.daysLeft,
       email,
@@ -101,23 +105,23 @@ function showExpiredScreen(licenseResult, email) {
   if (retryBtn) retryBtn.style.display = showRetry ? 'block' : 'none';
 
   if (licenseResult.reason === 'not_activated') {
-    document.getElementById('expiredMsg').textContent = 'Your account isn\u2019t activated yet. Once Creative Hubb activates it, tap “I\u2019ve been activated — Retry”.'
+    document.getElementById('expiredMsg').textContent = 'Your account isn\u2019t activated yet. Once Creative Hubb activates it, tap “I\u2019ve been activated — retry”.'
     badge.style.display = 'none'
   } else if (licenseResult.reason === 'expired') {
     document.getElementById('expiredMsg').textContent = 'Your subscription has expired. Please contact Creative Hubb to renew.'
-    badge.textContent = 'SUBSCRIPTION EXPIRED'
+    badge.textContent = 'Subscription expired'
     badge.style.display = 'inline-block'
   } else if (licenseResult.reason === 'wrong_machine') {
     const where = licenseResult.registeredMachineName ? (' (registered to “' + licenseResult.registeredMachineName + '”)') : '';
     document.getElementById('expiredMsg').textContent = 'This license is already in use on another device' + where + '. Contact Creative Hubb to move it to this machine.'
-    badge.textContent = 'DEVICE NOT AUTHORIZED'
+    badge.textContent = 'Device not authorized'
     badge.style.display = 'inline-block'
   } else if (licenseResult.reason === 'wrong_account') {
     document.getElementById('expiredMsg').textContent = 'Your saved offline license belongs to a different account. Connect to the internet to sign in with this account.'
     badge.style.display = 'none'
   } else if (licenseResult.reason === 'no_internet') {
     document.getElementById('expiredMsg').textContent = 'No internet connection and no saved license on this device. Please connect to the internet to sign in.'
-    badge.textContent = 'NO CONNECTION'
+    badge.textContent = 'No connection'
     badge.style.display = 'inline-block'
   } else {
     document.getElementById('expiredMsg').textContent = 'No subscription found for ' + email + '. Please contact Creative Hubb.'
@@ -136,7 +140,7 @@ function switchAccount() {
   document.getElementById('loginView').style.display = 'block';
   document.getElementById('expiredScreen').style.display = 'none';
   const retryBtn = document.getElementById('btnRetry');
-  if (retryBtn) { retryBtn.disabled = false; retryBtn.textContent = '↻ I\u2019ve been activated — Retry'; }
+  if (retryBtn) { retryBtn.disabled = false; retryBtn.textContent = 'I\u2019ve been activated — retry'; }
   lastSignedInEmail = null;
   setLoading(false);
   setStatus('');

@@ -344,7 +344,7 @@ function createTemplateFilter(store, deps) {
             if (!tplPath) return; // generative templates have no PSD on disk
             e.preventDefault();
             _showAppCtx(e.clientX, e.clientY, [
-                { label: '🎨 Open template in Photoshop', fn: () => _openInPS(tplPath) },
+                { label: 'Open template in Photoshop', fn: () => _openInPS(tplPath) },
             ]);
         });
     }
@@ -354,8 +354,8 @@ function createTemplateFilter(store, deps) {
             const p = photoNativePath(img.id);
             e.preventDefault();
             _showAppCtx(e.clientX, e.clientY, [
-                { label: '🎨 Open in Photoshop', disabled: !p, fn: () => _openInPS(p) },
-                { label: '📌 Place on selected layer (clipped)', disabled: !p, fn: () => _placeClippedPS(p) },
+                { label: 'Open in Photoshop', disabled: !p, fn: () => _openInPS(p) },
+                { label: 'Place on selected layer (clipped)', disabled: !p, fn: () => _placeClippedPS(p) },
             ]);
         });
     }

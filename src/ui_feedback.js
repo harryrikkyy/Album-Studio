@@ -15,7 +15,9 @@
 // footer directly); it has no store or IPC dependencies, so feature modules
 // keep receiving these three functions as injected deps from main.js.
 
-const _toastIcons = { info: 'ℹ', success: '✓', warning: '⚠', error: '✕' };
+const { icn } = require('./ui_icons');
+
+const _toastIcons = { info: 'info', success: 'check', warning: 'alert-triangle', error: 'x' };
 
 function _ensureToastStack() {
     let stack = document.getElementById('toastStack');
@@ -46,7 +48,7 @@ function toast(message, kind = 'info', { duration = 3500 } = {}) {
     const icon = document.createElement('span');
     icon.className = 'toast__icon';
     icon.setAttribute('aria-hidden', 'true');
-    icon.textContent = _toastIcons[kind] || _toastIcons.info;
+    icon.innerHTML = icn(_toastIcons[kind] || _toastIcons.info);
 
     const body = document.createElement('div');
     body.className = 'toast__body';
@@ -55,7 +57,7 @@ function toast(message, kind = 'info', { duration = 3500 } = {}) {
     const close = document.createElement('button');
     close.className = 'toast__close';
     close.setAttribute('aria-label', 'Dismiss notification');
-    close.textContent = '×';
+    close.innerHTML = icn('x');
 
     el.appendChild(icon);
     el.appendChild(body);

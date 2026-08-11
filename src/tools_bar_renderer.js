@@ -3,6 +3,10 @@
 // Node access.
 const api = window.toolsBarAPI;
 
+// <i data-icn> markers → inline SVGs (ui_icons.js is loaded just before us;
+// scripts run at end of body, so the DOM is ready).
+window.ADTIcons.hydrate(document);
+
 const toastEl     = document.getElementById('toast');
 const dropdown    = document.getElementById('dropdown');
 const dropdownList = document.getElementById('dropdownList');
@@ -14,6 +18,8 @@ const btnSwap     = document.getElementById('btnSwapImages');
 const btnExportOpen = document.getElementById('btnExportOpen');
 const btnExportOpenAll = document.getElementById('btnExportOpenAll');
 const btnHide     = document.getElementById('btnHide');
+const btnRetouch  = document.getElementById('btnRetouch');
+const retouchPanel = document.getElementById('retouchPanel');
 
 let allActions     = [];     // full list from Photoshop
 let visibleActions = [];     // filtered subset shown in the dropdown
@@ -54,12 +60,20 @@ function positionDropdown() {
   dropdown.style.height = h + 'px';
 }
 
+// The window's extra height above the bar serves whichever drop-up surface
+// is open (action dropdown or retouch panel — mutually exclusive, but the
+// max() keeps this correct even if that ever changes).
+async function syncWindowHeight() {
+  let h = 0;
+  if (dropdown.classList.contains('open')) h = Math.max(h, dropdownHeight() + 12);
+  if (retouchPanel.classList.contains('open')) h = Math.max(h, retouchPanel.offsetHeight + 12);
+  await api.setHeight(h);
+}
 async function expandWindow() {
-  // Add some padding so the dropdown's drop shadow doesn't get clipped.
-  await api.setHeight(dropdownHeight() + 12);
+  await syncWindowHeight();
 }
 async function collapseWindow() {
-  await api.setHeight(0);
+  await syncWindowHeight();
 }
 
 async function loadActions(force) {
@@ -160,6 +174,7 @@ searchInput.addEventListener('keydown', (e) => {
 
 function openDropdown() {
   if (dropdown.classList.contains('open')) return;
+  closeRetouch();
   dropdown.classList.add('open');
   positionDropdown();
   expandWindow();
@@ -221,7 +236,7 @@ function renderDropdown() {
   if (visibleActions.length === 0) {
     dropdownHint.style.display = 'none';
     if (allActions.length === 0 && actionsLoaded) {
-      dropdownList.innerHTML = '<div class="dropdown__empty">No actions in Photoshop yet — record one in Window → Actions, then click ↻.</div>';
+      dropdownList.innerHTML = '<div class="dropdown__empty">No actions in Photoshop yet — record one in Window → Actions, then press the refresh button.</div>';
     } else if (!actionsLoaded) {
       dropdownList.innerHTML = '<div class="dropdown__empty">Loading actions…</div>';
     } else {
@@ -351,6 +366,92 @@ async function _runExportOpen(btn, scope) {
 btnExportOpen.addEventListener('click', () => _runExportOpen(btnExportOpen, 'active'));
 btnExportOpenAll.addEventListener('click', () => _runExportOpen(btnExportOpenAll, 'all'));
 
+// ─── retouch panel ──────────────────────────────────────────────────
+// Drop-up with the ported CEP retouching actions. Opening it closes the
+// action dropdown (and vice versa); it stays open across runs so intensity
+// can be dialled in repeatedly while painting in Photoshop.
+
+let retouchBusy = false;
+
+function positionRetouch() {
+  if (!retouchPanel.classList.contains('open')) return;
+  const btnRect = btnRetouch.getBoundingClientRect();
+  // Left-align with the Retouch button, clamped so the panel never leaves
+  // the window (the bar spans Photoshop's width, so there's normally room).
+  const maxLeft = window.innerWidth - retouchPanel.offsetWidth - 8;
+  retouchPanel.style.left = Math.max(8, Math.min(btnRect.left, maxLeft)) + 'px';
+}
+
+async function openRetouch() {
+  if (retouchPanel.classList.contains('open')) return;
+  closeDropdown();
+  retouchPanel.classList.add('open');
+  btnRetouch.setAttribute('aria-expanded', 'true');
+  positionRetouch();
+  await syncWindowHeight();
+  setInteractive(true);
+}
+
+function closeRetouch() {
+  if (!retouchPanel.classList.contains('open')) return;
+  retouchPanel.classList.remove('open');
+  btnRetouch.setAttribute('aria-expanded', 'false');
+  syncWindowHeight();
+}
+
+btnRetouch.addEventListener('click', () => {
+  if (retouchPanel.classList.contains('open')) closeRetouch();
+  else openRetouch();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && retouchPanel.classList.contains('open')) {
+    closeRetouch();
+  }
+});
+
+async function runRetouch(payload, label) {
+  if (retouchBusy) return; // the Photoshop bridge is serial — one at a time
+  retouchBusy = true;
+  retouchPanel.classList.add('busy');
+  retouchPanel.setAttribute('aria-busy', 'true');
+  showToast(`Running: ${label}…`, 1500);
+  try {
+    const r = await api.runRetouch(payload);
+    if (r && r.ok) {
+      showToast(`✓ ${label}`, 2000);
+    } else {
+      showToast(`${label} failed: ${(r && r.error) || 'unknown'}`, 4500);
+    }
+  } catch (e) {
+    showToast(`${label} error: ` + (e.message || e), 4500);
+  } finally {
+    retouchBusy = false;
+    retouchPanel.classList.remove('busy');
+    retouchPanel.setAttribute('aria-busy', 'false');
+  }
+}
+
+retouchPanel.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-tool]');
+  if (!btn) return;
+  const payload = { tool: btn.dataset.tool };
+  if (btn.dataset.level) payload.level = btn.dataset.level;
+  runRetouch(payload, btn.dataset.toast || btn.textContent.trim());
+});
+
+// Opacity sliders: live readout while dragging, apply to Photoshop on release.
+function wireOpacitySlider(input, output, tool, label) {
+  input.addEventListener('input', () => { output.textContent = input.value + '%'; });
+  input.addEventListener('change', () => {
+    runRetouch({ tool, opacity: Number(input.value) }, `${label} ${input.value}%`);
+  });
+}
+wireOpacitySlider(document.getElementById('dodgeOpacity'), document.getElementById('dodgeOpacityOut'),
+  'dodge-intensity', 'Dodge opacity');
+wireOpacitySlider(document.getElementById('burnOpacity'), document.getElementById('burnOpacityOut'),
+  'burn-intensity', 'Burn opacity');
+
 btnHide.addEventListener('click', () => {
   api.close();
 });
@@ -359,6 +460,7 @@ btnHide.addEventListener('click', () => {
 // resizes (which happens whenever Photoshop's width changes).
 window.addEventListener('resize', () => {
   if (dropdown.classList.contains('open')) positionDropdown();
+  positionRetouch();
 });
 
 // ─── click-through for empty areas ──────────────────────────────────
@@ -386,6 +488,9 @@ function isOverChrome(x, y) {
   if (dropdown.classList.contains('open')) {
     const inDrop = pointInRect(x, y, dropdown.getBoundingClientRect());
     if (inDrop) return true;
+  }
+  if (retouchPanel.classList.contains('open')) {
+    if (pointInRect(x, y, retouchPanel.getBoundingClientRect())) return true;
   }
   return false;
 }

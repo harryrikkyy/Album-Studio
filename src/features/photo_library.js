@@ -115,7 +115,7 @@ function createPhotoLibrary(store, deps) {
             if (savedRotation !== 0) { badge.style.display = "block"; badge.innerText = savedRotation + "°"; }
 
             const btnRotate = document.createElement("button");
-            btnRotate.className = "btn-rotate-red"; btnRotate.innerHTML = "🔄";
+            btnRotate.className = "btn-rotate-red"; btnRotate.innerHTML = require('../ui_icons').icn('refresh');
             btnRotate.title = "Rotate image (Syncs with UI & High-Res)";
             // Inline onclick — rotate buttons are few, inline is fine
             btnRotate.onclick = (e) => {
@@ -251,7 +251,7 @@ function createPhotoLibrary(store, deps) {
             if (savedRotation !== 0) { badge6.style.display = "block"; badge6.innerText = savedRotation + "°"; }
 
             const btnRotate6 = document.createElement("button");
-            btnRotate6.className = "btn-rotate-red"; btnRotate6.innerHTML = "🔄"; btnRotate6.title = "Rotate image";
+            btnRotate6.className = "btn-rotate-red"; btnRotate6.innerHTML = require('../ui_icons').icn('refresh'); btnRotate6.title = "Rotate image";
 
             photoImgWrapper.appendChild(badge6); photoImgWrapper.appendChild(photoImg); photoImgWrapper.appendChild(btnRotate6);
 
@@ -346,7 +346,7 @@ function createPhotoLibrary(store, deps) {
         btnLoadPhotos.addEventListener("click", async () => {
             const folder = await deps.pickFolder(); if (!folder) return;
             if (folder.name.toLowerCase() === "_thumbnails") {
-                return deps.showAlert("🛑 UXP SANDBOX BLOCK!\n\nYou selected the '_Thumbnails' folder directly. Adobe security prevents plugins from reading 'backwards' into the previous folder to get your high-res files.\n\nPlease click Load again and select the MASTER FOLDER instead. The plugin will automatically grab the thumbnails for you!");
+                return deps.showAlert("UXP SANDBOX BLOCK\n\nYou selected the '_Thumbnails' folder directly. Adobe security prevents plugins from reading 'backwards' into the previous folder to get your high-res files.\n\nPlease click Load again and select the MASTER FOLDER instead. The plugin will automatically grab the thumbnails for you!");
             }
             deps.setStatus("Scanning folder…");
             await new Promise(resolve => setTimeout(resolve, 50));

@@ -68,8 +68,8 @@ function getPanelHeaderHTML(type) {
          +   `<button class="folder-rail__collapse" type="button" aria-label="Toggle folder list"></button>`
          +   `<span>Folders:</span>`
          +   `<div class="folder-rail__actions">`
-         +     `<span class="btn-reload-fld folder-rail__action" data-type="${type}" title="Refresh Folders">🔄</span>`
-         +     `<span class="btn-remove-fld folder-rail__action" data-type="${type}" title="Remove Folders">🗑️</span>`
+         +     `<span class="btn-reload-fld folder-rail__action" data-type="${type}" title="Refresh folders">${require('./ui_icons').icn('refresh')}</span>`
+         +     `<span class="btn-remove-fld folder-rail__action" data-type="${type}" title="Remove folders">${require('./ui_icons').icn('trash')}</span>`
          +   `</div>`
          + `</div>`;
 }

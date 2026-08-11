@@ -112,7 +112,7 @@ function createAssetLibrary(store, deps) {
         btnLoadWallpapers.addEventListener("click", async () => {
             const folder = await deps.pickFolder(); if (!folder) return;
             if (folder.name.toLowerCase() === "_thumbnails") {
-                return deps.showAlert("🛑 UXP SANDBOX BLOCK!\n\nYou selected the '_Thumbnails' folder directly. Please select the MASTER FOLDER instead.");
+                return deps.showAlert("UXP SANDBOX BLOCK\n\nYou selected the '_Thumbnails' folder directly. Please select the MASTER FOLDER instead.");
             }
             deps.setStatus("Scanning Wallpapers…");
             await new Promise(resolve => setTimeout(resolve, 50));

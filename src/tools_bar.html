@@ -87,6 +87,102 @@
     justify-content: space-between;
   }
 
+  /* Retouch panel — same drop-up family as the actions dropdown: dark
+     surface, violet hairline, top-rounded, flush against the bar's top
+     edge. JS anchors it horizontally to the Retouch button. */
+  .retouch {
+    position: absolute;
+    bottom: 44px;
+    background: rgba(12, 12, 18, 0.96);
+    border: 1px solid rgba(125, 77, 255, 0.32);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.5);
+    display: none;
+    gap: 20px;
+    padding: 12px 16px 14px;
+  }
+  .retouch.open { display: flex; }
+  /* One tool at a time — the Photoshop bridge is serial. While a tool
+     runs the panel stays visible but inert. */
+  .retouch.busy { pointer-events: none; }
+  .retouch.busy .retouch__btn,
+  .retouch.busy .retouch__pill,
+  .retouch.busy .retouch__slider { opacity: 0.45; }
+  .retouch__col { display: flex; flex-direction: column; gap: 5px; min-width: 168px; }
+  .retouch__title {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 3px;
+  }
+  .retouch__btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #f3f3f3;
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .retouch__btn:hover {
+    background: rgba(125, 77, 255, 0.18);
+    border-color: rgba(125, 77, 255, 0.45);
+  }
+  .retouch__btn:active { transform: scale(0.98); }
+  .retouch__row { display: flex; gap: 5px; }
+  .retouch__row .retouch__btn { flex: 1; justify-content: center; }
+  .retouch__label { font-size: 11px; color: rgba(255, 255, 255, 0.55); margin-top: 4px; }
+  .retouch__pills { display: flex; gap: 3px; }
+  .retouch__pill {
+    flex: 1;
+    padding: 4px 2px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.85);
+    font: inherit;
+    font-size: 10.5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .retouch__pill:hover {
+    background: rgba(125, 77, 255, 0.18);
+    border-color: rgba(125, 77, 255, 0.45);
+  }
+  .retouch__slider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    transition: opacity 0.12s ease;
+  }
+  .retouch__slider > span { width: 44px; }
+  .retouch__slider input[type="range"] { flex: 1; accent-color: #7d4dff; margin: 0; }
+  .retouch__slider output {
+    width: 36px;
+    text-align: right;
+    color: #f3f3f3;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+  }
+  .retouch__btn:focus-visible,
+  .retouch__pill:focus-visible,
+  .retouch__slider input:focus-visible {
+    outline: 2px solid rgba(125, 77, 255, 0.7);
+    outline-offset: 1px;
+  }
+
   .bar {
     position: absolute;
     left: 0; right: 0; bottom: 0;
@@ -141,7 +237,15 @@
   }
   .tool-btn:active { transform: scale(0.97); }
   .tool-btn[disabled] { opacity: 0.4; cursor: not-allowed; }
-  .tool-btn__emoji { font-size: 14px; line-height: 1; }
+  /* Toggle buttons (Retouch) stay lit while their panel is open. */
+  .tool-btn[aria-expanded="true"] {
+    background: rgba(125, 77, 255, 0.18);
+    border-color: rgba(125, 77, 255, 0.45);
+  }
+  /* Icon sizing (ui_icons.js SVGs). style.css isn't loaded in this window,
+     so the .icn rule is duplicated here — keep in sync with style.css. */
+  .icn { width: 1.15em; height: 1.15em; flex-shrink: 0; vertical-align: -0.2em; }
+  .tool-btn__icon { font-size: 14px; line-height: 1; display: inline-flex; align-items: center; }
 
   /* Action search input lives inside the bar. The wrapper is `no-drag` so
      the user can click into the field; the bar background stays draggable. */
@@ -194,7 +298,7 @@
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.4);
-    font-size: 13px;
+    font-size: 14px;
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 4px;
@@ -242,39 +346,102 @@
     <div class="dropdown__hint" id="dropdownHint" style="display:none;"></div>
   </div>
 
+  <!-- Retouch panel — ported 2018 CEP retouching actions (scripts/retouch.jsx).
+       Anchored above the Retouch button; every control acts on the ACTIVE
+       Photoshop document. -->
+  <div class="retouch" id="retouchPanel" role="group" aria-label="Retouching tools">
+    <div class="retouch__col">
+      <div class="retouch__title">Dodge &amp; burn</div>
+      <button class="retouch__btn" data-tool="dnb-auto" title="Build soft Dodge + Burn layers in an “Automatic Dodge and Burn” group">Auto setup</button>
+      <button class="retouch__btn" data-tool="dnb-manual" title="Build masked Dodge + Burn curves layers in a “Dodge and Burn” group and select a soft round brush">Manual setup</button>
+      <button class="retouch__btn" data-tool="dnb-finish" title="Merge the visible result to a new layer and reselect the Dodge and Burn group — run after finishing a manual pass">Finish manual pass</button>
+      <div class="retouch__row">
+        <button class="retouch__btn" data-tool="dodge" title="Target the Dodge layer and reset colors — paint to lighten">Dodge</button>
+        <button class="retouch__btn" data-tool="burn" title="Target the Burn layer and reset colors — paint to darken">Burn</button>
+      </div>
+      <label class="retouch__slider" title="Set the Dodge layer’s opacity (applies on release)">
+        <span>Dodge</span>
+        <input type="range" id="dodgeOpacity" min="10" max="100" step="10" value="50" aria-label="Dodge layer opacity">
+        <output id="dodgeOpacityOut">50%</output>
+      </label>
+      <label class="retouch__slider" title="Set the Burn layer’s opacity (applies on release)">
+        <span>Burn</span>
+        <input type="range" id="burnOpacity" min="10" max="100" step="10" value="50" aria-label="Burn layer opacity">
+        <output id="burnOpacityOut">50%</output>
+      </label>
+    </div>
+
+    <div class="retouch__col">
+      <div class="retouch__title">Skin</div>
+      <button class="retouch__btn" data-tool="advanced-retouch" title="Flatten, then build the “Advanced Skin Retouching” smart-object layer (inverted overlay + High Pass) with a hidden mask and select a soft round brush — paint to smooth">Retouching layer</button>
+      <button class="retouch__btn" data-tool="blemish-layer" title="Flatten, then add an empty “Blemish Removal Layer” and select a hard round brush for heal/clone work">Blemish layer</button>
+      <div class="retouch__label" id="smoothingLabel">Smoothing — needs the retouching layer selected</div>
+      <div class="retouch__pills" role="group" aria-labelledby="smoothingLabel">
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="low" data-toast="Smoothing low" title="High Pass radius 1 px">Low</button>
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="low-plus" data-toast="Smoothing low+" title="High Pass radius 3 px">Low+</button>
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="medium" data-toast="Smoothing medium" title="High Pass radius 5 px">Med</button>
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="high" data-toast="Smoothing high" title="High Pass radius 7 px">High</button>
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="high-plus" data-toast="Smoothing high+" title="High Pass radius 10 px">High+</button>
+        <button class="retouch__pill" data-tool="skin-smoothing" data-level="insane" data-toast="Smoothing max" title="High Pass radius 20 px (“Insane” in the original panel)">Max</button>
+      </div>
+      <div class="retouch__label" id="textureLabel">Texture — needs the retouching layer selected</div>
+      <div class="retouch__pills" role="group" aria-labelledby="textureLabel">
+        <button class="retouch__pill" data-tool="skin-texture" data-level="low" data-toast="Texture low" title="Gaussian Blur radius 1 px">Low</button>
+        <button class="retouch__pill" data-tool="skin-texture" data-level="low-plus" data-toast="Texture low+" title="Gaussian Blur radius 3 px">Low+</button>
+        <button class="retouch__pill" data-tool="skin-texture" data-level="medium" data-toast="Texture medium" title="Gaussian Blur radius 5 px">Med</button>
+        <button class="retouch__pill" data-tool="skin-texture" data-level="high" data-toast="Texture high" title="Gaussian Blur radius 7 px">High</button>
+        <button class="retouch__pill" data-tool="skin-texture" data-level="high-plus" data-toast="Texture high+" title="Gaussian Blur radius 10 px">High+</button>
+      </div>
+    </div>
+
+    <div class="retouch__col">
+      <div class="retouch__title">Makeup</div>
+      <button class="retouch__btn" data-tool="blushon" title="Flatten, then add an overlay “Blushon Layer” and select a soft round brush — pick a color and paint the cheeks">Blush-on layer</button>
+      <button class="retouch__btn" data-tool="eye-color" title="Flatten, then add a color-mode “Eye Color Layer” and select a soft round brush — pick a color and paint the iris">Eye color layer</button>
+      <button class="retouch__btn" data-tool="eyeshade" title="Flatten, then add an overlay “Eyeshade Layer” and select a soft round brush — pick a color and paint the lids">Eyeshade layer</button>
+      <button class="retouch__btn" data-tool="hair-color" title="Flatten, then add an overlay “Hair Color Layer” and select a soft round brush — pick a color and paint the hair">Hair color layer</button>
+      <button class="retouch__btn" data-tool="lipstick" title="Flatten, then add an overlay “Lipstick” layer and select a soft round brush — pick a color and paint the lips">Lipstick layer</button>
+    </div>
+  </div>
+
   <!-- The bar itself sits at the bottom, fixed at 44 px. -->
   <div class="bar">
     <span class="bar__brand">Album Studio · Tools</span>
     <div class="bar__divider"></div>
 
     <button class="tool-btn" id="btnSwapImages" title="Swap the contents of two selected clipped images in the active Photoshop document">
-      <span class="tool-btn__emoji">🔄</span><span>Swap 2 Images</span>
+      <span class="tool-btn__icon"><i data-icn="swap"></i></span><span>Swap 2 Images</span>
     </button>
 
     <button class="tool-btn" id="btnExportOpen" title="Export the ACTIVE Photoshop document to JPEG (High-Res quality 12 + Low-Res quality 1), replacing the matching files in its JPEG-High-Res / JPEG-Low-Res folders. The doc stays open.">
-      <span class="tool-btn__emoji">📸</span><span>JPEG Export</span>
+      <span class="tool-btn__icon"><i data-icn="camera"></i></span><span>JPEG Export</span>
     </button>
 
     <button class="tool-btn" id="btnExportOpenAll" title="Export EVERY open Photoshop document to JPEG (High-Res quality 12 + Low-Res quality 1), replacing the matching files in their JPEG-High-Res / JPEG-Low-Res folders. Docs stay open.">
-      <span class="tool-btn__emoji">🗂️</span><span>JPEG Export all</span>
+      <span class="tool-btn__icon"><i data-icn="layers"></i></span><span>JPEG Export all</span>
+    </button>
+
+    <button class="tool-btn" id="btnRetouch" aria-expanded="false" aria-controls="retouchPanel" title="Portrait retouching — dodge &amp; burn, skin, makeup layers (runs on the active Photoshop document)">
+      <span class="tool-btn__icon"><i data-icn="wand"></i></span><span>Retouch</span>
     </button>
 
     <div class="bar__divider"></div>
 
     <!-- Action search — keyboard-first, drop-up. -->
     <div class="search">
-      <span class="search__icon">🔎</span>
+      <span class="search__icon"><i data-icn="search"></i></span>
       <input class="search__input" id="actionSearch" type="text" placeholder="Run Photoshop action…" autocomplete="off" spellcheck="false">
       <span class="search__kbd" id="searchKbd">⌘K</span>
     </div>
-    <button class="search__refresh" id="btnRefreshActions" title="Re-scan Photoshop's Actions panel (use after editing actions there)">↻</button>
+    <button class="search__refresh" id="btnRefreshActions" title="Re-scan Photoshop's Actions panel (use after editing actions there)" aria-label="Refresh actions"><i data-icn="refresh"></i></button>
 
     <div class="bar__spacer"></div>
-    <button class="bar__close" id="btnHide" title="Hide bar (reopen from Tools tab)">✕</button>
+    <button class="bar__close" id="btnHide" title="Hide bar (reopen from Tools tab)" aria-label="Hide tools bar"><i data-icn="x"></i></button>
   </div>
 </div>
 <div class="toast" id="toast"></div>
 
+<script src="ui_icons.js"></script>
 <script src="tools_bar_renderer.js"></script>
 </body>
 </html>

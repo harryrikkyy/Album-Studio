@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('toolsBarAPI', {
   listActions: (opts) => ipcRenderer.invoke('actions-list', opts),
   runAction: (payload) => ipcRenderer.invoke('actions-run', payload),
   swapImages: () => ipcRenderer.invoke('swap-images'),
+  runRetouch: (payload) => ipcRenderer.invoke('retouch-run', payload),
   exportOpenDocs: (scope) => ipcRenderer.invoke('export-open-docs', scope),
 })

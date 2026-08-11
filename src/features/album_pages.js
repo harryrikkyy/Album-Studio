@@ -258,7 +258,7 @@ function createAlbumPages(store, deps) {
         const pageData = albumPages[currentPage];
         if (!pageData || !pageData.photos || pageData.photos.length === 0) {
             greenBox.innerHTML = `<div class="empty-state">
-                <div class="empty-state__icon">🗂️</div>
+                <div class="empty-state__icon">${require('../ui_icons').icn('layers')}</div>
                 <div class="empty-state__title">This page is empty</div>
                 <div class="empty-state__hint">Drag photos here from the Source pool (or double-click them), or use Auto-Fill to populate the album.</div>
             </div>`;

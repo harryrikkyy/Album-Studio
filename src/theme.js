@@ -17,14 +17,14 @@
             label:   'Studio',
             sub:     'Dark',
             dotClass: 'studio-dark',
-            accent:  '#A08FFF'
+            accent:  '#FF6B5E'
         },
         {
             id:      'studio-light',
             label:   'Studio',
             sub:     'Light',
             dotClass: 'studio-light',
-            accent:  '#5646C8'
+            accent:  '#AD2A20'
         }
     ];
 
