@@ -90,7 +90,19 @@ function createExportData(store, deps) {
                 const templatePath = pageData.template._generative
                     ? 'generative://' + pageData.template.id
                     : /** @type {any} */ (pageData.template).file.nativePath;
-                exportData.pages[i] = { templatePath, photos };
+                // Canvas dims come from the frame-extraction cache on the
+                // template. They're only needed to rasterize overlays at the
+                // page's true resolution; absent, the rasterizer falls back to
+                // a high default rather than blocking the export.
+                const canvas = /** @type {any} */ (pageData.template)._canvas || null;
+                exportData.pages[i] = {
+                    templatePath,
+                    photos,
+                    overlays: projectData.pageOverlays?.[i] || null,
+                    pageBackground: projectData.pageBackgrounds?.[i] || null,
+                    canvasWidth: canvas ? canvas.w : null,
+                    canvasHeight: canvas ? canvas.h : null,
+                };
             }
         }
         return exportData;

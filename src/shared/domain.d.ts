@@ -71,6 +71,13 @@ export interface ProjectData {
   imageRotations?: Record<string, number>
   imageAdjustments?: Record<string, unknown>
   imagePlacements?: Record<string, unknown>
+  /**
+   * Page-level edits, keyed by page number. The per-photo maps above are keyed
+   * by photo id so they follow a photo between pages; overlays and background
+   * belong to the page itself.
+   */
+  pageOverlays?: Record<number, unknown[]>
+  pageBackgrounds?: Record<number, string>
 }
 
 /**
@@ -89,6 +96,15 @@ export interface HistorySnapshot {
 export interface HashablePage {
   templatePath?: string
   photos: Photo[]
+  /** Page overlay layers — baked into the output, so they affect the hash. */
+  overlays?: unknown[] | null
+  pageBackground?: string | null
+  /**
+   * Template canvas size, when the frame-extraction cache has it. Used only to
+   * rasterize overlays at the page's true resolution for the Photoshop build.
+   */
+  canvasWidth?: number | null
+  canvasHeight?: number | null
 }
 
 /** Progress counters for the render batch currently being worked. */

@@ -261,6 +261,11 @@ function createProofs(store, deps) {
             canvasWidth: /** @type {{ w: number, h: number }} */ (tpl._canvas).w,
             canvasHeight: /** @type {{ w: number, h: number }} */ (tpl._canvas).h,
             photos,
+            // Page overlays (text, shapes) and background are baked into the
+            // proof, so the storyboard and live preview show captions exactly
+            // as they will export.
+            overlays: projectData.pageOverlays?.[pageNum] || null,
+            pageBackground: projectData.pageBackgrounds?.[pageNum] || null,
             outputPath: outPath,
             // Live preview renders smaller for speed (the preview pane is
             // small); batch proofs stay at 1500 for the storyboard/gallery.

@@ -87,7 +87,7 @@ An Editor window that, for the **current spread**: renders the DOM scene from fr
 
 ## Not doing (and why)
 
-- **Freeform layers / masks / brush retouch / text** — that's real Photoshop; keep edits *frame-constrained* (photos live in template slots, controlled within). Keeps it shippable and keeps preview==final tractable.
+- ~~**Freeform layers / masks / brush retouch / text**~~ — **text and shapes now ship** (see "Overlay layers" below). Masks and brush retouch remain out: that's real Photoshop, and Tab 8's Retouch panel already drives PS directly for those.
 - **Adding/removing/resizing frames** — frames come from the template.
 - **HR in the canvas** — proxies for interaction, HR only at export.
 - **Per-gesture libvips re-render** — kills the feel; render on release.
@@ -110,3 +110,37 @@ An Editor window that, for the **current spread**: renders the DOM scene from fr
 4. [x] **On-canvas select + pan/zoom** → writes placement params → libvips preview on release.
 5. [x] **Drag-to-swap** (shipped as arm-then-click-two, to avoid colliding with the pan gesture); colour sliders wired to selection.
 6. [~] **Export bake** uses placement everywhere; final harness pass (math parity verified; PS-vs-live comparison still to run).
+7. [x] **Overlay layers** — text + shapes on the page (below).
+
+---
+
+## Overlay layers (text & shapes)
+
+The window is now the **Page Editor**: it edits the page, not just the photos in it.
+
+### The decision that makes this safe: one SVG generator
+
+`src/overlay_render.js` turns a page's layer list into an SVG. It has exactly one implementation and three consumers:
+
+| Consumer | How it loads it | What it does |
+|---|---|---|
+| Page Editor | plain `<script>` → `window.OverlayRender` | injects the SVG into the stage as the live preview |
+| `proof_renderer` | `require` | composites it over the proof / generative HR export |
+| Photoshop build | `require` → `rasterizeOverlays()` → PNG | places that PNG as the top layer |
+
+The preview is not a lookalike of the export — it is **the same document**. WYSIWYG is structural rather than two code paths kept in sync by hand.
+
+Two consequences worth stating:
+
+- **Geometry is normalized** (fractions of canvas; font size is a fraction of canvas *height*). A layer renders identically on a 1500px proof and a 7000px final composite. This is what lets the editor trust its own preview.
+- **Wrapping is computed in the generator**, not delegated to the renderer. SVG has no auto-wrap, and librsvg and Chrome would otherwise break lines differently. `estimateAdvance` is a deterministic width table — its job is for both sides to agree with *each other*, not to match a font spec.
+
+### Why the Photoshop path rasterizes instead of building native text layers
+
+Native PS text would be re-editable in the delivered PSD, which sounds strictly better. It isn't: Photoshop would re-wrap the lines against its own font metrics, so the delivered page could differ from the one the user approved on screen — breaking the single guarantee this design exists to provide. Rasterizing the same SVG keeps the export exact. Text stays fully editable *in the app*, which is where the editing now happens.
+
+### Data model
+
+Overlays live on `projectData.pageOverlays[pageNum]` — keyed by **page**, unlike `imageAdjustments`/`imagePlacements` which are keyed by photo id so they follow a photo when it moves between pages. `pageBackgrounds[pageNum]` holds an optional page background colour.
+
+Both are in `_hashPage`, so retyping a caption invalidates the render cache even though no photo changed.

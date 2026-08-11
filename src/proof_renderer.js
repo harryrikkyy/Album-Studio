@@ -32,6 +32,20 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 
+// Text/shape overlays. The Spread Editor renders the SAME SVG into its stage,
+// so the preview and this composite cannot drift apart.
+const { buildOverlaySvg, overlayCacheKey } = require('./overlay_render')
+
+// '#rrggbb' → sharp's background object. Returns null for anything else so
+// callers fall back to their own default.
+function parseHexColor(hex) {
+  if (typeof hex !== 'string') return null
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim())
+  if (!m) return null
+  const n = parseInt(m[1], 16)
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 }
+}
+
 let _sharp = null
 function getSharp() {
   if (_sharp) return _sharp
@@ -80,38 +94,111 @@ function partitionFrames(frames) {
 }
 
 // Apply non-destructive per-photo adjustments to a sharp pipeline.
-// adj fields are sliders in [-100, 100]; 0 / missing = no change.
+// adj fields are sliders in [-100, 100] (except `bw`, a flag); 0 / missing =
+// no change.
+//
 //   exposure   → brightness, ±1 stop at ±100 (multiplicative, perceptual)
 //   saturation → ×(1 + s/100)   (0 = greyscale at -100, 2× at +100)
 //   contrast   → slope around mid-grey 128
 //   warmth     → R up / B down (negative = cooler)
-// Contrast + warmth fold into a single per-channel linear() pass; exposure +
-// saturation into one modulate(). All resolution-independent, so the small
-// preview and the full-size export match exactly.
-function applyAdjust(sharp, pipeline, adj) {
+//   tint       → green ↔ magenta, the axis perpendicular to warmth
+//   fade       → lifts the black point for a matte/film look
+//   bw         → true greyscale (applied before the colour ops so warmth/tint
+//                can then tone the mono image, e.g. selenium/sepia splits)
+//   clarity    → local contrast via CLAHE (a real midtone-detail op, not a
+//                second global contrast slider)
+//   sharpen    → unsharp mask
+//   blur       → gaussian
+//   vignette   → radial darkening; needs the output box, so it composites in
+//                buildPhotoLayer rather than here
+//
+// Every op is resolution-independent EXCEPT sharpen/blur/vignette, whose radii
+// scale with the output box — see the `dims` argument. That keeps the 1500px
+// proof and the full-size export visually matched instead of the proof looking
+// over-sharpened.
+//
+// Ordering is deliberate: greyscale → tone/colour → local contrast → detail.
+// Sharpening before a big contrast push would amplify halos.
+function applyAdjust(sharp, pipeline, adj, dims) {
   if (!adj) return pipeline
   const exposure = adj.exposure || 0
   const saturation = adj.saturation || 0
   const contrast = adj.contrast || 0
   const warmth = adj.warmth || 0
-  if (!exposure && !saturation && !contrast && !warmth) return pipeline
+  const tint = adj.tint || 0
+  const fade = adj.fade || 0
+  const clarity = adj.clarity || 0
+  const sharpenAmt = adj.sharpen || 0
+  const blurAmt = adj.blur || 0
+  const bw = !!adj.bw
+  if (!exposure && !saturation && !contrast && !warmth && !tint && !fade
+    && !clarity && !sharpenAmt && !blurAmt && !bw) return pipeline
 
-  if (exposure || saturation) {
+  // Greyscale first so the colour ops below tone the mono result.
+  if (bw) pipeline = pipeline.greyscale()
+
+  if (exposure || (saturation && !bw)) {
     pipeline = pipeline.modulate({
       brightness: Math.pow(2, exposure / 100), // ±1 stop at ±100
-      saturation: Math.max(0, 1 + saturation / 100),
+      saturation: bw ? 1 : Math.max(0, 1 + saturation / 100),
     })
   }
-  if (contrast || warmth) {
+  if (contrast || warmth || tint || fade) {
     const s = Math.max(0, 1 + contrast / 100) // contrast slope
     const w = warmth / 200                     // ±0.5 channel gain at ±100
-    const gains = [1 + w, 1, 1 - w]            // R, G, B
+    const t = tint / 200                       // + = magenta, - = green
+    const gains = [1 + w + t, 1 - t, 1 - w + t] // R, G, B
     // out = gain * (s*in + 128*(1-s)) = (gain*s)*in + gain*128*(1-s)
     const slopes = gains.map((g) => g * s)
-    const inter = gains.map((g) => g * 128 * (1 - s))
+    // Fade lifts the black point: a positive intercept added on top of the
+    // contrast pivot, up to ~1/4 of the range at +100.
+    const lift = (fade / 100) * 64
+    const inter = gains.map((g) => g * 128 * (1 - s) + lift)
     pipeline = pipeline.linear(slopes, inter)
   }
+
+  // Local contrast. CLAHE's window is a fraction of the output box so the
+  // effect covers the same real-world area at proof and export size.
+  if (clarity > 0 && dims && dims.width && dims.height) {
+    const win = Math.max(3, Math.round(Math.min(dims.width, dims.height) / 8))
+    pipeline = pipeline.clahe({
+      width: win,
+      height: win,
+      maxSlope: Math.max(1, Math.round(1 + (clarity / 100) * 5)),
+    })
+  }
+
+  // Detail ops last. Radii scale with the box so proof and export match.
+  const detailScale = dims && dims.height ? dims.height / 1000 : 1
+  if (sharpenAmt > 0) {
+    pipeline = pipeline.sharpen({
+      sigma: Math.max(0.3, (0.5 + (sharpenAmt / 100) * 1.5) * Math.max(0.35, detailScale)),
+    })
+  }
+  if (blurAmt > 0) {
+    pipeline = pipeline.blur(Math.max(0.3, (blurAmt / 100) * 12 * Math.max(0.35, detailScale)))
+  }
   return pipeline
+}
+
+// Radial vignette as an SVG overlay, composited over the finished photo layer.
+// Reuses the SVG path already in the pipeline for overlays, so there is no
+// second imaging dependency. Strength is [-100, 100]: positive darkens the
+// corners, negative lightens them.
+function vignetteSvg(width, height, strength) {
+  const s = Math.max(-100, Math.min(100, strength))
+  if (!s) return null
+  const color = s > 0 ? '0,0,0' : '255,255,255'
+  const alpha = (Math.abs(s) / 100) * 0.85
+  // Transparent through the middle ~45%, ramping to `alpha` at the corners.
+  return Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`
+    + `<defs><radialGradient id="v" cx="50%" cy="50%" r="75%">`
+    + `<stop offset="45%" stop-color="rgba(${color},0)"/>`
+    + `<stop offset="100%" stop-color="rgba(${color},${alpha.toFixed(3)})"/>`
+    + `</radialGradient></defs>`
+    + `<rect width="${width}" height="${height}" fill="url(#v)"/></svg>`
+  )
 }
 
 // Build the per-photo composite layer: read photo, rotate by exif/explicit
@@ -210,11 +297,20 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
         })
       }
 
-      // Non-destructive per-photo adjustments (exposure / contrast /
-      // saturation / warmth). Resolution-independent per-pixel maths, so the
-      // small live preview and the full-size final composite produce identical
-      // colour. Applied here so EVERY libvips render path honours edits.
-      pipe = applyAdjust(sharp, pipe, photo.adjust)
+      // Non-destructive per-photo adjustments. Resolution-independent colour
+      // maths, so the small live preview and the full-size final composite
+      // produce identical colour. Applied here so EVERY libvips render path
+      // honours edits. `dims` lets the detail ops (sharpen/blur/clarity) scale
+      // their radii with the output box.
+      pipe = applyAdjust(sharp, pipe, photo.adjust, { width: fW, height: fH })
+
+      // Vignette composites over the finished frame, so it must come after the
+      // photo has been cropped to the frame box — it darkens the FRAME's
+      // corners, not the source photo's.
+      const vig = photo.adjust && photo.adjust.vignette
+        ? vignetteSvg(fW, fH, photo.adjust.vignette)
+        : null
+      if (vig) pipe = sharp(await pipe.png().toBuffer()).composite([{ input: vig, top: 0, left: 0 }])
 
       const buf = await pipe.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
 
@@ -289,6 +385,10 @@ async function renderPageProof(job) {
     })),
     me: maxEdge,
     sc: smartCrop ? 1 : 0,
+    // Overlay text/shapes are baked into the output, so editing a caption has
+    // to invalidate the cached page exactly like a photo edit does.
+    ov: overlayCacheKey(job.overlays),
+    bg: job.pageBackground || 0,
   })).digest('hex').slice(0, 16)
 
   try {
@@ -306,7 +406,7 @@ async function renderPageProof(job) {
           width: dims.width,
           height: dims.height,
           channels: 3,
-          background: { r: 245, g: 244, b: 240 },
+          background: parseHexColor(job.pageBackground) || { r: 245, g: 244, b: 240 },
         },
       })
     }
@@ -335,6 +435,15 @@ async function renderPageProof(job) {
     }
 
     const layers = (await Promise.all(layerResults)).filter(Boolean)
+
+    // Overlay layers (text, shapes) sit ON TOP of every photo — appended last
+    // so they win the z-order. One SVG for the whole page: librsvg rasterises
+    // it at output resolution, so text stays crisp at export size instead of
+    // being upscaled from the proof.
+    const overlaySvg = buildOverlaySvg(job.overlays, dims.width, dims.height)
+    if (overlaySvg) {
+      layers.push({ input: Buffer.from(overlaySvg), top: 0, left: 0 })
+    }
 
     const finalQuality = job._hrMode ? 92 : 82
     await base
@@ -377,6 +486,31 @@ async function renderFinalComposite(job) {
 }
 
 
+/**
+ * Rasterize a page's overlay layers to a transparent PNG.
+ *
+ * This is how text and shapes reach the PHOTOSHOP export path. Photoshop
+ * cannot be handed the SVG, and rebuilding the layers as native PS text would
+ * re-wrap the lines against different font metrics — the export would then
+ * disagree with the editor preview, which is the one thing this design exists
+ * to prevent. Rasterizing the very same SVG keeps the delivered page identical
+ * to what the user approved, at the cost of the text not being re-editable
+ * inside the delivered PSD (it stays fully editable in the app).
+ *
+ * @returns {Promise<string|null>} temp PNG path, or null if nothing to draw
+ */
+async function rasterizeOverlays(overlays, width, height) {
+  const svg = buildOverlaySvg(overlays, width, height)
+  if (!svg) return null
+  const sharp = getSharp()
+  const out = path.join(
+    require('os').tmpdir(),
+    `albumstudio_overlay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`
+  )
+  await sharp(Buffer.from(svg)).png().toFile(out)
+  return out
+}
+
 async function renderProofBatch(jobs, onProgress) {
   const results = []
   for (let i = 0; i < jobs.length; i++) {
@@ -393,10 +527,13 @@ module.exports = {
   renderPageProof,
   renderProofBatch,
   renderFinalComposite,
+  rasterizeOverlays,
   templateKey,
   applyAdjust,
   // Exposed for unit tests — pure geometry helpers that must stay identical
   // between the preview and the final export.
   proofDims,
   partitionFrames,
+  parseHexColor,
+  vignetteSvg,
 }

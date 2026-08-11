@@ -132,15 +132,22 @@ function createGenerativeUi(store, deps) {
             let successes = 0, failures = 0;
             for (const p of pages) {
                 const rawPhotos = p.photos || payload.photos || [];
-                // Carry per-photo adjustments into the libvips final composite so
-                // the delivered output matches the live preview.
-                const photos = rawPhotos.map((/** @type {any} */ ph) => (
-                    ph && ph.id && projectData.imageAdjustments?.[ph.id]
-                        ? { ...ph, adjust: projectData.imageAdjustments[ph.id] }
-                        : ph
-                ));
+                // Carry per-photo edits into the libvips final composite so the
+                // delivered output matches the live preview. Placement (zoom/pan)
+                // was previously dropped here, so a photo the user had zoomed in
+                // the Spread Editor exported at its default cover-fit crop.
+                const photos = rawPhotos.map((/** @type {any} */ ph) => {
+                    if (!ph || !ph.id) return ph;
+                    const adjust = projectData.imageAdjustments?.[ph.id];
+                    const placement = projectData.imagePlacements?.[ph.id];
+                    if (!adjust && !placement) return ph;
+                    return { ...ph, adjust: adjust || ph.adjust, placement: placement || ph.placement };
+                });
                 const outDir = isBatch ? payload.outputPath : null;
                 const pageName = isBatch ? p.pageName : payload.pageName;
+                // Overlays are keyed by page number; pageName is the zero-padded
+                // string form ('007'), so parse it back.
+                const pageNum = parseInt(String(pageName), 10);
                 const outputPath = (outDir
                     ? outDir + '/Page_' + pageName + '.jpg'
                     : (payload.outputPath || (require('os').tmpdir() + '/Page_' + pageName + '.jpg'))
@@ -152,6 +159,8 @@ function createGenerativeUi(store, deps) {
                     canvasWidth: tpl._canvas.w,
                     canvasHeight: tpl._canvas.h,
                     photos,
+                    overlays: (Number.isFinite(pageNum) && projectData.pageOverlays?.[pageNum]) || null,
+                    pageBackground: (Number.isFinite(pageNum) && projectData.pageBackgrounds?.[pageNum]) || null,
                     outputPath,
                     smartCrop: false, // HR exports stay deterministic
                 };

@@ -3,81 +3,170 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob:; media-src 'self' file:; connect-src 'self'; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>Spread Editor — Album Toolkit</title>
+<title>Page Editor — Album Toolkit</title>
 <link rel="stylesheet" href="style.css">
 <style>
   html, body { height: 100%; margin: 0; background: var(--bg-base); color: var(--txt-primary);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
   .ed-app { display: flex; flex-direction: column; height: 100vh; }
-  .ed-header { padding: 10px 16px 8px; flex-shrink: 0; }
-  .ed-header__bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-  .ed-header__title { margin: 0; font-size: 18px; font-weight: 700; }
-  .ed-header__sub { margin: 2px 0 0; font-size: var(--fs-sm); color: var(--txt-secondary); }
-  #edSwap.armed { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); }
-  .ed-ctx { position: fixed; z-index: 1000; min-width: 180px; background: var(--bg-card); border: 1px solid var(--border-main); border-radius: var(--radius-lg); box-shadow: 0 8px 30px rgba(0,0,0,0.5); padding: 4px; }
-  .ed-ctx__item { display: block; width: 100%; text-align: left; background: transparent; border: none; color: var(--txt-primary); font-size: var(--fs-sm); padding: 8px 12px; border-radius: var(--radius-md); cursor: pointer; }
-  .ed-ctx__item:hover:not(:disabled) { background: var(--accent-dim); color: var(--accent); }
-  .ed-ctx__item:disabled { color: var(--txt-muted); cursor: default; }
-  .ed-body { display: flex; flex: 1; overflow: hidden; gap: var(--space-3); padding: 0 16px 14px; }
 
-  /* Left: spread thumbs */
-  .ed-rail {
-    width: 150px; flex-shrink: 0; overflow-y: auto;
+  /* ── Header + toolbar ─────────────────────────────────────── */
+  .ed-header { padding: 8px 14px 6px; flex-shrink: 0; }
+  .ed-header__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ed-header__title { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  .ed-header__sub { margin: 1px 0 0; font-size: var(--fs-xs); color: var(--txt-secondary); }
+
+  .ed-toolbar { display: flex; align-items: center; gap: 4px; padding: 6px 14px;
+    border-top: 1px solid var(--border-main); border-bottom: 1px solid var(--border-main);
+    background: var(--bg-elevated); flex-shrink: 0; flex-wrap: wrap; }
+  .ed-tool { display: inline-flex; align-items: center; gap: 5px; background: transparent;
+    border: 1px solid transparent; color: var(--txt-secondary); font-size: var(--fs-xs); font-weight: 600;
+    padding: 5px 9px; border-radius: var(--radius-md); cursor: pointer; white-space: nowrap; }
+  .ed-tool:hover:not(:disabled) { background: var(--bg-inset); color: var(--txt-primary); }
+  .ed-tool.is-active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+  .ed-tool:disabled { opacity: 0.35; cursor: default; }
+  .ed-tool svg { width: 14px; height: 14px; }
+  .ed-toolbar__sep { width: 1px; height: 20px; background: var(--border-main); margin: 0 5px; }
+  .ed-toolbar__spacer { flex: 1; }
+
+  .ed-body { display: flex; flex: 1; overflow: hidden; gap: var(--space-3); padding: 10px 14px 12px; }
+
+  /* ── Left rail: spreads + layers ──────────────────────────── */
+  .ed-rail { width: 168px; flex-shrink: 0; overflow-y: auto;
     border: 1px solid var(--border-main); border-radius: var(--radius-lg);
     background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
-    padding: 10px; display: flex; flex-direction: column; gap: 8px;
-  }
-  .ed-rail__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-muted); font-weight: 700; }
+    padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .ed-rail__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--txt-muted); font-weight: 700; }
   .ed-thumb { border: 2px solid var(--border-main); border-radius: var(--radius-md); overflow: hidden; background: var(--bg-inset); }
   .ed-thumb.active { border-color: var(--accent); }
   .ed-thumb img { width: 100%; display: block; }
   .ed-thumb__cap { font-size: 10px; color: var(--txt-secondary); text-align: center; padding: 2px; }
 
-  /* Center: workspace */
-  .ed-stage-wrap {
-    flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  /* Layers list */
+  .ed-layers { display: flex; flex-direction: column; gap: 3px; }
+  .ed-layer { display: flex; align-items: center; gap: 5px; padding: 5px 6px; border-radius: var(--radius-md);
+    border: 1px solid transparent; cursor: pointer; font-size: var(--fs-xs); color: var(--txt-secondary); }
+  .ed-layer:hover { background: var(--bg-inset); }
+  .ed-layer.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .ed-layer__name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ed-layer__btn { background: transparent; border: none; color: inherit; cursor: pointer; padding: 1px 2px;
+    opacity: 0.55; border-radius: 3px; line-height: 0; }
+  .ed-layer__btn:hover { opacity: 1; background: var(--bg-card); }
+  .ed-layer__btn svg { width: 12px; height: 12px; }
+  .ed-layer.is-hidden .ed-layer__name { opacity: 0.4; text-decoration: line-through; }
+  .ed-rail__empty { font-size: var(--fs-xs); color: var(--txt-muted); line-height: 1.5; }
+
+  /* ── Center: stage ────────────────────────────────────────── */
+  .ed-stage-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;
     border: 1px solid var(--border-main); border-radius: var(--radius-lg);
     background: var(--bg-inset);
     background-image: repeating-conic-gradient(rgba(128,128,128,0.10) 0% 25%, transparent 0% 50%);
-    background-size: 24px 24px;
-    position: relative;
-  }
+    background-size: 24px 24px; position: relative; }
   .ed-stage { position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
   .ed-stage__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
+  .ed-stage.tool-text, .ed-stage.tool-rect, .ed-stage.tool-ellipse, .ed-stage.tool-line { cursor: crosshair; }
   .ed-frame { position: absolute; overflow: hidden; cursor: pointer; outline: 1px solid rgba(255,255,255,0.12); }
   .ed-frame img { position: absolute; transform-origin: center center; will-change: left, top, width, height; }
+  /* Vignette preview. libvips composites the real one over the cropped frame,
+     so the preview darkens the FRAME box too — not the photo inside it. */
+  .ed-frame__vig { position: absolute; inset: 0; pointer-events: none; }
   .ed-frame.selected { outline: 2px solid var(--accent); box-shadow: 0 0 0 2px var(--accent-glow); z-index: 5; }
-  .ed-frame.swap-target { outline: 2px dashed var(--accent); }
   .ed-frame.dragging { cursor: grabbing; }
   .ed-empty { color: var(--txt-muted); font-size: var(--fs-md); }
 
-  /* Right: controls */
-  .ed-panel {
-    width: 240px; flex-shrink: 0; overflow-y: auto;
+  /* Overlay layer surface — the SVG built by overlay_render.js, i.e. exactly
+     what the exporter will composite. Pointer events go to the hit boxes. */
+  .ed-ovl { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+  .ed-ovl svg { width: 100%; height: 100%; display: block; }
+  /* The hit surface spans the page, so it must stay transparent to the pointer
+     or it would swallow every click meant for a photo underneath. Only the
+     individual boxes take events — and not while a draw tool is active, so
+     dragging a new shape over an existing layer draws instead of moving it. */
+  .ed-hits { position: absolute; inset: 0; z-index: 11; pointer-events: none; }
+  .ed-hit { position: absolute; cursor: move; border: 1px solid transparent; pointer-events: auto; }
+  .ed-stage.is-drawing .ed-hit { pointer-events: none; }
+  .ed-hit:hover { border-color: var(--accent-glow); }
+  .ed-hit.selected { border: 1px solid var(--accent); }
+  .ed-hit.locked { cursor: not-allowed; }
+  /* Resize + rotate handles */
+  .ed-hnd { position: absolute; width: 10px; height: 10px; background: var(--bg-card);
+    border: 1.5px solid var(--accent); border-radius: 2px; }
+  .ed-hnd--nw { left: -5px; top: -5px; cursor: nwse-resize; }
+  .ed-hnd--ne { right: -5px; top: -5px; cursor: nesw-resize; }
+  .ed-hnd--sw { left: -5px; bottom: -5px; cursor: nesw-resize; }
+  .ed-hnd--se { right: -5px; bottom: -5px; cursor: nwse-resize; }
+  .ed-hnd--rot { left: 50%; top: -24px; margin-left: -5px; border-radius: 50%; cursor: grab; }
+  /* Snap guides */
+  .ed-guide { position: absolute; background: var(--accent); z-index: 20; pointer-events: none; opacity: 0.9; }
+  .ed-guide--v { width: 1px; top: 0; bottom: 0; }
+  .ed-guide--h { height: 1px; left: 0; right: 0; }
+
+  /* ── Right: contextual controls ───────────────────────────── */
+  .ed-panel { width: 258px; flex-shrink: 0; overflow-y: auto;
     border: 1px solid var(--border-main); border-radius: var(--radius-lg);
     background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
-    padding: 12px; display: flex; flex-direction: column; gap: 12px;
-  }
-  .ed-panel__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt-muted); font-weight: 700; }
+    padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .ed-panel__title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--txt-muted); font-weight: 700; }
   .ed-panel__hint { font-size: var(--fs-xs); color: var(--txt-secondary); line-height: 1.5; }
   .ed-ctl { display: flex; align-items: center; gap: 8px; font-size: var(--fs-xs); color: var(--txt-secondary); }
-  .ed-ctl > span:first-child { width: 64px; flex-shrink: 0; }
-  .ed-ctl input[type="range"] { flex: 1; }
-  .ed-ctl .ed-val { width: 30px; text-align: right; font-variant-numeric: tabular-nums; color: var(--txt-primary); }
+  .ed-ctl > span:first-child { width: 62px; flex-shrink: 0; }
+  .ed-ctl input[type="range"] { flex: 1; min-width: 0; }
+  .ed-ctl .ed-val { width: 32px; text-align: right; font-variant-numeric: tabular-nums; color: var(--txt-primary); }
+  .ed-ctl select, .ed-ctl input[type="text"], .ed-ctl input[type="number"] { flex: 1; min-width: 0;
+    background: var(--bg-inset); border: 1px solid var(--border-main); color: var(--txt-primary);
+    border-radius: var(--radius-md); padding: 4px 6px; font-size: var(--fs-xs); font-family: inherit; }
+  .ed-ctl input[type="color"] { width: 32px; height: 24px; padding: 0; border: 1px solid var(--border-main);
+    border-radius: var(--radius-md); background: var(--bg-inset); cursor: pointer; }
   .ed-sep { height: 1px; background: var(--border-main); margin: 2px 0; }
-  .ed-actions { display: flex; gap: 8px; margin-top: auto; }
+  .ed-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
   .ed-actions .btn { flex: 1; }
+  .ed-textarea { width: 100%; min-height: 62px; resize: vertical; background: var(--bg-inset);
+    border: 1px solid var(--border-main); color: var(--txt-primary); border-radius: var(--radius-md);
+    padding: 6px 8px; font-size: var(--fs-sm); font-family: inherit; line-height: 1.4; box-sizing: border-box; }
+  .ed-textarea:focus, .ed-ctl select:focus, .ed-ctl input:focus { outline: none; border-color: var(--accent); }
 
-  .ed-toast {
-    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  /* Segmented button groups (alignment, etc.) */
+  .ed-seg { display: flex; gap: 2px; flex: 1; }
+  .ed-seg button { flex: 1; background: var(--bg-inset); border: 1px solid var(--border-main);
+    color: var(--txt-secondary); font-size: 11px; padding: 4px 0; cursor: pointer; line-height: 1.2; }
+  .ed-seg button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+  .ed-seg button:last-child { border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+  .ed-seg button.is-active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+  /* Preset look chips */
+  .ed-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .ed-preset { background: var(--bg-inset); border: 1px solid var(--border-main); color: var(--txt-secondary);
+    font-size: 10px; font-weight: 600; padding: 5px 2px; border-radius: var(--radius-md); cursor: pointer; }
+  .ed-preset:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Collapsible group */
+  .ed-group > summary { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--txt-muted); font-weight: 700; cursor: pointer; padding: 4px 0; list-style: none; }
+  .ed-group > summary::-webkit-details-marker { display: none; }
+  .ed-group > summary::before { content: '▸ '; }
+  .ed-group[open] > summary::before { content: '▾ '; }
+  .ed-group__body { display: flex; flex-direction: column; gap: 7px; padding: 4px 0 6px; }
+
+  .ed-ctx { position: fixed; z-index: 1000; min-width: 190px; background: var(--bg-card);
+    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5); padding: 4px; }
+  .ed-ctx__item { display: block; width: 100%; text-align: left; background: transparent; border: none;
+    color: var(--txt-primary); font-size: var(--fs-sm); padding: 7px 12px; border-radius: var(--radius-md); cursor: pointer; }
+  .ed-ctx__item:hover:not(:disabled) { background: var(--accent-dim); color: var(--accent); }
+  .ed-ctx__item:disabled { color: var(--txt-muted); cursor: default; }
+
+  .ed-toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
     background: var(--bg-card); border: 1px solid var(--border-main); color: var(--txt-primary);
     padding: 8px 16px; border-radius: var(--radius-lg); box-shadow: var(--elev-hover);
-    font-size: var(--fs-sm); opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100;
-  }
+    font-size: var(--fs-sm); opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
   .ed-toast.show { opacity: 1; }
 
   /* Standalone-window theme fixes (this window is not transparent). */
   body::before, body::after { display: none !important; content: none !important; }
+
+  @media (prefers-reduced-motion: reduce) { .ed-toast { transition: none; } }
 </style>
 </head>
 <body>
@@ -85,14 +174,42 @@
   <header class="ed-header">
     <div class="ed-header__bar">
       <div>
-        <h1 class="ed-header__title">Spread Editor</h1>
-        <p class="ed-header__sub" id="edHint">Click to select · ⌘/Shift-click for multiple · drag to reposition · scroll to zoom · right-click to swap.</p>
+        <h1 class="ed-header__title">Page Editor</h1>
+        <p class="ed-header__sub" id="edHint">Click to select · drag to reposition · scroll to zoom · right-click for more.</p>
       </div>
     </div>
   </header>
+
+  <div class="ed-toolbar" role="toolbar" aria-label="Editing tools">
+    <button class="ed-tool is-active" id="edToolSelect" data-tool="select" title="Select and move (V)"><i data-icn="cursor"></i> Select</button>
+    <button class="ed-tool" id="edToolText" data-tool="text" title="Add text — click or drag on the page (T)"><i data-icn="type"></i> Text</button>
+    <button class="ed-tool" id="edToolRect" data-tool="rect" title="Draw a rectangle (R)"><i data-icn="square"></i> Box</button>
+    <button class="ed-tool" id="edToolEllipse" data-tool="ellipse" title="Draw an ellipse (E)"><i data-icn="circle"></i> Ellipse</button>
+    <button class="ed-tool" id="edToolLine" data-tool="line" title="Draw a line (L)"><i data-icn="minus"></i> Line</button>
+
+    <div class="ed-toolbar__sep" aria-hidden="true"></div>
+
+    <button class="ed-tool" id="edUndo" title="Undo (⌘Z)" disabled><i data-icn="undo"></i> Undo</button>
+    <button class="ed-tool" id="edRedo" title="Redo (⇧⌘Z)" disabled><i data-icn="redo"></i> Redo</button>
+
+    <div class="ed-toolbar__sep" aria-hidden="true"></div>
+
+    <button class="ed-tool" id="edDuplicate" title="Duplicate (⌘D)" disabled><i data-icn="copy"></i></button>
+    <button class="ed-tool" id="edBringFront" title="Bring to front (⌘⇧])" disabled><i data-icn="bring-front"></i></button>
+    <button class="ed-tool" id="edSendBack" title="Send to back (⌘⇧[)" disabled><i data-icn="send-back"></i></button>
+    <button class="ed-tool" id="edDelete" title="Delete (⌫)" disabled><i data-icn="trash"></i></button>
+
+    <div class="ed-toolbar__spacer"></div>
+    <button class="ed-tool" id="edToggleGuides" title="Snap to guides"><i data-icn="magnet"></i> Snap</button>
+  </div>
+
   <div class="ed-body">
     <aside class="ed-rail">
-      <div class="ed-rail__title">Spread</div>
+      <div class="ed-rail__title">Layers</div>
+      <div id="edLayers" class="ed-layers"></div>
+      <div id="edLayersEmpty" class="ed-rail__empty">No text or shapes on this page yet. Pick the Text tool and click the page.</div>
+      <div class="ed-sep"></div>
+      <div class="ed-rail__title">Spreads</div>
       <div id="edThumbs"></div>
     </aside>
 
@@ -102,17 +219,120 @@
     </div>
 
     <aside class="ed-panel">
-      <div class="ed-panel__title">Adjust selected photo</div>
-      <div id="edNoSel" class="ed-panel__hint">Select a photo on the page to edit it.</div>
-      <div id="edControls" style="display:none; flex-direction:column; gap:10px;">
+      <!-- Nothing selected → page-level controls -->
+      <div id="edPagePanel">
+        <div class="ed-panel__title">Page</div>
+        <div class="ed-ctl" style="margin-top:8px;"><span>Background</span>
+          <input type="color" id="edPageBg" value="#f5f4f0">
+          <button class="ed-tool" id="edPageBgClear" title="Use the template's own backdrop">Clear</button>
+        </div>
+        <div class="ed-panel__hint" style="margin-top:8px;">
+          Shows through wherever the template has no artwork. Select a photo, or a text or shape layer, to edit it.
+        </div>
+      </div>
+
+      <!-- Photo selected -->
+      <div id="edPhotoPanel" style="display:none; flex-direction:column; gap:10px;">
+        <div class="ed-panel__title">Photo</div>
         <div class="ed-ctl"><span>Zoom</span><input type="range" id="edZoom" min="100" max="400" value="100"><span class="ed-val" id="edZoomVal">1.0×</span></div>
-        <div class="ed-sep"></div>
-        <div class="ed-ctl"><span>Exposure</span><input type="range" id="edExposure" min="-100" max="100" value="0"><span class="ed-val" id="edExposureVal">0</span></div>
-        <div class="ed-ctl"><span>Contrast</span><input type="range" id="edContrast" min="-100" max="100" value="0"><span class="ed-val" id="edContrastVal">0</span></div>
-        <div class="ed-ctl"><span>Saturation</span><input type="range" id="edSaturation" min="-100" max="100" value="0"><span class="ed-val" id="edSaturationVal">0</span></div>
-        <div class="ed-ctl"><span>Warmth</span><input type="range" id="edWarmth" min="-100" max="100" value="0"><span class="ed-val" id="edWarmthVal">0</span></div>
+        <div class="ed-ctl"><span>Rotate</span>
+          <div class="ed-seg">
+            <button id="edRotL" title="Rotate 90° left">⟲ 90°</button>
+            <button id="edRotR" title="Rotate 90° right">⟳ 90°</button>
+          </div>
+        </div>
+
+        <details class="ed-group" open>
+          <summary>Looks</summary>
+          <div class="ed-group__body">
+            <div class="ed-presets" id="edPresets"></div>
+          </div>
+        </details>
+
+        <details class="ed-group" open>
+          <summary>Light</summary>
+          <div class="ed-group__body">
+            <div class="ed-ctl"><span>Exposure</span><input type="range" id="edExposure" min="-100" max="100" value="0"><span class="ed-val" id="edExposureVal">0</span></div>
+            <div class="ed-ctl"><span>Contrast</span><input type="range" id="edContrast" min="-100" max="100" value="0"><span class="ed-val" id="edContrastVal">0</span></div>
+            <div class="ed-ctl"><span>Fade</span><input type="range" id="edFade" min="0" max="100" value="0"><span class="ed-val" id="edFadeVal">0</span></div>
+          </div>
+        </details>
+
+        <details class="ed-group" open>
+          <summary>Colour</summary>
+          <div class="ed-group__body">
+            <div class="ed-ctl"><span>Saturation</span><input type="range" id="edSaturation" min="-100" max="100" value="0"><span class="ed-val" id="edSaturationVal">0</span></div>
+            <div class="ed-ctl"><span>Warmth</span><input type="range" id="edWarmth" min="-100" max="100" value="0"><span class="ed-val" id="edWarmthVal">0</span></div>
+            <div class="ed-ctl"><span>Tint</span><input type="range" id="edTint" min="-100" max="100" value="0"><span class="ed-val" id="edTintVal">0</span></div>
+            <div class="ed-ctl"><span>Black &amp; white</span><input type="checkbox" id="edBw"></div>
+          </div>
+        </details>
+
+        <details class="ed-group">
+          <summary>Detail &amp; effects</summary>
+          <div class="ed-group__body">
+            <div class="ed-ctl"><span>Clarity</span><input type="range" id="edClarity" min="0" max="100" value="0"><span class="ed-val" id="edClarityVal">0</span></div>
+            <div class="ed-ctl"><span>Sharpen</span><input type="range" id="edSharpen" min="0" max="100" value="0"><span class="ed-val" id="edSharpenVal">0</span></div>
+            <div class="ed-ctl"><span>Blur</span><input type="range" id="edBlur" min="0" max="100" value="0"><span class="ed-val" id="edBlurVal">0</span></div>
+            <div class="ed-ctl"><span>Vignette</span><input type="range" id="edVignette" min="-100" max="100" value="0"><span class="ed-val" id="edVignetteVal">0</span></div>
+          </div>
+        </details>
+
         <button id="edResetPhoto" class="btn btn--ghost btn--sm">Reset this photo</button>
       </div>
+
+      <!-- Text layer selected -->
+      <div id="edTextPanel" style="display:none; flex-direction:column; gap:10px;">
+        <div class="ed-panel__title">Text</div>
+        <textarea id="edText" class="ed-textarea" placeholder="Type your text…" spellcheck="true"></textarea>
+        <div class="ed-ctl"><span>Font</span><select id="edFont"></select></div>
+        <div class="ed-ctl"><span>Size</span><input type="range" id="edFontSize" min="5" max="300" value="50"><span class="ed-val" id="edFontSizeVal">50</span></div>
+        <div class="ed-ctl"><span>Weight</span><select id="edWeight">
+          <option value="200">Extra light</option><option value="300">Light</option>
+          <option value="400" selected>Regular</option><option value="500">Medium</option>
+          <option value="600">Semibold</option><option value="700">Bold</option><option value="900">Black</option>
+        </select></div>
+        <div class="ed-ctl"><span>Colour</span><input type="color" id="edTextColor" value="#222222">
+          <div class="ed-seg">
+            <button id="edItalic" title="Italic"><em>I</em></button>
+            <button id="edUnderline" title="Underline"><u>U</u></button>
+          </div>
+        </div>
+        <div class="ed-ctl"><span>Align</span>
+          <div class="ed-seg" id="edAlign">
+            <button data-align="left">Left</button><button data-align="center">Centre</button><button data-align="right">Right</button>
+          </div>
+        </div>
+        <div class="ed-ctl"><span>Vertical</span>
+          <div class="ed-seg" id="edValign">
+            <button data-valign="top">Top</button><button data-valign="middle">Middle</button><button data-valign="bottom">Bottom</button>
+          </div>
+        </div>
+        <details class="ed-group">
+          <summary>Spacing &amp; effects</summary>
+          <div class="ed-group__body">
+            <div class="ed-ctl"><span>Line height</span><input type="range" id="edLineHeight" min="70" max="250" value="125"><span class="ed-val" id="edLineHeightVal">1.3</span></div>
+            <div class="ed-ctl"><span>Tracking</span><input type="range" id="edTracking" min="-10" max="60" value="0"><span class="ed-val" id="edTrackingVal">0</span></div>
+            <div class="ed-ctl"><span>Rotation</span><input type="range" id="edTextRot" min="-180" max="180" value="0"><span class="ed-val" id="edTextRotVal">0</span></div>
+            <div class="ed-ctl"><span>Opacity</span><input type="range" id="edTextOpacity" min="0" max="100" value="100"><span class="ed-val" id="edTextOpacityVal">100</span></div>
+            <div class="ed-ctl"><span>Shadow</span><input type="checkbox" id="edTextShadow"></div>
+          </div>
+        </details>
+      </div>
+
+      <!-- Shape layer selected -->
+      <div id="edShapePanel" style="display:none; flex-direction:column; gap:10px;">
+        <div class="ed-panel__title">Shape</div>
+        <div class="ed-ctl"><span>Fill</span><input type="color" id="edShapeFill" value="#000000">
+          <button class="ed-tool" id="edShapeFillNone" title="No fill">None</button></div>
+        <div class="ed-ctl"><span>Stroke</span><input type="color" id="edShapeStroke" value="#000000"></div>
+        <div class="ed-ctl"><span>Thickness</span><input type="range" id="edShapeStrokeW" min="0" max="60" value="0"><span class="ed-val" id="edShapeStrokeWVal">0</span></div>
+        <div class="ed-ctl" id="edRadiusCtl"><span>Corners</span><input type="range" id="edShapeRadius" min="0" max="100" value="0"><span class="ed-val" id="edShapeRadiusVal">0</span></div>
+        <div class="ed-ctl"><span>Rotation</span><input type="range" id="edShapeRot" min="-180" max="180" value="0"><span class="ed-val" id="edShapeRotVal">0</span></div>
+        <div class="ed-ctl"><span>Opacity</span><input type="range" id="edShapeOpacity" min="0" max="100" value="100"><span class="ed-val" id="edShapeOpacityVal">100</span></div>
+        <div class="ed-ctl"><span>Shadow</span><input type="checkbox" id="edShapeShadow"></div>
+      </div>
+
       <div class="ed-actions">
         <button id="edDone" class="btn btn--render btn--sm">Done</button>
       </div>
@@ -120,6 +340,8 @@
   </div>
 </div>
 <div class="ed-toast" id="edToast"></div>
+<script src="ui_icons.js"></script>
+<script src="overlay_render.js"></script>
 <script src="editor_renderer.js"></script>
 </body>
 </html>

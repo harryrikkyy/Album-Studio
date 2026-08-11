@@ -158,6 +158,9 @@ function createProjectIO(store, deps) {
         if (!projectData.imageRotations) projectData.imageRotations = {};
         if (!projectData.imageAdjustments) projectData.imageAdjustments = {};
         if (!projectData.imagePlacements) projectData.imagePlacements = {};
+        // Projects saved before page overlays existed simply have none.
+        if (!projectData.pageOverlays) projectData.pageOverlays = {};
+        if (!projectData.pageBackgrounds) projectData.pageBackgrounds = {};
         store.set('projectData', projectData);
 
         store.set('albumPages', data.albumPages || {});

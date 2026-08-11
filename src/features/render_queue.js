@@ -89,7 +89,12 @@ function createRenderQueue(store, deps) {
                     useAdjustmentLayers: deps.useAdjLayers(),
                     pages: fresh.map(j => ({
                         pageName: String(j.pageNum).padStart(3, '0'),
-                        photos: j.pageData.photos
+                        photos: j.pageData.photos,
+                        // Text/shape layers ride along so the Photoshop build
+                        // gets the same captions the proof showed.
+                        overlays: j.pageData.overlays || null,
+                        canvasWidth: j.pageData.canvasWidth || null,
+                        canvasHeight: j.pageData.canvasHeight || null
                     }))
                 });
                 for (const j of fresh) {
@@ -107,6 +112,9 @@ function createRenderQueue(store, deps) {
                             templatePath: j.pageData.templatePath,
                             pageName: String(j.pageNum).padStart(3, '0'),
                             photos: j.pageData.photos,
+                            overlays: j.pageData.overlays || null,
+                            canvasWidth: j.pageData.canvasWidth || null,
+                            canvasHeight: j.pageData.canvasHeight || null,
                             useAdjustmentLayers: deps.useAdjLayers()
                         });
                         renderHashes[j.cacheKey] = j.hash;

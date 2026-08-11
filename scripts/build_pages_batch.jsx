@@ -104,6 +104,32 @@ else {
     return { w:x2-x1, h:y2-y1, cx:x1+(x2-x1)/2, cy:y1+(y2-y1)/2 };
   }
 
+  // Place the pre-rasterized overlay (text + shapes) as the topmost layer and
+  // stretch it to the full canvas. Rendered from the SAME SVG the editor
+  // previewed and the proof composited, so the delivered page matches exactly.
+  // Rasterized rather than rebuilt as native PS text on purpose: PS would
+  // re-wrap lines against different font metrics and silently diverge from what
+  // the user approved on screen.
+  function placeOverlayPng(doc, pngPath) {
+    if (!pngPath) return;
+    var f = new File(pngPath);
+    if (!f.exists) return;
+    var desc = new ActionDescriptor();
+    desc.putPath(charIDToTypeID("null"), f);
+    desc.putBoolean(charIDToTypeID("Lnkd"), false);
+    executeAction(charIDToTypeID("Plc "), desc, DialogModes.NO);
+
+    var layer = doc.activeLayer;
+    layer.name = "Album Studio — text & shapes";
+    var b = getBounds(layer);
+    if (b.w > 0 && b.h > 0) {
+      layer.resize((doc.width.as("px") / b.w) * 100, (doc.height.as("px") / b.h) * 100, AnchorPosition.MIDDLECENTER);
+    }
+    var b2 = getBounds(layer);
+    layer.translate(doc.width.as("px") / 2 - b2.cx, doc.height.as("px") / 2 - b2.cy);
+    layer.move(doc.layers[0], ElementPlacement.PLACEBEFORE);
+  }
+
   function placeAndFit(filePath, frameLayer, rotation, layerName, placement, adjust) {
     app.activeDocument.activeLayer = frameLayer;
     var idPlc = charIDToTypeID("Plc ");
@@ -182,6 +208,8 @@ else {
           placeAndFit(hPhotos[h].filePath, hFrames[h], hPhotos[h].rotation, hPhotos[h].baseName, hPhotos[h].placement, hPhotos[h].adjust);
         for (var v = 0; v < vPhotos.length && v < vFrames.length; v++)
           placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement, vPhotos[v].adjust);
+
+        placeOverlayPng(safeDoc, page.overlayPngPath);
 
         var saveOptions = new PhotoshopSaveOptions();
         saveOptions.maximizeCompatibility = true;

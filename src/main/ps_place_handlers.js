@@ -13,6 +13,44 @@ const jsxTemplates = require('../jsx/templates')
 
 const SCRIPTS_DIR = path.join(__dirname, '..', '..', 'scripts')
 
+// Overlays are authored as resolution-independent SVG. When a page's true
+// canvas size isn't in the payload we rasterize on a generous default long
+// edge — big enough that the JSX's scale-to-fit is a downscale (which stays
+// crisp) rather than an upscale (which would soften the text).
+const OVERLAY_FALLBACK_EDGE = 4500
+
+/**
+ * Rasterize a page's overlay layers and hang the PNG path on the payload for
+ * the JSX to place. Returns a cleanup function that removes the temp file —
+ * always called in a `finally`, so a failed Photoshop run doesn't leak.
+ *
+ * @param {any} page a build-page payload or one entry of a batch
+ * @returns {Promise<() => void>}
+ */
+async function attachOverlayPng(page) {
+  const noop = () => {}
+  if (!page || !Array.isArray(page.overlays) || !page.overlays.length) return noop
+  try {
+    const { rasterizeOverlays } = require('../proof_renderer')
+    let w = Number(page.canvasWidth)
+    let h = Number(page.canvasHeight)
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+      w = OVERLAY_FALLBACK_EDGE
+      h = Math.round(OVERLAY_FALLBACK_EDGE * 0.75)
+    }
+    const png = await rasterizeOverlays(page.overlays, w, h)
+    if (!png) return noop
+    page.overlayPngPath = png
+    return () => { try { require('fs').unlinkSync(png) } catch (_) {} }
+  } catch (e) {
+    // A failed overlay raster must not sink the whole page render — the page
+    // still builds, just without its captions. Breadcrumb so it's diagnosable.
+    console.warn('Overlay rasterize failed; page will build without overlays:',
+      e instanceof Error ? e.message : String(e))
+    return noop
+  }
+}
+
 function registerPsPlaceHandlers() {
   // ── OPEN IN PHOTOSHOP ─────────────────────────────────────
   ipcMain.handle('open-in-photoshop', async (event, filePath) => {
@@ -71,7 +109,12 @@ function registerPsPlaceHandlers() {
   // ── BUILD PAGE ────────────────────────────────────────────
   ipcMain.handle('build-page', async (event, pageData) => {
     pageData = guards.reqObject(pageData, 'pageData', 'build-page')
-    return bridge.runJsxDataJob('build_page.jsx', pageData, 300000)
+    const cleanup = await attachOverlayPng(pageData)
+    try {
+      return await bridge.runJsxDataJob('build_page.jsx', pageData, 300000)
+    } finally {
+      cleanup()
+    }
   })
 
   // ── BUILD PAGES BATCH ─────────────────────────────────────
@@ -83,7 +126,12 @@ function registerPsPlaceHandlers() {
     // batch = { templatePath, outputPath, pages: [{ pageName, photos }] }
     // Generous timeout: 30s per page, capped at 30 minutes.
     const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
-    return bridge.runJsxDataJob('build_pages_batch.jsx', batch, ms)
+    const cleanups = await Promise.all((batch.pages || []).map(attachOverlayPng))
+    try {
+      return await bridge.runJsxDataJob('build_pages_batch.jsx', batch, ms)
+    } finally {
+      for (const c of cleanups) c()
+    }
   })
 
   // ── BATCH THUMBNAILS (legacy: all through Photoshop) ──────

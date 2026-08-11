@@ -86,6 +86,25 @@ test('_hashPage is stable for identical input (drives the render cache)', () => 
   assert.equal(_hashPage(p), _hashPage(JSON.parse(JSON.stringify(p))))
 })
 
+// Overlays change no photo field at all, so without them in the hash an edited
+// caption would be served from the render cache and never reach the page.
+test('_hashPage changes when a page overlay changes', () => {
+  const photos = [{ filePath: '/a.jpg', orient: 'h', baseName: 'a' }]
+  const bare = { templatePath: '/t.psd', photos }
+  const captioned = { templatePath: '/t.psd', photos, overlays: [{ id: 'o', type: 'text', text: 'Hello' }] }
+  const edited = { templatePath: '/t.psd', photos, overlays: [{ id: 'o', type: 'text', text: 'Goodbye' }] }
+  assert.notEqual(_hashPage(bare), _hashPage(captioned))
+  assert.notEqual(_hashPage(captioned), _hashPage(edited))
+})
+
+test('_hashPage changes when the page background changes', () => {
+  const photos = [{ filePath: '/a.jpg', orient: 'h', baseName: 'a' }]
+  assert.notEqual(
+    _hashPage({ templatePath: '/t.psd', photos }),
+    _hashPage({ templatePath: '/t.psd', photos, pageBackground: '#ffffff' })
+  )
+})
+
 test('_hashPage distinguishes placement (zoom/pan) edits', () => {
   const a = { templatePath: '/t', photos: [{ filePath: '/a', orient: 'h', baseName: 'a', placement: { scale: 1 } }] }
   const b = { templatePath: '/t', photos: [{ filePath: '/a', orient: 'h', baseName: 'a', placement: { scale: 2 } }] }

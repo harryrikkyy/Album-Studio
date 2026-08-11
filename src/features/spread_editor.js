@@ -79,7 +79,7 @@ function createSpreadEditor(store, deps) {
         const spreads = [];
         for (let i = 1; i <= store.get('totalActivePages'); i++) {
             const pg = albumPages[i];
-            if (!pg || !pg.template || !(pg.photos && pg.photos.length)) continue;
+            if (!pg || !pg.template) continue;
             spreads.push({ pageNum: i, backdropUrl: pg.template.url || null });
         }
 
@@ -90,6 +90,11 @@ function createSpreadEditor(store, deps) {
             backdropUrl: tpl.url || null,
             items,
             spreads,
+            // Page-level layers (text, shapes) and background colour. Cloned so
+            // the editor's working copy can't mutate project state directly —
+            // every change comes back through `editor-changes`.
+            overlays: JSON.parse(JSON.stringify(projectData.pageOverlays?.[pageNum] || [])),
+            pageBackground: projectData.pageBackgrounds?.[pageNum] || null,
         };
     }
 
@@ -98,8 +103,10 @@ function createSpreadEditor(store, deps) {
         btnEditSpread.addEventListener('click', async () => {
             const currentPage = store.get('currentPage');
             const page = store.get('albumPages')[currentPage];
-            if (!page || !page.template || !(page.photos && page.photos.length)) {
-                deps.toast('Add a template and photos to this page first', 'info');
+            // Only a template is required: a page with no photos yet is still
+            // worth opening, because text and shapes can be laid out on it.
+            if (!page || !page.template) {
+                deps.toast('Give this page a template first', 'info');
                 return;
             }
             deps.setStatus('Opening Spread Editor…');
@@ -126,6 +133,28 @@ function createSpreadEditor(store, deps) {
             for (const [id, adj] of Object.entries(changes.adjustments)) {
                 if (adj) projectData.imageAdjustments[id] = adj; else delete projectData.imageAdjustments[id];
             }
+        }
+        // Rotation is editable in the editor now, so it round-trips like the
+        // other per-photo edits. 0 means "no rotation" — stored as a delete so
+        // the project file doesn't accumulate no-op entries.
+        if (changes.rotations) {
+            if (!projectData.imageRotations) projectData.imageRotations = {};
+            for (const [id, deg] of Object.entries(changes.rotations)) {
+                if (deg) projectData.imageRotations[id] = deg; else delete projectData.imageRotations[id];
+            }
+        }
+        // Page overlays arrive as the page's WHOLE layer list (adds, edits,
+        // deletes and reordering all at once) — the editor owns the ordering,
+        // so replacing wholesale is simpler and cannot drift out of sync.
+        if (changes.overlays && changes.pageNum) {
+            if (!projectData.pageOverlays) projectData.pageOverlays = {};
+            if (changes.overlays.length) projectData.pageOverlays[changes.pageNum] = changes.overlays;
+            else delete projectData.pageOverlays[changes.pageNum];
+        }
+        if (changes.pageNum && 'pageBackground' in changes) {
+            if (!projectData.pageBackgrounds) projectData.pageBackgrounds = {};
+            if (changes.pageBackground) projectData.pageBackgrounds[changes.pageNum] = changes.pageBackground;
+            else delete projectData.pageBackgrounds[changes.pageNum];
         }
         // The edit is applied in-memory either way; only the autosave is
         // best-effort. But a silently failing autosave means editor changes

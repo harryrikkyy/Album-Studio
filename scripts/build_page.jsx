@@ -103,6 +103,35 @@ else {
     return { w:x2-x1, h:y2-y1, cx:x1+(x2-x1)/2, cy:y1+(y2-y1)/2 };
   }
 
+  // Place the pre-rasterized overlay (text + shapes) as the topmost layer and
+  // stretch it to the full canvas. It was rendered from the SAME SVG the editor
+  // previewed and the proof composited, so the delivered page matches exactly.
+  // Rasterized rather than rebuilt as native PS text on purpose: PS would
+  // re-wrap lines against different font metrics and silently diverge from what
+  // the user approved on screen.
+  function placeOverlayPng(doc, pngPath) {
+    if (!pngPath) return;
+    var f = new File(pngPath);
+    if (!f.exists) return;
+    var desc = new ActionDescriptor();
+    desc.putPath(charIDToTypeID("null"), f);
+    desc.putBoolean(charIDToTypeID("Lnkd"), false);
+    executeAction(charIDToTypeID("Plc "), desc, DialogModes.NO);
+
+    var layer = doc.activeLayer;
+    layer.name = "Album Studio — text & shapes";
+    // Place lands the art centered at its own size; scale it to the canvas.
+    var b = getBounds(layer);
+    if (b.w > 0 && b.h > 0) {
+      layer.resize((doc.width.as("px") / b.w) * 100, (doc.height.as("px") / b.h) * 100, AnchorPosition.MIDDLECENTER);
+    }
+    // Re-centre in case the placed art wasn't perfectly centered to begin with.
+    var b2 = getBounds(layer);
+    layer.translate(doc.width.as("px") / 2 - b2.cx, doc.height.as("px") / 2 - b2.cy);
+    // Topmost, above every photo.
+    layer.move(doc.layers[0], ElementPlacement.PLACEBEFORE);
+  }
+
   function placeAndFit(filePath, frameLayer, rotation, layerName, placement, adjust) {
     app.activeDocument.activeLayer = frameLayer;
     var idPlc = charIDToTypeID("Plc ");
@@ -181,6 +210,8 @@ else {
 
     for (var v = 0; v < vPhotos.length && v < vFrames.length; v++)
       placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement, vPhotos[v].adjust);
+
+    placeOverlayPng(safeDoc, data.overlayPngPath);
 
   } catch(e) {
     // Non-blocking: the render queue awaits this JSX call, so a modal alert()

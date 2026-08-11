@@ -89,8 +89,10 @@ function getDisplayName(folder) {
 
 // Deterministic stringification of the inputs that affect a page's render
 // output. Includes adjust + placement so colour/zoom-pan edits re-render (they
-// don't change filePath, so they'd otherwise be cached as unchanged). The
-// render queue caches this hash so an unchanged page is a no-op re-render.
+// don't change filePath, so they'd otherwise be cached as unchanged), and the
+// page's overlay layers + background for the same reason — retyping a caption
+// changes no photo at all. The render queue caches this hash so an unchanged
+// page is a no-op re-render.
 /** @param {HashablePage} pageData @returns {string} */
 function _hashPage(pageData) {
     const parts = [
@@ -99,7 +101,9 @@ function _hashPage(pageData) {
             const a = p.adjust ? JSON.stringify(p.adjust) : '';
             const pl = p.placement ? JSON.stringify(p.placement) : '';
             return `${p.filePath}|${p.orient}|${p.rotation || 0}|${p.baseName}|${a}|${pl}`;
-        })
+        }),
+        pageData.overlays ? JSON.stringify(pageData.overlays) : '',
+        pageData.pageBackground || '',
     ];
     return parts.join('§');
 }
