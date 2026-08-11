@@ -20,32 +20,44 @@ const SCRIPTS_DIR = path.join(__dirname, '..', '..', 'scripts')
 const OVERLAY_FALLBACK_EDGE = 4500
 
 /**
- * Rasterize a page's overlay layers and hang the PNG path on the payload for
- * the JSX to place. Returns a cleanup function that removes the temp file —
- * always called in a `finally`, so a failed Photoshop run doesn't leak.
+ * Prepare a page's overlays for the Photoshop build, in two halves:
+ *
+ *   text   → `overlayTextLayers`, rebuilt as NATIVE, editable Photoshop text
+ *            layers so the client can retype a name in the delivered PSD
+ *   shapes → `overlayPngPath`, a transparent raster placed as one layer
+ *
+ * Returns a cleanup function that removes the temp PNG — always called in a
+ * `finally`, so a failed Photoshop run doesn't leak files.
  *
  * @param {any} page a build-page payload or one entry of a batch
  * @returns {Promise<() => void>}
  */
-async function attachOverlayPng(page) {
+async function attachOverlayArtwork(page) {
   const noop = () => {}
   if (!page || !Array.isArray(page.overlays) || !page.overlays.length) return noop
   try {
     const { rasterizeOverlays } = require('../proof_renderer')
+    const { buildPsTextLayers, hasShapeOverlays } = require('../overlay_ps')
+
     let w = Number(page.canvasWidth)
     let h = Number(page.canvasHeight)
     if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
       w = OVERLAY_FALLBACK_EDGE
       h = Math.round(OVERLAY_FALLBACK_EDGE * 0.75)
     }
+
+    page.overlayTextLayers = buildPsTextLayers(page.overlays, w, h)
+
+    // Only rasterize when there is actually a shape to draw; text is native.
+    if (!hasShapeOverlays(page.overlays)) return noop
     const png = await rasterizeOverlays(page.overlays, w, h)
     if (!png) return noop
     page.overlayPngPath = png
     return () => { try { require('fs').unlinkSync(png) } catch (_) {} }
   } catch (e) {
-    // A failed overlay raster must not sink the whole page render — the page
+    // A failed overlay prep must not sink the whole page render — the page
     // still builds, just without its captions. Breadcrumb so it's diagnosable.
-    console.warn('Overlay rasterize failed; page will build without overlays:',
+    console.warn('Overlay prep failed; page will build without overlays:',
       e instanceof Error ? e.message : String(e))
     return noop
   }
@@ -109,7 +121,7 @@ function registerPsPlaceHandlers() {
   // ── BUILD PAGE ────────────────────────────────────────────
   ipcMain.handle('build-page', async (event, pageData) => {
     pageData = guards.reqObject(pageData, 'pageData', 'build-page')
-    const cleanup = await attachOverlayPng(pageData)
+    const cleanup = await attachOverlayArtwork(pageData)
     try {
       return await bridge.runJsxDataJob('build_page.jsx', pageData, 300000)
     } finally {
@@ -126,7 +138,7 @@ function registerPsPlaceHandlers() {
     // batch = { templatePath, outputPath, pages: [{ pageName, photos }] }
     // Generous timeout: 30s per page, capped at 30 minutes.
     const ms = Math.min(30 * 60 * 1000, Math.max(60_000, batch.pages.length * 30_000))
-    const cleanups = await Promise.all((batch.pages || []).map(attachOverlayPng))
+    const cleanups = await Promise.all((batch.pages || []).map(attachOverlayArtwork))
     try {
       return await bridge.runJsxDataJob('build_pages_batch.jsx', batch, ms)
     } finally {

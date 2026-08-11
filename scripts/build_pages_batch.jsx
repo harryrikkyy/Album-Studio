@@ -104,12 +104,88 @@ else {
     return { w:x2-x1, h:y2-y1, cx:x1+(x2-x1)/2, cy:y1+(y2-y1)/2 };
   }
 
-  // Place the pre-rasterized overlay (text + shapes) as the topmost layer and
-  // stretch it to the full canvas. Rendered from the SAME SVG the editor
-  // previewed and the proof composited, so the delivered page matches exactly.
-  // Rasterized rather than rebuilt as native PS text on purpose: PS would
-  // re-wrap lines against different font metrics and silently diverge from what
-  // the user approved on screen.
+  // ── OVERLAYS (text + shapes drawn in the app's Page Editor) ──────────
+  //
+  // Shapes arrive pre-rasterized as one transparent PNG. TEXT is rebuilt here
+  // as native Photoshop text so the delivered PSD stays editable — the client
+  // can retype a name without going back to the app.
+  //
+  // The lines are ALREADY wrapped by the app (data.overlayTextLayers[].contents
+  // uses \r between them) and each layer is POINT text, so Photoshop is never
+  // asked to make a wrapping decision and cannot re-flow the copy differently
+  // from the preview. Line widths can still differ slightly, because the app's
+  // advance-width estimate is not the real font's.
+
+  // Rotate a layer by `deg` about an arbitrary canvas pivot. Photoshop only
+  // rotates about the layer's own bounds, but the preview turns text about its
+  // BOX centre — which is a different point whenever the text doesn't fill its
+  // box. Rotate, then translate the difference.
+  function rotateAboutPivot(layer, deg, pivotX, pivotY) {
+    var b = getBounds(layer);
+    var rad = deg * Math.PI / 180;
+    var dx = b.cx - pivotX, dy = b.cy - pivotY;
+    var nx = pivotX + dx * Math.cos(rad) - dy * Math.sin(rad);
+    var ny = pivotY + dx * Math.sin(rad) + dy * Math.cos(rad);
+    layer.rotate(deg, AnchorPosition.MIDDLECENTER);
+    var b2 = getBounds(layer);
+    layer.translate(nx - b2.cx, ny - b2.cy);
+  }
+
+  function createTextLayers(doc, list) {
+    if (!list || !list.length) return;
+    var prevTypeUnits = app.preferences.typeUnits;
+    // Every measurement in the payload is canvas pixels.
+    app.preferences.typeUnits = TypeUnits.PIXELS;
+    try {
+      for (var i = 0; i < list.length; i++) {
+        var T = list[i];
+        try {
+          var layer = doc.artLayers.add();
+          layer.kind = LayerKind.TEXT;
+          var ti = layer.textItem;
+          ti.kind = TextType.POINTTEXT;
+
+          // Font first: changing it after the fact re-measures the text and
+          // shifts the anchor. An unavailable PostScript name throws, so fall
+          // back to Photoshop's current font rather than losing the layer.
+          if (T.fontName) { try { ti.font = T.fontName; } catch (fe) {} }
+          ti.size = T.sizePx;
+          // Leading is ignored unless auto-leading is explicitly off.
+          ti.autoLeading = false;
+          ti.leading = T.leadingPx;
+          if (T.tracking) { try { ti.tracking = T.tracking; } catch (te) {} }
+          if (T.fauxItalic) { try { ti.fauxItalic = true; } catch (ie) {} }
+          if (T.underline) { try { ti.underline = UnderlineType.UNDERLINELEFT; } catch (ue) {} }
+
+          var col = new SolidColor();
+          col.rgb.red = T.color.r; col.rgb.green = T.color.g; col.rgb.blue = T.color.b;
+          ti.color = col;
+          ti.justification = (T.justification === 'center') ? Justification.CENTER
+            : (T.justification === 'right') ? Justification.RIGHT
+            : Justification.LEFT;
+
+          ti.contents = T.contents;
+          // Position last — it is the baseline anchor of the first line, and
+          // the properties above all move it.
+          ti.position = [T.x, T.y];
+
+          layer.name = T.name;
+          if (T.opacity < 100) layer.opacity = T.opacity;
+          if (T.rot) rotateAboutPivot(layer, T.rot, T.pivotX, T.pivotY);
+          // Created bottom-to-top in the app's own order, each moved to the
+          // front, so the final stack matches the editor's layer list.
+          layer.move(doc.layers[0], ElementPlacement.PLACEBEFORE);
+        } catch (e) {
+          // One bad layer must not cost the whole page.
+        }
+      }
+    } finally {
+      app.preferences.typeUnits = prevTypeUnits;
+    }
+  }
+
+  // Place the rasterized SHAPE overlay and stretch it to the full canvas.
+  // Placed before the text layers so captions sit above rules and boxes.
   function placeOverlayPng(doc, pngPath) {
     if (!pngPath) return;
     var f = new File(pngPath);
@@ -121,12 +197,15 @@ else {
 
     var layer = doc.activeLayer;
     layer.name = "Album Studio — text & shapes";
+    // Place lands the art centered at its own size; scale it to the canvas.
     var b = getBounds(layer);
     if (b.w > 0 && b.h > 0) {
       layer.resize((doc.width.as("px") / b.w) * 100, (doc.height.as("px") / b.h) * 100, AnchorPosition.MIDDLECENTER);
     }
+    // Re-centre in case the placed art wasn't perfectly centered to begin with.
     var b2 = getBounds(layer);
     layer.translate(doc.width.as("px") / 2 - b2.cx, doc.height.as("px") / 2 - b2.cy);
+    // Topmost, above every photo.
     layer.move(doc.layers[0], ElementPlacement.PLACEBEFORE);
   }
 
@@ -210,6 +289,7 @@ else {
           placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement, vPhotos[v].adjust);
 
         placeOverlayPng(safeDoc, page.overlayPngPath);
+        createTextLayers(safeDoc, page.overlayTextLayers);
 
         var saveOptions = new PhotoshopSaveOptions();
         saveOptions.maximizeCompatibility = true;

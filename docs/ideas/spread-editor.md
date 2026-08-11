@@ -126,18 +126,26 @@ The window is now the **Page Editor**: it edits the page, not just the photos in
 |---|---|---|
 | Page Editor | plain `<script>` → `window.OverlayRender` | injects the SVG into the stage as the live preview |
 | `proof_renderer` | `require` | composites it over the proof / generative HR export |
-| Photoshop build | `require` → `rasterizeOverlays()` → PNG | places that PNG as the top layer |
+| Photoshop build | `require` → `resolveTextLayout()` | rebuilds text as **native, editable** PS text layers; shapes go through `rasterizeOverlays()` as one PNG |
 
-The preview is not a lookalike of the export — it is **the same document**. WYSIWYG is structural rather than two code paths kept in sync by hand.
+The preview is not a lookalike of the export — it is **the same document** (or, on the Photoshop leg, built from the same resolved layout). WYSIWYG is structural rather than two code paths kept in sync by hand.
 
 Two consequences worth stating:
 
 - **Geometry is normalized** (fractions of canvas; font size is a fraction of canvas *height*). A layer renders identically on a 1500px proof and a 7000px final composite. This is what lets the editor trust its own preview.
 - **Wrapping is computed in the generator**, not delegated to the renderer. SVG has no auto-wrap, and librsvg and Chrome would otherwise break lines differently. `estimateAdvance` is a deterministic width table — its job is for both sides to agree with *each other*, not to match a font spec.
 
-### Why the Photoshop path rasterizes instead of building native text layers
+### Editable PSD text without losing the guarantee
 
-Native PS text would be re-editable in the delivered PSD, which sounds strictly better. It isn't: Photoshop would re-wrap the lines against its own font metrics, so the delivered page could differ from the one the user approved on screen — breaking the single guarantee this design exists to provide. Rasterizing the same SVG keeps the export exact. Text stays fully editable *in the app*, which is where the editing now happens.
+The delivered PSD must stay editable — a client should be able to retype a name in Photoshop. The obvious risk is that Photoshop re-flows the copy against its own font metrics and the delivered page quietly stops matching the approved proof.
+
+The way out is that **the app has already decided where the lines break**. `resolveTextLayout` returns the wrapped lines; `overlay_ps.js` hands each one to Photoshop as a hard line (`\r`) inside a **POINT** text layer. Photoshop is therefore never asked to make a wrapping decision and cannot make a different one. `test/overlay_ps.test.js` asserts the PS lines equal the `<tspan>` lines the SVG renders — if that ever drifts, the suite fails.
+
+What still differs, and is accepted:
+
+- **Line widths**, slightly. Our advance-width estimate is not the real font's, so a centred line can sit a pixel or two off, and a line tuned to kiss a photo edge deserves one look. (Both paths share the estimate, so the *proof* has the same offset — the PSD matches the proof, and both may be a hair off the ideal.)
+- **Shapes are still raster.** Only text is native. The shape PNG is placed below the text layers, so captions sit above rules and boxes; interleaving a shape *above* text isn't reproduced in the PSD.
+- **Fonts are mapped by table.** Photoshop wants PostScript names (`Georgia-Italic`), not CSS family + weight. `PS_FONTS` covers the families the editor offers, picks the nearest available weight, and sets `fauxItalic` when a family ships no italic cut. An unmapped name leaves Photoshop's default rather than failing the page.
 
 ### Data model
 

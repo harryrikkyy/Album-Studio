@@ -187,14 +187,28 @@
     // ── Layer → SVG ─────────────────────────────────────────────────
 
     /**
-     * Render one text layer.
+     * Resolve a text layer to concrete pixel layout: the wrapped lines and
+     * where each one sits.
+     *
+     * Shared deliberately. The SVG below renders from this, and the Photoshop
+     * export builds native text layers from the very same numbers — which is
+     * what lets PS text stay editable without drifting from the preview: PS is
+     * handed lines that are ALREADY wrapped, so it never re-flows them against
+     * its own metrics.
+     *
      * @param {OverlayLayer} L
      * @param {number} W canvas width in px
      * @param {number} H canvas height in px
+     * @returns {null | {
+     *   lines: string[], fontSize: number, lineStep: number, anchorX: number,
+     *   firstBaseline: number, align: 'left'|'center'|'right', color: string,
+     *   font: string, weight: number, italic: boolean, underline: boolean,
+     *   trackingEm: number, opacity: number, rot: number, cx: number, cy: number
+     * }}
      */
-    function textSvg(L, W, H) {
+    function resolveTextLayout(L, W, H) {
         const raw = L.text == null ? '' : String(L.text)
-        if (!raw.trim()) return ''
+        if (!raw.trim()) return null
 
         const fontSize = num(L.size, 0.005, 0.5, 0.05) * H
         const weight = num(L.weight, 100, 900, 400)
@@ -220,18 +234,50 @@
         else if (valign === 'bottom') firstBaseline = boxY + boxH - blockH + fontSize * ASCENT
         else firstBaseline = boxY + fontSize * ASCENT
 
-        const anchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start'
-        const tx = align === 'center' ? boxX + boxW / 2 : align === 'right' ? boxX + boxW : boxX
+        const anchorX = align === 'center' ? boxX + boxW / 2 : align === 'right' ? boxX + boxW : boxX
 
-        const color = safeColor(L.color, '#111111')
-        const font = safeFont(L.font)
+        return {
+            lines,
+            fontSize,
+            lineStep,
+            anchorX,
+            firstBaseline,
+            align,
+            color: safeColor(L.color, '#111111'),
+            font: safeFont(L.font),
+            weight,
+            italic: !!L.italic,
+            underline: !!L.underline,
+            // Photoshop expresses tracking in 1/1000 em; ours is a fraction of
+            // the font size, which is the same thing scaled by 1000.
+            trackingEm: tracking,
+            opacity: num(L.opacity, 0, 1, 1),
+            rot: num(L.rot, -360, 360, 0),
+            cx: (num(L.x, -1, 2, 0) + num(L.w, 0, 2, 0) / 2) * W,
+            cy: (num(L.y, -1, 2, 0) + num(L.h, 0, 2, 0) / 2) * H,
+        }
+    }
+
+    /**
+     * Render one text layer.
+     * @param {OverlayLayer} L
+     * @param {number} W canvas width in px
+     * @param {number} H canvas height in px
+     */
+    function textSvg(L, W, H) {
+        const t = resolveTextLayout(L, W, H)
+        if (!t) return ''
+        const { lines, fontSize, lineStep, anchorX: tx, firstBaseline, align, color, font } = t
+        const tracking = t.trackingEm
+
+        const anchor = align === 'center' ? 'middle' : align === 'right' ? 'end' : 'start'
         const style = [
             `font-family:'${font}'`,
             `font-size:${r3(fontSize)}px`,
-            `font-weight:${weight}`,
-            L.italic ? 'font-style:italic' : '',
+            `font-weight:${t.weight}`,
+            t.italic ? 'font-style:italic' : '',
             tracking ? `letter-spacing:${r3(tracking * fontSize)}px` : '',
-            L.underline ? 'text-decoration:underline' : '',
+            t.underline ? 'text-decoration:underline' : '',
         ].filter(Boolean).join(';')
 
         const tspans = lines.map((ln, i) =>
@@ -360,6 +406,9 @@
     const api = {
         buildOverlaySvg,
         overlayCacheKey,
+        // Consumed by overlay_ps.js to build native Photoshop text layers from
+        // the SAME resolved layout the SVG uses — see that file's header.
+        resolveTextLayout,
         // Exported for unit tests + the editor's own hit-testing.
         wrapText,
         estimateTextWidth,

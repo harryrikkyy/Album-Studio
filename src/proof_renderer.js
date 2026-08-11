@@ -489,18 +489,24 @@ async function renderFinalComposite(job) {
 /**
  * Rasterize a page's overlay layers to a transparent PNG.
  *
- * This is how text and shapes reach the PHOTOSHOP export path. Photoshop
- * cannot be handed the SVG, and rebuilding the layers as native PS text would
- * re-wrap the lines against different font metrics — the export would then
- * disagree with the editor preview, which is the one thing this design exists
- * to prevent. Rasterizing the very same SVG keeps the delivered page identical
- * to what the user approved, at the cost of the text not being re-editable
- * inside the delivered PSD (it stays fully editable in the app).
+ * This is how SHAPES reach the Photoshop export path — Photoshop cannot be
+ * handed the SVG. Text is excluded by default and rebuilt as native, editable
+ * Photoshop text layers instead (see overlay_ps.js); including it here too
+ * would draw every caption twice.
  *
+ * @param {any[]} overlays
+ * @param {number} width
+ * @param {number} height
+ * @param {{ includeText?: boolean }} [opts] pass includeText to bake captions
+ *        into the raster as well — used by callers that have no native-text
+ *        path of their own.
  * @returns {Promise<string|null>} temp PNG path, or null if nothing to draw
  */
-async function rasterizeOverlays(overlays, width, height) {
-  const svg = buildOverlaySvg(overlays, width, height)
+async function rasterizeOverlays(overlays, width, height, opts = {}) {
+  const layers = opts.includeText
+    ? overlays
+    : (Array.isArray(overlays) ? overlays.filter((L) => L && L.type !== 'text') : overlays)
+  const svg = buildOverlaySvg(layers, width, height)
   if (!svg) return null
   const sharp = getSharp()
   const out = path.join(
