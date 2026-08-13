@@ -111,6 +111,8 @@ export interface HashablePage {
   canvasHeight?: number | null
   /** Per-page overrides of the template's own PSD layers. */
   layerEdits?: Record<string, { hidden?: boolean, opacity?: number }> | null
+  /** The template's layer tree — only needed to translate layer ids. */
+  psdLayers?: unknown[] | null
 }
 
 /** Progress counters for the render batch currently being worked. */

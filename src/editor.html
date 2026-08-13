@@ -118,6 +118,20 @@
   .ed-guide--v { width: 1px; top: 0; bottom: 0; }
   .ed-guide--h { height: 1px; left: 0; right: 0; }
 
+  .ed-seg--tool button { padding: 4px 5px; min-width: 26px; line-height: 0; }
+  .ed-seg--tool svg { width: 14px; height: 14px; }
+  .ed-align { background: var(--bg-inset); border: 1px solid var(--border-main); color: var(--txt-secondary); cursor: pointer; }
+  .ed-align:hover { color: var(--accent); border-color: var(--accent); }
+  #edZoomLevel { font-variant-numeric: tabular-nums; min-width: 38px; display: inline-block; text-align: center; }
+  /* Zoomed past fit, the page scrolls inside the mat instead of shrinking. */
+  .ed-stage-wrap.is-zoomed { align-items: flex-start; justify-content: flex-start; overflow: auto; }
+  /* Print guides: trim, safe area and the centre gutter. */
+  .ed-print-guide { position: absolute; pointer-events: none; z-index: 15; }
+  .ed-print-guide--trim { border: 1px dashed rgba(255,90,90,0.75); }
+  .ed-print-guide--safe { border: 1px dashed rgba(90,180,255,0.75); }
+  .ed-print-guide--gutter { top: 0; bottom: 0; width: 0;
+    border-left: 1px dashed rgba(255,200,60,0.75); }
+
   /* ── Right: contextual controls ───────────────────────────── */
   .ed-panel { width: 258px; flex-shrink: 0; overflow-y: auto;
     border: 1px solid var(--border-main); border-radius: var(--radius-lg);
@@ -221,8 +235,27 @@
     <button class="ed-tool" id="edSendBack" aria-label="Send to back" title="Send to back (⌘⇧[)" disabled><i data-icn="send-back"></i></button>
     <button class="ed-tool" id="edDelete" aria-label="Delete selection" title="Delete (⌫)" disabled><i data-icn="trash"></i></button>
 
+    <div class="ed-toolbar__sep" aria-hidden="true"></div>
+
+    <div class="ed-seg ed-seg--tool" role="group" aria-label="Align and distribute">
+      <button class="ed-align" data-align-edge="left"    title="Align left"        aria-label="Align left"><i data-icn="align-left"></i></button>
+      <button class="ed-align" data-align-edge="hcenter" title="Align centres"     aria-label="Align horizontal centres"><i data-icn="align-hcenter"></i></button>
+      <button class="ed-align" data-align-edge="right"   title="Align right"       aria-label="Align right"><i data-icn="align-right"></i></button>
+      <button class="ed-align" data-align-edge="top"     title="Align top"         aria-label="Align top"><i data-icn="align-top"></i></button>
+      <button class="ed-align" data-align-edge="vcenter" title="Align middles"     aria-label="Align vertical centres"><i data-icn="align-vcenter"></i></button>
+      <button class="ed-align" data-align-edge="bottom"  title="Align bottom"      aria-label="Align bottom"><i data-icn="align-bottom"></i></button>
+      <button class="ed-align" data-distribute="h" title="Distribute horizontally (3+)" aria-label="Distribute horizontally"><i data-icn="dist-h"></i></button>
+      <button class="ed-align" data-distribute="v" title="Distribute vertically (3+)"   aria-label="Distribute vertically"><i data-icn="dist-v"></i></button>
+    </div>
+
     <div class="ed-toolbar__spacer"></div>
+
+    <button class="ed-tool" id="edGuides" title="Show trim, safe-area and gutter guides" aria-label="Print guides"><i data-icn="ruler"></i> Guides</button>
     <button class="ed-tool" id="edToggleGuides" title="Snap to guides"><i data-icn="magnet"></i> Snap</button>
+    <div class="ed-toolbar__sep" aria-hidden="true"></div>
+    <button class="ed-tool" id="edZoomOut" title="Zoom out (⌘-)" aria-label="Zoom out"><i data-icn="minus"></i></button>
+    <button class="ed-tool" id="edZoomFit" title="Fit page (⌘0)"><span id="edZoomLevel">100%</span></button>
+    <button class="ed-tool" id="edZoomIn" title="Zoom in (⌘+)" aria-label="Zoom in"><i data-icn="plus"></i></button>
   </div>
 
   <div class="ed-body">

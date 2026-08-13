@@ -271,6 +271,56 @@ function resolveClipping(/** @type {any[]} */ drawOrder) {
   })
 }
 
+/**
+ * Translate layer overrides into instructions the build JSX can apply.
+ *
+ * The two worlds index layers in OPPOSITE directions: ag-psd lists a
+ * container's children bottom-to-top (PSD storage order), while ExtendScript's
+ * `doc.layers[0]` is the TOPMOST layer. Ignoring that doesn't fail loudly — it
+ * silently hides the wrong layer — so the inversion happens once, here, with
+ * tests, rather than being re-derived in ExtendScript.
+ *
+ * Only layers with an actual override are emitted, and only when the override
+ * differs from what the PSD already says: the export should leave a template
+ * it was never asked to change completely untouched.
+ *
+ * @param {any[]} layers the tree from readPsdLayerTree
+ * @param {Record<string, { hidden?: boolean, opacity?: number }>} layerEdits
+ * @returns {{ path: number[], name: string, hidden?: boolean, opacity?: number }[]}
+ */
+function toPhotoshopLayerOps(layers, layerEdits) {
+  /** @type {any[]} */
+  const ops = []
+  if (!layerEdits || !Object.keys(layerEdits).length) return ops
+
+  const walk = (/** @type {any[]} */ nodes, /** @type {number[]} */ psPath) => {
+    const n = nodes.length
+    for (let i = 0; i < n; i++) {
+      const node = nodes[i]
+      // Same child, counted from the other end.
+      const psIndex = n - 1 - i
+      const here = psPath.concat(psIndex)
+      const edit = layerEdits[node.id]
+      if (edit) {
+        /** @type {any} */
+        const op = { path: here, name: node.name }
+        if (edit.hidden !== undefined && edit.hidden === !node.visible) {
+          // Matches the PSD already — nothing to do.
+        } else if (edit.hidden !== undefined) {
+          op.hidden = edit.hidden
+        }
+        if (edit.opacity !== undefined && edit.opacity !== node.opacity) {
+          op.opacity = edit.opacity
+        }
+        if ('hidden' in op || 'opacity' in op) ops.push(op)
+      }
+      if (node.children) walk(node.children, here)
+    }
+  }
+  walk(layers || [], [])
+  return ops
+}
+
 /** Frame layers only, in draw order — the photo slots. */
 function frameLayers(/** @type {any[]} */ layers) {
   return flattenDrawOrder(layers).filter((n) => n.isFrame)
@@ -280,6 +330,7 @@ module.exports = {
   readPsdLayerTree,
   flattenDrawOrder,
   resolveClipping,
+  toPhotoshopLayerOps,
   frameLayers,
   layerCacheDir,
   isFrameName,

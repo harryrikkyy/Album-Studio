@@ -93,6 +93,8 @@ function createRenderQueue(store, deps) {
                         // Text/shape layers ride along so the Photoshop build
                         // gets the same captions the proof showed.
                         overlays: j.pageData.overlays || null,
+                        layerEdits: j.pageData.layerEdits || null,
+                        psdLayers: j.pageData.psdLayers || null,
                         canvasWidth: j.pageData.canvasWidth || null,
                         canvasHeight: j.pageData.canvasHeight || null
                     }))
@@ -113,6 +115,8 @@ function createRenderQueue(store, deps) {
                             pageName: String(j.pageNum).padStart(3, '0'),
                             photos: j.pageData.photos,
                             overlays: j.pageData.overlays || null,
+                            layerEdits: j.pageData.layerEdits || null,
+                            psdLayers: j.pageData.psdLayers || null,
                             canvasWidth: j.pageData.canvasWidth || null,
                             canvasHeight: j.pageData.canvasHeight || null,
                             useAdjustmentLayers: deps.useAdjLayers()

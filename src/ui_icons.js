@@ -48,6 +48,15 @@
         'film':        '<rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/>',
         'eraser':      '<path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/>',
         'play':        '<polygon points="5 3 19 12 5 21 5 3"/>',
+        // ── Align & distribute ──
+        'align-left':    '<line x1="3" y1="3" x2="3" y2="21"/><rect x="6" y="6" width="13" height="4"/><rect x="6" y="14" width="8" height="4"/>',
+        'align-hcenter': '<line x1="12" y1="3" x2="12" y2="21"/><rect x="5" y="6" width="14" height="4"/><rect x="8" y="14" width="8" height="4"/>',
+        'align-right':   '<line x1="21" y1="3" x2="21" y2="21"/><rect x="5" y="6" width="13" height="4"/><rect x="10" y="14" width="8" height="4"/>',
+        'align-top':     '<line x1="3" y1="3" x2="21" y2="3"/><rect x="6" y="6" width="4" height="13"/><rect x="14" y="6" width="4" height="8"/>',
+        'align-vcenter': '<line x1="3" y1="12" x2="21" y2="12"/><rect x="6" y="5" width="4" height="14"/><rect x="14" y="8" width="4" height="8"/>',
+        'align-bottom':  '<line x1="3" y1="21" x2="21" y2="21"/><rect x="6" y="5" width="4" height="13"/><rect x="14" y="10" width="4" height="8"/>',
+        'dist-h':        '<line x1="3" y1="3" x2="3" y2="21"/><line x1="21" y1="3" x2="21" y2="21"/><rect x="9" y="7" width="6" height="10"/>',
+        'dist-v':        '<line x1="3" y1="3" x2="21" y2="3"/><line x1="3" y1="21" x2="21" y2="21"/><rect x="7" y="9" width="10" height="6"/>',
         // ── Page Editor toolbar ──
         'cursor':      '<path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/>',
         'type':        '<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>',

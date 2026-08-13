@@ -104,6 +104,32 @@ else {
     return { w:x2-x1, h:y2-y1, cx:x1+(x2-x1)/2, cy:y1+(y2-y1)/2 };
   }
 
+  // Apply the Page Editor's template-layer overrides (hide/show, opacity)
+  // before photos go in, so the delivered PSD matches the proof. Paths arrive
+  // ALREADY converted to ExtendScript's top-down indexing by
+  // psd_layers.toPhotoshopLayerOps — ag-psd counts children bottom-up, and
+  // silently hiding the wrong layer is the failure mode that inversion avoids.
+  function applyLayerOps(doc, ops) {
+    if (!ops || !ops.length) return;
+    for (var i = 0; i < ops.length; i++) {
+      var op = ops[i];
+      try {
+        var node = doc;
+        for (var d = 0; d < op.path.length; d++) {
+          if (!node.layers || op.path[d] >= node.layers.length) { node = null; break; }
+          node = node.layers[op.path[d]];
+        }
+        // Name check: if the template was re-authored after the project was
+        // saved, the stored index can point at a different layer. Skipping is
+        // the safe failure — better an un-applied override than the wrong
+        // layer silently switched off in a delivered album.
+        if (!node || (op.name && node.name !== op.name)) continue;
+        if (typeof op.hidden !== 'undefined') node.visible = !op.hidden;
+        if (typeof op.opacity !== 'undefined') node.opacity = Math.round(op.opacity * 100);
+      } catch (e) { /* one bad override must not cost the page */ }
+    }
+  }
+
   // ── OVERLAYS (text + shapes drawn in the app's Page Editor) ──────────
   //
   // Shapes arrive pre-rasterized as one transparent PNG. TEXT is rebuilt here
@@ -271,6 +297,8 @@ else {
         var pageName = "Page_" + page.pageName;
         var safeDoc = templateDoc.duplicate(pageName);
         app.activeDocument = safeDoc;
+
+        applyLayerOps(safeDoc, page.layerOps);
 
         var hFrames = findFrames("toolkithframe", safeDoc);
         var vFrames = findFrames("toolkitvframe", safeDoc);

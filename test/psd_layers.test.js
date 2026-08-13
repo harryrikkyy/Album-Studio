@@ -236,3 +236,59 @@ test('a run of clipped layers all share one base', () => {
   const r = resolveClipping(flat)
   assert.deepEqual(r.map((n) => n.clipBaseId), [null, 'a', 'a', 'a', null])
 })
+
+// ─── Photoshop index translation ─────────────────────────────────────────────
+// ag-psd lists a container's children bottom-to-top; ExtendScript's
+// doc.layers[0] is the TOPMOST layer. Getting this backwards doesn't throw —
+// it hides the wrong layer in the delivered PSD — so it is pinned here.
+
+const { toPhotoshopLayerOps } = require('../src/psd_layers')
+
+test('layer indices are inverted for ExtendScript', async () => {
+  const t = await tree()
+  // Top level, bottom-to-top: Background(0) Photos(1) Gold rule(2) Hidden(3).
+  // ExtendScript sees the reverse: Hidden(0) Gold rule(1) Photos(2) Background(3).
+  const id = (n) => t.layers.find((l) => l.name === n).id
+  const ops = toPhotoshopLayerOps(t.layers, {
+    [id('Background')]: { hidden: true },
+    [id('Gold rule')]: { hidden: true },
+  })
+  const byName = Object.fromEntries(ops.map((o) => [o.name, o.path]))
+  assert.deepEqual(byName['Background'], [3], 'bottom layer is last in ExtendScript')
+  assert.deepEqual(byName['Gold rule'], [1])
+})
+
+test('nested layers get a full inverted path', async () => {
+  const t = await tree()
+  const group = t.layers.find((l) => l.name === 'Photos')
+  const wash = group.children.find((l) => l.name === 'colour wash')
+  const ops = toPhotoshopLayerOps(t.layers, { [wash.id]: { hidden: true } })
+  // Group is index 1 of 4 bottom-up -> 2 top-down. Wash is index 1 of 3 -> 1.
+  assert.deepEqual(ops[0].path, [2, 1])
+  assert.equal(ops[0].name, 'colour wash')
+})
+
+test('only real deviations are emitted', async () => {
+  const t = await tree()
+  const id = (n) => t.layers.find((l) => l.name === n).id
+  // Hiding an already-hidden layer, and setting opacity to its current value,
+  // are both no-ops — the export must leave the template untouched.
+  assert.deepEqual(toPhotoshopLayerOps(t.layers, { [id('Hidden flourish')]: { hidden: true } }), [])
+  assert.deepEqual(toPhotoshopLayerOps(t.layers, { [id('Gold rule')]: { opacity: 1 } }), [])
+  assert.deepEqual(toPhotoshopLayerOps(t.layers, {}), [])
+})
+
+test('re-showing a layer the PSD ships hidden IS emitted', async () => {
+  const t = await tree()
+  const id = t.layers.find((l) => l.name === 'Hidden flourish').id
+  const ops = toPhotoshopLayerOps(t.layers, { [id]: { hidden: false } })
+  assert.equal(ops.length, 1)
+  assert.equal(ops[0].hidden, false)
+})
+
+test('opacity overrides carry through', async () => {
+  const t = await tree()
+  const id = t.layers.find((l) => l.name === 'Gold rule').id
+  const ops = toPhotoshopLayerOps(t.layers, { [id]: { opacity: 0.4 } })
+  assert.equal(ops[0].opacity, 0.4)
+})

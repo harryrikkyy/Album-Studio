@@ -32,8 +32,26 @@ const OVERLAY_FALLBACK_EDGE = 4500
  * @param {any} page a build-page payload or one entry of a batch
  * @returns {Promise<() => void>}
  */
+/**
+ * Translate the page's template-layer overrides into ExtendScript-indexed
+ * instructions for the build JSX. Without this the delivered PSD would ignore
+ * every layer the user switched off — the proof and the export would disagree.
+ */
+function attachLayerOps(page) {
+  if (!page || !page.layerEdits || !page.psdLayers) return
+  try {
+    const { toPhotoshopLayerOps } = require('../psd_layers')
+    const ops = toPhotoshopLayerOps(page.psdLayers, page.layerEdits)
+    if (ops.length) page.layerOps = ops
+  } catch (e) {
+    console.warn('Layer-override translation failed; the template builds unchanged:',
+      e instanceof Error ? e.message : String(e))
+  }
+}
+
 async function attachOverlayArtwork(page) {
   const noop = () => {}
+  attachLayerOps(page)
   if (!page || !Array.isArray(page.overlays) || !page.overlays.length) return noop
   try {
     const { rasterizeOverlays } = require('../proof_renderer')

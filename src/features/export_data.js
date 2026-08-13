@@ -103,6 +103,10 @@ function createExportData(store, deps) {
                     canvasWidth: canvas ? canvas.w : null,
                     canvasHeight: canvas ? canvas.h : null,
                     layerEdits: projectData.pageLayerEdits?.[i] || null,
+                    // The tree is only needed to translate layer ids into
+                    // Photoshop indices, so it rides along only when there is
+                    // actually an override to apply.
+                    psdLayers: (projectData.pageLayerEdits?.[i] && /** @type {any} */ (pageData.template)._psdLayers) || null,
                 };
             }
         }

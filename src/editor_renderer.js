@@ -370,14 +370,50 @@ function applyPageBackground() {
   if (pageBackground) picker.value = pageBackground
 }
 
-function computeStageScale() {
+// ── Zoom ───────────────────────────────────────────────────────
+// `zoom` multiplies the fit-to-window scale, so 1 always means "whole page
+// visible" regardless of window size — the level a designer returns to.
+let zoom = 1
+let fitScale = 1
+const ZOOM_MIN = 0.25, ZOOM_MAX = 8
+
+function setZoom(z, opts = {}) {
+  const next = clamp(z, ZOOM_MIN, ZOOM_MAX)
+  if (next === zoom) return
+  zoom = next
+  computeStageScale(opts)
+  updateZoomUI()
+}
+function zoomToFit() { setZoom(1) }
+function updateZoomUI() {
+  const pct = Math.round(fitScale * zoom * 100)
+  const lbl = el('edZoomLevel')
+  if (lbl) lbl.textContent = pct + '%'
+  stageWrap.classList.toggle('is-zoomed', zoom > 1)
+}
+
+function computeStageScale(opts = {}) {
   if (!spread) return
+  // Keep whatever the viewport is centred on centred across a zoom change,
+  // rather than snapping back to the top-left.
+  const prevW = stage.offsetWidth || 1
+  const prevH = stage.offsetHeight || 1
+  const anchorX = (stageWrap.scrollLeft + stageWrap.clientWidth / 2) / prevW
+  const anchorY = (stageWrap.scrollTop + stageWrap.clientHeight / 2) / prevH
+
   const padW = stageWrap.clientWidth - 24
   const padH = stageWrap.clientHeight - 24
-  displayScale = Math.min(padW / spread.canvasW, padH / spread.canvasH)
-  if (!isFinite(displayScale) || displayScale <= 0) displayScale = 0.1
+  fitScale = Math.min(padW / spread.canvasW, padH / spread.canvasH)
+  if (!isFinite(fitScale) || fitScale <= 0) fitScale = 0.1
+  displayScale = fitScale * zoom
   stage.style.width = spread.canvasW * displayScale + 'px'
   stage.style.height = spread.canvasH * displayScale + 'px'
+  layoutGuides()
+
+  if (opts.keepCentre !== false && zoom > 1) {
+    stageWrap.scrollLeft = anchorX * stage.offsetWidth - stageWrap.clientWidth / 2
+    stageWrap.scrollTop = anchorY * stage.offsetHeight - stageWrap.clientHeight / 2
+  }
   layoutPsdLayers()
   for (const item of items) layoutItem(item)
   renderOverlays()
@@ -503,6 +539,93 @@ function buildHitBoxes(W, H) {
     wireOverlayBox(box, L)
     hitSurface.appendChild(box)
   })
+}
+
+// ── Print guides ───────────────────────────────────────────────
+// Album pages are trimmed and, in a layflat book, partly swallowed by the
+// gutter. Designers need to see those zones while placing text, not discover
+// them at the bindery — so bleed, trim and safe are drawn as overlays.
+let guidesOn = false
+const GUIDE_INSETS = { bleed: 0.03, safe: 0.08 }  // fractions of the short edge
+
+function layoutGuides() {
+  stage.querySelectorAll('.ed-print-guide').forEach((g) => g.remove())
+  if (!guidesOn || !spread) return
+  const W = spread.canvasW * displayScale
+  const H = spread.canvasH * displayScale
+  const short = Math.min(W, H)
+  const mk = (inset, cls, label) => {
+    const g = document.createElement('div')
+    g.className = 'ed-print-guide ' + cls
+    g.style.left = (short * inset) + 'px'
+    g.style.top = (short * inset) + 'px'
+    g.style.width = (W - short * inset * 2) + 'px'
+    g.style.height = (H - short * inset * 2) + 'px'
+    g.title = label
+    stage.appendChild(g)
+  }
+  mk(GUIDE_INSETS.bleed, 'ed-print-guide--trim', 'Trim edge — art outside this may be cut')
+  mk(GUIDE_INSETS.safe, 'ed-print-guide--safe', 'Safe area — keep text inside this')
+  // Gutter: the centre fold of a spread, where a layflat book loses content.
+  const gut = document.createElement('div')
+  gut.className = 'ed-print-guide ed-print-guide--gutter'
+  gut.style.left = (W / 2) + 'px'
+  gut.title = 'Gutter — the centre fold'
+  stage.appendChild(gut)
+}
+
+// ── Align & distribute ─────────────────────────────────────────
+// With one layer selected these align to the PAGE; with several, to the
+// selection's own bounding box — which is what every design tool does, and
+// what makes single-selection centring useful at all.
+function alignSelection(edge) {
+  const sel = selectedOverlays().filter((L) => !L.locked)
+  if (!sel.length) return
+  const many = sel.length > 1
+  const box = many
+    ? {
+      x: Math.min(...sel.map((L) => L.x)),
+      y: Math.min(...sel.map((L) => L.y)),
+      r: Math.max(...sel.map((L) => L.x + L.w)),
+      b: Math.max(...sel.map((L) => L.y + L.h)),
+    }
+    : { x: 0, y: 0, r: 1, b: 1 }
+
+  for (const L of sel) {
+    switch (edge) {
+      case 'left': L.x = box.x; break
+      case 'hcenter': L.x = box.x + (box.r - box.x) / 2 - L.w / 2; break
+      case 'right': L.x = box.r - L.w; break
+      case 'top': L.y = box.y; break
+      case 'vcenter': L.y = box.y + (box.b - box.y) / 2 - L.h / 2; break
+      case 'bottom': L.y = box.b - L.h; break
+    }
+  }
+  renderOverlays(); updatePanel(); pushHistory(); scheduleApply()
+  toast(many ? `Aligned ${sel.length} layers` : 'Aligned to page')
+}
+
+// Even gaps between three or more layers; the outermost two stay put.
+function distributeSelection(axis) {
+  const sel = selectedOverlays().filter((L) => !L.locked)
+  if (sel.length < 3) { toast('Select 3 or more layers to distribute'); return }
+  const k = axis === 'h' ? 'x' : 'y'
+  const size = axis === 'h' ? 'w' : 'h'
+  const sorted = [...sel].sort((a, b) => a[k] - b[k])
+  const first = sorted[0]
+  const last = sorted[sorted.length - 1]
+  // Distribute the free space, not the centres — equal GAPS is what reads as
+  // evenly spaced when the layers are different sizes.
+  const span = (last[k] + last[size]) - first[k]
+  const used = sorted.reduce((sum, L) => sum + L[size], 0)
+  const gap = (span - used) / (sorted.length - 1)
+  let cursor = first[k]
+  for (const L of sorted) {
+    L[k] = cursor
+    cursor += L[size] + gap
+  }
+  renderOverlays(); updatePanel(); pushHistory(); scheduleApply()
+  toast(`Distributed ${sel.length} layers`)
 }
 
 // ── Snapping ───────────────────────────────────────────────────
@@ -745,6 +868,30 @@ function setTool(t) {
 document.querySelectorAll('.ed-tool[data-tool]').forEach((b) => {
   b.addEventListener('click', () => setTool(b.dataset.tool))
 })
+
+document.querySelectorAll('[data-align-edge]').forEach((b) => {
+  b.addEventListener('click', () => alignSelection(b.dataset.alignEdge))
+})
+document.querySelectorAll('[data-distribute]').forEach((b) => {
+  b.addEventListener('click', () => distributeSelection(b.dataset.distribute))
+})
+
+el('edGuides').addEventListener('click', () => {
+  guidesOn = !guidesOn
+  el('edGuides').classList.toggle('is-active', guidesOn)
+  layoutGuides()
+})
+el('edZoomIn').addEventListener('click', () => setZoom(zoom * 1.25))
+el('edZoomOut').addEventListener('click', () => setZoom(zoom / 1.25))
+el('edZoomFit').addEventListener('click', zoomToFit)
+
+// ⌘/Ctrl + wheel zooms the canvas; a bare wheel over a photo still zooms the
+// PHOTO inside its frame, which is the older and more frequent gesture.
+stageWrap.addEventListener('wheel', (e) => {
+  if (!(e.metaKey || e.ctrlKey)) return
+  e.preventDefault()
+  setZoom(zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12))
+}, { passive: false })
 
 el('edToggleGuides').addEventListener('click', () => {
   snapEnabled = !snapEnabled
@@ -1411,6 +1558,9 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (meta && e.key.toLowerCase() === 'd') { e.preventDefault(); duplicateSelection(); return }
+  if (meta && (e.key === '=' || e.key === '+')) { e.preventDefault(); setZoom(zoom * 1.25); return }
+  if (meta && e.key === '-') { e.preventDefault(); setZoom(zoom / 1.25); return }
+  if (meta && e.key === '0') { e.preventDefault(); zoomToFit(); return }
   if (meta && e.shiftKey && e.key === ']') { e.preventDefault(); bringToFront(); return }
   if (meta && e.shiftKey && e.key === '[') { e.preventDefault(); sendToBack(); return }
   if (meta && e.key.toLowerCase() === 'a') {
