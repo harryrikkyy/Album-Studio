@@ -23,6 +23,8 @@ export interface Template {
   _spec?: unknown
   _canvas?: { w: number; h: number }
   _frames?: Frame[]
+  /** The template's real PSD layer tree, cached alongside the frames. */
+  _psdLayers?: unknown[]
 }
 
 export interface Photo {
@@ -78,6 +80,8 @@ export interface ProjectData {
    */
   pageOverlays?: Record<number, unknown[]>
   pageBackgrounds?: Record<number, string>
+  /** Per-page overrides of the template's own PSD layers (hide/show, opacity). */
+  pageLayerEdits?: Record<number, Record<string, { hidden?: boolean, opacity?: number }>>
 }
 
 /**
@@ -105,6 +109,8 @@ export interface HashablePage {
    */
   canvasWidth?: number | null
   canvasHeight?: number | null
+  /** Per-page overrides of the template's own PSD layers. */
+  layerEdits?: Record<string, { hidden?: boolean, opacity?: number }> | null
 }
 
 /** Progress counters for the render batch currently being worked. */

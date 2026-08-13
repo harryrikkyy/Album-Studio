@@ -60,8 +60,16 @@
     opacity: 0.55; border-radius: 3px; line-height: 0; }
   .ed-layer__btn:hover { opacity: 1; background: var(--bg-card); }
   .ed-layer__btn svg { width: 12px; height: 12px; }
-  .ed-layer.is-hidden .ed-layer__name { opacity: 0.4; text-decoration: line-through; }
+  .ed-layer.is-hidden .ed-layer__name { opacity: 0.7; text-decoration: line-through; }
   .ed-rail__empty { font-size: var(--fs-xs); color: var(--txt-muted); line-height: 1.5; }
+  /* Template (PSD) layers: read-only structure, so they are dimmer than the
+     page layers the user authored — visibility and opacity are still theirs. */
+  .ed-layer--psd { color: var(--txt-muted); }
+  .ed-layer--psd.is-group { font-weight: 700; }
+  .ed-layer__clip { flex-shrink: 0; opacity: 0.75; font-size: 10px; }
+  .ed-layer__frame { flex-shrink: 0; font-size: 9px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--accent); opacity: 0.85; }
+  .ed-rail__sub { font-size: 10px; color: var(--txt-muted); opacity: 0.8; margin-top: -4px; }
 
   /* ── Center: stage ────────────────────────────────────────── */
   .ed-stage-wrap { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -72,6 +80,8 @@
   .ed-stage { position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
   .ed-stage__backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill; }
   .ed-stage.tool-text, .ed-stage.tool-rect, .ed-stage.tool-ellipse, .ed-stage.tool-line { cursor: crosshair; }
+  /* One <img> per PSD layer, stacked in the document's own draw order. */
+  .ed-psd-layer { position: absolute; pointer-events: none; }
   .ed-frame { position: absolute; overflow: hidden; cursor: pointer; outline: 1px solid rgba(255,255,255,0.12); }
   .ed-frame img { position: absolute; transform-origin: center center; will-change: left, top, width, height; }
   /* Vignette preview. libvips composites the real one over the cropped frame,

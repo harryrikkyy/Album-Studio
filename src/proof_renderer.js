@@ -389,6 +389,9 @@ async function renderPageProof(job) {
     // to invalidate the cached page exactly like a photo edit does.
     ov: overlayCacheKey(job.overlays),
     bg: job.pageBackground || 0,
+    // Hiding a template layer changes the page without touching any photo,
+    // so it has to invalidate the cached render like any other edit.
+    le: job.layerEdits ? JSON.stringify(job.layerEdits) : 0,
   })).digest('hex').slice(0, 16)
 
   try {
@@ -434,7 +437,45 @@ async function renderPageProof(job) {
         .catch((e) => { skipped.push({ frame: vFrames[i].name, error: e.message }); return null }))
     }
 
-    const layers = (await Promise.all(layerResults)).filter(Boolean)
+    let layers = (await Promise.all(layerResults)).filter(Boolean)
+
+    // If the user turned template layers off (or faded them) in the Page
+    // Editor, the flattened backdrop no longer represents the page — rebuild
+    // it from the layer stack, with the photos interleaved at their frames'
+    // z-positions so template art above a frame stays above the photo.
+    const hasLayerEdits = job.layerEdits && Object.keys(job.layerEdits).length > 0
+    if (hasLayerEdits && job.psdLayers && job.psdLayers.length) {
+      const { ops, frameOrder } = buildPsdStackOps(job.psdLayers, job.layerEdits, scale)
+
+      // The photo layers were built in h-then-v order; map them back to the
+      // frame they occupy so each can be slotted into the stack.
+      const placed = []
+      let li = 0
+      for (let i = 0; i < hPhotos.length && i < hFrames.length; i++) placed.push({ frame: hFrames[i], layer: layers[li++] })
+      for (let i = 0; i < vPhotos.length && i < vFrames.length; i++) placed.push({ frame: vFrames[i], layer: layers[li++] })
+
+      for (const { frame, layer } of placed) {
+        if (!layer) continue
+        const at = frameOrder.get(frame.name)
+        if (at === undefined) ops.push(layer)   // frame not in the parsed stack
+        else ops[at] = layer
+      }
+
+      const realised = []
+      for (const op of ops) {
+        if (!op) continue                        // an empty photo slot
+        realised.push(op._layer ? await realisePsdOp(sharp, op, scale) : op)
+      }
+      layers = realised
+      // The stack draws the whole page, so the flattened backdrop underneath
+      // it would show through anywhere a layer was switched off.
+      base = sharp({
+        create: {
+          width: dims.width, height: dims.height, channels: 4,
+          background: parseHexColor(job.pageBackground) || { r: 255, g: 255, b: 255, alpha: 0 },
+        },
+      })
+    }
 
     // Overlay layers (text, shapes) sit ON TOP of every photo — appended last
     // so they win the z-order. One SVG for the whole page: librsvg rasterises
@@ -485,6 +526,104 @@ async function renderFinalComposite(job) {
   })
 }
 
+
+/**
+ * Build the composite operations for a template's own PSD layers.
+ *
+ * Used when the user has hidden or faded template layers in the Page Editor —
+ * the flattened preview can't express that, so the page is rebuilt from the
+ * layer stack instead. Photo slots are skipped here: the caller interleaves
+ * the photos at their frame's position so template art above a frame still
+ * renders above the photo, as it does in Photoshop.
+ *
+ * Fidelity caveat, and the reason this is NOT the default path: per-layer
+ * pixels are raw, so layer styles, adjustment layers and smart filters — which
+ * Photoshop applies at composite time — are absent. Unedited pages keep using
+ * Photoshop's own flattened render.
+ *
+ * @returns {{ ops: any[], frameOrder: Map<string, number> }} ops in draw order,
+ *   plus where each frame name falls within them
+ */
+function buildPsdStackOps(psdLayers, layerEdits, scale) {
+  const { flattenDrawOrder, resolveClipping } = require('./psd_layers')
+  const stack = resolveClipping(flattenDrawOrder(psdLayers || [], layerEdits || {}))
+  const ops = []
+  const frameOrder = new Map()
+  const byId = new Map(stack.map((n) => [n.id, n]))
+
+  for (const node of stack) {
+    if (node.kind === 'group') continue
+    if (node.isFrame) {
+      // Reserve this slot; the caller drops the photo in at this index.
+      frameOrder.set(node.name, ops.length)
+      ops.push(null)
+      continue
+    }
+    if (!node.effectiveVisible || !node.png || !fs.existsSync(node.png)) continue
+    ops.push({
+      _layer: node,
+      _clipBase: node.clipBaseId ? byId.get(node.clipBaseId) : null,
+      top: Math.round(node.y * scale),
+      left: Math.round(node.x * scale),
+      blend: PS_BLEND_TO_SHARP[String(node.blendMode || 'normal').toLowerCase()] || 'over',
+    })
+  }
+  return { ops, frameOrder }
+}
+
+// Photoshop blend-mode names → the libvips operators sharp exposes. Modes with
+// no libvips equivalent (hue/saturation/colour/luminosity) fall back to normal
+// rather than to a wrong-but-similar operator.
+const PS_BLEND_TO_SHARP = {
+  normal: 'over', multiply: 'multiply', screen: 'screen', overlay: 'overlay',
+  darken: 'darken', lighten: 'lighten', 'color dodge': 'colour-dodge',
+  'color burn': 'colour-burn', 'hard light': 'hard-light',
+  'soft light': 'soft-light', difference: 'difference', exclusion: 'exclusion',
+}
+
+/**
+ * Materialise one PSD layer op into a sharp composite entry: resize to the
+ * output scale, apply layer opacity, and mask to its clip base if it is a
+ * clipping mask.
+ */
+async function realisePsdOp(sharp, op, scale) {
+  const node = op._layer
+  const w = Math.max(1, Math.round(node.w * scale))
+  const h = Math.max(1, Math.round(node.h * scale))
+  let pipe = sharp(node.png).resize(w, h, { fit: 'fill' })
+
+  // Layer opacity: scale the alpha channel rather than flattening onto a
+  // background, so the layer stays translucent over whatever is beneath it.
+  if (node.effectiveOpacity < 1) {
+    pipe = pipe.ensureAlpha().composite([{
+      input: Buffer.from([255, 255, 255, Math.round(node.effectiveOpacity * 255)]),
+      raw: { width: 1, height: 1, channels: 4 },
+      tile: true,
+      blend: 'dest-in',
+    }])
+  }
+
+  // A clipping mask shows this layer only where its base has pixels. Render
+  // the base's alpha into this layer's box, then keep only that intersection.
+  if (op._clipBase && op._clipBase.png && fs.existsSync(op._clipBase.png)) {
+    const b = op._clipBase
+    const baseW = Math.max(1, Math.round(b.w * scale))
+    const baseH = Math.max(1, Math.round(b.h * scale))
+    const baseBuf = await sharp(b.png).resize(baseW, baseH, { fit: 'fill' })
+      .ensureAlpha().png().toBuffer()
+    const maskCanvas = await sharp({
+      create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    }).composite([{
+      input: baseBuf,
+      left: Math.round((b.x - node.x) * scale),
+      top: Math.round((b.y - node.y) * scale),
+    }]).png().toBuffer()
+    pipe = sharp(await pipe.png().toBuffer())
+      .composite([{ input: maskCanvas, blend: 'dest-in' }])
+  }
+
+  return { input: await pipe.png().toBuffer(), top: op.top, left: op.left, blend: op.blend }
+}
 
 /**
  * Rasterize a page's overlay layers to a transparent PNG.

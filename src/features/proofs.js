@@ -151,6 +151,19 @@ function createProofs(store, deps) {
         }
         template._frames = result.frames;
         template._canvas = { w: result.canvasWidth, h: result.canvasHeight };
+
+        // Also cache the template's real layer tree. Only needed when a page
+        // has template-layer overrides — but it's cheap (parsed directly from
+        // the PSD, no Photoshop round-trip) and cached on disk, so reading it
+        // here keeps the render path from having to do IPC mid-composite.
+        try {
+            const layers = await deps.invoke('psd-layers', tplPath);
+            if (layers && layers.ok) template._psdLayers = layers.layers;
+        } catch (e) {
+            // Non-fatal: without the tree, layer overrides simply don't apply
+            // and the page renders from the flattened backdrop.
+            console.warn(`PSD layer read failed for ${template.name}:`, _errMessage(e));
+        }
         return template;
     }
 
@@ -266,6 +279,12 @@ function createProofs(store, deps) {
             // as they will export.
             overlays: projectData.pageOverlays?.[pageNum] || null,
             pageBackground: projectData.pageBackgrounds?.[pageNum] || null,
+            // Template-layer overrides, plus the tree they refer to. Only sent
+            // when the user actually changed something — otherwise the render
+            // keeps using Photoshop's own flattened backdrop, which carries
+            // layer styles the raw per-layer pixels don't.
+            layerEdits: projectData.pageLayerEdits?.[pageNum] || null,
+            psdLayers: (projectData.pageLayerEdits?.[pageNum] && tpl._psdLayers) || null,
             outputPath: outPath,
             // Live preview renders smaller for speed (the preview pane is
             // small); batch proofs stay at 1500 for the storyboard/gallery.

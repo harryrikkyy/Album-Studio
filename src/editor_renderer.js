@@ -48,6 +48,8 @@ const HINTS = {
 let spread = null          // { pageNum, canvasW, canvasH, backdropUrl, items[], spreads[], overlays[] }
 let items = []             // photo working copies; each gets .placement, .adjust, ._nat, ._el, ._img
 let overlays = []          // overlay layer working copies (see overlay_render.js)
+let psd = null             // the template's real PSD layer tree (psd_layers.js)
+let layerEdits = {}        // psdLayerId → { hidden?, opacity? }
 let pageBackground = null
 let selectedIds = []       // selected PHOTO ids (ordered by selection)
 let selectedOverlayIds = []
@@ -106,6 +108,7 @@ function snapshot() {
   return JSON.stringify({
     overlays,
     pageBackground,
+    layerEdits,
     photos: items.map((it) => ({ id: it.id, placement: it.placement, adjust: it.adjust, rotation: it.rotation })),
   })
 }
@@ -121,6 +124,7 @@ function restore(snap) {
   const s = JSON.parse(snap)
   overlays = s.overlays || []
   pageBackground = s.pageBackground || null
+  layerEdits = s.layerEdits || {}
   for (const p of s.photos || []) {
     const it = items.find((i) => i.id === p.id)
     if (!it) continue
@@ -131,7 +135,7 @@ function restore(snap) {
     layoutItem(it)
   }
   selectedOverlayIds = selectedOverlayIds.filter((id) => overlays.some((o) => o.id === id))
-  renderOverlays(); buildLayerList(); updatePanel(); applyPageBackground(); scheduleApply()
+  buildScene(); buildLayerList(); updatePanel(); applyPageBackground(); scheduleApply()
 }
 function undo() {
   if (undoStack.length < 2) return
@@ -165,6 +169,8 @@ async function load() {
     adjust: it.adjust ? { ...it.adjust } : {},
   }))
   overlays = (spread.overlays || []).map((o) => ({ ...o }))
+  psd = spread.psd && spread.psd.ok ? spread.psd : null
+  layerEdits = JSON.parse(JSON.stringify(spread.layerEdits || {}))
   pageBackground = spread.pageBackground || null
   selectedIds = []; selectedOverlayIds = []
   undoStack = []; redoStack = []
@@ -181,17 +187,156 @@ api.onSpreadUpdated(() => load())
 let ovlSurface = null   // the injected SVG (visual truth)
 let hitSurface = null   // transparent boxes that take the pointer events
 
+// ── PSD layer stack ────────────────────────────────────────────
+// Flatten the tree the way psd_layers.flattenDrawOrder does, honouring group
+// visibility/opacity inheritance. Duplicated here rather than imported because
+// this window is context-isolated and cannot require() main-process modules;
+// the shapes are asserted against each other in test/psd_layers.test.js.
+function psdDrawOrder() {
+  if (!psd) return []
+  const out = []
+  const walk = (nodes, depth, parentVisible, parentOpacity) => {
+    for (const n of nodes) {
+      const e = layerEdits[n.id] || {}
+      const visible = (e.hidden === undefined ? n.visible : !e.hidden) && parentVisible
+      const opacity = (e.opacity === undefined ? n.opacity : e.opacity) * parentOpacity
+      out.push({ ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity, children: undefined })
+      if (n.children) walk(n.children, depth + 1, visible, opacity)
+    }
+  }
+  walk(psd.layers || [], 0, true, 1)
+  return out
+}
+
+// A clipped layer masks to the nearest non-clipped layer below it.
+function withClipBases(drawOrder) {
+  let base = null
+  return drawOrder.map((n) => {
+    if (n.kind === 'group') return { ...n, clipBase: null }
+    if (!n.clipped) { base = n; return { ...n, clipBase: null } }
+    return { ...n, clipBase: base }
+  })
+}
+
+const fileUrl = (p) => 'file://' + String(p).split('/').map(encodeURIComponent).join('/')
+
+// CSS blend keywords that map 1:1 onto Photoshop's names. Anything outside
+// this set falls back to normal rather than guessing — a wrong blend reads as
+// a rendering bug, a missing one reads as "not supported yet".
+const BLEND_CSS = {
+  normal: 'normal', multiply: 'multiply', screen: 'screen', overlay: 'overlay',
+  darken: 'darken', lighten: 'lighten', 'color dodge': 'color-dodge',
+  'color burn': 'color-burn', 'hard light': 'hard-light', 'soft light': 'soft-light',
+  difference: 'difference', exclusion: 'exclusion', hue: 'hue',
+  saturation: 'saturation', color: 'color', luminosity: 'luminosity',
+}
+
 function buildScene() {
   stage.innerHTML = ''
-  if (spread.backdropUrl) {
-    const bd = document.createElement('img')
-    bd.className = 'ed-stage__backdrop'
-    bd.src = spread.backdropUrl
-    bd.draggable = false
-    bd.alt = ''   // decorative: the template's own artwork
-    stage.appendChild(bd)
+  _psdEls = []
+
+  // With a parsed PSD we draw the real stack, so template art that sits ABOVE
+  // the photo frames renders above the photos — exactly as in Photoshop. The
+  // old flat-backdrop path drew every photo on top of one flattened image,
+  // which put borders and flourishes underneath. Templates we can't parse
+  // (generative ones have no PSD at all) still use the flat backdrop.
+  const stack = psd ? withClipBases(psdDrawOrder()) : null
+  if (stack && stack.length) {
+    buildPsdStack(stack)
+  } else {
+    if (spread.backdropUrl) {
+      const bd = document.createElement('img')
+      bd.className = 'ed-stage__backdrop'
+      bd.src = spread.backdropUrl
+      bd.draggable = false
+      bd.alt = ''   // decorative: the template's own artwork
+      stage.appendChild(bd)
+    }
+    for (const item of items) buildPhotoFrame(item)
   }
-  for (const item of items) {
+
+  ovlSurface = document.createElement('div')
+  ovlSurface.className = 'ed-ovl'
+  stage.appendChild(ovlSurface)
+  hitSurface = document.createElement('div')
+  hitSurface.className = 'ed-hits'
+  stage.appendChild(hitSurface)
+  computeStageScale()
+  renderOverlays()
+}
+
+// Draw the template's layers bottom-to-top, substituting each photo for the
+// frame layer it occupies so photos land at the frame's z-position instead of
+// on top of everything.
+function buildPsdStack(stack) {
+  const byFrameName = new Map()
+  for (const it of items) if (it.frame && it.frame.name) byFrameName.set(it.frame.name, it)
+
+  for (const node of stack) {
+    if (node.kind === 'group') continue          // structure only, no pixels
+
+    const photo = node.isFrame ? byFrameName.get(node.name) : null
+    if (photo) {
+      // The photo takes the frame's slot in the stack. Its box is the frame
+      // layer's own bounds, so it lines up with the artwork around it.
+      photo.frame = { name: node.name, x: node.x, y: node.y, w: node.w, h: node.h }
+      const f = buildPhotoFrame(photo)
+      if (!node.effectiveVisible) f.style.display = 'none'
+      f.style.opacity = String(node.effectiveOpacity)
+      continue
+    }
+
+    if (!node.png) continue
+    const img = document.createElement('img')
+    img.className = 'ed-psd-layer'
+    img.src = fileUrl(node.png)
+    img.alt = ''
+    img.draggable = false
+    img.dataset.layerId = node.id
+    if (!node.effectiveVisible) img.style.display = 'none'
+    if (node.effectiveOpacity !== 1) img.style.opacity = String(node.effectiveOpacity)
+    const blend = BLEND_CSS[String(node.blendMode || 'normal').toLowerCase()]
+    if (blend && blend !== 'normal') img.style.mixBlendMode = blend
+    // A clipping mask shows the clipped layer only where the base below it has
+    // pixels — CSS masks reproduce that from the base's own alpha.
+    if (node.clipBase && node.clipBase.png) {
+      const url = fileUrl(node.clipBase.png)
+      img.style.webkitMaskImage = `url("${url}")`
+      img.style.maskImage = `url("${url}")`
+      img.style.webkitMaskSize = '100% 100%'
+      img.style.maskSize = '100% 100%'
+    }
+    stage.appendChild(img)
+    _psdEls.push({ node, el: img })
+  }
+}
+
+/** @type {{node: any, el: HTMLElement}[]} */
+let _psdEls = []
+
+function layoutPsdLayers() {
+  const D = displayScale
+  for (const { node, el: e } of _psdEls) {
+    e.style.left = node.x * D + 'px'
+    e.style.top = node.y * D + 'px'
+    e.style.width = node.w * D + 'px'
+    e.style.height = node.h * D + 'px'
+    // The clip base is positioned independently, so its mask has to be offset
+    // back into this layer's own box or it would slide out of alignment.
+    if (node.clipBase && node.clipBase.png) {
+      const dx = (node.clipBase.x - node.x) * D
+      const dy = (node.clipBase.y - node.y) * D
+      e.style.webkitMaskPosition = `${dx}px ${dy}px`
+      e.style.maskPosition = `${dx}px ${dy}px`
+      e.style.webkitMaskSize = `${node.clipBase.w * D}px ${node.clipBase.h * D}px`
+      e.style.maskSize = `${node.clipBase.w * D}px ${node.clipBase.h * D}px`
+      e.style.webkitMaskRepeat = 'no-repeat'
+      e.style.maskRepeat = 'no-repeat'
+    }
+  }
+}
+
+function buildPhotoFrame(item) {
     const f = document.createElement('div')
     f.className = 'ed-frame'
     f.dataset.id = item.id
@@ -216,15 +361,7 @@ function buildScene() {
     })
     wireFrame(item)
     stage.appendChild(f)
-  }
-  ovlSurface = document.createElement('div')
-  ovlSurface.className = 'ed-ovl'
-  stage.appendChild(ovlSurface)
-  hitSurface = document.createElement('div')
-  hitSurface.className = 'ed-hits'
-  stage.appendChild(hitSurface)
-  computeStageScale()
-  renderOverlays()
+    return f
 }
 
 function applyPageBackground() {
@@ -241,6 +378,7 @@ function computeStageScale() {
   if (!isFinite(displayScale) || displayScale <= 0) displayScale = 0.1
   stage.style.width = spread.canvasW * displayScale + 'px'
   stage.style.height = spread.canvasH * displayScale + 'px'
+  layoutPsdLayers()
   for (const item of items) layoutItem(item)
   renderOverlays()
 }
@@ -621,10 +759,86 @@ function layerLabel(L) {
   return { rect: 'Rectangle', ellipse: 'Ellipse', line: 'Line' }[L.type] || L.type
 }
 
+// One row in the layers rail for a template (PSD) layer. These are the actual
+// Photoshop layers — groups, clipped layers and all — so the page reads the
+// same here as it does in Photoshop. They can be hidden and faded but not
+// renamed or reordered: the template owns its own structure.
+function buildPsdRow(node, wrap) {
+  const edit = layerEdits[node.id] || {}
+  const hidden = edit.hidden === undefined ? !node.visible : edit.hidden
+
+  const row = document.createElement('div')
+  row.className = 'ed-layer ed-layer--psd' + (node.kind === 'group' ? ' is-group' : '') + (hidden ? ' is-hidden' : '')
+  row.style.paddingLeft = (6 + node.depth * 12) + 'px'
+
+  // A clipping mask is invisible in a flat list, which is exactly the thing
+  // that makes a template confusing to edit — mark it.
+  if (node.clipped) {
+    const clip = document.createElement('span')
+    clip.className = 'ed-layer__clip'
+    clip.textContent = '↳'
+    clip.title = 'Clipped into the layer below'
+    row.appendChild(clip)
+  }
+
+  const name = document.createElement('button')
+  name.className = 'ed-layer__name'
+  name.textContent = node.name
+  name.title = node.kind === 'group' ? `Group: ${node.name}` : node.name
+  // Selecting a template layer isn't meaningful (it isn't editable geometry),
+  // so the button's job is purely to be a focusable, named target that reports
+  // what the layer is.
+  name.addEventListener('click', () => {
+    toast(`${node.name} · ${node.kind}${node.clipped ? ' · clipped' : ''}${node.isFrame ? ' · photo slot' : ''}`)
+  })
+  row.appendChild(name)
+
+  if (node.isFrame) {
+    const tag = document.createElement('span')
+    tag.className = 'ed-layer__frame'
+    tag.textContent = 'photo'
+    tag.title = 'This layer is a photo slot — a photo is placed into it'
+    row.appendChild(tag)
+  }
+
+  const eye = document.createElement('button')
+  eye.className = 'ed-layer__btn'
+  eye.title = hidden ? 'Show layer' : 'Hide layer'
+  eye.setAttribute('aria-label', `${hidden ? 'Show' : 'Hide'} template layer: ${node.name}`)
+  eye.innerHTML = window.ADTIcons.icn(hidden ? 'eye-off' : 'eye')
+  eye.addEventListener('click', (e) => {
+    e.stopPropagation()
+    setLayerEdit(node.id, { hidden: !hidden })
+  })
+  row.appendChild(eye)
+
+  wrap.appendChild(row)
+}
+
+// Record a template-layer override, dropping it when it matches the PSD's own
+// value so the project file only carries real deviations.
+function setLayerEdit(id, patch) {
+  const cur = layerEdits[id] || {}
+  const next = { ...cur, ...patch }
+  const node = psdNodeById(id)
+  if (node) {
+    if (next.hidden === !node.visible) delete next.hidden
+    if (next.opacity === node.opacity) delete next.opacity
+  }
+  if (Object.keys(next).length) layerEdits[id] = next
+  else delete layerEdits[id]
+  buildScene(); buildLayerList(); pushHistory(); scheduleApply()
+}
+
+function psdNodeById(id) {
+  return psdDrawOrder().find((n) => n.id === id) || null
+}
+
 function buildLayerList() {
   const wrap = el('edLayers')
   wrap.innerHTML = ''
-  el('edLayersEmpty').style.display = overlays.length ? 'none' : 'block'
+  const stack = psd ? psdDrawOrder() : []
+  el('edLayersEmpty').style.display = (overlays.length || stack.length) ? 'none' : 'block'
   // Topmost first — matches how the layers read on the page.
   for (let i = overlays.length - 1; i >= 0; i--) {
     const L = overlays[i]
@@ -669,6 +883,17 @@ function buildLayerList() {
     })
 
     wrap.appendChild(row)
+  }
+
+  // Template layers sit UNDER the page layers in the stack, so they list below
+  // them — the rail reads top-down exactly like the page does.
+  if (stack.length) {
+    const head = document.createElement('div')
+    head.className = 'ed-rail__sub'
+    head.textContent = `Template · ${stack.length} layers`
+    wrap.appendChild(head)
+    // Reversed: the rail reads topmost-first, the draw order is bottom-first.
+    for (let i = stack.length - 1; i >= 0; i--) buildPsdRow(stack[i], wrap)
   }
 }
 
@@ -1248,6 +1473,7 @@ function applyNow() {
     rotations: Object.fromEntries(items.map((it) => [it.id, it.rotation || 0])),
     overlays,
     pageBackground,
+    layerEdits,
   }).catch(() => {})
 }
 

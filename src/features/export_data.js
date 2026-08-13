@@ -102,6 +102,7 @@ function createExportData(store, deps) {
                     pageBackground: projectData.pageBackgrounds?.[i] || null,
                     canvasWidth: canvas ? canvas.w : null,
                     canvasHeight: canvas ? canvas.h : null,
+                    layerEdits: projectData.pageLayerEdits?.[i] || null,
                 };
             }
         }

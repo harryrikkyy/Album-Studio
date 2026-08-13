@@ -104,6 +104,7 @@ function _hashPage(pageData) {
         }),
         pageData.overlays ? JSON.stringify(pageData.overlays) : '',
         pageData.pageBackground || '',
+        pageData.layerEdits ? JSON.stringify(pageData.layerEdits) : '',
     ];
     return parts.join('§');
 }

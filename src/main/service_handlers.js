@@ -14,6 +14,17 @@ const plugins = require('../plugins')
 const library = require('../library')
 
 function registerServiceHandlers() {
+  // ── PSD LAYER TREE ────────────────────────────────────────
+  // Reads a template's real layer stack (groups, clipping, blend, opacity)
+  // and caches a PNG per layer, so the Page Editor can show and control the
+  // actual Photoshop layers instead of a flattened picture of them.
+  // No Photoshop round-trip — this parses the PSD directly.
+  ipcMain.handle('psd-layers', async (event, templatePath, opts) => {
+    templatePath = guards.reqAbsPath(templatePath, 'templatePath', 'psd-layers')
+    const { readPsdLayerTree } = require('../psd_layers')
+    return readPsdLayerTree(templatePath, { force: !!(opts && opts.force) })
+  })
+
   // ── TELEMETRY EVENT (FROM RENDERER) ────────────────────────
   ipcMain.handle('telemetry-event', (event, name, fields) => {
     try { telemetry.event(name, fields || {}) } catch (_) {}

@@ -83,11 +83,31 @@ function createSpreadEditor(store, deps) {
             spreads.push({ pageNum: i, backdropUrl: pg.template.url || null });
         }
 
+        // The template's REAL layer stack. Lets the editor show the Photoshop
+        // layers (groups, clipping, blend, opacity) and draw the page as a
+        // stack rather than a flattened picture — so template art that sits
+        // ABOVE the photo frames renders above the photos, as it does in
+        // Photoshop. Best-effort: a template we can't parse still edits, just
+        // with the flat backdrop.
+        let psd = null;
+        try {
+            const tplPath = /** @type {any} */ (tpl.file)?.nativePath;
+            if (tplPath) {
+                const r = await deps.invoke('psd-layers', tplPath);
+                if (r && r.ok) psd = r;
+                else if (r && r.error) console.warn('PSD layer read failed:', r.error);
+            }
+        } catch (e) {
+            console.warn('PSD layer read threw:', e instanceof Error ? e.message : String(e));
+        }
+
         return {
             pageNum,
             canvasW: tpl._canvas.w,
             canvasH: tpl._canvas.h,
             backdropUrl: tpl.url || null,
+            psd,
+            layerEdits: projectData.pageLayerEdits?.[pageNum] || {},
             items,
             spreads,
             // Page-level layers (text, shapes) and background colour. Cloned so
@@ -150,6 +170,13 @@ function createSpreadEditor(store, deps) {
             if (!projectData.pageOverlays) projectData.pageOverlays = {};
             if (changes.overlays.length) projectData.pageOverlays[changes.pageNum] = changes.overlays;
             else delete projectData.pageOverlays[changes.pageNum];
+        }
+        // Per-template-layer overrides (hide/show, opacity), keyed by page so
+        // the same template can read differently on different spreads.
+        if (changes.layerEdits && changes.pageNum) {
+            if (!projectData.pageLayerEdits) projectData.pageLayerEdits = {};
+            if (Object.keys(changes.layerEdits).length) projectData.pageLayerEdits[changes.pageNum] = changes.layerEdits;
+            else delete projectData.pageLayerEdits[changes.pageNum];
         }
         if (changes.pageNum && 'pageBackground' in changes) {
             if (!projectData.pageBackgrounds) projectData.pageBackgrounds = {};

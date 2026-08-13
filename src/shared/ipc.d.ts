@@ -77,6 +77,7 @@ export interface IpcInvokeMap {
   'renamer-pick-folder': Loose
   'renamer-status': Loose
   'render-final-composite': Loose
+  'psd-layers': Loose
   'render-proof': Loose
   'render-proofs-batch': Loose
   'resize-psds': Loose

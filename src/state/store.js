@@ -76,7 +76,7 @@ function defaultState() {
             // Page-level edits, keyed by page number (photo edits above are
             // keyed by photo id so they travel with the photo between pages;
             // overlays belong to the page, not to any one photo).
-            pageOverlays: {}, pageBackgrounds: {}
+            pageOverlays: {}, pageBackgrounds: {}, pageLayerEdits: {}
         },
         historyUndo: [],
         historyRedo: [],

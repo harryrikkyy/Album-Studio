@@ -161,6 +161,7 @@ function createProjectIO(store, deps) {
         // Projects saved before page overlays existed simply have none.
         if (!projectData.pageOverlays) projectData.pageOverlays = {};
         if (!projectData.pageBackgrounds) projectData.pageBackgrounds = {};
+        if (!projectData.pageLayerEdits) projectData.pageLayerEdits = {};
         store.set('projectData', projectData);
 
         store.set('albumPages', data.albumPages || {});
