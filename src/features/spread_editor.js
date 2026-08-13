@@ -89,17 +89,33 @@ function createSpreadEditor(store, deps) {
         // ABOVE the photo frames renders above the photos, as it does in
         // Photoshop. Best-effort: a template we can't parse still edits, just
         // with the flat backdrop.
+        // Every branch records WHY on failure. Silently handing back a null
+        // tree gave the editor an empty layers panel with nothing to explain
+        // it — indistinguishable from "this template has no layers", and
+        // impossible to diagnose from the outside.
         let psd = null;
-        try {
-            const tplPath = /** @type {any} */ (tpl.file)?.nativePath;
-            if (tplPath) {
+        let psdError = null;
+        const tplPath = /** @type {any} */ (tpl.file)?.nativePath;
+        if (tpl._generative) {
+            psdError = 'Generative templates are built in-app and have no PSD layers.';
+        } else if (!tplPath) {
+            psdError = 'This template has no file path in memory — reload its folder in the Templates tab.';
+        } else {
+            try {
                 const r = await deps.invoke('psd-layers', tplPath);
-                if (r && r.ok) psd = r;
-                else if (r && r.error) console.warn('PSD layer read failed:', r.error);
+                if (r && r.ok) {
+                    psd = r;
+                    if (r.pixelsSkipped) {
+                        psdError = 'Template is too large to load layer artwork; layers are listed but drawn from the flattened template.';
+                    }
+                } else {
+                    psdError = (r && r.error) || 'The template could not be read.';
+                }
+            } catch (e) {
+                psdError = 'Reading the template failed: ' + (e instanceof Error ? e.message : String(e));
             }
-        } catch (e) {
-            console.warn('PSD layer read threw:', e instanceof Error ? e.message : String(e));
         }
+        if (psdError) console.warn('Page Editor template layers:', psdError);
 
         return {
             pageNum,
@@ -107,6 +123,7 @@ function createSpreadEditor(store, deps) {
             canvasH: tpl._canvas.h,
             backdropUrl: tpl.url || null,
             psd,
+            psdError,
             layerEdits: projectData.pageLayerEdits?.[pageNum] || {},
             items,
             spreads,

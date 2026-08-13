@@ -49,6 +49,7 @@ let spread = null          // { pageNum, canvasW, canvasH, backdropUrl, items[],
 let items = []             // photo working copies; each gets .placement, .adjust, ._nat, ._el, ._img
 let overlays = []          // overlay layer working copies (see overlay_render.js)
 let psd = null             // the template's real PSD layer tree (psd_layers.js)
+let psdError = null        // why the tree is missing/partial, shown in the rail
 let layerEdits = {}        // psdLayerId → { hidden?, opacity? }
 let pageBackground = null
 let selectedIds = []       // selected PHOTO ids (ordered by selection)
@@ -170,6 +171,7 @@ async function load() {
   }))
   overlays = (spread.overlays || []).map((o) => ({ ...o }))
   psd = spread.psd && spread.psd.ok ? spread.psd : null
+  psdError = spread.psdError || null
   layerEdits = JSON.parse(JSON.stringify(spread.layerEdits || {}))
   pageBackground = spread.pageBackground || null
   selectedIds = []; selectedOverlayIds = []
@@ -986,6 +988,12 @@ function buildLayerList() {
   wrap.innerHTML = ''
   const stack = psd ? psdDrawOrder() : []
   el('edLayersEmpty').style.display = (overlays.length || stack.length) ? 'none' : 'block'
+  if (!stack.length && psdError) {
+    const note = document.createElement('div')
+    note.className = 'ed-rail__note'
+    note.textContent = 'Template layers unavailable — ' + psdError
+    wrap.appendChild(note)
+  }
   // Topmost first — matches how the layers read on the page.
   for (let i = overlays.length - 1; i >= 0; i--) {
     const L = overlays[i]
@@ -1039,6 +1047,14 @@ function buildLayerList() {
     head.className = 'ed-rail__sub'
     head.textContent = `Template · ${stack.length} layers`
     wrap.appendChild(head)
+    // A partial read (e.g. artwork skipped for size) still lists layers, but
+    // the user needs to know why the page is drawn from the flat template.
+    if (psdError) {
+      const note = document.createElement('div')
+      note.className = 'ed-rail__note'
+      note.textContent = psdError
+      wrap.appendChild(note)
+    }
     // Reversed: the rail reads topmost-first, the draw order is bottom-first.
     for (let i = stack.length - 1; i >= 0; i--) buildPsdRow(stack[i], wrap)
   }
