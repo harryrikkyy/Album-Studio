@@ -71,6 +71,11 @@ async function attachOverlayArtwork(page) {
     const png = await rasterizeOverlays(page.overlays, w, h)
     if (!png) return noop
     page.overlayPngPath = png
+    // The JSX scales from these, never from layer.bounds — Photoshop reports
+    // trimmed content bounds for a placed smart object, which would stretch an
+    // overlay containing one thin rule across the entire page.
+    page.overlayPngWidth = w
+    page.overlayPngHeight = h
     return () => { try { require('fs').unlinkSync(png) } catch (_) {} }
   } catch (e) {
     // A failed overlay prep must not sink the whole page render — the page

@@ -210,9 +210,17 @@ else {
     }
   }
 
-  // Place the rasterized SHAPE overlay and stretch it to the full canvas.
-  // Placed before the text layers so captions sit above rules and boxes.
-  function placeOverlayPng(doc, pngPath) {
+  // Place the rasterized SHAPE overlay. The PNG is generated at the page's own
+  // pixel dimensions, and Photoshop centres a placed image on the canvas, so
+  // it lands aligned with no adjustment at all.
+  //
+  // Do NOT position or scale this from layer.bounds: for a placed smart object
+  // Photoshop reports the bounds of the non-transparent PIXELS, not the layer's
+  // full extent. An overlay containing one thin rule would measure as that rule
+  // and get stretched across the whole page (which is exactly what happened the
+  // first time this ran against a real template). Scale only from the PNG's
+  // known dimensions, and only when they differ from the document.
+  function placeOverlayPng(doc, pngPath, pngW, pngH) {
     if (!pngPath) return;
     var f = new File(pngPath);
     if (!f.exists) return;
@@ -222,16 +230,12 @@ else {
     executeAction(charIDToTypeID("Plc "), desc, DialogModes.NO);
 
     var layer = doc.activeLayer;
-    layer.name = "Album Studio — text & shapes";
-    // Place lands the art centered at its own size; scale it to the canvas.
-    var b = getBounds(layer);
-    if (b.w > 0 && b.h > 0) {
-      layer.resize((doc.width.as("px") / b.w) * 100, (doc.height.as("px") / b.h) * 100, AnchorPosition.MIDDLECENTER);
+    layer.name = "Album Studio \u2014 text & shapes";
+    var docW = doc.width.as("px"), docH = doc.height.as("px");
+    if (pngW && pngH && (Math.abs(pngW - docW) > 1 || Math.abs(pngH - docH) > 1)) {
+      // Uniform-ish rescale about the centre; the placement stays centred.
+      layer.resize((docW / pngW) * 100, (docH / pngH) * 100, AnchorPosition.MIDDLECENTER);
     }
-    // Re-centre in case the placed art wasn't perfectly centered to begin with.
-    var b2 = getBounds(layer);
-    layer.translate(doc.width.as("px") / 2 - b2.cx, doc.height.as("px") / 2 - b2.cy);
-    // Topmost, above every photo.
     layer.move(doc.layers[0], ElementPlacement.PLACEBEFORE);
   }
 
@@ -316,7 +320,7 @@ else {
         for (var v = 0; v < vPhotos.length && v < vFrames.length; v++)
           placeAndFit(vPhotos[v].filePath, vFrames[v], vPhotos[v].rotation, vPhotos[v].baseName, vPhotos[v].placement, vPhotos[v].adjust);
 
-        placeOverlayPng(safeDoc, page.overlayPngPath);
+        placeOverlayPng(safeDoc, page.overlayPngPath, page.overlayPngWidth, page.overlayPngHeight);
         createTextLayers(safeDoc, page.overlayTextLayers);
 
         var saveOptions = new PhotoshopSaveOptions();
