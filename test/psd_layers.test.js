@@ -292,3 +292,12 @@ test('opacity overrides carry through', async () => {
   const ops = toPhotoshopLayerOps(t.layers, { [id]: { opacity: 0.4 } })
   assert.equal(ops[0].opacity, 0.4)
 })
+
+test('an oversized template is declined, not parsed into an OOM', async () => {
+  // Cap set below the fixture's size to exercise the guard without writing a
+  // 400 MB file. The caller falls back to the flattened backdrop.
+  const r = await readPsdLayerTree(fixturePath(), { force: true, maxBytes: 10 })
+  assert.equal(r.ok, false)
+  assert.equal(r.tooLarge, true)
+  assert.match(r.error, /layer-reading limit/)
+})

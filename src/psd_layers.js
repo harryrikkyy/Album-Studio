@@ -32,6 +32,11 @@ const path = require('path')
 const os = require('os')
 const crypto = require('crypto')
 
+// Ceiling on template size for layer extraction. See readPsdLayerTree for the
+// measurement behind it. Deliberately generous — real album templates are
+// typically well under this — and overridable per call for tests.
+const MAX_PSD_BYTES = 400 * 1024 * 1024
+
 /** @type {any} */
 let _agpsd = null
 function getAgPsd() {
@@ -154,13 +159,31 @@ async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ di
  * panel reads top-down.
  *
  * @param {string} psdPath
- * @param {{ force?: boolean }} [opts]
- * @returns {Promise<{ ok: boolean, error?: string, width?: number, height?: number,
- *                     layers?: any[], cacheDir?: string, cached?: boolean }>}
+ * @param {{ force?: boolean, maxBytes?: number }} [opts]
+ * @returns {Promise<{ ok: boolean, error?: string, tooLarge?: boolean, width?: number,
+ *                     height?: number, layers?: any[], compositePath?: string|null,
+ *                     cacheDir?: string, cached?: boolean }>}
  */
 async function readPsdLayerTree(psdPath, opts = {}) {
   if (!psdPath || !fs.existsSync(psdPath)) {
     return { ok: false, error: `template not found: ${psdPath}` }
+  }
+
+  // Decoding every layer materialises the whole document as raw RGBA. Measured
+  // on a 7200×3600 / 23-layer template that is a ~390 MB resident spike for a
+  // 5 MB file, and the ratio is worse for photographic art than for the flat
+  // fills that was measured with. Past the cap we decline rather than risk
+  // taking the app out with an OOM: callers fall back to the flattened
+  // backdrop, which is exactly the pre-existing behaviour.
+  const st = fs.statSync(psdPath)
+  const cap = opts.maxBytes || MAX_PSD_BYTES
+  if (st.size > cap) {
+    return {
+      ok: false,
+      tooLarge: true,
+      error: `template is ${(st.size / 1e6).toFixed(0)} MB, over the ${(cap / 1e6).toFixed(0)} MB layer-reading limit — `
+        + 'the page still renders from the flattened template, but its layers cannot be listed or toggled',
+    }
   }
   const dir = layerCacheDir(psdPath)
   const manifestPath = path.join(dir, 'manifest.json')
@@ -334,4 +357,5 @@ module.exports = {
   frameLayers,
   layerCacheDir,
   isFrameName,
+  MAX_PSD_BYTES,
 }
