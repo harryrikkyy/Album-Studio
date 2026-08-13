@@ -32,10 +32,16 @@ const path = require('path')
 const os = require('os')
 const crypto = require('crypto')
 
-// Ceiling on template size for layer extraction. See readPsdLayerTree for the
-// measurement behind it. Deliberately generous — real album templates are
-// typically well under this — and overridable per call for tests.
-const MAX_PSD_BYTES = 400 * 1024 * 1024
+// Budget for DECODED pixel data, not file size.
+//
+// File size is the wrong metric and measuring a real template proved it: a
+// 62 MB, 10800×3600 spread decodes to ~550 MB of RGBA and spiked ~717 MB
+// resident, while sailing under any sane file-size cap. What actually costs
+// memory is canvas pixels × layers, so that is what is budgeted.
+// Measured ratio of actual resident spike to this estimate is ~1.4× (551 MB
+// estimated -> 757 MB resident on the reference template), so the budget is
+// set where the worst case still lands near 1.2 GB rather than 2 GB.
+const MAX_DECODE_BYTES = 900_000_000
 
 /** @type {any} */
 let _agpsd = null
@@ -159,8 +165,8 @@ async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ di
  * panel reads top-down.
  *
  * @param {string} psdPath
- * @param {{ force?: boolean, maxBytes?: number }} [opts]
- * @returns {Promise<{ ok: boolean, error?: string, tooLarge?: boolean, width?: number,
+ * @param {{ force?: boolean, maxDecodeBytes?: number }} [opts]
+ * @returns {Promise<{ ok: boolean, error?: string, pixelsSkipped?: boolean, width?: number,
  *                     height?: number, layers?: any[], compositePath?: string|null,
  *                     cacheDir?: string, cached?: boolean }>}
  */
@@ -169,22 +175,6 @@ async function readPsdLayerTree(psdPath, opts = {}) {
     return { ok: false, error: `template not found: ${psdPath}` }
   }
 
-  // Decoding every layer materialises the whole document as raw RGBA. Measured
-  // on a 7200×3600 / 23-layer template that is a ~390 MB resident spike for a
-  // 5 MB file, and the ratio is worse for photographic art than for the flat
-  // fills that was measured with. Past the cap we decline rather than risk
-  // taking the app out with an OOM: callers fall back to the flattened
-  // backdrop, which is exactly the pre-existing behaviour.
-  const st = fs.statSync(psdPath)
-  const cap = opts.maxBytes || MAX_PSD_BYTES
-  if (st.size > cap) {
-    return {
-      ok: false,
-      tooLarge: true,
-      error: `template is ${(st.size / 1e6).toFixed(0)} MB, over the ${(cap / 1e6).toFixed(0)} MB layer-reading limit — `
-        + 'the page still renders from the flattened template, but its layers cannot be listed or toggled',
-    }
-  }
   const dir = layerCacheDir(psdPath)
   const manifestPath = path.join(dir, 'manifest.json')
 
@@ -200,7 +190,37 @@ async function readPsdLayerTree(psdPath, opts = {}) {
   try {
     const agpsd = getAgPsd()
     const buf = fs.readFileSync(psdPath)
-    const psd = agpsd.readPsd(buf, {
+
+    // Pass 1 — structure only. Measured at ~60 ms / ~40 MB on a 62 MB
+    // template, versus ~1 s / ~700 MB for a full decode. Cheap enough to do
+    // unconditionally, and it tells us what a full decode would cost BEFORE
+    // committing to one.
+    const outline = agpsd.readPsd(buf, {
+      skipLayerImageData: true,
+      skipCompositeImageData: true,
+      skipThumbnail: true,
+    })
+
+    let estimate = (outline.width || 0) * (outline.height || 0) * 4  // composite
+    const measure = (/** @type {any[]} */ nodes) => {
+      for (const n of nodes || []) {
+        if (n.children) { measure(n.children); continue }
+        estimate += Math.max(0, (n.right || 0) - (n.left || 0))
+          * Math.max(0, (n.bottom || 0) - (n.top || 0)) * 4
+      }
+    }
+    measure(outline.children)
+
+    const budget = opts.maxDecodeBytes || MAX_DECODE_BYTES
+    // Over budget: keep the TREE (so the layers panel still lists everything,
+    // which is most of the value) and skip the pixels. Callers fall back to
+    // the flattened backdrop for drawing, exactly as they do for a template
+    // that can't be parsed at all.
+    const pixelsSkipped = estimate > budget
+
+    fs.mkdirSync(dir, { recursive: true })
+
+    const psd = pixelsSkipped ? outline : agpsd.readPsd(buf, {
       useImageData: true,
       // Layer effects/adjustments aren't reproducible from raw pixels anyway
       // (see header), so skip the extra parsing work.
@@ -208,8 +228,6 @@ async function readPsdLayerTree(psdPath, opts = {}) {
       skipCompositeImageData: false,
       skipThumbnail: true,
     })
-
-    fs.mkdirSync(dir, { recursive: true })
 
     /** @type {any[]} */
     const layers = []
@@ -219,7 +237,7 @@ async function readPsdLayerTree(psdPath, opts = {}) {
     // backdrop because it includes layer styles and adjustments that a stack
     // composited from raw layer pixels cannot reproduce.
     let compositePath = null
-    if (psd.imageData) {
+    if (!pixelsSkipped && psd.imageData) {
       compositePath = path.join(dir, 'composite.png')
       await writeLayerPng({ imageData: psd.imageData }, compositePath)
     }
@@ -231,6 +249,8 @@ async function readPsdLayerTree(psdPath, opts = {}) {
       layers,
       compositePath,
       cacheDir: dir,
+      pixelsSkipped,
+      estimatedDecodeBytes: estimate,
     }
     try {
       fs.writeFileSync(manifestPath, JSON.stringify(result))
@@ -357,5 +377,5 @@ module.exports = {
   frameLayers,
   layerCacheDir,
   isFrameName,
-  MAX_PSD_BYTES,
+  MAX_DECODE_BYTES,
 }

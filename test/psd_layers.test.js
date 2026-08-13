@@ -293,11 +293,20 @@ test('opacity overrides carry through', async () => {
   assert.equal(ops[0].opacity, 0.4)
 })
 
-test('an oversized template is declined, not parsed into an OOM', async () => {
-  // Cap set below the fixture's size to exercise the guard without writing a
-  // 400 MB file. The caller falls back to the flattened backdrop.
-  const r = await readPsdLayerTree(fixturePath(), { force: true, maxBytes: 10 })
-  assert.equal(r.ok, false)
-  assert.equal(r.tooLarge, true)
-  assert.match(r.error, /layer-reading limit/)
+test('over the decode budget, the TREE still comes back — only pixels are skipped', async () => {
+  // The layers panel is most of the value, so a template too big to decode
+  // must still list its layers rather than failing outright.
+  const r = await readPsdLayerTree(fixturePath(), { force: true, maxDecodeBytes: 1 })
+  assert.equal(r.ok, true, 'still a successful read')
+  assert.equal(r.pixelsSkipped, true)
+  assert.equal(r.layers.length, 4, 'every layer is still listed')
+  const flat = flattenDrawOrder(r.layers)
+  assert.equal(flat.find((n) => n.name === 'Gold rule').png, null, 'no pixels extracted')
+  assert.equal(r.compositePath, null)
+})
+
+test('under budget, pixels are extracted as normal', async () => {
+  const r = await readPsdLayerTree(fixturePath(), { force: true })
+  assert.equal(r.pixelsSkipped, false)
+  assert.ok(r.estimatedDecodeBytes > 0)
 })

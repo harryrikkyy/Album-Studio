@@ -40,3 +40,7 @@ src/dist/
 
 # Phase 4 benchmark fixture (generated)
 bench/fixture/
+
+# Local PSD templates used for manual testing — large binaries, not project state
+pd files/
+psd files/
