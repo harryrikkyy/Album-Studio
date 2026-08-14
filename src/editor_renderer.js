@@ -203,7 +203,9 @@ function psdDrawOrder() {
       const e = layerEdits[n.id] || {}
       const visible = (e.hidden === undefined ? n.visible : !e.hidden) && parentVisible
       const opacity = (e.opacity === undefined ? n.opacity : e.opacity) * parentOpacity
-      out.push({ ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity, children: undefined })
+      const replaced = e.text !== undefined && n.kind === 'text'
+      out.push({ ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity,
+        rasterVisible: visible && !replaced, children: undefined })
       if (n.children) walk(n.children, depth + 1, visible, opacity)
     }
   }
@@ -291,6 +293,7 @@ function buildPsdStack(stack) {
     }
 
     if (!node.png) continue
+    if (node.rasterVisible === false) continue
     const img = document.createElement('img')
     img.className = 'ed-psd-layer'
     img.src = fileUrl(node.png)
@@ -513,8 +516,36 @@ function renderOverlays() {
   if (!ovlSurface || !spread) return
   const W = spread.canvasW * displayScale
   const H = spread.canvasH * displayScale
-  ovlSurface.innerHTML = OV.buildOverlaySvg(overlays, W, H) || ''
+  ovlSurface.innerHTML = OV.buildOverlaySvg(overlays.concat(textStandIns()), W, H) || ''
   buildHitBoxes(W, H)
+}
+
+// Retyped template text, expressed as overlay layers so the stage draws it
+// through the same SVG generator as everything else. Mirrors
+// psd_layers.textReplacementOverlays — this window cannot require() it.
+function textStandIns() {
+  if (!psd || !spread) return []
+  const W = spread.canvasW, H = spread.canvasH
+  const out = []
+  for (const n of psdDrawOrder()) {
+    const edit = layerEdits[n.id]
+    if (!edit || edit.text === undefined || n.kind !== 'text' || !n.effectiveVisible) continue
+    const st = n.textStyle || {}
+    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, n.h * 0.8)
+    const anchorX = (st.anchorX == null ? n.x : st.anchorX) + (edit.dx || 0)
+    const anchorY = (st.anchorY == null ? n.y + n.h : st.anchorY) + (edit.dy || 0)
+    const align = st.align || 'left'
+    const boxW = Math.max(n.w * 2, W * 0.5)
+    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
+    out.push({
+      id: 'psdtext_' + n.id, type: 'text',
+      x: x / W, y: (anchorY - sizePx * 0.78) / H, w: boxW / W, h: (sizePx * 1.6) / H,
+      text: edit.text, font: st.font || undefined, size: sizePx / H,
+      color: st.color || '#000000', align, valign: 'top',
+      tracking: st.tracking || 0, opacity: n.effectiveOpacity,
+    })
+  }
+  return out
 }
 
 function buildHitBoxes(W, H) {
@@ -659,6 +690,47 @@ function distributeSelection(axis) {
   toast(`Distributed ${sel.length} layers`)
 }
 
+// Hit-test the template stack at a canvas point.
+//
+// Bounds-based rather than per-pixel: the layer PNGs are file:// images, and
+// drawing them to a canvas to sample alpha taints it in Electron, so
+// getImageData would throw. Two heuristics make bounds behave: prefer the
+// SMALLEST box containing the point (a specific bit of art over the sheet it
+// sits on), and let repeated clicks cycle down through everything under the
+// cursor so a covered layer is still reachable.
+let _cycleAt = { x: -1, y: -1, i: 0 }
+function layersAtPoint(cx, cy) {
+  return psdDrawOrder()
+    .filter((n) => n.kind !== 'group' && n.effectiveVisible && n.png)
+    .filter((n) => {
+      const b = layerBox(n)
+      return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h
+    })
+    .sort((a, b) => {
+      const ba = layerBox(a), bb = layerBox(b)
+      return (ba.w * ba.h) - (bb.w * bb.h)   // smallest (most specific) first
+    })
+}
+
+function pickLayerAt(clientX, clientY) {
+  const rect = stage.getBoundingClientRect()
+  const cx = ((clientX - rect.left) / rect.width) * spread.canvasW
+  const cy = ((clientY - rect.top) / rect.height) * spread.canvasH
+  const hits = layersAtPoint(cx, cy)
+  if (!hits.length) return null
+  // Clicking the same spot again steps to the next layer underneath.
+  // Treat it as the same spot in CANVAS units scaled to the current zoom, so
+  // cycling works the same whether the page is fit or magnified.
+  const tol = spread.canvasW / 200
+  const same = Math.abs(_cycleAt.x - cx) < tol && Math.abs(_cycleAt.y - cy) < tol
+  let i = same ? (_cycleAt.i + 1) % hits.length : 0
+  // If the first pick is already selected, move on — otherwise a click on a
+  // selected layer looks like nothing happened.
+  if (!same && hits.length > 1 && selectedLayerIds.includes(hits[0].id)) i = 1
+  _cycleAt = { x: cx, y: cy, i }
+  return hits[i]
+}
+
 // Move/resize a template layer. Offsets are stored in CANVAS PIXELS rather
 // than normalized units, because they map straight onto Photoshop's
 // translate()/resize() in the export — no second conversion to get wrong.
@@ -667,6 +739,13 @@ function wireLayerBox(box, node) {
     if (e.button !== 0) return
     e.stopPropagation()
     const handle = e.target.dataset && e.target.dataset.handle
+    // Once selected, this box covers the layer and swallows further clicks —
+    // alt-click steps to whatever is underneath so a covered layer stays
+    // reachable without hunting for it in the rail.
+    if (!handle && e.altKey) {
+      const next = pickLayerAt(e.clientX, e.clientY)
+      if (next) { selectLayer(next.id, false); return }
+    }
     const rect = stage.getBoundingClientRect()
     const pxPerCanvasX = rect.width / spread.canvasW
     const pxPerCanvasY = rect.height / spread.canvasH
@@ -1345,6 +1424,9 @@ function updateLayerPanel(node) {
   const e = layerEdits[node.id] || {}
   const b = layerBox(node)
   el('edLayerName').textContent = node.name + (node.isFrame ? '  (photo slot)' : '')
+  const isText = node.kind === 'text'
+  el('edLayerTextWrap').style.display = isText ? 'block' : 'none'
+  if (isText) el('edLayerText').value = e.text === undefined ? (node.text || '') : e.text
   el('edLayerVisible').checked = e.hidden === undefined ? node.visible : !e.hidden
   const op = Math.round((e.opacity == null ? node.opacity : e.opacity) * 100)
   el('edLayerOpacity').value = op
@@ -1508,6 +1590,13 @@ el('edResetPhoto').addEventListener('click', () => {
     wrap.appendChild(b)
   }
 })()
+
+el('edLayerText').addEventListener('input', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  layerEdits[node.id] = { ...(layerEdits[node.id] || {}), text: el('edLayerText').value }
+  buildScene(); buildLayerList(); scheduleApply()
+  clearTimeout(_ctlHistTimer); _ctlHistTimer = setTimeout(pushHistory, 600)
+})
 
 ;['edLayerX', 'edLayerY', 'edLayerW', 'edLayerH'].forEach((id) => {
   el(id).addEventListener('change', commitLayerFields)
@@ -1839,9 +1928,14 @@ window.addEventListener('resize', computeStageScale)
 const clearOnBareClick = (e) => {
   if (suppressNextClick) { suppressNextClick = false; return }
   if (tool !== 'select') return
-  if (e.target === stageWrap || e.target === stage || e.target === hitSurface) {
-    setSelection(null); selectOverlay(null, false); selectLayer(null, false)
+  if (e.target !== stageWrap && e.target !== stage && e.target !== hitSurface) return
+  // Clicking the page itself selects the template layer under the pointer;
+  // only the surrounding mat clears the selection.
+  if (e.target !== stageWrap && psd) {
+    const hit = pickLayerAt(e.clientX, e.clientY)
+    if (hit) { selectLayer(hit.id, e.shiftKey || e.metaKey); return }
   }
+  setSelection(null); selectOverlay(null, false); selectLayer(null, false)
 }
 // Bound ONCE, on the outer wrap: clicks bubble up from the stage, so a second
 // listener on `stage` would run the handler twice per click — the first call

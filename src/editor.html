@@ -399,6 +399,11 @@
       <div id="edLayerPanel" style="display:none; flex-direction:column; gap:10px;">
         <h2 class="ed-panel__title">Template layer</h2>
         <div id="edLayerName" class="ed-panel__hint" style="font-weight:600;color:var(--txt-primary);"></div>
+        <div id="edLayerTextWrap" style="display:none;">
+          <label for="edLayerText" class="ed-panel__title" style="display:block;margin-bottom:5px;">Text</label>
+          <textarea id="edLayerText" class="ed-textarea" aria-label="Template layer text"></textarea>
+          <div class="ed-panel__hint" style="margin-top:5px;">Preview is an approximation; the exported PSD keeps live type in the template's own font.</div>
+        </div>
         <div class="ed-ctl"><label for="edLayerVisible">Visible</label><input type="checkbox" id="edLayerVisible"></div>
         <div class="ed-ctl"><label for="edLayerOpacity">Opacity</label><input type="range" id="edLayerOpacity" min="0" max="100" value="100"><span class="ed-val" id="edLayerOpacityVal">100</span></div>
         <div class="ed-sep"></div>

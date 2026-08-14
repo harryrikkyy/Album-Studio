@@ -21,6 +21,7 @@
  * @param {(channel: string, ...args: any[]) => Promise<any>} deps.invoke  IPC dispatch
  * @param {(channel: string, listener: (event: any, ...args: any[]) => void) => void} deps.on  IPC push subscribe
  * @param {(template: any) => Promise<any>} deps.ensureTemplateFrames
+ * @param {(pageNum: number) => (string|null)} [deps.proofUrlForPage]  rendered-proof URL for the spreads rail
  * @param {(pageNum: number) => void} deps.scheduleEditedPageReproof
  * @param {(label: string, fn: () => void) => void} deps.mutate
  * @param {() => void} deps.saveState  debounced workspace autosave
@@ -31,6 +32,35 @@
  * @param {(msg: string, kind?: string, opts?: { duration?: number }) => void} deps.toast
  */
 function createSpreadEditor(store, deps) {
+    /**
+     * file:// URL for a photo's real source, preferring the attached
+     * high-res original over the working file. Returns null when neither is
+     * resolvable, so the caller falls back to the proxy.
+     * @param {any} cache  a photoCache entry
+     */
+    function _fullResUrl(cache) {
+        if (!cache) return null;
+        try {
+            const nodepath = require('path');
+            const fs = require('fs');
+            if (cache.hrFolder && cache.hrFolder.nativePath && cache.baseName) {
+                const dir = cache.hrFolder.nativePath;
+                const lower = String(cache.baseName).toLowerCase();
+                const hit = fs.readdirSync(dir).find((/** @type {string} */ f) => f.toLowerCase().startsWith(lower));
+                // RAW files can't be decoded by the browser; only point at
+                // formats it can actually display, else keep the proxy.
+                if (hit && /\.(jpe?g|png|webp|gif|bmp)$/i.test(hit)) {
+                    return 'file://' + encodeURI(nodepath.join(dir, hit));
+                }
+            }
+            const direct = cache.file?.nativePath;
+            if (direct && /\.(jpe?g|png|webp|gif|bmp)$/i.test(direct)) {
+                return 'file://' + encodeURI(direct);
+            }
+        } catch (_) { /* fall back to the proxy */ }
+        return null;
+    }
+
     /**
      * Build the payload for one page: canvas geometry, per-frame photo
      * assignments (same partition + ordering the renderer/JSX use), and the
@@ -62,7 +92,11 @@ function createSpreadEditor(store, deps) {
                 const c = photoCache[p.id];
                 items.push({
                     id: p.id,
-                    url: (c && c.url) || p.url,
+                    // Prefer the FULL-RESOLUTION source over the thumbnail
+                    // proxy. The proxy exists to keep the source grid fast,
+                    // but the editor shows one page at a time — a handful of
+                    // photos — and zooming into a thumbnail just shows mush.
+                    url: _fullResUrl(c) || (c && c.url) || p.url,
                     orient,
                     frame: frames[i],
                     rotation: projectData.imageRotations?.[p.id] || 0,
@@ -80,7 +114,14 @@ function createSpreadEditor(store, deps) {
         for (let i = 1; i <= store.get('totalActivePages'); i++) {
             const pg = albumPages[i];
             if (!pg || !pg.template) continue;
-            spreads.push({ pageNum: i, backdropUrl: pg.template.url || null });
+            // Prefer the page's rendered proof over the bare template
+            // thumbnail — the rail should show the spread as it actually
+            // looks, photos and edits included.
+            spreads.push({
+                pageNum: i,
+                backdropUrl: deps.proofUrlForPage ? (deps.proofUrlForPage(i) || pg.template.url || null)
+                    : (pg.template.url || null),
+            });
         }
 
         // The template's REAL layer stack. Lets the editor show the Photoshop

@@ -68,6 +68,8 @@ export interface CompactPage {
  */
 export interface LayerEdit {
   hidden?: boolean
+  /** Replacement copy for a template TEXT layer. */
+  text?: string
   opacity?: number
   dx?: number
   dy?: number

@@ -43,6 +43,12 @@ const crypto = require('crypto')
 // set where the worst case still lands near 1.2 GB rather than 2 GB.
 const MAX_DECODE_BYTES = 900_000_000
 
+// Bump whenever the shape of an extracted node changes. The cache key is
+// path+mtime, so without this a manifest written by an OLDER build is served
+// forever for an unchanged template — which is exactly how text layers came
+// back missing their `textStyle` after that field was added.
+const SCHEMA_VERSION = 2
+
 /** @type {any} */
 let _agpsd = null
 function getAgPsd() {
@@ -137,7 +143,33 @@ async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ di
       isFrame: isFrameName(n.name),
       png: null,
     }
-    if (n.text && n.text.text) node.text = n.text.text
+    // Text layers carry enough to (a) show the copy for editing and (b) draw
+    // a stand-in when the user changes it. `transform` is PSD's 6-value affine
+    // [a,b,c,d,tx,ty]; the scale in it multiplies the point size, and tx/ty is
+    // the text's anchor on the canvas.
+    if (n.text) {
+      node.text = n.text.text || ''
+      const st = n.text.style || {}
+      const ps = n.text.paragraphStyle || {}
+      const tr = Array.isArray(n.text.transform) ? n.text.transform : [1, 0, 0, 1, node.x, node.y]
+      const scale = Math.abs(tr[0]) || 1
+      const c = st.fillColor || { r: 0, g: 0, b: 0 }
+      node.textStyle = {
+        font: (st.font && st.font.name) || null,
+        // Point size times the layer's own transform scale — a template that
+        // was scaled after the type was set reports the ORIGINAL size, so
+        // ignoring the transform renders it visibly too small.
+        sizePx: (st.fontSize || 12) * scale,
+        color: '#' + [c.r, c.g, c.b].map((v) =>
+          Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''),
+        // Photoshop tracking is 1/1000 em.
+        tracking: (st.tracking || 0) / 1000,
+        align: ps.justification === 'center' ? 'center'
+          : ps.justification === 'right' ? 'right' : 'left',
+        anchorX: tr[4],
+        anchorY: tr[5],
+      }
+    }
 
     if (isGroup) {
       node.children = []
@@ -183,7 +215,8 @@ async function readPsdLayerTree(psdPath, opts = {}) {
   if (!opts.force && fs.existsSync(manifestPath)) {
     try {
       const cached = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-      return { ...cached, cached: true }
+      if (cached.schema === SCHEMA_VERSION) return { ...cached, cached: true }
+      // Written by an older build — fall through and re-extract.
     } catch (_) { /* corrupt cache — fall through and rebuild */ }
   }
 
@@ -244,6 +277,7 @@ async function readPsdLayerTree(psdPath, opts = {}) {
 
     const result = {
       ok: true,
+      schema: SCHEMA_VERSION,
       width: psd.width,
       height: psd.height,
       layers,
@@ -270,7 +304,7 @@ async function readPsdLayerTree(psdPath, opts = {}) {
  * reason `effectiveVisible` is computed here rather than per-consumer.
  *
  * @param {any[]} layers
- * @param {Record<string, { hidden?: boolean, opacity?: number }>} [edits]
+ * @param {Record<string, any>} [edits]
  */
 function flattenDrawOrder(layers, edits = {}) {
   /** @type {any[]} */
@@ -279,9 +313,12 @@ function flattenDrawOrder(layers, edits = {}) {
     /** @type {boolean} */ parentVisible, /** @type {number} */ parentOpacity) => {
     for (const n of nodes) {
       const edit = edits[n.id] || {}
+      // Retyped text hides its own baked pixels — the stand-in draws instead.
+      const replaced = edit.text !== undefined && n.kind === 'text'
       const visible = (edit.hidden === undefined ? n.visible : !edit.hidden) && parentVisible
+      const rasterVisible = visible && !replaced
       const opacity = (edit.opacity === undefined ? n.opacity : edit.opacity) * parentOpacity
-      const node = { ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity }
+      const node = { ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity, rasterVisible }
       delete node.children
       out.push(node)
       if (n.children) walk(n.children, depth + 1, visible, opacity)
@@ -328,7 +365,7 @@ function resolveClipping(/** @type {any[]} */ drawOrder) {
  * it was never asked to change completely untouched.
  *
  * @param {any[]} layers the tree from readPsdLayerTree
- * @param {Record<string, { hidden?: boolean, opacity?: number, dx?: number, dy?: number, sx?: number, sy?: number }>} layerEdits
+ * @param {Record<string, any>} layerEdits
  * @returns {any[]}
  */
 function toPhotoshopLayerOps(layers, layerEdits) {
@@ -363,13 +400,74 @@ function toPhotoshopLayerOps(layers, layerEdits) {
         if (edit.sx != null && edit.sx !== 1) op.sx = edit.sx
         if (edit.sy != null && edit.sy !== 1) op.sy = edit.sy
         if (op.sx || op.sy) { op.w = node.w; op.h = node.h }
-        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy'].some((k) => k in op)) ops.push(op)
+        // Retyped copy goes in as LIVE type: Photoshop re-renders it in the
+        // template's own font, so the delivered PSD is exact — the editor's
+        // stand-in was only ever a preview.
+        if (edit.text !== undefined && node.kind === 'text' && edit.text !== node.text) {
+          op.text = edit.text
+        }
+        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy', 'text'].some((k) => k in op)) ops.push(op)
       }
       if (node.children) walk(node.children, here)
     }
   }
   walk(layers || [], [])
   return ops
+}
+
+/**
+ * Turn edited template TEXT layers into overlay layers.
+ *
+ * When the user retypes a template's copy, the layer's baked raster is wrong,
+ * so it is hidden and a stand-in is drawn instead. Expressing the stand-in as
+ * an ordinary overlay means the editor preview and the proof renderer draw it
+ * through the SAME SVG path as every other caption — no third text renderer.
+ *
+ * The Photoshop export does NOT use these: there the real text layer's
+ * contents are set directly, so the delivered PSD keeps live, correctly
+ * rendered type in the template's own font.
+ *
+ * @param {any[]} layers
+ * @param {Record<string, any>} layerEdits
+ * @param {number} W canvas width  @param {number} H canvas height
+ */
+function textReplacementOverlays(layers, layerEdits, W, H) {
+  /** @type {any[]} */
+  const out = []
+  if (!layerEdits) return out
+  for (const n of flattenDrawOrder(layers, layerEdits)) {
+    const edit = layerEdits[n.id]
+    if (!edit || edit.text === undefined || n.kind !== 'text') continue
+    if (!n.effectiveVisible) continue
+    const st = n.textStyle || {}
+    // ag-psd doesn't always report a size; fall back to the layer's own height,
+    // which for a single line is close enough to keep the stand-in legible.
+    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, n.h * 0.8)
+    const anchorX = (st.anchorX == null ? n.x : st.anchorX) + (edit.dx || 0)
+    const anchorY = (st.anchorY == null ? n.y + n.h : st.anchorY) + (edit.dy || 0)
+    const align = st.align || 'left'
+    // Give the box generous width and place it so the engine's anchor for this
+    // alignment lands on the PSD's own anchor point.
+    const boxW = Math.max(n.w * 2, W * 0.5)
+    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
+    // The engine puts the first baseline at 0.78em below the box top for a
+    // top-aligned box; PSD's anchorY IS the baseline, so back that out.
+    const y = anchorY - sizePx * 0.78
+    out.push({
+      id: 'psdtext_' + n.id,
+      type: 'text',
+      x: x / W, y: y / H, w: boxW / W, h: (sizePx * 1.6) / H,
+      text: edit.text,
+      font: st.font || undefined,
+      size: sizePx / H,
+      color: st.color || '#000000',
+      align,
+      valign: 'top',
+      tracking: st.tracking || 0,
+      opacity: n.effectiveOpacity,
+    })
+  }
+  return out
 }
 
 /** Frame layers only, in draw order — the photo slots. */
@@ -382,6 +480,7 @@ module.exports = {
   flattenDrawOrder,
   resolveClipping,
   toPhotoshopLayerOps,
+  textReplacementOverlays,
   frameLayers,
   layerCacheDir,
   isFrameName,

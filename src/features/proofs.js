@@ -200,7 +200,19 @@ function createProofs(store, deps) {
             }
         }
 
-        return {
+        /**
+     * file:// URL of a page's most recent rendered proof, or null. Lets the
+     * Page Editor's spread rail show the real page instead of the bare
+     * template thumbnail.
+     * @param {number} pageNum
+     */
+    function proofUrlForPage(pageNum) {
+        const p = _proofPaths[pageNum];
+        return p ? 'file://' + encodeURI(p) : null;
+    }
+
+    return {
+        proofUrlForPage,
             primary: hrPath || proxyPath,
             fallback: hrPath ? proxyPath : null,
         };

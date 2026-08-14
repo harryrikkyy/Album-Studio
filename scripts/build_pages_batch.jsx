@@ -125,6 +125,11 @@ else {
         // layer silently switched off in a delivered album.
         if (!node || (op.name && node.name !== op.name)) continue;
         if (typeof op.hidden !== 'undefined') node.visible = !op.hidden;
+        // Live type: Photoshop re-renders in the template's own font, so the
+        // delivered PSD is exact and the client can still retype it.
+        if (typeof op.text === 'string' && node.kind == LayerKind.TEXT) {
+          node.textItem.contents = op.text;
+        }
         if (typeof op.opacity !== 'undefined') node.opacity = Math.round(op.opacity * 100);
 
         // Move / scale. Photoshop resizes about a chosen anchor, not about the

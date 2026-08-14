@@ -481,7 +481,17 @@ async function renderPageProof(job) {
     // so they win the z-order. One SVG for the whole page: librsvg rasterises
     // it at output resolution, so text stays crisp at export size instead of
     // being upscaled from the proof.
-    const overlaySvg = buildOverlaySvg(job.overlays, dims.width, dims.height)
+    // Retyped template text draws through the same overlay pipeline as any
+    // other caption, so there is only ever one text renderer in this file.
+    let pageOverlays = job.overlays || []
+    if (job.layerEdits && job.psdLayers) {
+      try {
+        const { textReplacementOverlays } = require('./psd_layers')
+        const subs = textReplacementOverlays(job.psdLayers, job.layerEdits, job.canvasWidth, job.canvasHeight)
+        if (subs.length) pageOverlays = pageOverlays.concat(subs)
+      } catch (_) { /* stand-ins are best-effort; the page still renders */ }
+    }
+    const overlaySvg = buildOverlaySvg(pageOverlays, dims.width, dims.height)
     if (overlaySvg) {
       layers.push({ input: Buffer.from(overlaySvg), top: 0, left: 0 })
     }
@@ -559,7 +569,8 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
       ops.push(null)
       continue
     }
-    if (!node.effectiveVisible || !node.png || !fs.existsSync(node.png)) continue
+    const shown = node.rasterVisible === undefined ? node.effectiveVisible : node.rasterVisible
+    if (!shown || !node.png || !fs.existsSync(node.png)) continue
     const edit = (layerEdits && layerEdits[node.id]) || {}
     ops.push({
       _layer: node,

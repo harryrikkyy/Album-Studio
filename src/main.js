@@ -257,7 +257,7 @@ const { scheduleFilterUpdate, setPreview, setActiveMatchPanel, photoNativePath }
 // split). scheduleEditedPageReproof/ensureTemplateFrames keep their old
 // names for the Spread Editor call sites below.
 const {
-    isLivePreviewOn, scheduleLivePreview,
+    isLivePreviewOn, scheduleLivePreview, proofUrlForPage,
     ensureTemplateFrames, scheduleEditedPageReproof: _scheduleEditedPageReproof,
     reapplyProofs: _reapplyProofs, clearProofs: _clearProofs,
 } = require('./features/proofs').createProofs(store, {
@@ -287,6 +287,7 @@ require('./features/spread_editor').createSpreadEditor(store, {
     invoke: (channel, ...args) => require('electron').ipcRenderer.invoke(channel, ...args),
     on: (channel, listener) => require('electron').ipcRenderer.on(channel, listener),
     ensureTemplateFrames: (tpl) => ensureTemplateFrames(tpl),
+    proofUrlForPage: (n) => proofUrlForPage(n),
     scheduleEditedPageReproof: (pageNum) => _scheduleEditedPageReproof(pageNum),
     mutate: (label, fn) => mutate(label, fn),
     saveState: () => saveStateToStorage(),
