@@ -575,6 +575,16 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
     ops.push({
       _layer: node,
       _clipBase: node.clipBaseId ? byId.get(node.clipBaseId) : null,
+      _clipBaseBox: (() => {
+        const base = node.clipBaseId ? byId.get(node.clipBaseId) : null
+        if (!base) return null
+        const be = (layerEdits && layerEdits[base.id]) || {}
+        return {
+          png: base.png,
+          x: base.x + (be.dx || 0), y: base.y + (be.dy || 0),
+          w: base.w * (be.sx == null ? 1 : be.sx), h: base.h * (be.sy == null ? 1 : be.sy),
+        }
+      })(),
       // Move/scale from the Page Editor. Stored in canvas pixels, so they
       // scale with the output like every other coordinate here.
       _box: {
@@ -627,7 +637,9 @@ async function realisePsdOp(sharp, op, scale) {
   // A clipping mask shows this layer only where its base has pixels. Render
   // the base's alpha into this layer's box, then keep only that intersection.
   if (op._clipBase && op._clipBase.png && fs.existsSync(op._clipBase.png)) {
-    const b = op._clipBase
+    // The base's EDITED box, for the same reason as the editor: a moved or
+    // scaled base must carry its clipping mask with it.
+    const b = op._clipBaseBox || op._clipBase
     const baseW = Math.max(1, Math.round(b.w * scale))
     const baseH = Math.max(1, Math.round(b.h * scale))
     const baseBuf = await sharp(b.png).resize(baseW, baseH, { fit: 'fill' })

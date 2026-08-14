@@ -250,3 +250,68 @@ test('identical input yields byte-identical SVG (stable hashing)', () => {
   const L = textLayer({ x: 1 / 3, size: 0.0777 })
   assert.equal(buildOverlaySvg([L], 1500, 1000), buildOverlaySvg([L], 1500, 1000))
 })
+
+// ─── psdTextOverlay ──────────────────────────────────────────────────────────
+// Stand-in geometry for a retyped template text layer. It lives in this shared
+// module precisely so the editor window and the main-process renderer cannot
+// disagree about where a caption lands.
+
+const { psdTextOverlay } = require('../src/overlay_render')
+
+const psdNode = (over = {}) => ({
+  id: '1/0', kind: 'text', name: 'Title', text: 'Original',
+  x: 100, y: 200, w: 400, h: 80, effectiveOpacity: 1,
+  textStyle: { font: 'Didot', sizePx: 100, color: '#112233', tracking: 0.05, align: 'center', anchorX: 500, anchorY: 300 },
+  ...over,
+})
+
+test('psdTextOverlay returns null unless the copy actually changed', () => {
+  const n = psdNode()
+  assert.equal(psdTextOverlay(n, undefined, 1000, 1000), null)
+  assert.equal(psdTextOverlay(n, {}, 1000, 1000), null)
+  // Typing the original text back is NOT an edit — the layer's own baked
+  // pixels render better than any stand-in, so they must be left alone.
+  assert.equal(psdTextOverlay(n, { text: 'Original' }, 1000, 1000), null)
+  assert.ok(psdTextOverlay(n, { text: 'Changed' }, 1000, 1000))
+})
+
+test('psdTextOverlay only applies to text layers', () => {
+  assert.equal(psdTextOverlay(psdNode({ kind: 'raster' }), { text: 'x' }, 1000, 1000), null)
+})
+
+test('the stand-in anchor matches the PSD anchor for each alignment', () => {
+  const W = 1000, H = 1000
+  for (const [align, expected] of [['center', 500], ['left', 500], ['right', 500]]) {
+    const n = psdNode({ textStyle: { ...psdNode().textStyle, align } })
+    const ov = psdTextOverlay(n, { text: 'New' }, W, H)
+    // The engine's own anchor for this alignment must land on anchorX.
+    const anchor = align === 'center' ? (ov.x + ov.w / 2)
+      : align === 'right' ? (ov.x + ov.w) : ov.x
+    assert.ok(Math.abs(anchor * W - expected) < 0.001, `${align}: ${anchor * W} != ${expected}`)
+  }
+})
+
+test('the baseline offset is backed out of the box top', () => {
+  const ov = psdTextOverlay(psdNode(), { text: 'New' }, 1000, 1000)
+  // anchorY (300) is the BASELINE; the engine draws the first baseline 0.78em
+  // below the box top, so the top must sit that far above it.
+  assert.ok(Math.abs(ov.y * 1000 - (300 - 100 * 0.78)) < 0.001)
+})
+
+test('a moved layer carries its stand-in with it', () => {
+  const a = psdTextOverlay(psdNode(), { text: 'New' }, 1000, 1000)
+  const b = psdTextOverlay(psdNode(), { text: 'New', dx: 50, dy: -25 }, 1000, 1000)
+  assert.ok(Math.abs((b.x - a.x) * 1000 - 50) < 0.001)
+  assert.ok(Math.abs((b.y - a.y) * 1000 - (-25)) < 0.001)
+})
+
+test('style carries over, and a missing size falls back to the layer height', () => {
+  const ov = psdTextOverlay(psdNode(), { text: 'New' }, 1000, 1000)
+  assert.equal(ov.font, 'Didot')
+  assert.equal(ov.color, '#112233')
+  assert.equal(ov.tracking, 0.05)
+  assert.equal(ov.size * 1000, 100)
+
+  const noSize = psdTextOverlay(psdNode({ textStyle: { align: 'left' } }), { text: 'New' }, 1000, 1000)
+  assert.ok(noSize.size * 1000 > 4, 'must not collapse to an unreadable size')
+})

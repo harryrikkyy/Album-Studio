@@ -203,7 +203,9 @@ function psdDrawOrder() {
       const e = layerEdits[n.id] || {}
       const visible = (e.hidden === undefined ? n.visible : !e.hidden) && parentVisible
       const opacity = (e.opacity === undefined ? n.opacity : e.opacity) * parentOpacity
-      const replaced = e.text !== undefined && n.kind === 'text'
+      // Only a genuine change counts: text typed back to the original leaves
+      // the layer's own pixels in place, which render better than any stand-in.
+      const replaced = e.text !== undefined && n.kind === 'text' && e.text !== n.text
       out.push({ ...n, depth, effectiveVisible: visible, effectiveOpacity: opacity,
         rasterVisible: visible && !replaced, children: undefined })
       if (n.children) walk(n.children, depth + 1, visible, opacity)
@@ -334,12 +336,15 @@ function layoutPsdLayers() {
     // The clip base is positioned independently, so its mask has to be offset
     // back into this layer's own box or it would slide out of alignment.
     if (node.clipBase && node.clipBase.png) {
-      const dx = (node.clipBase.x - node.x) * D
-      const dy = (node.clipBase.y - node.y) * D
+      // Against the base's EDITED box: the base can have been moved or scaled,
+      // and a mask left at the original bounds clips the wrong region.
+      const cb = layerBox(node.clipBase)
+      const dx = (cb.x - b.x) * D
+      const dy = (cb.y - b.y) * D
       e.style.webkitMaskPosition = `${dx}px ${dy}px`
       e.style.maskPosition = `${dx}px ${dy}px`
-      e.style.webkitMaskSize = `${node.clipBase.w * D}px ${node.clipBase.h * D}px`
-      e.style.maskSize = `${node.clipBase.w * D}px ${node.clipBase.h * D}px`
+      e.style.webkitMaskSize = `${cb.w * D}px ${cb.h * D}px`
+      e.style.maskSize = `${cb.w * D}px ${cb.h * D}px`
       e.style.webkitMaskRepeat = 'no-repeat'
       e.style.maskRepeat = 'no-repeat'
     }
@@ -520,30 +525,15 @@ function renderOverlays() {
   buildHitBoxes(W, H)
 }
 
-// Retyped template text, expressed as overlay layers so the stage draws it
-// through the same SVG generator as everything else. Mirrors
-// psd_layers.textReplacementOverlays — this window cannot require() it.
+// Retyped template text, drawn through the same overlay SVG generator as
+// every other caption. The geometry lives in overlay_render.psdTextOverlay so
+// this window and the main-process renderer cannot disagree about it.
 function textStandIns() {
   if (!psd || !spread) return []
-  const W = spread.canvasW, H = spread.canvasH
   const out = []
   for (const n of psdDrawOrder()) {
-    const edit = layerEdits[n.id]
-    if (!edit || edit.text === undefined || n.kind !== 'text' || !n.effectiveVisible) continue
-    const st = n.textStyle || {}
-    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, n.h * 0.8)
-    const anchorX = (st.anchorX == null ? n.x : st.anchorX) + (edit.dx || 0)
-    const anchorY = (st.anchorY == null ? n.y + n.h : st.anchorY) + (edit.dy || 0)
-    const align = st.align || 'left'
-    const boxW = Math.max(n.w * 2, W * 0.5)
-    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
-    out.push({
-      id: 'psdtext_' + n.id, type: 'text',
-      x: x / W, y: (anchorY - sizePx * 0.78) / H, w: boxW / W, h: (sizePx * 1.6) / H,
-      text: edit.text, font: st.font || undefined, size: sizePx / H,
-      color: st.color || '#000000', align, valign: 'top',
-      tracking: st.tracking || 0, opacity: n.effectiveOpacity,
-    })
+    const ov = OV.psdTextOverlay(n, layerEdits[n.id], spread.canvasW, spread.canvasH)
+    if (ov && n.effectiveVisible) out.push(ov)
   }
   return out
 }
@@ -1295,8 +1285,10 @@ function duplicateSelection() {
 }
 function deleteSelection() {
   if (!selectedOverlayIds.length) return
-  overlays = overlays.filter((o) => !selectedOverlayIds.includes(o.id))
-  selectedOverlayIds = []
+  const doomed = selectedOverlays().filter((L) => !L.locked).map((L) => L.id)
+  if (!doomed.length) { toast('Locked — unlock the layer first'); return }
+  overlays = overlays.filter((o) => !doomed.includes(o.id))
+  selectedOverlayIds = selectedOverlayIds.filter((id) => !doomed.includes(id))
   renderOverlays(); buildLayerList(); updatePanel(); pushHistory(); scheduleApply()
 }
 el('edBringFront').addEventListener('click', bringToFront)
@@ -1314,6 +1306,7 @@ function refreshSelectionUI() {
 function setSelection(id) { selectedOverlayIds = []; selectedLayerIds = []; selectedIds = id ? [id] : []; refreshSelectionUI() }
 function toggleSelection(id) {
   selectedOverlayIds = []
+  selectedLayerIds = []
   const i = selectedIds.indexOf(id)
   if (i === -1) selectedIds.push(id); else selectedIds.splice(i, 1)
   refreshSelectionUI()
@@ -1513,7 +1506,9 @@ function updateShapePanel(L) {
 // stops moving the control.
 let _ctlHistTimer = null
 function editOverlays(fn, { immediate = false } = {}) {
-  const sel = selectedOverlays()
+  // Locked layers are skipped here too, not just on drag — otherwise the lock
+  // only holds against the mouse and every panel control walks straight past it.
+  const sel = selectedOverlays().filter((L) => !L.locked)
   if (!sel.length) return
   sel.forEach(fn)
   renderOverlays(); buildLayerList()

@@ -314,7 +314,8 @@ function flattenDrawOrder(layers, edits = {}) {
     for (const n of nodes) {
       const edit = edits[n.id] || {}
       // Retyped text hides its own baked pixels — the stand-in draws instead.
-      const replaced = edit.text !== undefined && n.kind === 'text'
+      // Only a genuine change counts — see the editor's matching guard.
+      const replaced = edit.text !== undefined && n.kind === 'text' && edit.text !== n.text
       const visible = (edit.hidden === undefined ? n.visible : !edit.hidden) && parentVisible
       const rasterVisible = visible && !replaced
       const opacity = (edit.opacity === undefined ? n.opacity : edit.opacity) * parentOpacity
@@ -435,37 +436,11 @@ function textReplacementOverlays(layers, layerEdits, W, H) {
   /** @type {any[]} */
   const out = []
   if (!layerEdits) return out
+  const { psdTextOverlay } = require('./overlay_render')
   for (const n of flattenDrawOrder(layers, layerEdits)) {
-    const edit = layerEdits[n.id]
-    if (!edit || edit.text === undefined || n.kind !== 'text') continue
     if (!n.effectiveVisible) continue
-    const st = n.textStyle || {}
-    // ag-psd doesn't always report a size; fall back to the layer's own height,
-    // which for a single line is close enough to keep the stand-in legible.
-    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, n.h * 0.8)
-    const anchorX = (st.anchorX == null ? n.x : st.anchorX) + (edit.dx || 0)
-    const anchorY = (st.anchorY == null ? n.y + n.h : st.anchorY) + (edit.dy || 0)
-    const align = st.align || 'left'
-    // Give the box generous width and place it so the engine's anchor for this
-    // alignment lands on the PSD's own anchor point.
-    const boxW = Math.max(n.w * 2, W * 0.5)
-    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
-    // The engine puts the first baseline at 0.78em below the box top for a
-    // top-aligned box; PSD's anchorY IS the baseline, so back that out.
-    const y = anchorY - sizePx * 0.78
-    out.push({
-      id: 'psdtext_' + n.id,
-      type: 'text',
-      x: x / W, y: y / H, w: boxW / W, h: (sizePx * 1.6) / H,
-      text: edit.text,
-      font: st.font || undefined,
-      size: sizePx / H,
-      color: st.color || '#000000',
-      align,
-      valign: 'top',
-      tracking: st.tracking || 0,
-      opacity: n.effectiveOpacity,
-    })
+    const ov = psdTextOverlay(n, layerEdits[n.id], W, H)
+    if (ov) out.push(ov)
   }
   return out
 }

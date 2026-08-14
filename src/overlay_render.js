@@ -403,12 +403,61 @@
         return buildOverlaySvg(visible, 1000, 1000)
     }
 
+
+    /**
+     * Build the stand-in overlay for a retyped template TEXT layer.
+     *
+     * Lives here, in the module BOTH sides load, because the geometry is
+     * fiddly and was previously duplicated between the editor window and the
+     * main-process renderer — two copies of the same arithmetic that could
+     * silently disagree about where a caption sits.
+     *
+     * @param {any} node a flattened PSD layer node (needs textStyle)
+     * @param {any} edit its layer edit (needs .text)
+     * @param {number} W canvas width @param {number} H canvas height
+     * @returns {any|null} an overlay layer, or null if nothing to draw
+     */
+    function psdTextOverlay(node, edit, W, H) {
+        if (!node || !edit || edit.text === undefined) return null
+        if (node.kind !== 'text' || edit.text === node.text) return null
+        const st = node.textStyle || {}
+        // ag-psd doesn't always report a size; the layer's own height is a
+        // close enough fallback for a single line to stay legible.
+        const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, node.h * 0.8)
+        const anchorX = (st.anchorX == null ? node.x : st.anchorX) + (edit.dx || 0)
+        const anchorY = (st.anchorY == null ? node.y + node.h : st.anchorY) + (edit.dy || 0)
+        const align = st.align || 'left'
+        // A generous box, placed so THIS alignment's anchor lands on the PSD's.
+        const boxW = Math.max(node.w * 2, W * 0.5)
+        const x = align === 'center' ? anchorX - boxW / 2
+            : align === 'right' ? anchorX - boxW : anchorX
+        return {
+            id: 'psdtext_' + node.id,
+            type: 'text',
+            x: x / W,
+            // The engine puts the first baseline 0.78em below the box top;
+            // PSD's anchorY IS the baseline, so back that offset out.
+            y: (anchorY - sizePx * 0.78) / H,
+            w: boxW / W,
+            h: (sizePx * 1.6) / H,
+            text: edit.text,
+            font: st.font || undefined,
+            size: sizePx / H,
+            color: st.color || '#000000',
+            align,
+            valign: 'top',
+            tracking: st.tracking || 0,
+            opacity: node.effectiveOpacity == null ? 1 : node.effectiveOpacity,
+        }
+    }
+
     const api = {
         buildOverlaySvg,
         overlayCacheKey,
         // Consumed by overlay_ps.js to build native Photoshop text layers from
         // the SAME resolved layout the SVG uses — see that file's header.
         resolveTextLayout,
+        psdTextOverlay,
         // Exported for unit tests + the editor's own hit-testing.
         wrapText,
         estimateTextWidth,
