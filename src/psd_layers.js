@@ -406,6 +406,11 @@ function toPhotoshopLayerOps(layers, layerEdits) {
         // stand-in was only ever a preview.
         if (edit.text !== undefined && node.kind === 'text' && edit.text !== node.text) {
           op.text = edit.text
+          // Re-assert the face. Replacing a text layer's contents can drop it
+          // back to the document default — observed on a real template, where
+          // a script face came back as a plain sans. The PostScript name is
+          // what Photoshop wants, and it is exactly what ag-psd reports.
+          if (node.textStyle && node.textStyle.font) op.font = node.textStyle.font
         }
         if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy', 'text'].some((k) => k in op)) ops.push(op)
       }

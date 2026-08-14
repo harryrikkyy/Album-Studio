@@ -128,7 +128,49 @@ else {
         // Live type: Photoshop re-renders in the template's own font, so the
         // delivered PSD is exact and the client can still retype it.
         if (typeof op.text === 'string' && node.kind == LayerKind.TEXT) {
-          node.textItem.contents = op.text;
+          // Replacing contents resets the layer's character style to the
+          // document default — measured on a real template, where a 192pt
+          // display line came back as 38pt Myriad. So snapshot the style from
+          // PHOTOSHOP first and put it back afterwards.
+          //
+          // Reading it from the live layer rather than from our own parsed
+          // metadata is deliberate: no point/pixel conversion to get wrong,
+          // and it preserves whatever face Photoshop actually resolved —
+          // including a substitution for a font the machine doesn't have,
+          // which is what the template was already displaying anyway.
+          var ti = node.textItem;
+          var prev = {};
+          var keys = ['font', 'size', 'color', 'tracking', 'justification', 'leading', 'autoLeading'];
+          for (var k = 0; k < keys.length; k++) {
+            try { prev[keys[k]] = ti[keys[k]]; } catch (pe) {}
+          }
+          var prevPt = null;
+          try { prevPt = prev.size && prev.size.as ? prev.size.as('pt') : prev.size; } catch (se) {}
+
+          ti.contents = op.text;
+
+          for (var k2 = 0; k2 < keys.length; k2++) {
+            var key = keys[k2];
+            if (key === 'size') continue;   // handled below
+            if (typeof prev[key] === 'undefined') continue;
+            // Each restore is guarded on its own: one property Photoshop
+            // refuses must not abandon the rest of the style.
+            try { ti[key] = prev[key]; } catch (re) {}
+          }
+
+          // Size needs compensating, not just restoring. On a text layer that
+          // carries a transform, every assignment to `contents` re-applies the
+          // transform's divisor — measured on a real template as 38pt -> 31.3pt
+          // (a 1.21 scale), and restoring the old value verbatim just gets
+          // divided again. So measure the ratio Photoshop actually applied and
+          // pre-multiply by it. Self-calibrating, which beats passing the
+          // transform in from our own parse and hoping the two agree.
+          try {
+            var nowPt = ti.size && ti.size.as ? ti.size.as('pt') : ti.size;
+            if (prevPt > 0 && nowPt > 0 && Math.abs(nowPt - prevPt) > 0.01) {
+              ti.size = UnitValue(prevPt * (prevPt / nowPt), 'pt');
+            }
+          } catch (ze) {}
         }
         if (typeof op.opacity !== 'undefined') node.opacity = Math.round(op.opacity * 100);
 
