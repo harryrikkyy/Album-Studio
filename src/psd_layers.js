@@ -328,8 +328,8 @@ function resolveClipping(/** @type {any[]} */ drawOrder) {
  * it was never asked to change completely untouched.
  *
  * @param {any[]} layers the tree from readPsdLayerTree
- * @param {Record<string, { hidden?: boolean, opacity?: number }>} layerEdits
- * @returns {{ path: number[], name: string, hidden?: boolean, opacity?: number }[]}
+ * @param {Record<string, { hidden?: boolean, opacity?: number, dx?: number, dy?: number, sx?: number, sy?: number }>} layerEdits
+ * @returns {any[]}
  */
 function toPhotoshopLayerOps(layers, layerEdits) {
   /** @type {any[]} */
@@ -355,7 +355,15 @@ function toPhotoshopLayerOps(layers, layerEdits) {
         if (edit.opacity !== undefined && edit.opacity !== node.opacity) {
           op.opacity = edit.opacity
         }
-        if ('hidden' in op || 'opacity' in op) ops.push(op)
+        // Move/scale, in canvas pixels. Photoshop resizes about the layer's
+        // centre, so the translate is pre-compensated for the drift that
+        // introduces — see the JSX for the arithmetic.
+        if (edit.dx) op.dx = edit.dx
+        if (edit.dy) op.dy = edit.dy
+        if (edit.sx != null && edit.sx !== 1) op.sx = edit.sx
+        if (edit.sy != null && edit.sy !== 1) op.sy = edit.sy
+        if (op.sx || op.sy) { op.w = node.w; op.h = node.h }
+        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy'].some((k) => k in op)) ops.push(op)
       }
       if (node.children) walk(node.children, here)
     }

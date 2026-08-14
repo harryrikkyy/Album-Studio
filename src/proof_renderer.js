@@ -560,11 +560,20 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
       continue
     }
     if (!node.effectiveVisible || !node.png || !fs.existsSync(node.png)) continue
+    const edit = (layerEdits && layerEdits[node.id]) || {}
     ops.push({
       _layer: node,
       _clipBase: node.clipBaseId ? byId.get(node.clipBaseId) : null,
-      top: Math.round(node.y * scale),
-      left: Math.round(node.x * scale),
+      // Move/scale from the Page Editor. Stored in canvas pixels, so they
+      // scale with the output like every other coordinate here.
+      _box: {
+        x: node.x + (edit.dx || 0),
+        y: node.y + (edit.dy || 0),
+        w: node.w * (edit.sx == null ? 1 : edit.sx),
+        h: node.h * (edit.sy == null ? 1 : edit.sy),
+      },
+      top: Math.round((node.y + (edit.dy || 0)) * scale),
+      left: Math.round((node.x + (edit.dx || 0)) * scale),
       blend: PS_BLEND_TO_SHARP[String(node.blendMode || 'normal').toLowerCase()] || 'over',
     })
   }
@@ -588,8 +597,9 @@ const PS_BLEND_TO_SHARP = {
  */
 async function realisePsdOp(sharp, op, scale) {
   const node = op._layer
-  const w = Math.max(1, Math.round(node.w * scale))
-  const h = Math.max(1, Math.round(node.h * scale))
+  const box = op._box || node
+  const w = Math.max(1, Math.round(box.w * scale))
+  const h = Math.max(1, Math.round(box.h * scale))
   let pipe = sharp(node.png).resize(w, h, { fit: 'fill' })
 
   // Layer opacity: scale the alpha channel rather than flattening onto a
@@ -615,8 +625,8 @@ async function realisePsdOp(sharp, op, scale) {
       create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
     }).composite([{
       input: baseBuf,
-      left: Math.round((b.x - node.x) * scale),
-      top: Math.round((b.y - node.y) * scale),
+      left: Math.round((b.x - box.x) * scale),
+      top: Math.round((b.y - box.y) * scale),
     }]).png().toBuffer()
     pipe = sharp(await pipe.png().toBuffer())
       .composite([{ input: maskCanvas, blend: 'dest-in' }])

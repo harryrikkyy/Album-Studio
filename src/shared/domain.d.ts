@@ -61,6 +61,20 @@ export interface CompactPage {
  * what localStorage `adt_workspace` and the saved project `.json` carry.
  * Loaded data may pre-date a field, so consumers guard with `|| {}` / `|| []`.
  */
+/**
+ * A per-page override of one template PSD layer. `dx`/`dy` are canvas-pixel
+ * offsets and `sx`/`sy` scale multipliers relative to the layer's own bounds,
+ * so they map straight onto Photoshop's translate()/resize() at export.
+ */
+export interface LayerEdit {
+  hidden?: boolean
+  opacity?: number
+  dx?: number
+  dy?: number
+  sx?: number
+  sy?: number
+}
+
 export interface ProjectData {
   imageTokens?: unknown[]
   templateTokens?: unknown[]
@@ -81,7 +95,7 @@ export interface ProjectData {
   pageOverlays?: Record<number, unknown[]>
   pageBackgrounds?: Record<number, string>
   /** Per-page overrides of the template's own PSD layers (hide/show, opacity). */
-  pageLayerEdits?: Record<number, Record<string, { hidden?: boolean, opacity?: number }>>
+  pageLayerEdits?: Record<number, Record<string, LayerEdit>>
 }
 
 /**
@@ -110,7 +124,7 @@ export interface HashablePage {
   canvasWidth?: number | null
   canvasHeight?: number | null
   /** Per-page overrides of the template's own PSD layers. */
-  layerEdits?: Record<string, { hidden?: boolean, opacity?: number }> | null
+  layerEdits?: Record<string, LayerEdit> | null
   /** The template's layer tree — only needed to translate layer ids. */
   psdLayers?: unknown[] | null
 }

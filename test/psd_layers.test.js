@@ -310,3 +310,24 @@ test('under budget, pixels are extracted as normal', async () => {
   assert.equal(r.pixelsSkipped, false)
   assert.ok(r.estimatedDecodeBytes > 0)
 })
+
+test('move and scale reach the Photoshop ops, with the source size for drift', async () => {
+  const t = await tree()
+  const node = t.layers.find((l) => l.name === 'Gold rule')
+  const ops = toPhotoshopLayerOps(t.layers, { [node.id]: { dx: 40, dy: -15, sx: 1.5, sy: 2 } })
+  assert.equal(ops.length, 1)
+  assert.equal(ops[0].dx, 40)
+  assert.equal(ops[0].dy, -15)
+  assert.equal(ops[0].sx, 1.5)
+  assert.equal(ops[0].sy, 2)
+  // The JSX needs the ORIGINAL size to undo Photoshop's centre-anchored
+  // resize drift; without it the layer lands offset by half the growth.
+  assert.equal(ops[0].w, node.w)
+  assert.equal(ops[0].h, node.h)
+})
+
+test('a scale of exactly 1 is not emitted as a transform', async () => {
+  const t = await tree()
+  const node = t.layers.find((l) => l.name === 'Gold rule')
+  assert.deepEqual(toPhotoshopLayerOps(t.layers, { [node.id]: { sx: 1, sy: 1, dx: 0, dy: 0 } }), [])
+})

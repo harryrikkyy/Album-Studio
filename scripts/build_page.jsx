@@ -125,6 +125,20 @@ else {
         if (!node || (op.name && node.name !== op.name)) continue;
         if (typeof op.hidden !== 'undefined') node.visible = !op.hidden;
         if (typeof op.opacity !== 'undefined') node.opacity = Math.round(op.opacity * 100);
+
+        // Move / scale. Photoshop resizes about a chosen anchor, not about the
+        // layer's top-left, so scaling alone shifts the origin. Resize about
+        // the centre, then translate by the offset the editor asked for MINUS
+        // the drift the resize introduced — that lands the layer's top-left
+        // exactly where the on-screen box showed it.
+        var sx = (typeof op.sx === 'number') ? op.sx : 1;
+        var sy = (typeof op.sy === 'number') ? op.sy : 1;
+        if (sx !== 1 || sy !== 1) node.resize(sx * 100, sy * 100, AnchorPosition.MIDDLECENTER);
+        var driftX = (op.w || 0) * (1 - sx) / 2;
+        var driftY = (op.h || 0) * (1 - sy) / 2;
+        var tx = (op.dx || 0) - driftX;
+        var ty = (op.dy || 0) - driftY;
+        if (tx || ty) node.translate(tx, ty);
       } catch (e) { /* one bad override must not cost the page */ }
     }
   }

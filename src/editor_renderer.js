@@ -54,6 +54,7 @@ let layerEdits = {}        // psdLayerId → { hidden?, opacity? }
 let pageBackground = null
 let selectedIds = []       // selected PHOTO ids (ordered by selection)
 let selectedOverlayIds = []
+let selectedLayerIds = []   // selected TEMPLATE (PSD) layers
 let displayScale = 1
 let tool = 'select'
 let snapEnabled = true
@@ -174,7 +175,7 @@ async function load() {
   psdError = spread.psdError || null
   layerEdits = JSON.parse(JSON.stringify(spread.layerEdits || {}))
   pageBackground = spread.pageBackground || null
-  selectedIds = []; selectedOverlayIds = []
+  selectedIds = []; selectedOverlayIds = []; selectedLayerIds = []
   undoStack = []; redoStack = []
   buildScene()
   buildRail()
@@ -281,7 +282,8 @@ function buildPsdStack(stack) {
     if (photo) {
       // The photo takes the frame's slot in the stack. Its box is the frame
       // layer's own bounds, so it lines up with the artwork around it.
-      photo.frame = { name: node.name, x: node.x, y: node.y, w: node.w, h: node.h }
+      const fb = layerBox(node)
+      photo.frame = { name: node.name, x: fb.x, y: fb.y, w: fb.w, h: fb.h }
       const f = buildPhotoFrame(photo)
       if (!node.effectiveVisible) f.style.display = 'none'
       f.style.opacity = String(node.effectiveOpacity)
@@ -319,10 +321,13 @@ let _psdEls = []
 function layoutPsdLayers() {
   const D = displayScale
   for (const { node, el: e } of _psdEls) {
-    e.style.left = node.x * D + 'px'
-    e.style.top = node.y * D + 'px'
-    e.style.width = node.w * D + 'px'
-    e.style.height = node.h * D + 'px'
+    // Position from the EDITED box so a moved/scaled template layer shows
+    // where it will actually render.
+    const b = layerBox(node)
+    e.style.left = b.x * D + 'px'
+    e.style.top = b.y * D + 'px'
+    e.style.width = b.w * D + 'px'
+    e.style.height = b.h * D + 'px'
     // The clip base is positioned independently, so its mask has to be offset
     // back into this layer's own box or it would slide out of alignment.
     if (node.clipBase && node.clipBase.png) {
@@ -514,6 +519,30 @@ function renderOverlays() {
 
 function buildHitBoxes(W, H) {
   hitSurface.innerHTML = ''
+
+  // A selected TEMPLATE layer gets the same move/resize affordance as a page
+  // layer. Only when selected — an always-on hit box for every template layer
+  // would swallow the clicks meant for photos underneath.
+  if (spread) {
+    for (const node of psdDrawOrder()) {
+      if (!selectedLayerIds.includes(node.id) || node.kind === 'group') continue
+      const b = layerBox(node)
+      const box = document.createElement('div')
+      box.className = 'ed-hit selected ed-hit--layer'
+      box.style.left = (b.x / spread.canvasW * W) + 'px'
+      box.style.top = (b.y / spread.canvasH * H) + 'px'
+      box.style.width = (b.w / spread.canvasW * W) + 'px'
+      box.style.height = (b.h / spread.canvasH * H) + 'px'
+      for (const pos of ['nw', 'ne', 'sw', 'se']) {
+        const h = document.createElement('div')
+        h.className = 'ed-hnd ed-hnd--' + pos
+        h.dataset.handle = pos
+        box.appendChild(h)
+      }
+      wireLayerBox(box, node)
+      hitSurface.appendChild(box)
+    }
+  }
   overlays.forEach((L) => {
     if (L.hidden) return
     const box = document.createElement('div')
@@ -628,6 +657,70 @@ function distributeSelection(axis) {
   }
   renderOverlays(); updatePanel(); pushHistory(); scheduleApply()
   toast(`Distributed ${sel.length} layers`)
+}
+
+// Move/resize a template layer. Offsets are stored in CANVAS PIXELS rather
+// than normalized units, because they map straight onto Photoshop's
+// translate()/resize() in the export — no second conversion to get wrong.
+function wireLayerBox(box, node) {
+  box.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const handle = e.target.dataset && e.target.dataset.handle
+    const rect = stage.getBoundingClientRect()
+    const pxPerCanvasX = rect.width / spread.canvasW
+    const pxPerCanvasY = rect.height / spread.canvasH
+    const startX = e.clientX, startY = e.clientY
+    const e0 = { ...(layerEdits[node.id] || {}) }
+    const sx0 = e0.sx == null ? 1 : e0.sx
+    const sy0 = e0.sy == null ? 1 : e0.sy
+    const dx0 = e0.dx || 0, dy0 = e0.dy || 0
+    let moved = false
+    box.setPointerCapture(e.pointerId)
+
+    const onMove = (ev) => {
+      const dx = (ev.clientX - startX) / pxPerCanvasX
+      const dy = (ev.clientY - startY) / pxPerCanvasY
+      if (Math.abs(ev.clientX - startX) > 2 || Math.abs(ev.clientY - startY) > 2) moved = true
+      if (!moved) return
+      const patch = {}
+      if (!handle) {
+        patch.dx = dx0 + dx
+        patch.dy = dy0 + dy
+      } else {
+        // Corner resize: the opposite corner stays put, so scaling from the
+        // north or west edges also shifts the origin.
+        let nw = node.w * sx0, nh = node.h * sy0
+        let ndx = dx0, ndy = dy0
+        if (handle.includes('e')) nw = Math.max(8, node.w * sx0 + dx)
+        if (handle.includes('s')) nh = Math.max(8, node.h * sy0 + dy)
+        if (handle.includes('w')) { nw = Math.max(8, node.w * sx0 - dx); ndx = dx0 + (node.w * sx0 - nw) }
+        if (handle.includes('n')) { nh = Math.max(8, node.h * sy0 - dy); ndy = dy0 + (node.h * sy0 - nh) }
+        if (ev.shiftKey && node.w && node.h) {   // keep the aspect ratio
+          const r = (node.h * sy0) / (node.w * sx0)
+          nh = nw * r
+          if (handle.includes('n')) ndy = dy0 + (node.h * sy0 - nh)
+        }
+        patch.sx = nw / node.w
+        patch.sy = nh / node.h
+        patch.dx = ndx
+        patch.dy = ndy
+      }
+      layerEdits[node.id] = { ...(layerEdits[node.id] || {}), ...patch }
+      layoutPsdLayers()
+      for (const it of items) layoutItem(it)
+      buildHitBoxes(spread.canvasW * displayScale, spread.canvasH * displayScale)
+      updatePanel()
+    }
+    const onUp = (ev) => {
+      box.removeEventListener('pointermove', onMove)
+      box.removeEventListener('pointerup', onUp)
+      try { box.releasePointerCapture(ev.pointerId) } catch (_) {}
+      if (moved) { buildScene(); buildLayerList(); pushHistory(); scheduleApply() }
+    }
+    box.addEventListener('pointermove', onMove)
+    box.addEventListener('pointerup', onUp)
+  })
 }
 
 // ── Snapping ───────────────────────────────────────────────────
@@ -779,6 +872,7 @@ function wireOverlayBox(box, L) {
 
 function selectOverlay(id, additive) {
   selectedIds = []
+  selectedLayerIds = []
   if (additive) {
     const i = selectedOverlayIds.indexOf(id)
     if (i === -1) selectedOverlayIds.push(id); else selectedOverlayIds.splice(i, 1)
@@ -917,7 +1011,10 @@ function buildPsdRow(node, wrap) {
   const hidden = edit.hidden === undefined ? !node.visible : edit.hidden
 
   const row = document.createElement('div')
-  row.className = 'ed-layer ed-layer--psd' + (node.kind === 'group' ? ' is-group' : '') + (hidden ? ' is-hidden' : '')
+  row.className = 'ed-layer ed-layer--psd'
+    + (node.kind === 'group' ? ' is-group' : '')
+    + (hidden ? ' is-hidden' : '')
+    + (selectedLayerIds.includes(node.id) ? ' selected' : '')
   row.style.paddingLeft = (6 + node.depth * 12) + 'px'
 
   // A clipping mask is invisible in a flat list, which is exactly the thing
@@ -937,8 +1034,13 @@ function buildPsdRow(node, wrap) {
   // Selecting a template layer isn't meaningful (it isn't editable geometry),
   // so the button's job is purely to be a focusable, named target that reports
   // what the layer is.
-  name.addEventListener('click', () => {
-    toast(`${node.name} · ${node.kind}${node.clipped ? ' · clipped' : ''}${node.isFrame ? ' · photo slot' : ''}`)
+  name.setAttribute('aria-pressed', String(selectedLayerIds.includes(node.id)))
+  name.addEventListener('click', (e) => {
+    // Groups have no geometry of their own, so selecting one would give a
+    // transform box that means nothing — toggle its subtree's visibility
+    // affordance instead by just reporting it.
+    if (node.kind === 'group') { toast(`${node.name} · group of ${node.name ? '' : ''}layers`); return }
+    selectLayer(node.id, e.shiftKey || e.metaKey)
   })
   row.appendChild(name)
 
@@ -977,6 +1079,37 @@ function setLayerEdit(id, patch) {
   if (Object.keys(next).length) layerEdits[id] = next
   else delete layerEdits[id]
   buildScene(); buildLayerList(); pushHistory(); scheduleApply()
+}
+
+// Selecting a template layer clears the other two selections: the right-hand
+// panel is contextual and can only show one kind at a time.
+function selectLayer(id, additive) {
+  selectedIds = []
+  selectedOverlayIds = []
+  if (additive) {
+    const i = selectedLayerIds.indexOf(id)
+    if (i === -1) selectedLayerIds.push(id); else selectedLayerIds.splice(i, 1)
+  } else {
+    selectedLayerIds = id ? [id] : []
+  }
+  items.forEach((it) => it._el && it._el.classList.remove('selected'))
+  renderOverlays(); buildLayerList(); updatePanel()
+}
+function selectedLayers() {
+  return psdDrawOrder().filter((n) => selectedLayerIds.includes(n.id))
+}
+
+// Where a template layer actually sits once its edits are applied. Kept in one
+// place because the canvas box, the proof renderer and the Photoshop export
+// must all agree on it.
+function layerBox(node) {
+  const e = layerEdits[node.id] || {}
+  return {
+    x: node.x + (e.dx || 0),
+    y: node.y + (e.dy || 0),
+    w: node.w * (e.sx == null ? 1 : e.sx),
+    h: node.h * (e.sy == null ? 1 : e.sy),
+  }
 }
 
 function psdNodeById(id) {
@@ -1099,7 +1232,7 @@ function refreshSelectionUI() {
   items.forEach((it) => it._el && it._el.classList.toggle('selected', selectedIds.includes(it.id)))
   renderOverlays(); buildLayerList(); updatePanel()
 }
-function setSelection(id) { selectedOverlayIds = []; selectedIds = id ? [id] : []; refreshSelectionUI() }
+function setSelection(id) { selectedOverlayIds = []; selectedLayerIds = []; selectedIds = id ? [id] : []; refreshSelectionUI() }
 function toggleSelection(id) {
   selectedOverlayIds = []
   const i = selectedIds.indexOf(id)
@@ -1183,7 +1316,9 @@ function updatePanel() {
   const isText = ovSel.length > 0 && ovSel.every((L) => L.type === 'text')
   const isShape = ovSel.length > 0 && ovSel.every((L) => L.type !== 'text')
 
-  el('edPagePanel').style.display = (!photoSel.length && !ovSel.length) ? 'block' : 'none'
+  const layerSel = selectedLayers()
+  el('edLayerPanel').style.display = layerSel.length ? 'flex' : 'none'
+  el('edPagePanel').style.display = (!photoSel.length && !ovSel.length && !layerSel.length) ? 'block' : 'none'
   el('edPhotoPanel').style.display = photoSel.length ? 'flex' : 'none'
   el('edTextPanel').style.display = isText ? 'flex' : 'none'
   el('edShapePanel').style.display = isShape ? 'flex' : 'none'
@@ -1200,9 +1335,40 @@ function updatePanel() {
     else hintEl.textContent = HINTS.select
   }
 
+  if (layerSel.length) updateLayerPanel(layerSel[0])
   if (photoSel.length) updatePhotoPanel(photoSel[0])
   if (isText) updateTextPanel(ovSel[0])
   if (isShape) updateShapePanel(ovSel[0])
+}
+
+function updateLayerPanel(node) {
+  const e = layerEdits[node.id] || {}
+  const b = layerBox(node)
+  el('edLayerName').textContent = node.name + (node.isFrame ? '  (photo slot)' : '')
+  el('edLayerVisible').checked = e.hidden === undefined ? node.visible : !e.hidden
+  const op = Math.round((e.opacity == null ? node.opacity : e.opacity) * 100)
+  el('edLayerOpacity').value = op
+  el('edLayerOpacityVal').textContent = op
+  el('edLayerX').value = Math.round(b.x)
+  el('edLayerY').value = Math.round(b.y)
+  el('edLayerW').value = Math.round(b.w)
+  el('edLayerH').value = Math.round(b.h)
+}
+
+// Numeric fields write the same edit shape the drag handles do.
+function commitLayerFields() {
+  const node = selectedLayers()[0]
+  if (!node) return
+  const nx = Number(el('edLayerX').value)
+  const ny = Number(el('edLayerY').value)
+  const nw = Math.max(1, Number(el('edLayerW').value))
+  const nh = Math.max(1, Number(el('edLayerH').value))
+  layerEdits[node.id] = {
+    ...(layerEdits[node.id] || {}),
+    dx: nx - node.x, dy: ny - node.y,
+    sx: node.w ? nw / node.w : 1, sy: node.h ? nh / node.h : 1,
+  }
+  buildScene(); buildLayerList(); updatePanel(); pushHistory(); scheduleApply()
 }
 
 function updatePhotoPanel(it) {
@@ -1342,6 +1508,28 @@ el('edResetPhoto').addEventListener('click', () => {
     wrap.appendChild(b)
   }
 })()
+
+;['edLayerX', 'edLayerY', 'edLayerW', 'edLayerH'].forEach((id) => {
+  el(id).addEventListener('change', commitLayerFields)
+})
+el('edLayerVisible').addEventListener('change', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  setLayerEdit(node.id, { hidden: !el('edLayerVisible').checked })
+})
+el('edLayerOpacity').addEventListener('input', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  const v = parseInt(el('edLayerOpacity').value, 10)
+  el('edLayerOpacityVal').textContent = v
+  layerEdits[node.id] = { ...(layerEdits[node.id] || {}), opacity: v / 100 }
+  buildScene(); scheduleApply()
+  clearTimeout(_ctlHistTimer); _ctlHistTimer = setTimeout(pushHistory, 500)
+})
+el('edLayerReset').addEventListener('click', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  delete layerEdits[node.id]
+  buildScene(); buildLayerList(); updatePanel(); pushHistory(); scheduleApply()
+  toast('Layer reset')
+})
 
 // ── Text controls ──────────────────────────────────────────────
 ;(function buildFontList() {
@@ -1562,7 +1750,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     hideContextMenu()
     if (tool !== 'select') { setTool('select'); return }
-    setSelection(null); selectOverlay(null, false)
+    setSelection(null); selectOverlay(null, false); selectLayer(null, false)
     return
   }
   if (isTyping(e)) return
@@ -1652,7 +1840,7 @@ const clearOnBareClick = (e) => {
   if (suppressNextClick) { suppressNextClick = false; return }
   if (tool !== 'select') return
   if (e.target === stageWrap || e.target === stage || e.target === hitSurface) {
-    setSelection(null); selectOverlay(null, false)
+    setSelection(null); selectOverlay(null, false); selectLayer(null, false)
   }
 }
 // Bound ONCE, on the outer wrap: clicks bubble up from the stage, so a second

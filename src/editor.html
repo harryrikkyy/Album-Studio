@@ -64,7 +64,11 @@
   .ed-rail__empty { font-size: var(--fs-xs); color: var(--txt-muted); line-height: 1.5; }
   /* Template (PSD) layers: read-only structure, so they are dimmer than the
      page layers the user authored — visibility and opacity are still theirs. */
-  .ed-layer--psd { color: var(--txt-muted); }
+  .ed-layer--psd { color: var(--txt-secondary); }
+  /* A hidden layer is the row you click to bring it back, so it must stay
+     readable — struck through and dimmed, never near-invisible. */
+  .ed-layer.is-hidden { opacity: 0.85; }
+  .ed-layer.is-hidden .ed-layer__btn { opacity: 1; color: var(--accent); }
   .ed-layer--psd.is-group { font-weight: 700; }
   .ed-layer__clip { flex-shrink: 0; opacity: 0.75; font-size: 10px; }
   .ed-layer__frame { flex-shrink: 0; font-size: 9px; text-transform: uppercase;
@@ -389,6 +393,21 @@
         <div class="ed-ctl"><label for="edShapeRot">Rotation</label><input type="range" id="edShapeRot" min="-180" max="180" value="0"><span class="ed-val" id="edShapeRotVal">0</span></div>
         <div class="ed-ctl"><label for="edShapeOpacity">Opacity</label><input type="range" id="edShapeOpacity" min="0" max="100" value="100"><span class="ed-val" id="edShapeOpacityVal">100</span></div>
         <div class="ed-ctl"><label for="edShapeShadow">Shadow</label><input type="checkbox" id="edShapeShadow"></div>
+      </div>
+
+      <!-- Template (PSD) layer selected -->
+      <div id="edLayerPanel" style="display:none; flex-direction:column; gap:10px;">
+        <h2 class="ed-panel__title">Template layer</h2>
+        <div id="edLayerName" class="ed-panel__hint" style="font-weight:600;color:var(--txt-primary);"></div>
+        <div class="ed-ctl"><label for="edLayerVisible">Visible</label><input type="checkbox" id="edLayerVisible"></div>
+        <div class="ed-ctl"><label for="edLayerOpacity">Opacity</label><input type="range" id="edLayerOpacity" min="0" max="100" value="100"><span class="ed-val" id="edLayerOpacityVal">100</span></div>
+        <div class="ed-sep"></div>
+        <div class="ed-ctl"><label for="edLayerX">X</label><input type="number" id="edLayerX" step="1"></div>
+        <div class="ed-ctl"><label for="edLayerY">Y</label><input type="number" id="edLayerY" step="1"></div>
+        <div class="ed-ctl"><label for="edLayerW">Width</label><input type="number" id="edLayerW" step="1"></div>
+        <div class="ed-ctl"><label for="edLayerH">Height</label><input type="number" id="edLayerH" step="1"></div>
+        <div class="ed-panel__hint">Drag the layer on the page, or use the handles to scale. Shift-drag a corner keeps its proportions.</div>
+        <button id="edLayerReset" class="btn btn--ghost btn--sm">Reset this layer</button>
       </div>
 
       <div class="ed-actions">
