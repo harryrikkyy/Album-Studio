@@ -132,13 +132,36 @@ function createProofs(store, deps) {
             return null;
         }
         deps.setStatus(`Reading frame layout from ${template.name}…`);
+
+        // Read the PSD directly FIRST. It yields the same frame geometry the
+        // Photoshop extractor does, plus the layer tree, without needing
+        // Photoshop to be running, idle, or free of modal dialogs. Photoshop
+        // remains the fallback, not the gate — a busy or absent Photoshop used
+        // to stop the Page Editor from opening at all.
+        let psdRead = null;
+        try {
+            psdRead = await deps.invoke('psd-layers', tplPath);
+        } catch (e) {
+            console.warn(`PSD read failed for ${template.name}:`, _errMessage(e));
+        }
+        if (psdRead && psdRead.ok && psdRead.frames && psdRead.frames.length) {
+            template._frames = psdRead.frames;
+            template._canvas = { w: psdRead.width, h: psdRead.height };
+            template._psdLayers = psdRead.layers;
+            return template;
+        }
+
+        // No frames from the direct read — either the file couldn't be parsed
+        // or it genuinely has no toolkit frame layers. Ask Photoshop, which
+        // can also open formats ag-psd can't (PSB, exotic colour modes).
         let result;
         try {
             result = await deps.invoke('extract-template-frames', tplPath);
         } catch (e) {
             // IPC-level failure — usually means Photoshop isn't reachable.
             const msg = _errMessage(e) || 'Photoshop is not responding';
-            deps.toast(`Couldn't open ${template.name}: ${msg}`, 'error');
+            const extra = psdRead && psdRead.error ? ` (direct read also failed: ${psdRead.error})` : '';
+            deps.toast(`Couldn't open ${template.name}: ${msg}${extra}`, 'error', { duration: 8000 });
             return null;
         }
         if (!result || !result.ok) {
@@ -151,19 +174,7 @@ function createProofs(store, deps) {
         }
         template._frames = result.frames;
         template._canvas = { w: result.canvasWidth, h: result.canvasHeight };
-
-        // Also cache the template's real layer tree. Only needed when a page
-        // has template-layer overrides — but it's cheap (parsed directly from
-        // the PSD, no Photoshop round-trip) and cached on disk, so reading it
-        // here keeps the render path from having to do IPC mid-composite.
-        try {
-            const layers = await deps.invoke('psd-layers', tplPath);
-            if (layers && layers.ok) template._psdLayers = layers.layers;
-        } catch (e) {
-            // Non-fatal: without the tree, layer overrides simply don't apply
-            // and the page renders from the flattened backdrop.
-            console.warn(`PSD layer read failed for ${template.name}:`, _errMessage(e));
-        }
+        if (psdRead && psdRead.ok) template._psdLayers = psdRead.layers;
         return template;
     }
 
@@ -200,7 +211,13 @@ function createProofs(store, deps) {
             }
         }
 
-        /**
+        return {
+            primary: hrPath || proxyPath,
+            fallback: hrPath ? proxyPath : null,
+        };
+    }
+
+    /**
      * file:// URL of a page's most recent rendered proof, or null. Lets the
      * Page Editor's spread rail show the real page instead of the bare
      * template thumbnail.
@@ -209,13 +226,6 @@ function createProofs(store, deps) {
     function proofUrlForPage(pageNum) {
         const p = _proofPaths[pageNum];
         return p ? 'file://' + encodeURI(p) : null;
-    }
-
-    return {
-        proofUrlForPage,
-            primary: hrPath || proxyPath,
-            fallback: hrPath ? proxyPath : null,
-        };
     }
 
     // Session cache of HR folder listings for proof file resolution, keyed by
@@ -570,7 +580,7 @@ function createProofs(store, deps) {
     }
 
     return {
-        isLivePreviewOn, scheduleLivePreview,
+        isLivePreviewOn, scheduleLivePreview, proofUrlForPage,
         ensureTemplateFrames, scheduleEditedPageReproof,
         reapplyProofs, clearProofs,
     };

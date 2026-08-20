@@ -160,7 +160,14 @@ function refreshHistoryUI() {
 // ── Load ───────────────────────────────────────────────────────
 async function load() {
   spread = await api.getSpread()
-  if (!spread || ((!spread.items || !spread.items.length) && !(spread.overlays || []).length)) {
+  // A page is worth opening if it has ANY of: photos, page layers, or a
+  // template layer stack. Requiring photos or overlays meant a page with a
+  // template but nothing placed on it yet showed "No spread loaded" — hiding
+  // the very template layers the user opened the editor to work on.
+  const hasItems = !!(spread && spread.items && spread.items.length)
+  const hasOverlays = !!(spread && (spread.overlays || []).length)
+  const hasPsd = !!(spread && spread.psd && spread.psd.ok && (spread.psd.layers || []).length)
+  if (!spread || (!hasItems && !hasOverlays && !hasPsd)) {
     emptyEl.style.display = 'block'
     return
   }

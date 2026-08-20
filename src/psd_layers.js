@@ -47,7 +47,7 @@ const MAX_DECODE_BYTES = 900_000_000
 // path+mtime, so without this a manifest written by an OLDER build is served
 // forever for an unchanged template — which is exactly how text layers came
 // back missing their `textStyle` after that field was added.
-const SCHEMA_VERSION = 2
+const SCHEMA_VERSION = 3
 
 /** @type {any} */
 let _agpsd = null
@@ -281,6 +281,10 @@ async function readPsdLayerTree(psdPath, opts = {}) {
       width: psd.width,
       height: psd.height,
       layers,
+      // Frame geometry in the same shape extract_frames.jsx returns, so the
+      // renderer can use this INSTEAD of a Photoshop round-trip. Cached in the
+      // manifest, so it costs nothing after the first read.
+      frames: frameLayers(layers).map((f) => ({ name: f.name, x: f.x, y: f.y, w: f.w, h: f.h })),
       compositePath,
       cacheDir: dir,
       pixelsSkipped,
