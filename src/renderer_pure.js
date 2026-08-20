@@ -281,8 +281,66 @@ function partitionByRenderCache(jobs, renderHashes = {}) {
     return { fresh, skipped };
 }
 
+/**
+ * Parse a page selection like "1, 3, 9-12" into an ordered list of page
+ * numbers.
+ *
+ * Album work is rarely "render everything" — it's "the client changed three
+ * spreads". Re-rendering 80 pages to deliver 3 costs minutes of Photoshop
+ * time, so the selection has to be expressible directly.
+ *
+ * Accepts commas, spaces and newlines as separators, and `a-b` ranges in
+ * either direction. Out-of-range numbers are DROPPED rather than clamped:
+ * clamping "1-999" to the album length would silently render everything,
+ * which is precisely the surprise this feature exists to avoid. Invalid
+ * tokens are reported so the UI can say what it didn't understand.
+ *
+ * @param {string} spec
+ * @param {number} totalPages
+ * @returns {{ pages: number[], invalid: string[], outOfRange: number[] }}
+ */
+function parsePageSpec(spec, totalPages) {
+    /** @type {Set<number>} */
+    const pages = new Set();
+    /** @type {string[]} */
+    const invalid = [];
+    /** @type {Set<number>} */
+    const outOfRange = new Set();
+
+    const inBounds = (/** @type {number} */ n) => {
+        if (n >= 1 && n <= totalPages) { pages.add(n); return; }
+        outOfRange.add(n);
+    };
+
+    for (const raw of String(spec == null ? '' : spec).split(/[,\n]/)) {
+        const token = raw.trim();
+        if (!token) continue;
+        // A range: "9-12", and "12-9" means the same span.
+        const range = /^(\d+)\s*[-–—]\s*(\d+)$/.exec(token);
+        if (range) {
+            const a = parseInt(range[1], 10);
+            const b = parseInt(range[2], 10);
+            const lo = Math.min(a, b);
+            const hi = Math.max(a, b);
+            // A wild upper bound would otherwise spin for a very long time.
+            if (hi - lo > 10000) { invalid.push(token); continue; }
+            for (let n = lo; n <= hi; n++) inBounds(n);
+            continue;
+        }
+        if (/^\d+$/.test(token)) { inBounds(parseInt(token, 10)); continue; }
+        invalid.push(token);
+    }
+
+    return {
+        pages: [...pages].sort((a, b) => a - b),
+        invalid,
+        outOfRange: [...outOfRange].sort((a, b) => a - b),
+    };
+}
+
 module.exports = {
     escapeHtml,
+    parsePageSpec,
     _generativePreviewSvg,
     getPanelHeaderHTML,
     getDisplayName,

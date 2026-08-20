@@ -7,10 +7,13 @@
 
 /** @typedef {import('../state/store').Store} Store */
 
+const { parsePageSpec } = require('../renderer_pure');
+
 /**
  * @param {Store} store
  * @param {object} deps
  * @param {(start: number, end: number) => any} deps.buildExportData
+ * @param {(pages: number[]) => any} deps.buildExportDataForPages
  * @param {(exportData: any) => Promise<void>} deps.bakeExportAdjustments
  * @param {(exportData: any) => void} deps.queueRender
  * @param {(channel: string, payload?: any) => Promise<any>} deps.invoke
@@ -112,6 +115,113 @@ function createExportActions(store, deps) {
             if (isNaN(start) || isNaN(end) || start > end) return deps.showAlert("Invalid Start/End pages.");
             const exportData = deps.buildExportData(start, end);
             if (Object.keys(exportData.pages).length === 0) return deps.showAlert("No complete pages in range!");
+            deps.queueRender(exportData);
+        });
+    }
+
+    // ── Selective export ────────────────────────────────────────────────
+    // "Render final album" is all-or-nothing, which is the wrong shape for
+    // revisions: a client asking for changes to pages 1, 3 and 9 should cost
+    // three page renders, not eighty. The spec box accepts "1, 3, 9-12".
+    const pageSpecInput = /** @type {HTMLInputElement | null} */ (document.getElementById("exportPageSpec"));
+    const pageSpecHint = document.getElementById("exportPageSpecHint");
+    const btnRenderSelected = /** @type {HTMLButtonElement | null} */ (document.getElementById("btnRenderSelected"));
+
+    /** Resolve the box to page numbers, and describe the result to the user. */
+    function readPageSpec() {
+        if (!pageSpecInput) return { pages: [], invalid: [], outOfRange: [] };
+        return parsePageSpec(pageSpecInput.value, store.get('totalActivePages'));
+    }
+
+    function refreshPageSpecHint() {
+        if (!pageSpecInput || !pageSpecHint || !btnRenderSelected) return;
+        const raw = pageSpecInput.value.trim();
+        if (!raw) {
+            pageSpecHint.textContent = 'All pages';
+            pageSpecHint.classList.remove('is-error');
+            btnRenderSelected.disabled = true;
+            return;
+        }
+        const { pages, invalid, outOfRange } = readPageSpec();
+
+        // Both lists have to be summarised, not enumerated: "1-999" on a
+        // 20-page album otherwise reports 979 missing page numbers and buries
+        // the useful half of the message.
+        const brief = (/** @type {(string|number)[]} */ list, /** @type {number} */ max) => (
+            list.length <= max ? list.join(', ') : `${list.slice(0, max).join(', ')} +${list.length - max} more`
+        );
+
+        const problems = [];
+        if (invalid.length) problems.push(`couldn't read ${brief(invalid, 3)}`);
+        // Out-of-range is called out rather than clamped — silently rendering
+        // something the user didn't ask for is the failure mode to avoid.
+        if (outOfRange.length) {
+            problems.push(outOfRange.length === 1
+                ? `no page ${outOfRange[0]}`
+                : `${outOfRange.length} pages don't exist (album has ${store.get('totalActivePages')})`);
+        }
+
+        if (!pages.length) {
+            pageSpecHint.textContent = problems.length ? problems.join(' · ') : 'Nothing selected';
+            pageSpecHint.classList.add('is-error');
+            btnRenderSelected.disabled = true;
+            return;
+        }
+        const label = `${pages.length} page${pages.length === 1 ? '' : 's'}: ${brief(pages, 8)}`;
+        pageSpecHint.textContent = problems.length ? `${label} · ${problems.join(' · ')}` : label;
+        pageSpecHint.classList.toggle('is-error', problems.length > 0);
+        btnRenderSelected.disabled = false;
+    }
+
+    if (pageSpecInput) {
+        pageSpecInput.addEventListener('input', refreshPageSpecHint);
+        // Enter renders, so a selection can be typed and fired without reaching
+        // for the mouse.
+        pageSpecInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && btnRenderSelected && !btnRenderSelected.disabled) btnRenderSelected.click();
+        });
+        refreshPageSpecHint();
+    }
+
+    const btnClearPageSpec = document.getElementById("btnClearPageSpec");
+    if (btnClearPageSpec && pageSpecInput) {
+        btnClearPageSpec.addEventListener('click', () => {
+            pageSpecInput.value = '';
+            refreshPageSpecHint();
+        });
+    }
+
+    // Fill the box from whatever is ticked in the storyboard, so the two ways
+    // of choosing pages feed the same place rather than competing.
+    const btnSelectFromStoryboard = document.getElementById("btnSelectFromStoryboard");
+    if (btnSelectFromStoryboard && pageSpecInput) {
+        btnSelectFromStoryboard.addEventListener('click', () => {
+            const ticked = [...document.querySelectorAll('.storyboard-page__pick:checked')]
+                .map((cb) => parseInt(/** @type {HTMLInputElement} */ (cb).value, 10))
+                .filter((n) => Number.isFinite(n))
+                .sort((a, b) => a - b);
+            if (!ticked.length) { deps.toast('Tick some pages in the storyboard first', 'info'); return; }
+            pageSpecInput.value = ticked.join(', ');
+            refreshPageSpecHint();
+        });
+    }
+
+    if (btnRenderSelected) {
+        btnRenderSelected.addEventListener('click', () => {
+            if (!store.get('outputFolder')) return deps.showAlert("Please SET OUTPUT FOLDER first!");
+            const { pages } = readPageSpec();
+            if (!pages.length) return deps.showAlert("No pages selected.");
+            const exportData = deps.buildExportDataForPages(pages);
+            const ready = Object.keys(exportData.pages).map(Number).sort((a, b) => a - b);
+            if (!ready.length) {
+                return deps.showAlert(`None of those pages can render yet — a page needs a template and at least one photo.`);
+            }
+            // Say what was skipped instead of quietly rendering fewer pages
+            // than were asked for.
+            const skipped = pages.filter((p) => !ready.includes(p));
+            if (skipped.length) {
+                deps.toast(`Skipping page ${skipped.join(', ')} — no template or no photos`, 'warning', { duration: 6000 });
+            }
             deps.queueRender(exportData);
         });
     }

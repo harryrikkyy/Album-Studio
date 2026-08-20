@@ -629,8 +629,21 @@
                 <button id="btnRenderFinalAlbum" class="btn btn--render">Render final album</button>
             </div>
         </div>
+        <div class="row u-row--between export-toolbar export-toolbar--pages">
+            <div class="u-row u-row--gap-2">
+                <label for="exportPageSpec" class="u-fs-md u-text-secondary">Pages</label>
+                <input type="text" id="exportPageSpec" class="export-pagespec" placeholder="e.g. 1, 3, 9-12 — blank for all"
+                       aria-describedby="exportPageSpecHint" autocomplete="off">
+                <button id="btnClearPageSpec" class="btn btn--ghost btn--sm" title="Clear the selection and render everything">Clear</button>
+                <button id="btnSelectFromStoryboard" class="btn btn--ghost btn--sm" title="Fill this from the pages you ticked in the storyboard below">Use ticked pages</button>
+            </div>
+            <div class="u-row u-row--gap-3">
+                <span id="exportPageSpecHint" class="export-pagespec__hint" aria-live="polite">All pages</span>
+                <button id="btnRenderSelected" class="btn btn--secondary" disabled>Render selected</button>
+            </div>
+        </div>
         <div class="export-hint">
-            Drag photos between pages to reorder. When the layout is perfect, hit Render.
+            Drag photos between pages to reorder. Tick pages to re-render only those, or leave the selection blank to render everything.
         </div>
         <div class="storyboard-canvas">
             <div id="storyboardGrid" class="storyboard-grid">

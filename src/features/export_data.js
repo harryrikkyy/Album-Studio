@@ -36,6 +36,22 @@ function createExportData(store, deps) {
      * @returns {ExportData}
      */
     function buildExportData(startPage, endPage) {
+        const pages = [];
+        for (let i = startPage; i <= endPage; i++) pages.push(i);
+        return buildExportDataForPages(pages);
+    }
+
+    /**
+     * Same payload, but for an ARBITRARY set of pages rather than a span.
+     *
+     * Album revisions are rarely contiguous — "the client wants 1, 3 and 9
+     * changed" is the normal case, and re-rendering the span 1..9 to deliver
+     * three pages wastes minutes of Photoshop time per round.
+     *
+     * @param {number[]} pageNumbers
+     * @returns {ExportData}
+     */
+    function buildExportDataForPages(pageNumbers) {
         // ⚡ Memoize HR folder scans: a 200-page album with 5 photos/page used to
         // do up to 1,000 sync readdirSync calls (one per photo) on the renderer
         // thread before the export even started. Now we do one per unique HR folder.
@@ -58,7 +74,7 @@ function createExportData(store, deps) {
 
         /** @type {ExportData} */
         const exportData = { outputPath: outputFolder.nativePath, pages: {} };
-        for (let i = startPage; i <= endPage; i++) {
+        for (const i of pageNumbers) {
             const pageData = albumPages[i];
             if (!pageData || !pageData.template || !pageData.photos || pageData.photos.length === 0) continue;
             const photos = [];
@@ -148,7 +164,7 @@ function createExportData(store, deps) {
         return baked;
     }
 
-    return { buildExportData, bakeExportAdjustments };
+    return { buildExportData, buildExportDataForPages, bakeExportAdjustments };
 }
 
 module.exports = { createExportData };

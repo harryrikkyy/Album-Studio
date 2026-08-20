@@ -240,3 +240,55 @@ test('_hydratePage yields empty url when a photo is missing from the cache', () 
   assert.equal(restored.photos[0].url, '')
   assert.equal(restored.photos[0].id, 'ghost')
 })
+
+// ─── parsePageSpec ───────────────────────────────────────────────────────────
+// Selective export: "the client changed three spreads" must not mean
+// re-rendering the whole album.
+
+const { parsePageSpec } = require('../src/renderer_pure')
+
+test('parsePageSpec reads a plain list', () => {
+  assert.deepEqual(parsePageSpec('1, 3, 9', 20).pages, [1, 3, 9])
+})
+
+test('parsePageSpec expands ranges, in either direction', () => {
+  assert.deepEqual(parsePageSpec('9-12', 20).pages, [9, 10, 11, 12])
+  assert.deepEqual(parsePageSpec('12-9', 20).pages, [9, 10, 11, 12], 'reversed range is the same span')
+})
+
+test('parsePageSpec mixes lists and ranges, sorted and deduped', () => {
+  assert.deepEqual(parsePageSpec('9-11, 1, 3, 10', 20).pages, [1, 3, 9, 10, 11])
+})
+
+test('parsePageSpec tolerates spacing, newlines and dash styles', () => {
+  assert.deepEqual(parsePageSpec('  1 ,3\n9 – 10 ', 20).pages, [1, 3, 9, 10])
+})
+
+test('parsePageSpec DROPS out-of-range pages instead of clamping', () => {
+  // Clamping "1-999" would silently render the whole album — exactly the
+  // surprise selective export exists to prevent.
+  const r = parsePageSpec('1-999', 5)
+  assert.deepEqual(r.pages, [1, 2, 3, 4, 5])
+  assert.ok(r.outOfRange.length > 0, 'the overshoot must be reported')
+  const z = parsePageSpec('0, 7', 5)
+  assert.deepEqual(z.pages, [])
+  assert.deepEqual(z.outOfRange, [0, 7])
+})
+
+test('parsePageSpec reports what it could not read', () => {
+  const r = parsePageSpec('1, banana, 3', 20)
+  assert.deepEqual(r.pages, [1, 3])
+  assert.deepEqual(r.invalid, ['banana'])
+})
+
+test('parsePageSpec on empty input selects nothing', () => {
+  for (const v of ['', '   ', ',,', null, undefined]) {
+    assert.deepEqual(parsePageSpec(v, 20).pages, [], `input: ${JSON.stringify(v)}`)
+  }
+})
+
+test('parsePageSpec refuses an absurd range rather than looping', () => {
+  const r = parsePageSpec('1-99999999', 20)
+  assert.deepEqual(r.pages, [])
+  assert.deepEqual(r.invalid, ['1-99999999'])
+})

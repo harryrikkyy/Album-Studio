@@ -1017,9 +1017,19 @@ body {
     font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--txt-secondary);
-    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--border-main);
+}
+/* The label keeps the centred look the header had before the tick box; the
+   box sits in the gutter the flex row opens up on the left. */
+.sb-page-header__label { flex: 1; text-align: center; }
+.storyboard-page__pick { flex-shrink: 0; cursor: pointer; margin: 0; }
+.sb-page-card:has(.storyboard-page__pick:checked) {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 .sb-template-preview {
     width: 100%; height: 115px;
@@ -1795,6 +1805,34 @@ input[type="range"]::-webkit-slider-thumb:active { background: var(--slider-thum
     color: var(--txt-secondary);
     font-size: var(--fs-sm);
 }
+/* Selective export: pick the pages to re-render rather than the whole album. */
+.export-toolbar--pages {
+    padding-top: 0;
+    border-bottom: 1px solid var(--border-main);
+}
+.export-pagespec {
+    width: 260px;
+    background: var(--bg-inset);
+    border: 1px solid var(--border-main);
+    color: var(--txt-primary);
+    border-radius: var(--radius-md);
+    padding: 6px 10px;
+    font-size: var(--fs-sm);
+    font-family: inherit;
+}
+.export-pagespec:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+.export-pagespec__hint {
+    font-size: var(--fs-sm);
+    color: var(--txt-secondary);
+    min-width: 190px;
+    text-align: right;
+}
+/* A spec that names nothing renderable is a mistake worth seeing before the
+   render starts, not after it finishes early. */
+.export-pagespec__hint.is-error { color: var(--danger, #ff6b5e); }
 .export-hint {
     padding: var(--space-3) var(--space-8);
     color: var(--txt-muted);

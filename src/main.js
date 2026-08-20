@@ -435,6 +435,7 @@ const { refreshPluginsView } =
 // the live J1 flag through exportActions.useAdjLayers().
 const exportActions = require('./features/export_actions').createExportActions(store, {
     buildExportData: (start, end) => buildExportData(start, end),
+    buildExportDataForPages: (pages) => buildExportDataForPages(pages),
     bakeExportAdjustments: (exportData) => bakeExportAdjustments(exportData),
     queueRender: (exportData) => queueRender(exportData),
     invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
@@ -450,7 +451,7 @@ const exportActions = require('./features/export_actions').createExportActions(s
 // Export-data assembly lives in src/features/export_data.js (Phase 2 split):
 // page range → render payload (HR path upgrade, per-photo edits, generative
 // sentinel), plus the pre-render adjustment bake.
-const { buildExportData, bakeExportAdjustments } = require('./features/export_data').createExportData(store, {
+const { buildExportData, buildExportDataForPages, bakeExportAdjustments } = require('./features/export_data').createExportData(store, {
     invoke: (channel, payload) => require('electron').ipcRenderer.invoke(channel, payload),
     readDir: (p) => require('fs').readdirSync(p),
 });

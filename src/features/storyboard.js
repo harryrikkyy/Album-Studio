@@ -144,7 +144,25 @@ function createStoryboard(store, deps) {
 
             const header = document.createElement("div");
             header.className = "sb-page-header";
-            header.innerText = `Page ${String(i).padStart(3, '0')}`;
+
+            // Tick to include this page in a selective re-render. Picking
+            // pages off the storyboard is how a photographer actually thinks
+            // about it — "these three spreads" — rather than recalling numbers.
+            const pick = document.createElement("input");
+            pick.type = "checkbox";
+            pick.className = "storyboard-page__pick";
+            pick.value = String(i);
+            pick.title = `Include page ${String(i).padStart(3, '0')} in a selective render`;
+            pick.setAttribute('aria-label', `Select page ${String(i).padStart(3, '0')} for rendering`);
+            // The card is a drag source for reordering photos; without this a
+            // tick would start a drag instead of toggling.
+            pick.addEventListener('pointerdown', (e) => e.stopPropagation());
+            header.appendChild(pick);
+
+            const label = document.createElement("span");
+            label.className = "sb-page-header__label";
+            label.innerText = `Page ${String(i).padStart(3, '0')}`;
+            header.appendChild(label);
             card.appendChild(header);
 
             const preview = document.createElement("div");
