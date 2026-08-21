@@ -21,7 +21,7 @@
  * @typedef {import('../shared/domain').Page} Page
  */
 
-const { escapeHtml } = require('../renderer_pure');
+const { escapeHtml, planAutoFillCounts, effectiveOrientation } = require('../renderer_pure');
 
 /** @param {unknown} e */
 function _errMessage(e) {
@@ -223,15 +223,17 @@ function createAlbumPages(store, deps) {
         items.forEach(item => { const redImg = document.getElementById(item.id); if (redImg) { redImg.classList.add("used"); redImg.classList.remove("selected"); } });
         const analysisPromises = items.map(item => new Promise((resolve) => {
             const img = document.createElement("img"); img.style.cssText = "position: absolute; top: -9999px; left: -9999px; visibility: hidden;";
-            img.onload = () => { const isH = img.naturalWidth >= img.naturalHeight; document.body.removeChild(img); resolve({ ...item, orient: isH ? 'h' : 'v' }); };
-            img.onerror = () => { if (img.parentNode) document.body.removeChild(img); resolve({ ...item, orient: 'h' }); };
+            img.onload = () => { const nat = { w: img.naturalWidth, h: img.naturalHeight }; document.body.removeChild(img); resolve({ ...item, _nat: nat }); };
+            img.onerror = () => { if (img.parentNode) document.body.removeChild(img); resolve({ ...item, _nat: null }); };
             document.body.appendChild(img); img.src = item.url;
         }));
         const analyzedResults = /** @type {any[]} */ (await Promise.all(analysisPromises));
         const finalResults = analyzedResults.map(res => {
             const rotation = (projectData.imageRotations || {})[res.id] || 0;
-            if (rotation === 90 || rotation === 270) res.orient = (res.orient === 'h') ? 'v' : 'h';
-            return res;
+            // A photo that failed to decode is assumed landscape, as before.
+            const nat = res._nat || { w: 1, h: 0 };
+            const { _nat, ...rest } = res;
+            return { ...rest, orient: effectiveOrientation(nat.w, nat.h, rotation) };
         });
         deps.mutate(`Pull ${finalResults.length} photo${finalResults.length === 1 ? '' : 's'}`, () => {
             const page = /** @type {{ photos: any[] }} */ (albumPages[currentPage]);
@@ -549,12 +551,6 @@ function createAlbumPages(store, deps) {
             const maxVal = parseInt(/** @type {HTMLInputElement} */ (document.getElementById("maxImgs")).value);
             const desiredVal = parseInt(/** @type {HTMLInputElement} */ (document.getElementById("desiredSheetsCount")).value);
 
-            if (useDesired) {
-                if (isNaN(desiredVal) || desiredVal < 1) return deps.showAlert("Enter a valid number of desired sheets (1 or more).");
-            } else {
-                if (isNaN(minVal) || isNaN(maxVal) || minVal > maxVal) return deps.showAlert("Invalid Min/Max values.");
-            }
-
             const activeTemplateFolders = store.get('activeTemplateFolders');
             const activeLibrary = store.get('templateLibrary').filter(t => activeTemplateFolders.has(/** @type {string} */ (t.folderId)));
             if (activeLibrary.length === 0) return deps.showAlert("Load and check at least one Template folder first!");
@@ -590,46 +586,21 @@ function createAlbumPages(store, deps) {
 
             deps.setStatus("Processing Auto-Fill…");
 
-            // Build the list of "pull counts" per page up front. Two modes:
-            //
-            //   Desired-sheets ON  → distribute ALL available photos across
-            //                        exactly desiredVal sheets. base =
-            //                        floor(N/D); the remainder is spread by
-            //                        handing out a +1 to a randomly-shuffled
-            //                        subset of sheets so the heavy pages
-            //                        aren't always front-loaded.
-            //
-            //   Desired-sheets OFF → original behavior. Pull a random number
-            //                        in [min, max] per page until photos run
-            //                        out.
-            const pullCounts = [];
-            if (useDesired) {
-                const N = availablePhotos.length;
-                const D = Math.min(desiredVal, N); // can't make more pages than photos
-                const base = Math.floor(N / D);
-                const remainder = N - base * D;
-                // Sheets that receive the +1
-                const bonusIdx = new Set();
-                const order = Array.from({ length: D }, (_, i) => i);
-                // Shuffle (Fisher–Yates)
-                for (let i = order.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [order[i], order[j]] = [order[j], order[i]];
-                }
-                for (let i = 0; i < remainder; i++) bonusIdx.add(order[i]);
-                for (let i = 0; i < D; i++) pullCounts.push(base + (bonusIdx.has(i) ? 1 : 0));
-                if (D < desiredVal) {
-                    deps.toast(`Only ${N} photos available — capping at ${D} sheets`, 'warning', { duration: 4000 });
-                }
-            } else {
-                // Original Min/Max random walk
-                let remaining = availablePhotos.length;
-                while (remaining > 0) {
-                    let n = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
-                    if (n > remaining) n = remaining;
-                    pullCounts.push(n);
-                    remaining -= n;
-                }
+            // How many photos land on each page. The planner is pure and
+            // tested (renderer_pure.planAutoFillCounts) — it guarantees the
+            // counts sum to exactly the photo count and that it terminates.
+            // The previous inline version did neither: min = max = 0 passed
+            // validation and looped forever, hanging the app.
+            const plan = planAutoFillCounts(availablePhotos.length, {
+                mode: useDesired ? 'desired' : 'range',
+                desiredSheets: desiredVal,
+                min: minVal,
+                max: maxVal,
+            });
+            if (plan.error) return deps.showAlert(plan.error);
+            const pullCounts = plan.counts;
+            if (plan.cappedTo != null) {
+                deps.toast(`Only ${availablePhotos.length} photos available — capping at ${plan.cappedTo} sheets`, 'warning', { duration: 4000 });
             }
 
             // Build all page assignments off-DOM first, THEN commit in a
@@ -655,18 +626,23 @@ function createAlbumPages(store, deps) {
                         img.onload = () => {
                             const isH = img.naturalWidth >= img.naturalHeight;
                             if (photoCache[item.id]) photoCache[item.id].orient = isH ? 'h' : 'v';
+                            const nat = { w: img.naturalWidth, h: img.naturalHeight };
                             document.body.removeChild(img);
-                            resolve({ ...item, orient: isH ? 'h' : 'v' });
+                            resolve({ ...item, orient: isH ? 'h' : 'v', _nat: nat });
                         };
-                        img.onerror = () => { if (img.parentNode) document.body.removeChild(img); resolve({ ...item, orient: 'h' }); };
+                        img.onerror = () => { if (img.parentNode) document.body.removeChild(img); resolve({ ...item, orient: 'h', _nat: null }); };
                         document.body.appendChild(img); img.src = item.url;
                     });
                 });
                 const analyzedPhotos = /** @type {any[]} */ (await Promise.all(analysisPromises));
                 const syncedPhotos = analyzedPhotos.map(res => {
                     const rotation = (projectData.imageRotations || {})[res.id] || 0;
-                    if (rotation === 90 || rotation === 270) res.orient = (res.orient === 'h') ? 'v' : 'h';
-                    return res;
+                    // Cached-orientation photos have no decoded dims; derive
+                    // stand-in dims from the cached value so the same helper
+                    // decides the flip in both paths.
+                    const nat = res._nat || (res.orient === 'v' ? { w: 0, h: 1 } : { w: 1, h: 0 });
+                    const { _nat, ...rest } = res;
+                    return { ...rest, orient: effectiveOrientation(nat.w, nat.h, rotation) };
                 });
 
                 const hCount = syncedPhotos.filter(p => p.orient === 'h').length;

@@ -338,9 +338,103 @@ function parsePageSpec(spec, totalPages) {
     };
 }
 
+/**
+ * A photo's effective orientation once the user's rotation is applied.
+ *
+ * The decoded pixels say one thing; a 90°/270° rotation swaps it. Getting
+ * this wrong sends a portrait photo to a landscape frame, where it is cropped
+ * to ribbons — so it is worth pinning rather than inlining.
+ *
+ * @param {number} naturalWidth
+ * @param {number} naturalHeight
+ * @param {number} [rotation] degrees, any multiple of 90
+ * @returns {'h'|'v'}
+ */
+function effectiveOrientation(naturalWidth, naturalHeight, rotation) {
+    const base = naturalWidth >= naturalHeight ? 'h' : 'v';
+    const rot = ((Number(rotation) || 0) % 360 + 360) % 360;
+    const quarterTurned = rot === 90 || rot === 270;
+    if (!quarterTurned) return base;
+    return base === 'h' ? 'v' : 'h';
+}
+
+/**
+ * Decide how many photos land on each page in an Auto-Fill run.
+ *
+ * Two modes:
+ *   desired — spread ALL photos across exactly N sheets. Every sheet gets
+ *             floor(total/N); the remainder is handed out one-per-sheet to a
+ *             shuffled subset, so the heavy pages aren't always the first few.
+ *   range   — take a random count in [min, max] per page until photos run out.
+ *
+ * `rng` is injectable purely so the distribution can be tested deterministically.
+ *
+ * Guarantees, whatever the input: the counts sum to exactly `total` (no photo
+ * lost or placed twice) and the function always terminates. The previous
+ * inline version did neither — min = max = 0 passed validation (0 > 0 is
+ * false), pushed a 0 forever and never decremented the remaining count, so
+ * the app hung and the array grew until it ran out of memory. Negative values
+ * were worse: `remaining` grew.
+ *
+ * @param {number} total  photos available to place
+ * @param {{ mode?: 'desired'|'range', desiredSheets?: number, min?: number, max?: number }} opts
+ * @param {() => number} [rng]
+ * @returns {{ counts: number[], cappedTo: number|null, error: string|null }}
+ */
+function planAutoFillCounts(total, opts, rng = Math.random) {
+    const n = Math.floor(Number(total) || 0);
+    if (n <= 0) return { counts: [], cappedTo: null, error: 'No photos available to place.' };
+
+    if (opts && opts.mode === 'desired') {
+        const want = Math.floor(Number(opts.desiredSheets));
+        if (!Number.isFinite(want) || want < 1) {
+            return { counts: [], cappedTo: null, error: 'Enter a valid number of desired sheets (1 or more).' };
+        }
+        // Never more sheets than photos — an empty sheet helps nobody.
+        const sheets = Math.min(want, n);
+        const base = Math.floor(n / sheets);
+        const remainder = n - base * sheets;
+
+        const order = Array.from({ length: sheets }, (_, i) => i);
+        for (let i = order.length - 1; i > 0; i--) {           // Fisher–Yates
+            const j = Math.floor(rng() * (i + 1));
+            [order[i], order[j]] = [order[j], order[i]];
+        }
+        const bonus = new Set(order.slice(0, remainder));
+        const counts = [];
+        for (let i = 0; i < sheets; i++) counts.push(base + (bonus.has(i) ? 1 : 0));
+        return { counts, cappedTo: sheets < want ? sheets : null, error: null };
+    }
+
+    const min = Math.floor(Number(opts && opts.min));
+    const max = Math.floor(Number(opts && opts.max));
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min > max) {
+        return { counts: [], cappedTo: null, error: 'Invalid Min/Max values.' };
+    }
+    // A page must take at least one photo, or the loop below cannot converge.
+    if (max < 1) {
+        return { counts: [], cappedTo: null, error: 'Max photos per page must be at least 1.' };
+    }
+    const lo = Math.max(1, min);
+
+    const counts = [];
+    let remaining = n;
+    while (remaining > 0) {
+        let take = Math.floor(rng() * (max - lo + 1)) + lo;
+        // Belt and braces: even a misbehaving rng cannot stall this loop.
+        if (!Number.isFinite(take) || take < 1) take = 1;
+        if (take > remaining) take = remaining;
+        counts.push(take);
+        remaining -= take;
+    }
+    return { counts, cappedTo: null, error: null };
+}
+
 module.exports = {
     escapeHtml,
     parsePageSpec,
+    planAutoFillCounts,
+    effectiveOrientation,
     _generativePreviewSvg,
     getPanelHeaderHTML,
     getDisplayName,
