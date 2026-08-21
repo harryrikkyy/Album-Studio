@@ -407,3 +407,40 @@ test('planAutoFillCounts reports bad input instead of guessing', () => {
   assert.match(planAutoFillCounts(10, { mode: 'desired', desiredSheets: 0 }).error, /desired sheets/)
   assert.match(planAutoFillCounts(10, { mode: 'desired', desiredSheets: NaN }).error, /desired sheets/)
 })
+
+// ─── parseBatchResult ────────────────────────────────────────────────────────
+// The render cache is persistent, so a page wrongly marked "rendered" is
+// skipped forever — the user gets no file and no way to retry without
+// clearing the cache by hand. Anything not clearly a success must fail.
+
+const { parseBatchResult } = require('../src/renderer_pure')
+
+test('parseBatchResult accepts a clean batch', () => {
+  assert.deepEqual(parseBatchResult('OK 12/12', ['001']), { fatal: null, failed: [] })
+  assert.deepEqual(parseBatchResult('OK 1/1', ['001']), { fatal: null, failed: [] })
+})
+
+test('parseBatchResult names the pages that failed in a partial batch', () => {
+  const r = parseBatchResult('PARTIAL 10/12: 003,007', ['001', '003', '007'])
+  assert.equal(r.fatal, null)
+  assert.deepEqual(r.failed, ['003', '007'])
+})
+
+test('parseBatchResult surfaces a fatal error message', () => {
+  assert.match(parseBatchResult('BATCH_ERROR: template not found', ['001']).fatal, /template not found/)
+  assert.match(parseBatchResult('BUILD_PAGE_ERROR: no frames', ['001']).fatal, /no frames/)
+})
+
+test('parseBatchResult treats anything unrecognised as a total failure', () => {
+  // Photoshop can return an empty string or a stray warning. Taking that as
+  // success is what let a batch that produced nothing mark every page cached.
+  for (const junk of ['', undefined, null, 'undefined', 'some warning', 42]) {
+    const r = parseBatchResult(junk, ['001', '002'])
+    assert.ok(r.fatal, `should be fatal for ${JSON.stringify(junk)}`)
+    assert.deepEqual(r.failed, ['001', '002'], 'and no page may be considered done')
+  }
+})
+
+test('parseBatchResult tolerates surrounding whitespace', () => {
+  assert.deepEqual(parseBatchResult('  OK 3/3\n', ['001']), { fatal: null, failed: [] })
+})

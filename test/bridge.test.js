@@ -38,9 +38,13 @@ test('the mock records runJsxDataJob to the manifest and reports success', async
   const log = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bridge-test-')), 'jobs.ndjson')
   const bridge = createPhotoshopBridge({ e2e: true, jsxLogPath: log })
 
+  // Build scripts answer with the result STRING the render queue parses, so
+  // the mock must too — a mock that returned a bare object let the queue's
+  // result checking pass under test while failing against real Photoshop.
   const res = await bridge.runJsxDataJob('build_page.jsx', { page: 1 })
-  assert.deepEqual(res, { success: true, mocked: true })
-  await bridge.runJsxDataJob('export_album.jsx', { pages: [2] })
+  assert.equal(res, 'OK 1/1')
+  const other = await bridge.runJsxDataJob('export_album.jsx', { pages: [2] })
+  assert.deepEqual(other, { success: true, mocked: true }, 'non-build scripts keep the object')
 
   const lines = fs.readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse)
   assert.deepEqual(lines, [

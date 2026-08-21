@@ -391,6 +391,7 @@ else {
         successes++;
       } catch(e) {
         failures++;
+        failedPages.push(page.pageName);
         try { app.activeDocument.close(SaveOptions.DONOTSAVECHANGES); } catch(ex) {}
       }
     }
@@ -399,11 +400,23 @@ else {
     try { templateDoc.close(SaveOptions.DONOTSAVECHANGES); } catch(_) {}
 
   } catch(e) {
-    // Non-blocking: render queue awaits this call. Surface via the result
-    // string instead of a modal that would freeze the queue.
-    "BATCH_ERROR: " + ((e && e.message) ? e.message : String(e));
+    // Non-blocking: the render queue awaits this call, so a modal alert()
+    // would freeze the queue until a human clicked OK. Record the error and
+    // let it be the RESULT — an earlier version wrote this string as a bare
+    // expression, which the "OK" line below then overwrote, so a batch that
+    // rendered nothing still reported success and the caller marked every
+    // page as rendered in the persistent cache.
+    fatal = (e && e.message) ? e.message : String(e);
   }
 
-  // Echo a result summary for the renderer-side queue.
-  "OK " + successes + "/" + (successes + failures);
+  // The result the renderer-side queue parses. Failures are reported even
+  // when some pages succeeded, so a partial batch cannot be mistaken for a
+  // clean one.
+  if (fatal) {
+    "BATCH_ERROR: " + fatal;
+  } else if (failures > 0) {
+    "PARTIAL " + successes + "/" + (successes + failures) + ": " + failedPages.join(",");
+  } else {
+    "OK " + successes + "/" + successes;
+  }
 }

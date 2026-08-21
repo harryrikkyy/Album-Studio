@@ -430,9 +430,48 @@ function planAutoFillCounts(total, opts, rng = Math.random) {
     return { counts, cappedTo: null, error: null };
 }
 
+/**
+ * Read the result string a build JSX returns.
+ *
+ * The scripts answer with one of:
+ *   "OK 12/12"                     every page built
+ *   "PARTIAL 10/12: 003,007"       some pages failed, named
+ *   "BATCH_ERROR: <message>"       the run died
+ *   "BUILD_PAGE_ERROR: <message>"  single-page equivalent
+ *
+ * Anything else is treated as a FAILURE rather than a success. Photoshop can
+ * return an empty string or a stray warning, and the previous code took
+ * "didn't throw" as proof the pages rendered — so a batch that produced
+ * nothing still marked every page as cached and the user could never retry
+ * without clearing the cache by hand.
+ *
+ * @param {unknown} result raw JSX return value
+ * @param {string[]} expected zero-padded page names in the batch
+ * @returns {{ fatal: string|null, failed: string[] }}
+ */
+function parseBatchResult(result, expected) {
+    const text = typeof result === 'string' ? result.trim() : '';
+    if (/^(BATCH_ERROR|BUILD_PAGE_ERROR):/.test(text)) {
+        return { fatal: text.replace(/^[A-Z_]+:\s*/, ''), failed: [] };
+    }
+    const partial = /^PARTIAL\s+\d+\/\d+:\s*(.*)$/.exec(text);
+    if (partial) {
+        const named = partial[1].split(',').map((s2) => s2.trim()).filter(Boolean);
+        return { fatal: null, failed: named };
+    }
+    if (/^OK\s+\d+\/\d+$/.test(text)) return { fatal: null, failed: [] };
+    // Unrecognised: assume nothing rendered. Better a spurious retry than a
+    // page silently marked done that was never written.
+    return {
+        fatal: text ? `unexpected result from Photoshop: ${text.slice(0, 120)}` : 'Photoshop returned no result',
+        failed: expected.slice(),
+    };
+}
+
 module.exports = {
     escapeHtml,
     parsePageSpec,
+    parseBatchResult,
     planAutoFillCounts,
     effectiveOrientation,
     _generativePreviewSvg,

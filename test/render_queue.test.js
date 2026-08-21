@@ -15,6 +15,14 @@ function harness({ failures = {} } = {}) {
     invoke: async (channel, payload) => {
       calls.invokes.push({ channel, payload })
       if (failures[channel]) throw new Error(failures[channel])
+      // Mirror the real bridge: the build scripts return a result STRING the
+      // queue parses, not an object. A fake that returns anything else is
+      // testing a contract the app does not have.
+      if (channel === 'build-pages-batch') {
+        const n = payload && payload.pages ? payload.pages.length : 0
+        return `OK ${n}/${n}`
+      }
+      if (channel === 'build-page') return 'OK 1/1'
       return { success: true }
     },
     updateBadge: () => {},

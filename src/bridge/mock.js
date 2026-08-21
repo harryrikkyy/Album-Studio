@@ -22,6 +22,17 @@ function createMockBridge({ logPath } = {}) {
       if (logPath) {
         try { fs.appendFileSync(logPath, JSON.stringify({ scriptName, data }) + '\n') } catch (_) {}
       }
+      // The real build scripts answer with a result STRING that the render
+      // queue parses ("OK n/n" / "PARTIAL …" / "BATCH_ERROR: …"). Returning a
+      // bare object here made the mock disagree with the contract, so a queue
+      // that correctly rejects an unrecognised result failed under test while
+      // passing in production.
+      if (scriptName === 'build_pages_batch.jsx') {
+        const pages = /** @type {any} */ (data || {}).pages
+        const n = Array.isArray(pages) ? pages.length : 0
+        return `OK ${n}/${n}`
+      }
+      if (scriptName === 'build_page.jsx') return 'OK 1/1'
       return { success: true, mocked: true }
     },
   }

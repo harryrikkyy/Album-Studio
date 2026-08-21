@@ -352,6 +352,8 @@ else {
     }
   }
 
+  var built = false;
+  var failure = null;
   try {
     app.preferences.rulerUnits = Units.PIXELS;
     var originalDoc = app.open(new File(data.templatePath));
@@ -383,10 +385,22 @@ else {
     placeOverlayPng(safeDoc, data.overlayPngPath, data.overlayPngWidth, data.overlayPngHeight);
     createTextLayers(safeDoc, data.overlayTextLayers);
 
+    built = true;
   } catch(e) {
     // Non-blocking: the render queue awaits this JSX call, so a modal alert()
     // here would freeze the whole queue until a human clicks OK. Echo the
     // error as the script result instead — the renderer surfaces it as a toast.
-    "BUILD_PAGE_ERROR: " + ((e && e.message) ? e.message : String(e));
+    failure = (e && e.message) ? e.message : String(e);
+  }
+
+  // An explicit result either way. Returning nothing on success meant the
+  // caller could not tell a completed build from a script that died early,
+  // so every outcome looked like success.
+  if (failure) {
+    "BUILD_PAGE_ERROR: " + failure;
+  } else if (built) {
+    "OK 1/1";
+  } else {
+    "BUILD_PAGE_ERROR: script ended without building a page";
   }
 }

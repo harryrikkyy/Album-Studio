@@ -22,7 +22,7 @@
  * @typedef {import('../shared/domain').ExportData} ExportData
  */
 
-const { partitionByRenderCache } = require('../renderer_pure');
+const { partitionByRenderCache, parseBatchResult } = require('../renderer_pure');
 
 /** @param {unknown} e */
 function _errMessage(e) {
@@ -83,7 +83,7 @@ function createRenderQueue(store, deps) {
             }
 
             try {
-                await deps.invoke('build-pages-batch', {
+                const result = await deps.invoke('build-pages-batch', {
                     templatePath: chunk[0].pageData.templatePath,
                     outputPath: chunk[0].outputPath,
                     useAdjustmentLayers: deps.useAdjLayers(),
@@ -99,9 +99,26 @@ function createRenderQueue(store, deps) {
                         canvasHeight: j.pageData.canvasHeight || null
                     }))
                 });
+                // The JSX reports its own outcome; trusting "it didn't throw"
+                // meant a batch that rendered NOTHING still had every page
+                // written to the persistent render cache, so the user saw
+                // "Render complete", got no files, and a retry skipped them
+                // all as unchanged.
+                const outcome = parseBatchResult(result, fresh.map(j => String(j.pageNum).padStart(3, '0')));
+                if (outcome.fatal) throw new Error(outcome.fatal);
                 for (const j of fresh) {
+                    const name = String(j.pageNum).padStart(3, '0');
+                    if (outcome.failed.includes(name)) {
+                        // Not cached — a page that didn't render must render
+                        // again next time rather than being skipped forever.
+                        stats.failed++;
+                        continue;
+                    }
                     renderHashes[j.cacheKey] = j.hash;
                     stats.done++;
+                }
+                if (outcome.failed.length) {
+                    deps.toast(`Page ${outcome.failed.join(', ')} failed to build`, 'error', { duration: 8000 });
                 }
                 deps.persistHashes();
             } catch (err) {
@@ -110,7 +127,7 @@ function createRenderQueue(store, deps) {
                 for (const j of fresh) {
                     if (stats.cancelled) break;
                     try {
-                        await deps.invoke('build-page', {
+                        const oneResult = await deps.invoke('build-page', {
                             templatePath: j.pageData.templatePath,
                             pageName: String(j.pageNum).padStart(3, '0'),
                             photos: j.pageData.photos,
@@ -121,6 +138,10 @@ function createRenderQueue(store, deps) {
                             canvasHeight: j.pageData.canvasHeight || null,
                             useAdjustmentLayers: deps.useAdjLayers()
                         });
+                        const one = parseBatchResult(oneResult, [String(j.pageNum).padStart(3, '0')]);
+                        if (one.fatal || one.failed.length) {
+                            throw new Error(one.fatal || `page ${j.pageNum} did not build`);
+                        }
                         renderHashes[j.cacheKey] = j.hash;
                         deps.persistHashes();
                         stats.done++;
