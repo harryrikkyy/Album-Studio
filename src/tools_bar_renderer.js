@@ -326,7 +326,16 @@ btnSwap.addEventListener('click', async () => {
   btnSwap.disabled = true;
   try {
     const result = await api.swapImages();
-    showToast(typeof result === 'string' ? result : 'Swap complete');
+    // Swap_Clipped_Images.jsx answers with "OK", "ALERT: …" (the user needs
+    // to do something) or "ERROR: …". It used to raise a modal in Photoshop
+    // instead, which stalled the serialised bridge and left this button
+    // reporting success for a swap that never happened.
+    const text = typeof result === 'string' ? result.trim() : '';
+    if (text.startsWith('ALERT:') || text.startsWith('ERROR:')) {
+      showToast(text.replace(/^(ALERT|ERROR):\s*/, ''), 5000);
+    } else {
+      showToast('Swap complete');
+    }
   } catch (e) {
     showToast('Swap failed: ' + (e.message || e));
   } finally {

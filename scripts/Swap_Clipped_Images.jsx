@@ -76,14 +76,27 @@ function getRawBounds(lyr) {
 // ---------------------------------------------------------
 // MAIN SWAP LOGIC
 // ---------------------------------------------------------
+// The script's OUTCOME, carried out to the caller.
+//
+// Every message here used to be a modal alert() in Photoshop. The bridge
+// serialises JSX calls, so a modal left sitting on screen stalled every
+// later Photoshop call the app made — renders included — until somebody
+// noticed and clicked OK. Worse, the renderer already expected "ALERT:"/
+// "ERROR:" prefixed results (see features/tools_tab.js) and never got them,
+// so a failed swap was reported to the user as "Swap complete".
+var __swapResult = "OK";
+
 function swapAndReclip() {
-    if (app.documents.length === 0) return;
-    
+    if (app.documents.length === 0) {
+        __swapResult = "ALERT: Open a document in Photoshop first.";
+        return;
+    }
+
     var doc = app.activeDocument;
     var sel = getSelectedLayers();
 
     if (sel.length !== 2) {
-        alert("Please hold Cmd/Ctrl and select exactly TWO clipped layers.");
+        __swapResult = "ALERT: Hold Cmd/Ctrl and select exactly TWO clipped layers.";
         return;
     }
 
@@ -99,7 +112,7 @@ function swapAndReclip() {
         var maskB = getLayerBelow(B);
 
         if (!maskA || !maskB) {
-            alert("Could not find the frames below the images.");
+            __swapResult = "ALERT: Could not find the frames below the images.";
             return;
         }
 
@@ -139,11 +152,24 @@ function swapAndReclip() {
         selectLayerById(B.id, true);
 
     } catch (e) {
-        alert("Error: " + e.message);
+        __swapResult = "ERROR: " + ((e && e.message) ? e.message : String(e));
     } finally {
         app.preferences.rulerUnits = oldUnits;
     }
 }
 
-// Wrapper for a single Undo
-app.activeDocument.suspendHistory("Ultimate Swap & Reclip", "swapAndReclip()");
+// Wrapper for a single Undo. suspendHistory lives ON a document, so reaching
+// for app.activeDocument unguarded threw before the no-documents check inside
+// swapAndReclip could ever run.
+if (app.documents.length === 0) {
+    __swapResult = "ALERT: Open a document in Photoshop first.";
+} else {
+    try {
+        app.activeDocument.suspendHistory("Ultimate Swap & Reclip", "swapAndReclip()");
+    } catch (e) {
+        __swapResult = "ERROR: " + ((e && e.message) ? e.message : String(e));
+    }
+}
+
+// The completion value the bridge hands back to the renderer.
+__swapResult;

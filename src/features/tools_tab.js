@@ -27,12 +27,18 @@ function createToolsTab(deps) {
             try {
                 deps.setStatus('Swapping images…');
                 const result = await deps.invoke('swap-images');
-                if (result && result.startsWith('ALERT:')) {
-                    deps.showAlert(result.replace('ALERT:', ''));
-                } else if (result && result.startsWith('ERROR:')) {
-                    deps.toast('Swap error: ' + result.replace('ERROR:', ''), 'error');
-                } else {
+                // Contract: "OK" | "ALERT: …" | "ERROR: …" (see
+                // scripts/Swap_Clipped_Images.jsx). Anything else means the
+                // script didn't report, so don't claim success for it.
+                const text = typeof result === 'string' ? result.trim() : '';
+                if (text.startsWith('ALERT:')) {
+                    deps.showAlert(text.replace(/^ALERT:\s*/, ''));
+                } else if (text.startsWith('ERROR:')) {
+                    deps.toast('Swap error: ' + text.replace(/^ERROR:\s*/, ''), 'error');
+                } else if (text === 'OK') {
                     deps.notify('Swap complete', 'success');
+                } else {
+                    deps.toast('Swap returned no result — check Photoshop', 'warning');
                 }
             } catch(err) { deps.toast('Swap error: ' + (/** @type {any} */ (err)).message, 'error'); }
         });
