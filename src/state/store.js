@@ -3,12 +3,11 @@
 //
 // The renderer state store — Phase 2's single source of truth.
 //
-// Every slice that used to live as a reassigned module `let` in main.js
-// migrates here, one commit at a time. During the migration main.js exposes
-// each migrated slice back onto `globalThis` as an accessor property (see
-// exposeOnGlobal), so the hundreds of existing bare references keep working
-// while the store owns the data. The module split then replaces those bare
-// references with explicit store access and the accessors get deleted.
+// Every slice that used to live as a reassigned module `let` in main.js now
+// lives here, and the migration is COMPLETE: every module reads and writes
+// through explicit store.get/set. The accessor shim that let pre-split code
+// keep saying bare `albumPages` during the transition (exposeOnGlobal) is no
+// longer called by the app — see the note on that function.
 //
 // Deliberately framework-free: a sealed slice map, get/set, and per-slice
 // subscriptions. Deep mutation of a slice's contents (albumPages[n].photos
@@ -182,8 +181,13 @@ function createStore(overrides) {
 /**
  * Migration shim: expose store slices as accessor properties on a global
  * object, so pre-split code that says bare `albumPages` transparently
- * reads/writes the store. Every accessor is `configurable`, so the split can
- * delete them file-by-file as references move to explicit store access.
+ * reads/writes the store.
+ *
+ * NO LONGER USED BY THE APP. The Phase 2 split finished: every module reads
+ * and writes through explicit store.get/set, and main.js stopped calling this.
+ * Kept because it is small, tested, and the obvious tool if another slice is
+ * ever migrated — but nothing should start depending on it again, since its
+ * whole cost was giving state a second, invisible way in.
  *
  * @param {Store} store
  * @param {(keyof AppState)[]} keys

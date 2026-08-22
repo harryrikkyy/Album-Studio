@@ -36,28 +36,19 @@ const { isTab6Rendered, invalidateTab6 } = require('./ui_tabs').createTabs({
 // ==========================================
 // Phase 2 state store: the undoable core (album pages, paging, project data,
 // template lists) lives in src/state/store.js — the single source of truth.
-// exposeOnGlobal surfaces each migrated slice as an accessor property on
-// globalThis, so every bare reference below transparently reads/writes the
-// store until the module split rewrites them to explicit store access.
-/* global albumPages:writable, currentPage:writable, totalActivePages:writable */
+// Phase 2's migration shim (exposeOnGlobal) is GONE: every module now reads
+// and writes state through explicit store.get/set, so there is no longer a
+// second, invisible way to touch it. The last six bare references lived in the
+// E2E hook below and were the only thing keeping fifteen accessors alive.
 const store = require('./state/store').createStore();
-require('./state/store').exposeOnGlobal(store, [
-    'albumPages', 'templateLibrary', 'filteredTemplates',
-    'currentPage', 'totalActivePages', 'projectData',
-    'photoCache', 'outputFolder',
-    'activeImageFolders', 'activeTemplateFolders', 'activeWallpaperFolders',
-    'activePngFolders', 'activeMaskedFolders',
-    'globalHighResMap', 'globalWpHighResMap',
-]);
 // Template sync state (_syncTemplates / _activeMatchPanel) lives in
 // src/features/template_filter.js.
 // The J1 adjustment-layers flag lives in src/features/export_actions.js
 // (wired in the export section below).
 // photoCache / wallpaperCache / pngCache / maskedCache / outputFolder live in
-// the state store (see the exposeOnGlobal block above).
+// the state store.
 
-// projectData lives in the store (seeded with the same defaults) — see the
-// exposeOnGlobal block above.
+// projectData lives in the store, seeded with the same defaults.
 
 // The five active*Folders Sets (which source folders are checked) live in the
 // state store.
@@ -621,15 +612,38 @@ if (window.native && window.native.isE2E) {
     window.__E2E__ = {
         loadProject: (data) => restoreWorkspace(data),
         state: () => ({
-            totalActivePages,
-            pageCount: Object.keys(albumPages).length,
-            currentPage,
+            totalActivePages: store.get('totalActivePages'),
+            pageCount: Object.keys(store.get('albumPages')).length,
+            currentPage: store.get('currentPage'),
         }),
+        // The export path needs an output folder. The suite used to assign the
+        // bare `outputFolder` global, which only worked while the Phase 2
+        // accessor shim existed — an explicit hook says what it is doing and
+        // survives the store being the only way in.
+        setOutputFolder: (nativePath) => store.set('outputFolder', { nativePath }),
+        // Seed album state for a test. The suite used to assign the bare
+        // `albumPages` / `photoCache` / `totalActivePages` globals, which only
+        // worked while the Phase 2 accessor shim was in place. Naming the
+        // slices explicitly keeps the store the single way in.
+        seedAlbum: ({ albumPages, photoCache, totalActivePages, currentPage }) => {
+            if (photoCache) store.set('photoCache', photoCache);
+            if (albumPages) store.set('albumPages', albumPages);
+            if (totalActivePages) store.set('totalActivePages', totalActivePages);
+            if (currentPage) store.set('currentPage', currentPage);
+        },
+        // Per-photo rotation, the input the render cache keys on. Same reason
+        // as the hooks above: the suite used to assign `projectData` directly.
+        setRotation: (photoId, degrees) => {
+            const pd = store.get('projectData');
+            if (!pd.imageRotations) pd.imageRotations = {};
+            if (degrees) pd.imageRotations[photoId] = degrees;
+            else delete pd.imageRotations[photoId];
+        },
         // A real, undoable mutation routed through the history system.
         clearAlbum: () => mutate('e2e-clear', () => {
-            albumPages = { 1: { photos: [], template: null } };
-            totalActivePages = 1;
-            currentPage = 1;
+            store.set('albumPages', { 1: { photos: [], template: null } });
+            store.set('totalActivePages', 1);
+            store.set('currentPage', 1);
         }),
         undo: () => undo(),
         redo: () => redo(),
