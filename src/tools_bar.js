@@ -21,6 +21,7 @@
 const { BrowserWindow, screen, systemPreferences, shell, dialog, app } = require('electron')
 const { exec } = require('child_process')
 const path = require('path')
+const { dockRect } = require('./tools_bar_geometry')
 
 // Lightweight logger that flows through electron-log when available, so we
 // have a real paper trail when something goes wrong with docking or the
@@ -185,36 +186,12 @@ function dockToBounds(b) {
     x: b.x, y: b.y, width: b.w, height: b.h,
   }).workArea
 
-  const totalH = BAR_HEIGHT + _expansionPx
-  let targetX = b.x
-  let targetY = b.y + b.h - _expansionPx
-  let targetW = b.w
-
-  // If the docked position would push the bar off-screen below, flip it
-  // above PS instead (rare, but handles full-height windows on small
-  // displays).
-  if (targetY + totalH > dispBounds.y + dispBounds.height) {
-    targetY = b.y - totalH
-  }
-
-  // Clamp the bar to the display PS lives on. dispBounds is in screen
-  // coordinates and CAN have a negative origin when the user has a second
-  // display to the left of the primary (this was the bug: PS reported
-  // x = -207 on a left-side external display, the bar tried to dock at
-  // x = -207, and the old clamp only checked the right edge — leaving the
-  // bar partially or fully off-screen so the user "couldn't find it").
-  // Now clamp on both sides so the bar always lands on the same display
-  // as Photoshop, even when the display has a negative origin.
-  const dispLeft  = dispBounds.x
-  const dispRight = dispBounds.x + dispBounds.width
-  if (targetX < dispLeft) {
-    targetW -= (dispLeft - targetX)
-    targetX = dispLeft
-  }
-  if (targetX + targetW > dispRight) {
-    targetW = dispRight - targetX
-  }
-  if (targetW < 200) targetW = 200
+  // Placement is pure geometry, so it lives in tools_bar_geometry.js where it
+  // can be tested against display layouts we can't reproduce on demand —
+  // including the negative-origin left-hand display here, and a maximised
+  // Photoshop with no room beneath it.
+  const { x: targetX, y: targetY, width: targetW, height: totalH } =
+    dockRect(b, dispBounds, { barHeight: BAR_HEIGHT, expansionPx: _expansionPx })
 
   const cur = _barWin.getBounds()
   // Only call setBounds when something genuinely changed. The poller fires

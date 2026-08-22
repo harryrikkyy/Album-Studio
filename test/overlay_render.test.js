@@ -315,3 +315,64 @@ test('style carries over, and a missing size falls back to the layer height', ()
   const noSize = psdTextOverlay(psdNode({ textStyle: { align: 'left' } }), { text: 'New' }, 1000, 1000)
   assert.ok(noSize.size * 1000 > 4, 'must not collapse to an unreadable size')
 })
+
+// ─── template text STYLE overrides ───────────────────────────────────────────
+// The editor's Template-layer panel writes overrides into
+// layerEdits[id].textStyle. psdTextStyle is the single merge point, so the
+// editor preview, the proof renderer and the Photoshop text builder all
+// resolve one style rather than three.
+
+const { psdTextStyle } = require('../src/overlay_render')
+
+test('psdTextStyle lays overrides over the PSD run style', () => {
+  const n = psdNode()
+  assert.deepEqual(psdTextStyle(n, {}), n.textStyle, 'no edit is the PSD style')
+  const merged = psdTextStyle(n, { textStyle: { color: '#ff0000', sizePx: 42 } })
+  assert.equal(merged.color, '#ff0000', 'override wins')
+  assert.equal(merged.sizePx, 42)
+  assert.equal(merged.font, 'Didot', 'untouched fields survive')
+  assert.equal(merged.anchorX, 500, 'anchors are not lost')
+})
+
+test('psdTextStyle tolerates a layer with no style at all', () => {
+  assert.deepEqual(psdTextStyle({ kind: 'text' }, {}), {})
+  assert.deepEqual(psdTextStyle(null, null), {})
+})
+
+test('a style-only change still produces a stand-in', () => {
+  // Recolouring a caption without retyping it is a real edit: the layer's
+  // baked pixels are the OLD colour, so they have to be replaced.
+  const n = psdNode()
+  const ov = psdTextOverlay(n, { textStyle: { color: '#ff0000' } }, 1000, 1000)
+  assert.ok(ov, 'expected a stand-in for a colour-only edit')
+  assert.equal(ov.color, '#ff0000')
+  assert.equal(ov.text, 'Original', 'keeps the template copy when only the style changed')
+})
+
+test('an empty textStyle is not treated as an edit', () => {
+  assert.equal(psdTextOverlay(psdNode(), { textStyle: {} }, 1000, 1000), null)
+})
+
+test('the stand-in honours an overridden size, face and alignment', () => {
+  const n = psdNode()
+  const ov = psdTextOverlay(n, {
+    text: 'New',
+    textStyle: { sizePx: 200, font: 'Futura', align: 'left', weight: 700, italic: true, lineHeight: 1.5 },
+  }, 1000, 1000)
+  assert.equal(ov.size * 1000, 200, 'size override reaches the overlay')
+  assert.equal(ov.font, 'Futura')
+  assert.equal(ov.align, 'left')
+  assert.equal(ov.weight, 700)
+  assert.equal(ov.italic, true)
+  assert.equal(ov.lineHeight, 1.5)
+})
+
+test('an overridden alignment moves the anchor to match', () => {
+  // The box is placed so the chosen alignment's anchor lands on the PSD's
+  // anchorX — change the alignment and the box must move, not the anchor.
+  const n = psdNode()
+  const left = psdTextOverlay(n, { text: 'New', textStyle: { align: 'left' } }, 1000, 1000)
+  const right = psdTextOverlay(n, { text: 'New', textStyle: { align: 'right' } }, 1000, 1000)
+  assert.ok(Math.abs(left.x * 1000 - 500) < 0.001, 'left edge on the anchor')
+  assert.ok(Math.abs((right.x + right.w) * 1000 - 500) < 0.001, 'right edge on the anchor')
+})

@@ -171,6 +171,59 @@ else {
             }
           } catch (ze) {}
         }
+
+        // Style overrides from the editor's Template-layer panel. Applied
+        // AFTER the contents restore above so they win over the snapshot —
+        // and applied even when the copy was not retyped, since recolouring
+        // or resizing a caption is an edit in its own right.
+        if (node.kind == LayerKind.TEXT && (typeof op.sizePx !== 'undefined'
+            || op.color || op.align || op.font || typeof op.tracking !== 'undefined'
+            || typeof op.lineHeight !== 'undefined' || op.weight || typeof op.italic !== 'undefined')) {
+          var si = node.textItem;
+          // Each assignment is guarded on its own: one property Photoshop
+          // refuses must not abandon the rest of the style.
+          if (op.font) { try { si.font = op.font; } catch (fe) {} }
+          if (op.sizePx > 0) {
+            // ag-psd reports size in PIXELS; Photoshop wants points, and the
+            // two only coincide at 72 DPI. Album templates are 300 DPI.
+            try {
+              var dpi = doc.resolution || 72;
+              si.size = UnitValue(op.sizePx * 72 / dpi, 'pt');
+            } catch (sze) {}
+          }
+          if (op.color) {
+            try {
+              var sc = new SolidColor();
+              sc.rgb.hexValue = String(op.color).replace('#', '');
+              si.color = sc;
+            } catch (ce) {}
+          }
+          if (op.align) {
+            try {
+              si.justification = op.align === 'center' ? Justification.CENTER
+                : op.align === 'right' ? Justification.RIGHT : Justification.LEFT;
+            } catch (je) {}
+          }
+          // Our tracking is in em (0.06 = 6% of the em); Photoshop counts
+          // thousandths of an em.
+          if (typeof op.tracking !== 'undefined') {
+            try { si.tracking = op.tracking * 1000; } catch (te) {}
+          }
+          if (op.lineHeight > 0 && op.sizePx > 0) {
+            try {
+              var dpi2 = doc.resolution || 72;
+              si.autoLeading = false;
+              si.leading = UnitValue(op.sizePx * op.lineHeight * 72 / dpi2, 'pt');
+            } catch (le) {}
+          }
+          // Weight and italic are properties of the FACE, not of the text
+          // item, and we cannot conjure a face the machine doesn't have — so
+          // these are the faux equivalents, which is what Photoshop itself
+          // offers when a family has no such cut.
+          if (op.weight) { try { si.fauxBold = op.weight >= 600; } catch (be) {} }
+          if (typeof op.italic !== 'undefined') { try { si.fauxItalic = !!op.italic; } catch (ie2) {} }
+        }
+
         if (typeof op.opacity !== 'undefined') node.opacity = Math.round(op.opacity * 100);
 
         // Move / scale. Photoshop resizes about a chosen anchor, not about the

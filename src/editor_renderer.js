@@ -1013,7 +1013,7 @@ function buildPsdRow(node, wrap) {
   const row = document.createElement('div')
   row.className = 'ed-layer ed-layer--psd'
     + (node.kind === 'group' ? ' is-group' : '')
-    + (hidden ? ' is-hidden' : '')
+    + (hidden ? ' ed-layer--off' : '')
     + (selectedLayerIds.includes(node.id) ? ' selected' : '')
   row.style.paddingLeft = (6 + node.depth * 12) + 'px'
 
@@ -1115,6 +1115,17 @@ function buildLayerList() {
   wrap.innerHTML = ''
   const stack = psd ? psdDrawOrder() : []
   el('edLayersEmpty').style.display = (overlays.length || stack.length) ? 'none' : 'block'
+  // The pane header carries the count, including how many are hidden — a
+  // hidden layer keeps its row, so the tally is the quickest way to notice
+  // that something is switched off rather than missing.
+  const hiddenCount = stack.filter((n) => {
+    const e = layerEdits[n.id] || {}
+    return (e.hidden === undefined ? !n.visible : e.hidden)
+  }).length + overlays.filter((o) => o.hidden).length
+  const total = stack.length + overlays.length
+  el('edLayersCount').textContent = total
+    ? (hiddenCount ? `${total} · ${hiddenCount} hidden` : String(total))
+    : ''
   if (!stack.length && psdError) {
     const note = document.createElement('div')
     note.className = 'ed-rail__note'
@@ -1127,7 +1138,7 @@ function buildLayerList() {
     const row = document.createElement('div')
     row.className = 'ed-layer'
     if (selectedOverlayIds.includes(L.id)) row.classList.add('selected')
-    if (L.hidden) row.classList.add('is-hidden')
+    if (L.hidden) row.classList.add('ed-layer--off')
 
     // A real button, not a clickable div: this is the keyboard route to
     // selecting a layer, since the drag handles on the stage are pointer-only.
@@ -1343,8 +1354,11 @@ function updateLayerPanel(node) {
   const b = layerBox(node)
   el('edLayerName').textContent = node.name + (node.isFrame ? '  (photo slot)' : '')
   const isText = node.kind === 'text'
-  el('edLayerTextWrap').style.display = isText ? 'block' : 'none'
-  if (isText) el('edLayerText').value = e.text === undefined ? (node.text || '') : e.text
+  el('edLayerTextWrap').style.display = isText ? 'flex' : 'none'
+  if (isText) {
+    el('edLayerText').value = e.text === undefined ? (node.text || '') : e.text
+    updateLayerTextStyle(node, e)
+  }
   el('edLayerVisible').checked = e.hidden === undefined ? node.visible : !e.hidden
   const op = Math.round((e.opacity == null ? node.opacity : e.opacity) * 100)
   el('edLayerOpacity').value = op
@@ -1354,6 +1368,122 @@ function updateLayerPanel(node) {
   el('edLayerW').value = Math.round(b.w)
   el('edLayerH').value = Math.round(b.h)
 }
+
+// ── Template text styling ──────────────────────────────────────
+// A template text layer carries the PSD's own run style. The editor writes
+// overrides into layerEdits[id].textStyle, and overlay_render.psdTextStyle
+// merges the two — so the preview, the proof renderer and the Photoshop text
+// builder all read one resolved style.
+
+// The template's own face goes at the top of the list: it is the one the
+// exported PSD will use unless the user deliberately changes it, and it is
+// usually NOT among the app's bundled families.
+function layerFontOptions(templateFont) {
+  const list = FONTS.slice()
+  if (templateFont && !list.includes(templateFont)) list.unshift(templateFont)
+  return list
+}
+
+function updateLayerTextStyle(node, e) {
+  const st = OV.psdTextStyle(node, e)
+  const sel = el('edLayerFont')
+  const want = st.font || ''
+  const opts = layerFontOptions(node.textStyle && node.textStyle.font)
+  if (sel.dataset.builtFor !== opts.join('|')) {
+    sel.innerHTML = ''
+    for (const f of opts) {
+      const o = document.createElement('option')
+      o.value = f; o.textContent = f; o.style.fontFamily = f
+      sel.appendChild(o)
+    }
+    sel.dataset.builtFor = opts.join('|')
+  }
+  sel.value = want
+
+  const sizePx = Math.round(st.sizePx || 0)
+  el('edLayerFontSize').value = sizePx || ''
+  el('edLayerWeight').value = String(st.weight || 400)
+  el('edLayerColor').value = /^#[0-9a-f]{6}$/i.test(st.color || '') ? st.color : '#000000'
+  el('edLayerItalic').classList.toggle('is-active', !!st.italic)
+  el('edLayerItalic').setAttribute('aria-pressed', String(!!st.italic))
+  for (const b of el('edLayerAlign').querySelectorAll('button')) {
+    b.classList.toggle('is-active', b.dataset.align === (st.align || 'left'))
+  }
+  const lh = Math.round((st.lineHeight || 1.25) * 100)
+  el('edLayerLineHeight').value = lh
+  el('edLayerLineHeightVal').textContent = (lh / 100).toFixed(2)
+  const tr = Math.round((st.tracking || 0) * 10)
+  el('edLayerTracking').value = tr
+  el('edLayerTrackingVal').textContent = tr
+
+  // Small type on a big canvas draws at a couple of screen pixels when the
+  // page is fitted to the window — which reads as "my edit vanished". Say so
+  // in numbers rather than leaving the user to guess.
+  const onScreen = sizePx * displayScale
+  el('edLayerSizeHint').textContent = onScreen && onScreen < 7
+    ? `${sizePx}px on a ${spread.canvasW}px page — about ${onScreen.toFixed(1)}px at this zoom. Zoom in to read it.`
+    : ''
+}
+
+// Every control writes through here so one code path owns the merge, the
+// drop-back-to-template behaviour, and the redraw.
+function setLayerTextStyle(patch) {
+  const node = selectedLayers()[0]
+  if (!node) return
+  const cur = layerEdits[node.id] || {}
+  const nextStyle = { ...(cur.textStyle || {}), ...patch }
+  // Drop overrides that match the template's own value, so the project file
+  // only carries real deviations and "Reset" is a true reset.
+  const base = node.textStyle || {}
+  for (const k of Object.keys(nextStyle)) {
+    if (nextStyle[k] === base[k]) delete nextStyle[k]
+  }
+  const next = { ...cur }
+  if (Object.keys(nextStyle).length) next.textStyle = nextStyle
+  else delete next.textStyle
+  if (Object.keys(next).length) layerEdits[node.id] = next
+  else delete layerEdits[node.id]
+  buildScene(); buildLayerList(); scheduleApply()
+  clearTimeout(_ctlHistTimer); _ctlHistTimer = setTimeout(pushHistory, 500)
+}
+
+el('edLayerFont').addEventListener('change', () => setLayerTextStyle({ font: el('edLayerFont').value }))
+el('edLayerFontSize').addEventListener('change', () => {
+  const v = Number(el('edLayerFontSize').value)
+  if (Number.isFinite(v) && v > 0) setLayerTextStyle({ sizePx: v })
+})
+el('edLayerWeight').addEventListener('change', () => setLayerTextStyle({ weight: Number(el('edLayerWeight').value) }))
+el('edLayerColor').addEventListener('input', () => setLayerTextStyle({ color: el('edLayerColor').value }))
+el('edLayerItalic').addEventListener('click', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  const st = OV.psdTextStyle(node, layerEdits[node.id] || {})
+  setLayerTextStyle({ italic: !st.italic })
+  updateLayerPanel(node)
+})
+el('edLayerAlign').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button[data-align]'); if (!b) return
+  setLayerTextStyle({ align: b.dataset.align })
+  const node = selectedLayers()[0]; if (node) updateLayerPanel(node)
+})
+el('edLayerLineHeight').addEventListener('input', () => {
+  const v = Number(el('edLayerLineHeight').value) / 100
+  el('edLayerLineHeightVal').textContent = v.toFixed(2)
+  setLayerTextStyle({ lineHeight: v })
+})
+el('edLayerTracking').addEventListener('input', () => {
+  const v = Number(el('edLayerTracking').value)
+  el('edLayerTrackingVal').textContent = String(v)
+  setLayerTextStyle({ tracking: v / 10 })
+})
+el('edLayerTextReset').addEventListener('click', () => {
+  const node = selectedLayers()[0]; if (!node) return
+  const cur = { ...(layerEdits[node.id] || {}) }
+  delete cur.textStyle
+  if (Object.keys(cur).length) layerEdits[node.id] = cur
+  else delete layerEdits[node.id]
+  buildScene(); buildLayerList(); updatePanel(); pushHistory(); scheduleApply()
+  toast('Text style reset')
+})
 
 // Numeric fields write the same edit shape the drag handles do.
 function commitLayerFields() {
@@ -1646,6 +1776,10 @@ function buildRail() {
   const list = (spread.spreads && spread.spreads.length)
     ? spread.spreads
     : [{ pageNum: spread.pageNum, backdropUrl: spread.backdropUrl }]
+  const idx = list.findIndex((sp) => sp.pageNum === spread.pageNum)
+  el('edSpreadsCount').textContent = list.length > 1
+    ? `${idx < 0 ? '?' : idx + 1}/${list.length}`
+    : ''
   for (const sp of list) {
     const isCurrent = sp.pageNum === spread.pageNum
     const label = 'Page ' + String(sp.pageNum).padStart(3, '0')

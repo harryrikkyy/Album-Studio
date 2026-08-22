@@ -405,7 +405,24 @@
 
 
     /**
-     * Build the stand-in overlay for a retyped template TEXT layer.
+     * The style a template text layer should be drawn with: the PSD's own run
+     * style, with any per-layer override the user set in the editor's
+     * Template-layer panel laid over the top.
+     *
+     * One merge point, so the editor preview, the proof renderer and the
+     * Photoshop text builder cannot disagree about the face, size or colour
+     * of a caption.
+     *
+     * @param {any} node a flattened PSD layer node
+     * @param {any} edit its layer edit (may carry .textStyle)
+     * @returns {any} the resolved style
+     */
+    function psdTextStyle(node, edit) {
+        return { ...((node && node.textStyle) || {}), ...((edit && edit.textStyle) || {}) }
+    }
+
+    /**
+     * Build the stand-in overlay for an edited template TEXT layer.
      *
      * Lives here, in the module BOTH sides load, because the geometry is
      * fiddly and was previously duplicated between the editor window and the
@@ -413,14 +430,21 @@
      * silently disagree about where a caption sits.
      *
      * @param {any} node a flattened PSD layer node (needs textStyle)
-     * @param {any} edit its layer edit (needs .text)
-     * @param {number} W canvas width @param {number} H canvas height
+     * @param {any} edit its layer edit (.text and/or .textStyle)
+     * @param {number} W canvas width
+     * @param {number} H canvas height
      * @returns {any|null} an overlay layer, or null if nothing to draw
      */
     function psdTextOverlay(node, edit, W, H) {
-        if (!node || !edit || edit.text === undefined) return null
-        if (node.kind !== 'text' || edit.text === node.text) return null
-        const st = node.textStyle || {}
+        if (!node || !edit) return null
+        // A style-only change (recolour, resize, re-face) still needs a
+        // stand-in, so this is no longer gated on the text having been
+        // retyped — only on there being SOMETHING to draw differently.
+        const hasStyle = !!(edit.textStyle && Object.keys(edit.textStyle).length)
+        const retyped = edit.text !== undefined && edit.text !== node.text
+        if (node.kind !== 'text') return null
+        if (!retyped && !hasStyle) return null
+        const st = psdTextStyle(node, edit)
         // ag-psd doesn't always report a size; the layer's own height is a
         // close enough fallback for a single line to stay legible.
         const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, node.h * 0.8)
@@ -440,13 +464,17 @@
             y: (anchorY - sizePx * 0.78) / H,
             w: boxW / W,
             h: (sizePx * 1.6) / H,
-            text: edit.text,
+            // Style-only edits keep the template's own copy.
+            text: edit.text === undefined ? (node.text || '') : edit.text,
             font: st.font || undefined,
             size: sizePx / H,
             color: st.color || '#000000',
             align,
             valign: 'top',
             tracking: st.tracking || 0,
+            weight: st.weight || undefined,
+            italic: st.italic || undefined,
+            lineHeight: st.lineHeight || undefined,
             opacity: node.effectiveOpacity == null ? 1 : node.effectiveOpacity,
         }
     }
@@ -458,6 +486,7 @@
         // the SAME resolved layout the SVG uses — see that file's header.
         resolveTextLayout,
         psdTextOverlay,
+        psdTextStyle,
         // Exported for unit tests + the editor's own hit-testing.
         wrapText,
         estimateTextWidth,

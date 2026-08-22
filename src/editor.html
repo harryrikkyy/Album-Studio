@@ -33,11 +33,24 @@
 
   .ed-body { display: flex; flex: 1; overflow: hidden; gap: var(--space-3); padding: 10px 14px 12px; }
 
-  /* ── Left rail: spreads + layers ──────────────────────────── */
-  .ed-rail { width: 168px; flex-shrink: 0; overflow-y: auto;
-    border: 1px solid var(--border-main); border-radius: var(--radius-lg);
+  /* ── Left rail: two independent panes ─────────────────────────
+     Spreads (navigation) and Layers (the working surface) are separate
+     docked panes, each with its own header and its own scroll — one
+     shared scroll meant paging through spreads scrolled the layer list
+     out of view, and a long template pushed the spreads off the bottom. */
+  .ed-rail-col { width: 190px; flex-shrink: 0; display: flex; flex-direction: column;
+    gap: var(--space-3); min-height: 0; }
+  .ed-pane { border: 1px solid var(--border-main); border-radius: var(--radius-lg);
     background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
-    padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* Spreads is a fixed-size navigator; Layers takes whatever is left. */
+  .ed-pane--spreads { flex: 0 0 auto; max-height: 38%; }
+  .ed-pane--layers { flex: 1 1 auto; }
+  .ed-pane__head { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    padding: 8px 10px 6px; border-bottom: 1px solid var(--border-main); flex-shrink: 0; }
+  .ed-pane__body { overflow-y: auto; padding: 8px 10px 10px; display: flex; flex-direction: column;
+    gap: 8px; min-height: 0; }
+  .ed-pane__count { font-size: 10px; color: var(--txt-muted); font-variant-numeric: tabular-nums; }
   .ed-rail__title { margin: 0; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.1em;
     color: var(--txt-muted); font-weight: 700; }
   .ed-thumb { display: block; width: 100%; padding: 0; font: inherit; cursor: pointer;
@@ -60,15 +73,19 @@
     opacity: 0.55; border-radius: 3px; line-height: 0; }
   .ed-layer__btn:hover { opacity: 1; background: var(--bg-card); }
   .ed-layer__btn svg { width: 12px; height: 12px; }
-  .ed-layer.is-hidden .ed-layer__name { opacity: 0.7; text-decoration: line-through; }
+  /* NB: the modifier is `ed-layer--off`, NOT `is-hidden`. style.css defines a
+     global `.is-hidden { display: none !important }` utility, and that
+     !important beat every rule here — so hiding a layer removed its row from
+     the rail entirely and left no way to unhide it. */
+  .ed-layer.ed-layer--off .ed-layer__name { opacity: 0.7; text-decoration: line-through; }
   .ed-rail__empty { font-size: var(--fs-xs); color: var(--txt-muted); line-height: 1.5; }
   /* Template (PSD) layers: read-only structure, so they are dimmer than the
      page layers the user authored — visibility and opacity are still theirs. */
   .ed-layer--psd { color: var(--txt-secondary); }
   /* A hidden layer is the row you click to bring it back, so it must stay
      readable — struck through and dimmed, never near-invisible. */
-  .ed-layer.is-hidden { opacity: 0.85; }
-  .ed-layer.is-hidden .ed-layer__btn { opacity: 1; color: var(--accent); }
+  .ed-layer.ed-layer--off { opacity: 0.85; }
+  .ed-layer.ed-layer--off .ed-layer__btn { opacity: 1; color: var(--accent); }
   .ed-layer--psd.is-group { font-weight: 700; }
   .ed-layer__clip { flex-shrink: 0; opacity: 0.75; font-size: 10px; }
   .ed-layer__frame { flex-shrink: 0; font-size: 9px; text-transform: uppercase;
@@ -166,6 +183,10 @@
 
   /* Segmented button groups (alignment, etc.) */
   .ed-seg { display: flex; gap: 2px; flex: 1; }
+  /* A one-button group must not stretch across the row — full width makes a
+     lone toggle read as an empty text field. */
+  .ed-seg--compact { flex: 0 0 auto; }
+  .ed-seg--compact button { flex: 0 0 auto; min-width: 30px; border-radius: var(--radius-md); }
   .ed-seg button { flex: 1; background: var(--bg-inset); border: 1px solid var(--border-main);
     color: var(--txt-secondary); font-size: 11px; padding: 4px 0; cursor: pointer; line-height: 1.2; }
   .ed-seg button:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
@@ -266,14 +287,26 @@
   </div>
 
   <div class="ed-body">
-    <aside class="ed-rail">
-      <h2 class="ed-rail__title">Layers</h2>
-      <div id="edLayers" class="ed-layers"></div>
-      <div id="edLayersEmpty" class="ed-rail__empty">No text or shapes on this page yet. Pick the Text tool and click the page.</div>
-      <div class="ed-sep"></div>
-      <h2 class="ed-rail__title">Spreads</h2>
-      <div id="edThumbs"></div>
-    </aside>
+    <div class="ed-rail-col">
+      <aside class="ed-pane ed-pane--spreads" aria-labelledby="edSpreadsTitle">
+        <div class="ed-pane__head">
+          <h2 class="ed-rail__title" id="edSpreadsTitle">Spreads</h2>
+          <span class="ed-pane__count" id="edSpreadsCount"></span>
+        </div>
+        <div class="ed-pane__body" id="edThumbs"></div>
+      </aside>
+
+      <aside class="ed-pane ed-pane--layers" aria-labelledby="edLayersTitle">
+        <div class="ed-pane__head">
+          <h2 class="ed-rail__title" id="edLayersTitle">Layers</h2>
+          <span class="ed-pane__count" id="edLayersCount"></span>
+        </div>
+        <div class="ed-pane__body">
+          <div id="edLayers" class="ed-layers"></div>
+          <div id="edLayersEmpty" class="ed-rail__empty">No text or shapes on this page yet. Pick the Text tool and click the page.</div>
+        </div>
+      </aside>
+    </div>
 
     <div class="ed-stage-wrap" id="edStageWrap">
       <div class="ed-stage" id="edStage"></div>
@@ -399,10 +432,42 @@
       <div id="edLayerPanel" style="display:none; flex-direction:column; gap:10px;">
         <h2 class="ed-panel__title">Template layer</h2>
         <div id="edLayerName" class="ed-panel__hint" style="font-weight:600;color:var(--txt-primary);"></div>
-        <div id="edLayerTextWrap" style="display:none;">
-          <label for="edLayerText" class="ed-panel__title" style="display:block;margin-bottom:5px;">Text</label>
+        <div id="edLayerTextWrap" style="display:none; flex-direction:column; gap:10px;">
+          <label for="edLayerText" class="ed-panel__title" style="display:block;margin-bottom:-4px;">Text</label>
           <textarea id="edLayerText" class="ed-textarea" aria-label="Template layer text"></textarea>
-          <div class="ed-panel__hint" style="margin-top:5px;">Preview is an approximation; the exported PSD keeps live type in the template's own font.</div>
+
+          <div class="ed-ctl"><label for="edLayerFont">Font</label><select id="edLayerFont"></select></div>
+          <div class="ed-ctl"><label for="edLayerFontSize">Size</label>
+            <input type="number" id="edLayerFontSize" min="1" step="1" aria-describedby="edLayerSizeHint">
+            <span class="ed-val">px</span></div>
+          <div class="ed-ctl"><label for="edLayerWeight">Weight</label><select id="edLayerWeight">
+            <option value="200">Extra light</option><option value="300">Light</option>
+            <option value="400">Regular</option><option value="500">Medium</option>
+            <option value="600">Semibold</option><option value="700">Bold</option><option value="900">Black</option>
+          </select></div>
+          <div class="ed-ctl"><label for="edLayerColor">Colour</label><input type="color" id="edLayerColor" value="#000000">
+            <div class="ed-seg ed-seg--compact" role="group" aria-label="Template text style">
+              <button id="edLayerItalic" aria-label="Italic" aria-pressed="false" title="Italic"><em>I</em></button>
+            </div>
+          </div>
+          <div class="ed-ctl"><span>Align</span>
+            <div class="ed-seg" id="edLayerAlign" role="group" aria-label="Template text alignment">
+              <button data-align="left">Left</button><button data-align="center">Centre</button><button data-align="right">Right</button>
+            </div>
+          </div>
+          <details class="ed-group">
+            <summary>Spacing</summary>
+            <div class="ed-group__body">
+              <div class="ed-ctl"><label for="edLayerLineHeight">Line height</label>
+                <input type="range" id="edLayerLineHeight" min="70" max="250" value="125"><span class="ed-val" id="edLayerLineHeightVal">1.25</span></div>
+              <div class="ed-ctl"><label for="edLayerTracking">Tracking</label>
+                <input type="range" id="edLayerTracking" min="-10" max="60" value="0"><span class="ed-val" id="edLayerTrackingVal">0</span></div>
+            </div>
+          </details>
+
+          <div class="ed-panel__hint" id="edLayerSizeHint"></div>
+          <button id="edLayerTextReset" class="btn btn--ghost btn--sm">Reset text style</button>
+          <div class="ed-panel__hint">The exported PSD keeps this as live, editable Photoshop type — the preview is a close stand-in, not the final render.</div>
         </div>
         <div class="ed-ctl"><label for="edLayerVisible">Visible</label><input type="checkbox" id="edLayerVisible"></div>
         <div class="ed-ctl"><label for="edLayerOpacity">Opacity</label><input type="range" id="edLayerOpacity" min="0" max="100" value="100"><span class="ed-val" id="edLayerOpacityVal">100</span></div>

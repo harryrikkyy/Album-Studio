@@ -416,7 +416,22 @@ function toPhotoshopLayerOps(layers, layerEdits) {
           // what Photoshop wants, and it is exactly what ag-psd reports.
           if (node.textStyle && node.textStyle.font) op.font = node.textStyle.font
         }
-        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy', 'text'].some((k) => k in op)) ops.push(op)
+        // Style overrides set in the editor's Template-layer panel. These
+        // travel independently of the copy: recolouring a caption without
+        // retyping it is a real edit and has to reach the delivered PSD.
+        if (node.kind === 'text' && edit.textStyle) {
+          const st = edit.textStyle
+          if (st.font) op.font = st.font
+          if (st.sizePx > 0) op.sizePx = st.sizePx
+          if (st.color) op.color = st.color
+          if (st.align) op.align = st.align
+          if (st.tracking != null) op.tracking = st.tracking
+          if (st.lineHeight > 0) op.lineHeight = st.lineHeight
+          if (st.weight) op.weight = st.weight
+          if (st.italic != null) op.italic = !!st.italic
+        }
+        const TEXT_KEYS = ['sizePx', 'color', 'align', 'tracking', 'lineHeight', 'weight', 'italic']
+        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy', 'text', ...TEXT_KEYS].some((k) => k in op)) ops.push(op)
       }
       if (node.children) walk(node.children, here)
     }

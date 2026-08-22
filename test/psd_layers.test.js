@@ -331,3 +331,64 @@ test('a scale of exactly 1 is not emitted as a transform', async () => {
   const node = t.layers.find((l) => l.name === 'Gold rule')
   assert.deepEqual(toPhotoshopLayerOps(t.layers, { [node.id]: { sx: 1, sy: 1, dx: 0, dy: 0 } }), [])
 })
+
+// ─── template text style overrides → Photoshop ops ───────────────────────────
+// Style set in the editor's Template-layer panel has to reach the delivered
+// PSD, not just the on-screen preview. These use a synthetic tree so the
+// assertions are about the translation, not about one fixture's contents.
+
+const textTree = () => ([
+  { id: '0', kind: 'raster', name: 'Background', visible: true, opacity: 1, x: 0, y: 0, w: 800, h: 600 },
+  {
+    id: '1', kind: 'text', name: 'Title', visible: true, opacity: 1,
+    x: 100, y: 100, w: 400, h: 80, text: 'Original',
+    textStyle: { font: 'Didot', sizePx: 100, color: '#112233', align: 'center' },
+  },
+])
+
+test('a style-only edit is emitted even when the copy is unchanged', () => {
+  const ops = toPhotoshopLayerOps(textTree(), { 1: { textStyle: { color: '#ff0000' } } })
+  assert.equal(ops.length, 1, 'recolouring is a real edit')
+  assert.equal(ops[0].name, 'Title')
+  assert.equal(ops[0].color, '#ff0000')
+  assert.equal(ops[0].text, undefined, 'no retype, so no contents op')
+})
+
+test('every text style field reaches the op', () => {
+  const ops = toPhotoshopLayerOps(textTree(), {
+    1: {
+      text: 'New copy',
+      textStyle: {
+        font: 'Futura', sizePx: 48, color: '#00ff00', align: 'right',
+        tracking: 0.08, lineHeight: 1.5, weight: 700, italic: true,
+      },
+    },
+  })
+  const op = ops[0]
+  assert.equal(op.text, 'New copy')
+  assert.equal(op.font, 'Futura', 'the override beats the template face')
+  assert.equal(op.sizePx, 48)
+  assert.equal(op.color, '#00ff00')
+  assert.equal(op.align, 'right')
+  assert.equal(op.tracking, 0.08)
+  assert.equal(op.lineHeight, 1.5)
+  assert.equal(op.weight, 700)
+  assert.equal(op.italic, true)
+})
+
+test('retyping with no style override still re-asserts the template face', () => {
+  const ops = toPhotoshopLayerOps(textTree(), { 1: { text: 'New copy' } })
+  assert.equal(ops[0].font, 'Didot', 'contents replacement drops the face, so it is restated')
+})
+
+test('style fields are ignored on a layer that is not type', () => {
+  const ops = toPhotoshopLayerOps(textTree(), { 0: { textStyle: { color: '#ff0000' } } })
+  assert.deepEqual(ops, [], 'a raster layer has no text style to set')
+})
+
+test('italic:false is still emitted, so it can be turned back OFF', () => {
+  // `if (st.italic)` would silently drop the un-italicise edit.
+  const ops = toPhotoshopLayerOps(textTree(), { 1: { textStyle: { italic: false } } })
+  assert.equal(ops.length, 1)
+  assert.equal(ops[0].italic, false)
+})
