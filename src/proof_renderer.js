@@ -35,6 +35,9 @@ const crypto = require('crypto')
 // Text/shape overlays. The Spread Editor renders the SAME SVG into its stage,
 // so the preview and this composite cannot drift apart.
 const { buildOverlaySvg, overlayCacheKey } = require('./overlay_render')
+// Layer move/scale geometry, shared with the Page Editor and unit-tested
+// in test/editor_geometry.test.js.
+const { layerBox } = require('./editor_geometry')
 
 // '#rrggbb' → sharp's background object. Returns null for anything else so
 // callers fall back to their own default.
@@ -579,20 +582,14 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
         const base = node.clipBaseId ? byId.get(node.clipBaseId) : null
         if (!base) return null
         const be = (layerEdits && layerEdits[base.id]) || {}
-        return {
-          png: base.png,
-          x: base.x + (be.dx || 0), y: base.y + (be.dy || 0),
-          w: base.w * (be.sx == null ? 1 : be.sx), h: base.h * (be.sy == null ? 1 : be.sy),
-        }
+        return { png: base.png, ...layerBox(base, be) }
       })(),
       // Move/scale from the Page Editor. Stored in canvas pixels, so they
       // scale with the output like every other coordinate here.
-      _box: {
-        x: node.x + (edit.dx || 0),
-        y: node.y + (edit.dy || 0),
-        w: node.w * (edit.sx == null ? 1 : edit.sx),
-        h: node.h * (edit.sy == null ? 1 : edit.sy),
-      },
+      // Same helper the editor's canvas and hit-test use, so a moved layer
+      // renders exactly where it was dragged. This was a second copy of the
+      // arithmetic until editor_geometry existed.
+      _box: layerBox(node, edit),
       top: Math.round((node.y + (edit.dy || 0)) * scale),
       left: Math.round((node.x + (edit.dx || 0)) * scale),
       blend: PS_BLEND_TO_SHARP[String(node.blendMode || 'normal').toLowerCase()] || 'over',

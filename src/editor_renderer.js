@@ -16,6 +16,9 @@
 // Bridged IPC surface exposed by editor_preload.js (contextIsolation on).
 const api = window.editorAPI
 const OV = window.OverlayRender
+// Pure geometry, shared with the exporter and unit-tested in
+// test/editor_geometry.test.js.
+const EG = window.EditorGeometry
 
 // Theme (shared via file:// localStorage), opaque for this non-transparent window.
 // Saved ids from the retired 5-theme system fall back to studio-dark.
@@ -640,92 +643,43 @@ function layoutGuides() {
 function alignSelection(edge) {
   const sel = selectedOverlays().filter((L) => !L.locked)
   if (!sel.length) return
-  const many = sel.length > 1
-  const box = many
-    ? {
-      x: Math.min(...sel.map((L) => L.x)),
-      y: Math.min(...sel.map((L) => L.y)),
-      r: Math.max(...sel.map((L) => L.x + L.w)),
-      b: Math.max(...sel.map((L) => L.y + L.h)),
-    }
-    : { x: 0, y: 0, r: 1, b: 1 }
-
-  for (const L of sel) {
-    switch (edge) {
-      case 'left': L.x = box.x; break
-      case 'hcenter': L.x = box.x + (box.r - box.x) / 2 - L.w / 2; break
-      case 'right': L.x = box.r - L.w; break
-      case 'top': L.y = box.y; break
-      case 'vcenter': L.y = box.y + (box.b - box.y) / 2 - L.h / 2; break
-      case 'bottom': L.y = box.b - L.h; break
-    }
-  }
+  // One layer aligns to the PAGE; several to their own bounding box.
+  const aligned = EG.alignBoxes(sel.map((L) => ({ x: L.x, y: L.y, w: L.w, h: L.h })),
+    edge, { x: 0, y: 0, w: 1, h: 1 })
+  sel.forEach((L, i) => { L.x = aligned[i].x; L.y = aligned[i].y })
   renderOverlays(); updatePanel(); pushHistory(); scheduleApply()
-  toast(many ? `Aligned ${sel.length} layers` : 'Aligned to page')
+  toast(sel.length > 1 ? `Aligned ${sel.length} layers` : 'Aligned to page')
 }
 
 // Even gaps between three or more layers; the outermost two stay put.
 function distributeSelection(axis) {
   const sel = selectedOverlays().filter((L) => !L.locked)
   if (sel.length < 3) { toast('Select 3 or more layers to distribute'); return }
-  const k = axis === 'h' ? 'x' : 'y'
-  const size = axis === 'h' ? 'w' : 'h'
-  const sorted = [...sel].sort((a, b) => a[k] - b[k])
-  const first = sorted[0]
-  const last = sorted[sorted.length - 1]
-  // Distribute the free space, not the centres — equal GAPS is what reads as
-  // evenly spaced when the layers are different sizes.
-  const span = (last[k] + last[size]) - first[k]
-  const used = sorted.reduce((sum, L) => sum + L[size], 0)
-  const gap = (span - used) / (sorted.length - 1)
-  let cursor = first[k]
-  for (const L of sorted) {
-    L[k] = cursor
-    cursor += L[size] + gap
-  }
+  // Equal GAPS, not equal centres — see editor_geometry.distributeBoxes.
+  const spread2 = EG.distributeBoxes(sel.map((L) => ({ x: L.x, y: L.y, w: L.w, h: L.h })), axis)
+  sel.forEach((L, i) => { L.x = spread2[i].x; L.y = spread2[i].y })
   renderOverlays(); updatePanel(); pushHistory(); scheduleApply()
   toast(`Distributed ${sel.length} layers`)
 }
 
-// Hit-test the template stack at a canvas point.
-//
-// Bounds-based rather than per-pixel: the layer PNGs are file:// images, and
-// drawing them to a canvas to sample alpha taints it in Electron, so
-// getImageData would throw. Two heuristics make bounds behave: prefer the
-// SMALLEST box containing the point (a specific bit of art over the sheet it
-// sits on), and let repeated clicks cycle down through everything under the
-// cursor so a covered layer is still reachable.
-let _cycleAt = { x: -1, y: -1, i: 0 }
-function layersAtPoint(cx, cy) {
-  return psdDrawOrder()
-    .filter((n) => n.kind !== 'group' && n.effectiveVisible && n.png)
-    .filter((n) => {
-      const b = layerBox(n)
-      return cx >= b.x && cx <= b.x + b.w && cy >= b.y && cy <= b.y + b.h
-    })
-    .sort((a, b) => {
-      const ba = layerBox(a), bb = layerBox(b)
-      return (ba.w * ba.h) - (bb.w * bb.h)   // smallest (most specific) first
-    })
-}
+
+// Which template layer a click means. The ordering and cycling rules live in
+// editor_geometry.pickAtPoint, where they are unit-tested; this only converts
+// screen coordinates into canvas ones.
+let _cycleAt = null
 
 function pickLayerAt(clientX, clientY) {
   const rect = stage.getBoundingClientRect()
   const cx = ((clientX - rect.left) / rect.width) * spread.canvasW
   const cy = ((clientY - rect.top) / rect.height) * spread.canvasH
-  const hits = layersAtPoint(cx, cy)
-  if (!hits.length) return null
-  // Clicking the same spot again steps to the next layer underneath.
-  // Treat it as the same spot in CANVAS units scaled to the current zoom, so
-  // cycling works the same whether the page is fit or magnified.
-  const tol = spread.canvasW / 200
-  const same = Math.abs(_cycleAt.x - cx) < tol && Math.abs(_cycleAt.y - cy) < tol
-  let i = same ? (_cycleAt.i + 1) % hits.length : 0
-  // If the first pick is already selected, move on — otherwise a click on a
-  // selected layer looks like nothing happened.
-  if (!same && hits.length > 1 && selectedLayerIds.includes(hits[0].id)) i = 1
-  _cycleAt = { x: cx, y: cy, i }
-  return hits[i]
+  const candidates = psdDrawOrder()
+    .filter((n) => n.kind !== 'group' && n.effectiveVisible && n.png)
+    .map((n) => ({ ...layerBox(n), id: n.id, _node: n }))
+  // Tolerance in CANVAS units, so "the same spot" means the same thing
+  // whatever the zoom level.
+  const r = EG.pickAtPoint(candidates, cx, cy, _cycleAt, spread.canvasW / 200)
+  _cycleAt = r.hit ? { x: cx, y: cy, index: r.index } : null
+  return r.hit ? r.hit._node : null
 }
 
 // Move/resize a template layer. Offsets are stored in CANVAS PIXELS rather
@@ -765,22 +719,14 @@ function wireLayerBox(box, node) {
         patch.dy = dy0 + dy
       } else {
         // Corner resize: the opposite corner stays put, so scaling from the
-        // north or west edges also shifts the origin.
-        let nw = node.w * sx0, nh = node.h * sy0
-        let ndx = dx0, ndy = dy0
-        if (handle.includes('e')) nw = Math.max(8, node.w * sx0 + dx)
-        if (handle.includes('s')) nh = Math.max(8, node.h * sy0 + dy)
-        if (handle.includes('w')) { nw = Math.max(8, node.w * sx0 - dx); ndx = dx0 + (node.w * sx0 - nw) }
-        if (handle.includes('n')) { nh = Math.max(8, node.h * sy0 - dy); ndy = dy0 + (node.h * sy0 - nh) }
-        if (ev.shiftKey && node.w && node.h) {   // keep the aspect ratio
-          const r = (node.h * sy0) / (node.w * sx0)
-          nh = nw * r
-          if (handle.includes('n')) ndy = dy0 + (node.h * sy0 - nh)
-        }
-        patch.sx = nw / node.w
-        patch.sy = nh / node.h
-        patch.dx = ndx
-        patch.dy = ndy
+        // north or west edges also shifts the origin. Same helper the overlay
+        // handles use, so the two behave identically.
+        const start = { x: node.x + dx0, y: node.y + dy0, w: node.w * sx0, h: node.h * sy0 }
+        const nb = EG.resizeBox(start, handle, dx, dy, { keepAspect: ev.shiftKey, min: 8 })
+        patch.sx = node.w ? nb.w / node.w : 1
+        patch.sy = node.h ? nb.h / node.h : 1
+        patch.dx = nb.x - node.x
+        patch.dy = nb.y - node.y
       }
       layerEdits[node.id] = { ...(layerEdits[node.id] || {}), ...patch }
       layoutPsdLayers()
@@ -843,24 +789,10 @@ function clearGuides() {
 
 // Snap a moving box's edges/centre to nearby targets; returns adjusted x/y.
 function applySnap(L, x, y) {
-  if (!snapEnabled) return { x, y, vx: null, hy: null }
-  const { xs, ys } = snapTargets(L.id)
-  let bestX = null, bestXd = SNAP_TOL, guideX = null
-  for (const edge of [[x, 0], [x + L.w / 2, L.w / 2], [x + L.w, L.w]]) {
-    for (const t of xs) {
-      const d = Math.abs(edge[0] - t)
-      if (d < bestXd) { bestXd = d; bestX = t - edge[1]; guideX = t }
-    }
-  }
-  let bestY = null, bestYd = SNAP_TOL, guideY = null
-  for (const edge of [[y, 0], [y + L.h / 2, L.h / 2], [y + L.h, L.h]]) {
-    for (const t of ys) {
-      const d = Math.abs(edge[0] - t)
-      if (d < bestYd) { bestYd = d; bestY = t - edge[1]; guideY = t }
-    }
-  }
-  showGuides(guideX, guideY)
-  return { x: bestX != null ? bestX : x, y: bestY != null ? bestY : y }
+  if (!snapEnabled) { clearGuides(); return { x, y } }
+  const r = EG.snapPosition(L, x, y, snapTargets(L.id), SNAP_TOL)
+  showGuides(r.guideX, r.guideY)
+  return { x: r.x, y: r.y }
 }
 
 // ── Overlay interaction ────────────────────────────────────────
@@ -897,17 +829,9 @@ function wireOverlayBox(box, L) {
         L.rot = Math.round(deg)
       } else if (handle) {
         // Corner resize. Shift keeps the aspect ratio.
-        let nx = orig.x, ny = orig.y, nw = orig.w, nh = orig.h
-        if (handle.includes('e')) nw = Math.max(0.01, orig.w + dx)
-        if (handle.includes('s')) nh = Math.max(0.01, orig.h + dy)
-        if (handle.includes('w')) { nw = Math.max(0.01, orig.w - dx); nx = orig.x + (orig.w - nw) }
-        if (handle.includes('n')) { nh = Math.max(0.01, orig.h - dy); ny = orig.y + (orig.h - nh) }
-        if (ev.shiftKey && orig.w > 0) {
-          const ratio = orig.h / orig.w
-          nh = nw * ratio
-          if (handle.includes('n')) ny = orig.y + (orig.h - nh)
-        }
-        L.x = nx; L.y = ny; L.w = nw; L.h = nh
+        const nb = EG.resizeBox(orig, handle, dx, dy, { keepAspect: ev.shiftKey, min: 0.01 })
+        const nh = nb.h
+        L.x = nb.x; L.y = nb.y; L.w = nb.w; L.h = nb.h
         // Text scales its font with the box so resizing behaves like a text
         // frame rather than stretching glyphs.
         if (L.type === 'text' && orig.h > 0) L.size = Math.max(0.005, (L.size || 0.05) * (nh / orig.h))
@@ -1179,13 +1103,7 @@ function selectedLayers() {
 // place because the canvas box, the proof renderer and the Photoshop export
 // must all agree on it.
 function layerBox(node) {
-  const e = layerEdits[node.id] || {}
-  return {
-    x: node.x + (e.dx || 0),
-    y: node.y + (e.dy || 0),
-    w: node.w * (e.sx == null ? 1 : e.sx),
-    h: node.h * (e.sy == null ? 1 : e.sy),
-  }
+  return EG.layerBox(node, layerEdits[node.id])
 }
 
 function psdNodeById(id) {
