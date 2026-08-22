@@ -913,8 +913,142 @@ function createOverlay(type, x, y, w, h) {
   return L
 }
 
+// ── Resizable rail ─────────────────────────────────────────────
+// Two drag handles: one splitting Spreads from Layers, one setting how much
+// width the whole rail takes from the stage. Both are also arrow-key operable,
+// because a `role="separator"` that only responds to the mouse is a keyboard
+// dead end.
+const RAIL_MIN = 150, RAIL_MAX = 620
+const SPREADS_MIN = 90
+
+const railSizes = (() => {
+  try { return JSON.parse(localStorage.getItem('ed.rail') || '{}') } catch (_) { return {} }
+})()
+
+function applyRailSizes() {
+  const col = el('edRailCol')
+  const spreads = el('edSpreadsPane')
+  const total = clamp(railSizes.rail || 380, RAIL_MIN, RAIL_MAX)
+  col.style.width = total + 'px'
+  // The layers pane flexes, so only the spreads pane needs an explicit basis.
+  // Cap it so dragging can never squeeze the layer list out of existence.
+  const maxSpreads = Math.max(SPREADS_MIN, total - SPREADS_MIN - 10)
+  const spreadsW = clamp(railSizes.spreads || 150, SPREADS_MIN, maxSpreads)
+  spreads.style.flexBasis = spreadsW + 'px'
+
+  // A focusable role="separator" is a widget, so it has to report its value —
+  // otherwise a screen reader announces a draggable control with no indication
+  // of where it currently sits (and axe fails the build on aria-required-attr).
+  const railHandle = el('edSplitRail')
+  railHandle.setAttribute('aria-valuenow', String(Math.round(total)))
+  railHandle.setAttribute('aria-valuetext', `Side panel ${Math.round(total)} pixels wide`)
+  const paneHandle = el('edSplitPanes')
+  paneHandle.setAttribute('aria-valuenow', String(Math.round(spreadsW)))
+  paneHandle.setAttribute('aria-valuemax', String(Math.round(maxSpreads)))
+  paneHandle.setAttribute('aria-valuetext', `Spreads pane ${Math.round(spreadsW)} pixels wide`)
+}
+
+function saveRailSizes() {
+  try { localStorage.setItem('ed.rail', JSON.stringify(railSizes)) } catch (_) { /* private mode */ }
+}
+
+/**
+ * Wire one drag handle.
+ * @param {string} id handle element id
+ * @param {(deltaPx: number, startValue: number) => void} apply
+ * @param {() => number} read current value in px
+ */
+function wireSplit(id, apply, read) {
+  const handle = el(id)
+  handle.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    const startX = e.clientX
+    const startValue = read()
+    handle.classList.add('is-dragging')
+    document.body.classList.add('is-splitting')
+    const onMove = (ev) => { apply(ev.clientX - startX, startValue); computeStageScale({ keepCentre: false }) }
+    const onUp = () => {
+      handle.classList.remove('is-dragging')
+      document.body.classList.remove('is-splitting')
+      document.removeEventListener('pointermove', onMove)
+      document.removeEventListener('pointerup', onUp)
+      saveRailSizes()
+    }
+    document.addEventListener('pointermove', onMove)
+    document.addEventListener('pointerup', onUp)
+  })
+  handle.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 40 : 10
+    if (e.key === 'ArrowLeft') { e.preventDefault(); apply(-step, read()); computeStageScale({ keepCentre: false }); saveRailSizes() }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); apply(step, read()); computeStageScale({ keepCentre: false }); saveRailSizes() }
+  })
+}
+
+applyRailSizes()
+wireSplit('edSplitPanes',
+  (d, start) => { railSizes.spreads = start + d; applyRailSizes() },
+  () => el('edSpreadsPane').getBoundingClientRect().width)
+wireSplit('edSplitRail',
+  (d, start) => { railSizes.rail = start + d; applyRailSizes() },
+  () => el('edRailCol').getBoundingClientRect().width)
+
+// ── Space-drag panning ─────────────────────────────────────────
+// Photoshop's hand tool: hold Space and drag with the left button to push the
+// page around. The stage lives inside a scrolling viewport, so panning is just
+// driving that viewport's scroll offsets.
+//
+// The pointerdown listener is registered in the CAPTURE phase on the wrapper
+// so it runs before the stage's own draw/select handlers and can swallow the
+// gesture — otherwise a space-drag would also marquee-draw a shape or start
+// dragging whatever layer happened to be under the cursor.
+let spaceHeld = false
+let panning = false
+
+function setSpaceHeld(on) {
+  if (spaceHeld === on) return
+  spaceHeld = on
+  stageWrap.classList.toggle('is-panning-ready', on)
+  if (!on) stageWrap.classList.remove('is-panning')
+}
+
+stageWrap.addEventListener('pointerdown', (e) => {
+  if (!spaceHeld || e.button !== 0) return
+  e.preventDefault()
+  e.stopPropagation()
+  panning = true
+  stageWrap.classList.add('is-panning')
+  const startX = e.clientX, startY = e.clientY
+  const startLeft = stageWrap.scrollLeft, startTop = stageWrap.scrollTop
+  // Pointer capture keeps the gesture alive when the cursor leaves the
+  // viewport mid-drag, which is common when shoving a zoomed page across.
+  try { stageWrap.setPointerCapture(e.pointerId) } catch (_) { /* not fatal */ }
+
+  const onMove = (ev) => {
+    // Drag right → reveal content to the LEFT, so scroll decreases.
+    stageWrap.scrollLeft = startLeft - (ev.clientX - startX)
+    stageWrap.scrollTop = startTop - (ev.clientY - startY)
+  }
+  const onUp = () => {
+    panning = false
+    stageWrap.classList.remove('is-panning')
+    document.removeEventListener('pointermove', onMove)
+    document.removeEventListener('pointerup', onUp)
+    try { stageWrap.releasePointerCapture(e.pointerId) } catch (_) { /* already gone */ }
+  }
+  document.addEventListener('pointermove', onMove)
+  document.addEventListener('pointerup', onUp)
+}, true)
+
+// A space-drag must not also register as a click on the stage, or releasing
+// the mouse would clear the selection.
+stageWrap.addEventListener('click', (e) => {
+  if (spaceHeld || panning) { e.preventDefault(); e.stopPropagation() }
+}, true)
+
 // Drag-to-draw on the empty stage.
 stage.addEventListener('pointerdown', (e) => {
+  if (spaceHeld) return
   if (tool === 'select') return
   if (e.button !== 0) return
   e.preventDefault()
@@ -1898,6 +2032,15 @@ document.addEventListener('keydown', (e) => {
   }
   if (isTyping(e)) return
 
+  // Space arms the hand tool. Swallow the default so it neither scrolls the
+  // viewport nor "clicks" whatever button currently has focus — both of which
+  // would fire on every pan.
+  if (e.code === 'Space') {
+    e.preventDefault()
+    setSpaceHeld(true)
+    return
+  }
+
   const meta = e.metaKey || e.ctrlKey
   if (meta && e.key.toLowerCase() === 'z') {
     e.preventDefault()
@@ -1975,6 +2118,13 @@ function applyNow() {
 }
 
 el('edDone').addEventListener('click', () => { applyNow(); toast('Saved'); setTimeout(() => window.close(), 250) })
+
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space') setSpaceHeld(false)
+})
+// Losing focus mid-pan (Cmd-Tab away while holding Space) never delivers the
+// keyup, which would leave the hand tool stuck on. Reset on the way out.
+window.addEventListener('blur', () => setSpaceHeld(false))
 
 window.addEventListener('resize', computeStageScale)
 // Clicking bare page or the surrounding mat clears the selection (but not

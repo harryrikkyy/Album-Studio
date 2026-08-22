@@ -38,14 +38,28 @@
      docked panes, each with its own header and its own scroll — one
      shared scroll meant paging through spreads scrolled the layer list
      out of view, and a long template pushed the spreads off the bottom. */
-  .ed-rail-col { width: 190px; flex-shrink: 0; display: flex; flex-direction: column;
-    gap: var(--space-3); min-height: 0; }
+  .ed-rail-col { flex-shrink: 0; display: flex; flex-direction: row;
+    min-height: 0; min-width: 150px; }
   .ed-pane { border: 1px solid var(--border-main); border-radius: var(--radius-lg);
     background-color: var(--bg-card); background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
-    display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-  /* Spreads is a fixed-size navigator; Layers takes whatever is left. */
-  .ed-pane--spreads { flex: 0 0 auto; max-height: 38%; }
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden; min-width: 0; }
+  /* Side by side, each taking a share of the rail's width. The split is
+     driven by flex-basis so the drag handle between them only has to move one
+     number, and both panes keep their own scroll. */
+  .ed-pane--spreads { flex: 0 0 auto; }
   .ed-pane--layers { flex: 1 1 auto; }
+
+  /* Drag handles: one between the two panes, one between the rail and the
+     stage. Hit area is wider than the visible line so they are grabbable. */
+  .ed-split { flex: 0 0 10px; cursor: col-resize; position: relative;
+    background: transparent; border: none; padding: 0; align-self: stretch; }
+  .ed-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: 4px; width: 2px;
+    background: var(--border-main); border-radius: 1px; transition: background 0.15s ease; }
+  .ed-split:hover::after, .ed-split.is-dragging::after { background: var(--accent); }
+  .ed-split:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* While a split is being dragged the pointer can outrun the handle; killing
+     text selection stops the whole editor highlighting blue mid-drag. */
+  body.is-splitting { user-select: none; cursor: col-resize; }
   .ed-pane__head { display: flex; align-items: center; justify-content: space-between; gap: 6px;
     padding: 8px 10px 6px; border-bottom: 1px solid var(--border-main); flex-shrink: 0; }
   .ed-pane__body { overflow-y: auto; padding: 8px 10px 10px; display: flex; flex-direction: column;
@@ -149,6 +163,13 @@
   #edZoomLevel { font-variant-numeric: tabular-nums; min-width: 38px; display: inline-block; text-align: center; }
   /* Zoomed past fit, the page scrolls inside the mat instead of shrinking. */
   .ed-stage-wrap.is-zoomed { align-items: flex-start; justify-content: flex-start; overflow: auto; }
+  /* Hand tool (hold Space). The descendant override is deliberate: frames,
+     hit boxes and the draw tools all set their own cursor, and every one of
+     them would otherwise win over the wrapper mid-pan. */
+  .ed-stage-wrap.is-panning-ready,
+  .ed-stage-wrap.is-panning-ready * { cursor: grab; }
+  .ed-stage-wrap.is-panning,
+  .ed-stage-wrap.is-panning * { cursor: grabbing; }
   /* Print guides: trim, safe area and the centre gutter. */
   .ed-print-guide { position: absolute; pointer-events: none; z-index: 15; }
   .ed-print-guide--trim { border: 1px dashed rgba(255,90,90,0.75); }
@@ -287,14 +308,18 @@
   </div>
 
   <div class="ed-body">
-    <div class="ed-rail-col">
-      <aside class="ed-pane ed-pane--spreads" aria-labelledby="edSpreadsTitle">
+    <div class="ed-rail-col" id="edRailCol">
+      <aside class="ed-pane ed-pane--spreads" id="edSpreadsPane" aria-labelledby="edSpreadsTitle">
         <div class="ed-pane__head">
           <h2 class="ed-rail__title" id="edSpreadsTitle">Spreads</h2>
           <span class="ed-pane__count" id="edSpreadsCount"></span>
         </div>
         <div class="ed-pane__body" id="edThumbs"></div>
       </aside>
+
+      <div class="ed-split" id="edSplitPanes" role="separator" aria-orientation="vertical"
+           aria-label="Resize spreads and layers panes" tabindex="0"
+           aria-valuenow="150" aria-valuemin="90" aria-valuemax="530"></div>
 
       <aside class="ed-pane ed-pane--layers" aria-labelledby="edLayersTitle">
         <div class="ed-pane__head">
@@ -307,6 +332,10 @@
         </div>
       </aside>
     </div>
+
+    <div class="ed-split" id="edSplitRail" role="separator" aria-orientation="vertical"
+         aria-label="Resize the side panel" tabindex="0"
+         aria-valuenow="380" aria-valuemin="150" aria-valuemax="620"></div>
 
     <div class="ed-stage-wrap" id="edStageWrap">
       <div class="ed-stage" id="edStage"></div>

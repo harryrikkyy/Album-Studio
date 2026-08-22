@@ -18,7 +18,14 @@ function registerFileHandlers() {
 
   // ── FOLDER PICKER ─────────────────────────────────────────
   ipcMain.handle('pick-folder', async () => {
-    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    // `createDirectory` is what enables the New Folder button in the macOS
+    // open panel. Without it the user has to leave the app, make the folder in
+    // Finder and come back — which is exactly what an export destination
+    // usually needs (a fresh folder for this album).
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+      buttonLabel: 'Choose Folder',
+    })
     if (result.canceled) return null
     return result.filePaths[0]
   })
