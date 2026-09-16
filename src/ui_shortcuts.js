@@ -12,7 +12,7 @@
  * @typedef {import('./state/store').Store} Store
  */
 
-const { _isEditingTarget } = require('./renderer_pure');
+const { isTextEntry, controlOwnsKey } = require('./shortcut_target');
 
 const _shortcutHelp = [
     ['J  /  ←',          'Previous page'],
@@ -72,17 +72,22 @@ function showShortcutHelp() {
  */
 function createShortcuts(store, deps) {
     document.addEventListener('keydown', (e) => {
-        // Don't hijack typing.
-        if (_isEditingTarget(/** @type {any} */ (e.target))) {
-            // Allow undo/redo even when an input is focused.
-            if ((e.metaKey || e.ctrlKey) && (e.key === 'z' || e.key === 'Z')) {
-                e.preventDefault();
-                if (e.shiftKey) deps.redo(); else deps.undo();
-            }
+        const target = /** @type {any} */ (e.target);
+        const cmd = e.metaKey || e.ctrlKey;
+
+        // ⌘Z is the ALBUM's undo even while a field has focus — a deliberate
+        // choice that predates this handler's rewrite, kept as-is.
+        if (isTextEntry(target) && cmd && (e.key === 'z' || e.key === 'Z')) {
+            e.preventDefault();
+            if (e.shiftKey) deps.redo(); else deps.undo();
             return;
         }
 
-        const cmd = e.metaKey || e.ctrlKey;
+        // Yield only the keys the focused control actually uses. The old test
+        // counted every <input> as a text field, so clicking any checkbox or
+        // slider left it focused and silently disabled every shortcut here
+        // until the user clicked somewhere neutral. See shortcut_target.js.
+        if (controlOwnsKey(target, e)) return;
 
         // Undo / Redo
         if (cmd && (e.key === 'z' || e.key === 'Z')) {
@@ -124,12 +129,12 @@ function createShortcuts(store, deps) {
         }
 
         // Page nav: J/← prev, K/→ next
-        if (e.key === 'j' || e.key === 'ArrowLeft') {
+        if (e.key === 'j' || e.key === 'J' || e.key === 'ArrowLeft') {
             e.preventDefault();
             deps.changePage(store.get('currentPage') - 1);
             return;
         }
-        if (e.key === 'k' || e.key === 'ArrowRight') {
+        if (e.key === 'k' || e.key === 'K' || e.key === 'ArrowRight') {
             e.preventDefault();
             deps.changePage(store.get('currentPage') + 1);
             return;

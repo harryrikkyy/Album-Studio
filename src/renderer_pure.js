@@ -184,15 +184,13 @@ function _proofTemplatePreviewPath(template) {
     return null;
 }
 
-// True when a keyboard event target is a text-entry control, so global
-// shortcuts can bow out while the user is typing. Works on any object exposing
-// `tagName` / `isContentEditable` (a real DOM node in the app; a plain object
-// in tests).
-/** @param {{ tagName?: string, isContentEditable?: boolean } | null | undefined} t @returns {boolean | undefined} */
+// True when a keyboard event target is a control the user TYPES into.
+// Delegates to shortcut_target.js, which owns the rule: this used to count
+// every <input> and <select> as typing, so a focused checkbox or slider
+// disabled all global shortcuts. Kept as an export for existing callers.
+/** @param {{ tagName?: string, type?: string, isContentEditable?: boolean } | null | undefined} t @returns {boolean} */
 function _isEditingTarget(t) {
-    if (!t) return false;
-    const tag = t.tagName;
-    return tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || t.isContentEditable;
+    return require('./shortcut_target').isTextEntry(t);
 }
 
 // ─── Undo/redo snapshot compaction ──────────────────────────────────────────

@@ -118,6 +118,8 @@ function snapshot() {
   })
 }
 function pushHistory() {
+  _ctlHistTimer = null
+  _zoomHistTimer = null
   const snap = snapshot()
   if (undoStack.length && undoStack[undoStack.length - 1] === snap) return
   undoStack.push(snap)
@@ -142,13 +144,31 @@ function restore(snap) {
   selectedOverlayIds = selectedOverlayIds.filter((id) => overlays.some((o) => o.id === id))
   buildScene(); buildLayerList(); updatePanel(); applyPageBackground(); scheduleApply()
 }
+// Sliders, nudges and wheel-zoom defer their history entry until the burst
+// ends, so a drag or a held arrow is ONE undo step. The cost was that anything
+// done inside that window saw a stack without the burst on it:
+//   - ⌘Z right after a nudge undid the action BEFORE it, and the nudge was
+//     silently lost when the timer later found nothing new to push;
+//   - a click (hide, delete…) right after a nudge was snapshotted together
+//     with it, so one ⌘Z reverted both.
+// Committing the pending entry first — before undo/redo, and before any new
+// discrete action starts — keeps a burst as one step without either failure.
+function flushHistory() {
+  let pending = false
+  if (_ctlHistTimer) { clearTimeout(_ctlHistTimer); _ctlHistTimer = null; pending = true }
+  if (_zoomHistTimer) { clearTimeout(_zoomHistTimer); _zoomHistTimer = null; pending = true }
+  if (pending) pushHistory()
+}
+
 function undo() {
+  flushHistory()
   if (undoStack.length < 2) return
   redoStack.push(undoStack.pop())
   restore(undoStack[undoStack.length - 1])
   refreshHistoryUI(); toast('Undo')
 }
 function redo() {
+  flushHistory()
   const snap = redoStack.pop()
   if (!snap) return
   undoStack.push(snap)
@@ -442,6 +462,7 @@ function computeStageScale(opts = {}) {
   layoutPsdLayers()
   for (const item of items) layoutItem(item)
   renderOverlays()
+  updateZoomUI()
 }
 
 // Position the frame box + the photo inside it, mirroring the libvips crop.
@@ -2018,10 +2039,12 @@ function performSwap(a, b) {
 }
 
 // ── Keyboard ───────────────────────────────────────────────────
-function isTyping(e) {
-  const t = e.target
-  return t && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT' || t.isContentEditable)
-}
+// Which keys a focused control keeps for itself lives in shortcut_target.js,
+// shared with the main window. The local test this replaced counted every
+// <input> as typing — so after clicking the Opacity slider or the Visible
+// checkbox (both of which stay focused) every shortcut in the editor, the
+// Space hand tool included, went dead until you clicked the canvas.
+const ST = window.ShortcutTarget
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -2030,7 +2053,7 @@ document.addEventListener('keydown', (e) => {
     setSelection(null); selectOverlay(null, false); selectLayer(null, false)
     return
   }
-  if (isTyping(e)) return
+  if (ST.controlOwnsKey(e.target, e)) return
 
   // Space arms the hand tool. Swallow the default so it neither scrolls the
   // viewport nor "clicks" whatever button currently has focus — both of which
@@ -2061,7 +2084,17 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (e.key === 'Backspace' || e.key === 'Delete') {
-    if (selectedOverlayIds.length) { e.preventDefault(); deleteSelection() }
+    if (selectedOverlayIds.length) { e.preventDefault(); deleteSelection(); return }
+    // Template layers belong to the PSD, so they can't be removed from the
+    // project — the non-destructive equivalent is hiding, which also keeps
+    // the row in the Layers pane so it can be brought straight back.
+    const layers = selectedLayers().filter((n) => n.kind !== 'group')
+    if (layers.length) {
+      e.preventDefault()
+      for (const n of layers) setLayerEdit(n.id, { hidden: true })
+      updatePanel()
+      toast(layers.length === 1 ? 'Layer hidden — click its eye to show it again' : `${layers.length} layers hidden`)
+    }
     return
   }
   // Arrow keys nudge the selected overlays; Shift = 10× step.
@@ -2071,6 +2104,28 @@ document.addEventListener('keydown', (e) => {
     const step = (e.shiftKey ? 0.01 : 0.001)
     const [dx, dy] = NUDGE[e.key]
     editOverlays((L) => { L.x += dx * step; L.y += dy * step })
+    return
+  }
+  // Template layers are movable too, so they nudge too. Their edits are in
+  // canvas pixels; the step is the same fraction of the page as the overlay
+  // nudge, taken from the LONG edge so left/right and up/down move the same
+  // distance on a 3:1 spread.
+  if (NUDGE[e.key] && selectedLayerIds.length && spread) {
+    const layers = selectedLayers().filter((n) => n.kind !== 'group')
+    if (!layers.length) return
+    e.preventDefault()
+    const step = Math.max(spread.canvasW, spread.canvasH) * (e.shiftKey ? 0.01 : 0.001)
+    const [ux, uy] = NUDGE[e.key]
+    for (const n of layers) {
+      const cur = layerEdits[n.id] || {}
+      layerEdits[n.id] = { ...cur, dx: (cur.dx || 0) + ux * step, dy: (cur.dy || 0) + uy * step }
+    }
+    layoutPsdLayers()
+    for (const it of items) layoutItem(it)
+    renderOverlays()
+    updatePanel(); scheduleApply()
+    // A held arrow auto-repeats; one undo step per burst, not per repeat.
+    clearTimeout(_ctlHistTimer); _ctlHistTimer = setTimeout(pushHistory, 500)
     return
   }
   // Tool shortcuts.
@@ -2122,6 +2177,17 @@ el('edDone').addEventListener('click', () => { applyNow(); toast('Saved'); setTi
 document.addEventListener('keyup', (e) => {
   if (e.code === 'Space') setSpaceHeld(false)
 })
+
+document.addEventListener('pointerdown', flushHistory, true)
+document.addEventListener('keydown', (e) => {
+  // Keys that CONTINUE a burst must not split it: held/alternating arrows
+  // (nudging), bare modifiers (Shift for the 10× nudge), and typing — each
+  // character in a caption field is not its own undo step.
+  if (e.key.startsWith('Arrow')) return
+  if (['Shift', 'Meta', 'Control', 'Alt', 'CapsLock'].includes(e.key)) return
+  if (ST.isTextEntry(e.target)) return
+  flushHistory()
+}, true)
 // Losing focus mid-pan (Cmd-Tab away while holding Space) never delivers the
 // keyup, which would leave the hand tool stuck on. Reset on the way out.
 window.addEventListener('blur', () => setSpaceHeld(false))

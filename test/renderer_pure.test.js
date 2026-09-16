@@ -172,10 +172,19 @@ test('_proofTemplatePreviewPath returns null without a url or for non-file urls'
 
 // ─── _isEditingTarget ────────────────────────────────────────────────────────
 test('_isEditingTarget is true for text-entry controls', () => {
-  for (const tag of ['INPUT', 'SELECT', 'TEXTAREA']) {
+  for (const tag of ['INPUT', 'TEXTAREA']) {
     assert.equal(_isEditingTarget({ tagName: tag }), true)
   }
   assert.equal(_isEditingTarget({ tagName: 'DIV', isContentEditable: true }), true)
+})
+
+test('_isEditingTarget is false for controls you operate rather than type into', () => {
+  // A focused slider, checkbox or select used to count as "typing", which
+  // switched every global shortcut off after a single click on one.
+  assert.equal(_isEditingTarget({ tagName: 'SELECT' }), false)
+  for (const type of ['range', 'checkbox', 'radio', 'color']) {
+    assert.equal(_isEditingTarget({ tagName: 'INPUT', type }), false, type)
+  }
 })
 
 test('_isEditingTarget is falsy for non-editing targets and null', () => {
