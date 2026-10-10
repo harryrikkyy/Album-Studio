@@ -1,10 +1,11 @@
 // Frame.tsx — the window's frame: the top bar (with room for the traffic lights), the rail of
 // places, and the toast stack. The current place renders inside.
 
-import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, Moon, PackageCheck, Sun, Wrench, X } from 'lucide-preact'
+import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Sun, Wrench, X } from 'lucide-preact'
 import type { ComponentChildren } from 'preact'
 import { call, inShell } from '../bridge'
 import { plural } from '../format'
+import { job, running } from '../render'
 import { album, dismissToast, editCurrentSpread, place, setTheme, theme, toasts, type Place } from '../state'
 
 const PLACES: { id: Place; label: string; icon: ComponentChildren; key: string; needsAlbum: boolean }[] = [
@@ -52,6 +53,11 @@ function TopBar() {
         )}
       </div>
       <div class="topbar__actions">
+        {running.value && job.value ? (
+          <button type="button" class="topbar__job" onClick={() => goToPlace('deliver')} title="Show the render">
+            <LoaderCircle size={14} /> Rendering {job.value.index} of {job.value.total}
+          </button>
+        ) : null}
         <button
           type="button"
           class="icon-btn"

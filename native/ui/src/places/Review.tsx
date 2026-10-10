@@ -1,9 +1,8 @@
 // Review.tsx — every spread at once, large: check the album's flow before delivering it.
 
 import { ImageOff } from 'lucide-preact'
-import { fileUrl } from '../bridge'
 import { plural, templateLabel } from '../format'
-import { album, goToSpread, place } from '../state'
+import { album, goToSpread, place, previewUrl } from '../state'
 
 export function Review() {
   const a = album.value!
@@ -25,7 +24,7 @@ export function Review() {
               aria-label={`Spread ${s.n}: ${plural(s.photoIds.length, 'photo')}, ${templateLabel(s.template?.name)}`}
             >
               <span class="review-card__img">
-                {s.proof ? <img src={fileUrl(s.proof)} alt="" loading="lazy" decoding="async" /> : <ImageOff size={22} strokeWidth={1.4} />}
+                {s.proof ? <img src={previewUrl(s.proof)} alt="" loading="lazy" decoding="async" /> : <ImageOff size={22} strokeWidth={1.4} />}
               </span>
               <span class="review-card__cap">
                 <span class="review-card__n">{s.n}</span>

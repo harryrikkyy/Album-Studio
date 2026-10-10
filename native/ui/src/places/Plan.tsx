@@ -6,7 +6,7 @@ import { fileUrl } from '../bridge'
 import { plural, shortPath, signature, templateLabel } from '../format'
 import {
   album, currentPhotos, currentSpread, editCurrentSpread, goToSpread, hoveredPhoto, inspectorOpen, nextSpread,
-  orientFilter, poolFilter, poolPhotos, setPoolFilter, setThumbSize, spreadIndex, thumbSize, toggleInspector,
+  orientFilter, poolFilter, poolPhotos, previewUrl, setPoolFilter, setThumbSize, spreadIndex, thumbSize, toggleInspector,
 } from '../state'
 import type { Photo, Spread } from '../types'
 import { Button, IconButton, Kbd, Segmented } from '../ui/controls'
@@ -143,7 +143,7 @@ function Stage() {
       </div>
       <div class="stage__well">
         {s.proof ? (
-          <img class="stage__spread" src={fileUrl(s.proof)} alt={`Spread ${s.n} proof`} decoding="async" key={s.proof} />
+          <img class="stage__spread" src={previewUrl(s.proof)} alt={`Spread ${s.n} proof`} decoding="async" key={s.proof} />
         ) : (
           <div class="stage__noproof">
             <ImageOff size={28} strokeWidth={1.4} />
@@ -177,7 +177,7 @@ function Strip() {
             onClick={() => goToSpread(idx)}
           >
             <span class="strip__img">
-              {s.proof ? <img src={fileUrl(s.proof)} alt="" loading="lazy" decoding="async" /> : null}
+              {s.proof ? <img src={previewUrl(s.proof)} alt="" loading="lazy" decoding="async" /> : null}
             </span>
             <span class="strip__n">{s.n}</span>
             <StatusDot s={s} />

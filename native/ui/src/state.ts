@@ -2,7 +2,7 @@
 // that change it. Components read signals and call actions; nothing else mutates state.
 
 import { batch, computed, signal } from '@preact/signals'
-import { call } from './bridge'
+import { call, fileUrl } from './bridge'
 import type { Album, Orient, Photo, RecentAlbum, Spread } from './types'
 
 export type Place = 'albums' | 'plan' | 'review' | 'edit' | 'deliver' | 'library' | 'tools'
@@ -45,6 +45,15 @@ export const hoveredPhoto = signal<string | null>(null)
 export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string }
 export const toasts = signal<Toast[]>([])
 let toastId = 1
+
+/** Bumped after a render so previews that kept their file name are fetched again. */
+export const assetVersion = signal(0)
+
+/** A preview or proof image: its file URL, re-fetched after each render. */
+export function previewUrl(path: string | null | undefined): string | undefined {
+  const u = fileUrl(path)
+  return u && assetVersion.value ? `${u}?v=${assetVersion.value}` : u
+}
 
 export const currentSpread = computed<Spread | null>(() => album.value?.spreads[spreadIndex.value] ?? null)
 
@@ -131,6 +140,16 @@ export async function openAlbum(path: string) {
     toast('error', (e as Error).message, 8000)
   } finally {
     albumLoading.value = null
+  }
+}
+
+/** Re-read the open album (after a render) without moving the user anywhere. */
+export async function openAlbumQuietly(path: string) {
+  try {
+    const a = await call<Album>('album.open', { path })
+    if (album.value?.path === path) album.value = a
+  } catch (e) {
+    toast('error', (e as Error).message, 8000)
   }
 }
 
