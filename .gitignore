@@ -44,3 +44,6 @@ bench/fixture/
 # Local PSD templates used for manual testing — large binaries, not project state
 pd files/
 psd files/
+
+# Our PhotoCraft fork: its own git repository (branch album-studio, upstream v0.6.0)
+/native/photocraft/
