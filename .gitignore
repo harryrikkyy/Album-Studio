@@ -47,3 +47,5 @@ psd files/
 
 # Our PhotoCraft fork: its own git repository (branch album-studio, upstream v0.6.0)
 /native/photocraft/
+/native/ui/node_modules/
+/native/ui/dist/

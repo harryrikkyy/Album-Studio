@@ -1,0 +1,130 @@
+/* tokens.css — Album Studio's design tokens.
+ *
+ * Surfaces are true neutral greys (chroma 0): a tinted surround biases colour judgement, and
+ * photographers judge skin and saree reds here for hours. One accent, a cool ice blue, does the
+ * work of selection, focus, primary action and progress; it never competes with the warm reds
+ * and golds of wedding photos. Contrast pairs are AA-checked in test/contrast.test.ts.
+ */
+
+:root {
+  /* Type: the system face (SF Pro), one family, fixed scale ≈1.125. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;   /* base */
+  --fs-15: 15px;
+  --fs-17: 17px;
+  --fs-20: 20px;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  /* Space: 4-point base, a few half steps for dense controls. */
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 20px;
+  --sp-8: 24px;
+  --sp-9: 32px;
+  --sp-10: 48px;
+
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 8px;
+  --r-4: 12px;
+
+  --control-h: 28px;
+  --control-h-sm: 24px;
+  --topbar-h: 44px;
+  --rail-w: 64px;
+
+  /* Motion: state changes only. */
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);      /* quart */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --t-slow: 240ms;
+
+  /* Layers. */
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+  --z-tooltip: 60;
+}
+
+:root,
+[data-theme="studio-dark"] {
+  color-scheme: dark;
+  --bg-app:      oklch(0.155 0 0);
+  --bg-rail:     oklch(0.13 0 0);
+  --bg-panel:    oklch(0.18 0 0);
+  --bg-raised:   oklch(0.22 0 0);
+  --bg-hover:    oklch(0.255 0 0);
+  --bg-active:   oklch(0.29 0 0);
+  --bg-well:     oklch(0.115 0 0);     /* behind photos and spreads */
+  --line:        oklch(1 0 0 / 0.08);
+  --line-strong: oklch(1 0 0 / 0.15);
+
+  --ink:   oklch(0.95 0 0);
+  --ink-2: oklch(0.79 0 0);
+  --ink-3: oklch(0.66 0 0);
+  --ink-4: oklch(0.50 0 0);            /* disabled; never for content */
+
+  --accent:        oklch(0.77 0.11 235);
+  --accent-hover:  oklch(0.82 0.10 235);
+  --accent-ink:    oklch(0.17 0.02 235);   /* text on the accent */
+  --accent-soft:   oklch(0.77 0.11 235 / 0.16);
+  --accent-line:   oklch(0.77 0.11 235 / 0.60);
+  --focus-ring:    0 0 0 2px var(--bg-app), 0 0 0 4px var(--accent);
+
+  --ok:     oklch(0.78 0.13 155);
+  --warn:   oklch(0.83 0.13 80);
+  --danger: oklch(0.71 0.15 25);
+  --ok-soft:     oklch(0.78 0.13 155 / 0.16);
+  --warn-soft:   oklch(0.83 0.13 80 / 0.16);
+  --danger-soft: oklch(0.71 0.15 25 / 0.16);
+
+  --shadow-pop: 0 12px 32px oklch(0 0 0 / 0.45), 0 0 0 1px var(--line-strong);
+  --shadow-photo: 0 1px 2px oklch(0 0 0 / 0.5);
+}
+
+[data-theme="studio-light"] {
+  color-scheme: light;
+  --bg-app:      oklch(0.955 0 0);
+  --bg-rail:     oklch(0.925 0 0);
+  --bg-panel:    oklch(0.975 0 0);
+  --bg-raised:   oklch(0.995 0 0);
+  --bg-hover:    oklch(0.915 0 0);
+  --bg-active:   oklch(0.885 0 0);
+  --bg-well:     oklch(0.88 0 0);
+  --line:        oklch(0 0 0 / 0.09);
+  --line-strong: oklch(0 0 0 / 0.16);
+
+  --ink:   oklch(0.20 0 0);
+  --ink-2: oklch(0.36 0 0);
+  --ink-3: oklch(0.47 0 0);
+  --ink-4: oklch(0.62 0 0);
+
+  --accent:        oklch(0.50 0.13 245);
+  --accent-hover:  oklch(0.45 0.13 245);
+  --accent-ink:    oklch(0.99 0 0);
+  --accent-soft:   oklch(0.50 0.13 245 / 0.12);
+  --accent-line:   oklch(0.50 0.13 245 / 0.55);
+  --focus-ring:    0 0 0 2px var(--bg-app), 0 0 0 4px var(--accent);
+
+  --ok:     oklch(0.52 0.13 155);
+  --warn:   oklch(0.56 0.12 70);
+  --danger: oklch(0.53 0.17 25);
+  --ok-soft:     oklch(0.52 0.13 155 / 0.12);
+  --warn-soft:   oklch(0.56 0.12 70 / 0.14);
+  --danger-soft: oklch(0.53 0.17 25 / 0.12);
+
+  --shadow-pop: 0 12px 32px oklch(0 0 0 / 0.16), 0 0 0 1px var(--line-strong);
+  --shadow-photo: 0 1px 2px oklch(0 0 0 / 0.18);
+}
