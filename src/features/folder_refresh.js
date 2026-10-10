@@ -148,9 +148,14 @@ function createFolderRefresh(store, deps) {
     }
 
     // ── Remove-folders dialog ──────────────────────────────────────
-    document.addEventListener('click', (e) => {
-        const target = /** @type {HTMLElement} */ (e.target);
-        if (target && target.classList.contains('btn-remove-fld')) {
+    // Delegated, and resolved with closest(): the trash button wraps an SVG
+    // icon, so a click on the glyph itself has the <svg>/<path> as its target,
+    // never the .btn-remove-fld span.
+    /** @param {Event} e */
+    const openRemoveDialog = (e) => {
+        const origin = /** @type {Element | null} */ (e.target instanceof Element ? e.target : null);
+        const target = /** @type {HTMLElement | null} */ (origin && origin.closest('.btn-remove-fld'));
+        if (target) {
             const type = /** @type {keyof typeof PANEL_IDS} */ (target.dataset.type);
             const listDiv = /** @type {HTMLElement} */ (document.getElementById("removeDialogList"));
             listDiv.innerHTML = "";
@@ -172,6 +177,16 @@ function createFolderRefresh(store, deps) {
                 });
             }
             /** @type {HTMLDialogElement} */ (document.getElementById("removeFolderDialog")).showModal();
+        }
+    };
+    document.addEventListener('click', openRemoveDialog);
+    // The buttons are role="button" spans, so Enter/Space must work too.
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const origin = e.target instanceof Element ? e.target : null;
+        if (origin && origin.classList.contains('btn-remove-fld')) {
+            e.preventDefault();
+            openRemoveDialog(e);
         }
     });
 

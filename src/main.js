@@ -476,6 +476,9 @@ const { queueRender } = require('./features/render_queue').createRenderQueue(sto
     persistHashes: () => saveRenderHashes(store),
     bakeAdjustments: (exportData) => bakeExportAdjustments(exportData),
     useAdjLayers: () => exportActions.useAdjLayers(),
+    // A cached page whose PSD was deleted or moved has to render again. If the
+    // check itself can't run, fall back to trusting the cache.
+    outputExists: (filePath) => { try { return require('fs').existsSync(filePath); } catch (_) { return true; } },
 });
 
 // btnExport is wired by src/features/export_actions.js (created above).

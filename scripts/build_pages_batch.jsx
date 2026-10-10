@@ -349,6 +349,8 @@ else {
   }
 
   var failures = 0, successes = 0;
+  var failedPages = [];
+  var fatal = null;
 
   try {
     app.preferences.rulerUnits = Units.PIXELS;
@@ -357,6 +359,7 @@ else {
 
     for (var pIdx = 0; pIdx < data.pages.length; pIdx++) {
       var page = data.pages[pIdx];
+      var safeDoc = null;
       try {
         app.activeDocument = templateDoc;
         var pageName = "Page_" + page.pageName;
@@ -392,7 +395,8 @@ else {
       } catch(e) {
         failures++;
         failedPages.push(page.pageName);
-        try { app.activeDocument.close(SaveOptions.DONOTSAVECHANGES); } catch(ex) {}
+        // Close THIS page's duplicate, not whatever happens to be active.
+        try { if (safeDoc) safeDoc.close(SaveOptions.DONOTSAVECHANGES); } catch(ex) {}
       }
     }
 

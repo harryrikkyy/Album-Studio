@@ -45,6 +45,9 @@ function _errMessage(e) {
  * @param {(exportData: ExportData) => Promise<number>} deps.bakeAdjustments
  *   bake per-photo edits into source files; resolves to the count baked
  * @param {() => boolean} deps.useAdjLayers  live J1 flag (editable adjustment layers)
+ * @param {(filePath: string) => boolean} [deps.outputExists]  is the rendered
+ *   file still on disk? A cached page whose PSD was deleted or moved must be
+ *   rendered again; without this the cache is trusted as-is.
  */
 function createRenderQueue(store, deps) {
     async function _renderWorker() {
@@ -70,7 +73,7 @@ function createRenderQueue(store, deps) {
             deps.updateBadge();
 
             // Filter out pages whose hash matches the previous successful render.
-            const { fresh, skipped } = partitionByRenderCache(chunk, renderHashes);
+            const { fresh, skipped } = partitionByRenderCache(chunk, renderHashes, deps.outputExists);
             stats.skipped += skipped.length;
             deps.updateBadge();
             if (fresh.length === 0) continue;

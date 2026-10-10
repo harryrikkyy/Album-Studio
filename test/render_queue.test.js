@@ -8,7 +8,7 @@ const { createRenderQueue } = require('../src/features/render_queue')
 
 // A queue wired to a bare store with a scriptable fake bridge. `failures`
 // maps a channel to an error it should throw (once set, every call fails).
-function harness({ failures = {} } = {}) {
+function harness({ failures = {}, outputExists } = {}) {
   const store = createStore()
   const calls = { invokes: [], notifies: [], toasts: [], persisted: 0 }
   const rq = createRenderQueue(store, {
@@ -32,6 +32,7 @@ function harness({ failures = {} } = {}) {
     persistHashes: () => { calls.persisted++ },
     bakeAdjustments: async () => 0,
     useAdjLayers: () => false,
+    ...(outputExists ? { outputExists } : {}),
   })
   return { store, calls, queueRender: rq.queueRender }
 }
@@ -136,4 +137,25 @@ test('cancellation stops the worker without notifying success', async () => {
   assert.equal(store.get('renderQueue').length, 1) // left unconsumed
   assert.equal(calls.invokes.length, 0)
   assert.match(calls.notifies[0].msg, /Render cancelled/)
+})
+
+test('a cached page whose PSD was deleted is rendered again, and only that one', async () => {
+  const onDisk = new Set(['/out/Page_001.psd', '/out/Page_002.psd', '/out/Page_003.psd'])
+  const { store, calls, queueRender } = harness({ outputExists: (f) => onDisk.has(f) })
+  const data = () => exportData('/out', {
+    1: page('/tpl-a.psd', 'a'), 2: page('/tpl-b.psd', 'b'), 3: page('/tpl-c.psd', 'c'),
+  })
+  await queueRender(data())
+  await drained(store)
+  assert.equal(calls.invokes.length, 3)
+
+  // The user deletes page 2's PSD, then re-renders the same, unedited pages.
+  onDisk.delete('/out/Page_002.psd')
+  await queueRender(data())
+  await drained(store)
+
+  assert.equal(calls.invokes.length, 4)
+  assert.equal(calls.invokes[3].channel, 'build-pages-batch')
+  assert.deepEqual(calls.invokes[3].payload.pages.map(p => p.pageName), ['002'])
+  assert.match(calls.notifies[1].msg, /Render complete · 1 fresh, 2 cached/)
 })

@@ -131,7 +131,8 @@ else {
         result.failed++;
         result.errors.push(psd.name + ": " + ((e && e.message) ? e.message : String(e)));
         try { if (doc) doc.close(SaveOptions.DONOTSAVECHANGES); } catch (eC) {}
-        try { if (app.documents.length > 0) app.activeDocument.close(SaveOptions.DONOTSAVECHANGES); } catch (eC2) {}
+        // Only the document THIS script opened is closed. Closing whatever is
+        // active would take the user's own open (possibly unsaved) work with it.
       }
       writeProgress(p + 1, psds.length,
         (p + 1 < psds.length) ? psds[p + 1].name : "finishing…");

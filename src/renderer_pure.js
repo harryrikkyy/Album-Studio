@@ -249,6 +249,23 @@ function _hydratePage(cpage, templateLibrary = [], photoCache = {}) {
     return { template, photos };
 }
 
+/**
+ * The file a render job writes into its output folder. The Photoshop build
+ * scripts save `<output>/Page_NNN.psd` (NNN = page number, zero-padded to 3);
+ * the generative HR path writes `<output>/Page_NNN.jpg` instead. Keep this in
+ * step with build_pages_batch.jsx and the generative interceptor in
+ * features/generative_ui.js.
+ *
+ * @param {RenderJob} job
+ * @returns {string}
+ */
+function _renderedOutputPath(job) {
+    const generative = typeof job.pageData.templatePath === 'string' &&
+        job.pageData.templatePath.startsWith('generative://');
+    const name = 'Page_' + String(job.pageNum).padStart(3, '0') + (generative ? '.jpg' : '.psd');
+    return job.outputPath.replace(/\/+$/, '') + '/' + name;
+}
+
 // Render-queue dirty tracking. Given a batch of render jobs and the stored
 // hash cache, decide which need rendering vs can be skipped (unchanged since
 // their last successful render). This is the "re-render 5 changed pages, not
@@ -257,20 +274,27 @@ function _hydratePage(cpage, templateLibrary = [], photoCache = {}) {
 //   key:   `${outputPath}|${pageNum}` — same page to a different output, or a
 //          different page to the same output, are distinct cache entries.
 // A job is skipped when its stored hash equals the current hash of its
-// pageData. Fresh jobs come back with `hash` + `cacheKey` attached, ready to
+// pageData AND, when `outputExists` is supplied, the file it produced is
+// still on disk. The hash only proves the inputs are unchanged; it says
+// nothing about the deliverable. Without the file check, deleting or moving a
+// PSD and pressing Render selected reported "0 fresh, 1 cached" and produced
+// nothing. Fresh jobs come back with `hash` + `cacheKey` attached, ready to
 // write into the cache on a successful render.
 /**
  * @param {RenderJob[]} jobs
  * @param {Record<string, string>} [renderHashes]
+ * @param {(filePath: string) => boolean} [outputExists]  true when the rendered
+ *   file is still on disk. Omitted → the cache is trusted as-is.
  * @returns {{ fresh: Array<RenderJob & { hash: string, cacheKey: string }>, skipped: RenderJob[] }}
  */
-function partitionByRenderCache(jobs, renderHashes = {}) {
+function partitionByRenderCache(jobs, renderHashes = {}, outputExists) {
     const fresh = [];
     const skipped = [];
     for (const job of jobs) {
         const hash = _hashPage(job.pageData);
         const cacheKey = `${job.outputPath}|${job.pageNum}`;
-        if (renderHashes[cacheKey] === hash) {
+        const unchanged = renderHashes[cacheKey] === hash;
+        if (unchanged && (!outputExists || outputExists(_renderedOutputPath(job)))) {
             skipped.push(job);
         } else {
             fresh.push({ ...job, hash, cacheKey });
@@ -476,6 +500,7 @@ module.exports = {
     getPanelHeaderHTML,
     getDisplayName,
     _hashPage,
+    _renderedOutputPath,
     _parseExifDateFromBuffer,
     _proofTemplatePreviewPath,
     _isEditingTarget,
