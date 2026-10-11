@@ -71,7 +71,15 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    now; upstream test `mask_thumbs_ui::a_new_mask_is_targeted…` fails on the fork as received,
    and `gpu_startup::returned_non_graphics_errors…` is flaky (both upstream).
 6. **Library, Tools** (renamer, curation, retouch), settings, licence/sign-in.
-7. **Packaging**: .app with bundled Node runtime, `photocraft-cli`, built UI; icon; signing.
+7. ~~Packaging~~ (done 2026-10-11, ahead of 6): `native/scripts/package-mac.sh` builds
+   `native/dist/Album Studio.app` (124 MB): release shell + PhotoCraft engine, the interface,
+   the helper with exactly the Electron modules and packages it needs
+   (`collect-backend.mjs`), the Album Studio icon, NOTICE + licence texts (npm, PhotoCraft,
+   fonts, icons, every Rust crate), ad-hoc signature. Tested from the bundle: opened an
+   album, rendered 3 sheets with the bundled engine, drew the previews.
+   Open: bundling the official Node.js runtime (needs a download from nodejs.org; until then
+   the app uses Homebrew's Node, so it runs on this Mac only); Developer ID signing and
+   notarisation for other Macs (needs Creative Hubb's Apple developer certificate).
 8. **Retire Electron**.
 
 ## Known behaviour (not a bug)
