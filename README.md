@@ -1,124 +1,57 @@
-# Creative Hubb Album Toolkit Pro
+# Album Studio
 
-Professional photo-album production software for photographers. Design album
-spreads with Photoshop-like immediacy while keeping every edit non-destructive
-and faithful to the final Photoshop export.
+Album Studio by Creative Hubb plans, renders, edits and delivers photo albums on the Mac. You
+choose a shoot and template collections, plan the spreads, and the app renders print sheets.
+You can then edit any sheet in the built-in PhotoCraft editor and export JPEGs and a PDF for
+the lab and the client. Photoshop isn't needed at any step.
 
-It composites spreads live with **libvips** (via [sharp](https://sharp.pixelplumbing.com/)),
-lets you place, zoom, swap, and colour-grade photos in a **Spread Editor**,
-batch-renames order folders, and renders true-to-PSD files through Adobe
-Photoshop only at the final export step.
+> **Platform:** macOS 13+ on Apple silicon.
 
-> **Platform:** macOS (Apple Silicon / arm64). Final rendering requires a local
-> install of Adobe Photoshop.
+## What's in it
 
----
+- **Albums**: open recent albums, or start a new one from photo folders. Thumbnails are made
+  where missing, RAW files included. Templates and a name are suggested from earlier albums.
+- **Plan**: drag photos onto spreads, frames and the spread strip. Templates that fit come
+  first, and every change can be undone. Auto-fill plans the whole album in capture order,
+  and live proofs redraw in the background.
+- **Review**: the spreads as the client will see them.
+- **Edit**: the PhotoCraft editor in the same window. Sheets saved there are kept by later
+  renders.
+- **Deliver**: renders the print sheets with the PhotoCraft engine, then exports
+  JPEG-High-Res, JPEG-Low-Res and the low-res PDF.
+- **Library**: template collections across albums, browsable by layout.
+- **Tools**:
+  - **Lab naming** names an order's sheets the way the print lab wants them.
+  - **Best picks** narrows a shoot to its sharpest, best-exposed photos.
+- **Account**: sign in with Google to a Creative Hubb subscription. Accounts are the same as
+  the Album Toolkit's.
 
-## Features
+## How it's built
 
-- **Live Design Engine** — full-page spread previews composited natively with
-  libvips, so the design loop never round-trips through Photoshop. The preview
-  is validated to match the final PSD export (see `docs/ideas/live-design-engine.md`).
-- **Spread Editor** — a focused editing window: click a photo on the page,
-  drag to reposition, scroll to zoom, swap two photos, and colour-grade
-  (exposure / contrast / saturation / warmth). Edits are non-destructive and
-  baked only at export.
-- **Non-destructive adjustments** — placement (`scale`, `ox`, `oy`), rotation,
-  and colour are stored per photo and applied identically in the preview and
-  the Photoshop build.
-- **Renamer** — batch-rename order folders with configurable naming schemes.
-- **Photoshop bridge** — final, true-to-PSD album export via scripted Photoshop
-  automation.
+| Part | Where | What |
+|---|---|---|
+| Shell | `native/photocraft/apps/album-studio` (Rust) | The window: the PhotoCraft editor (egui) and a WKWebView for the interface, and the menus. It starts the helper. |
+| Interface | `native/ui` (Preact, TypeScript) | Albums, Plan, Review, Deliver, Library, Tools, Settings, sign-in. |
+| Helper | `native/backend` (Node.js) | Projects, plans, proofs, renders, exports, tools, account. Talks to the shell over stdio. |
+| Shared modules | `src/` | Planning, proof compositing, PSD reading, curation and licence code, used by the helper. |
+| Engine | `native/photocraft` (separate checkout of the PhotoCraft fork, branch `album-studio`) | Builds and edits the sheets. |
 
----
+`docs/native-shell/PLAN.md` has the status and what's still open. `docs/DEVELOPMENT.md`
+covers building, running and testing.
 
-## Getting Started
-
-### Prerequisites
-
-- macOS on Apple Silicon (arm64)
-- [Node.js](https://nodejs.org/) 18+ and npm
-- Adobe Photoshop (only required for final PSD/JPEG rendering, not for the
-  live preview workflow)
-
-### Install & run (development)
+## Quick start
 
 ```bash
-git clone https://github.com/<your-org>/<your-repo>.git
-cd <your-repo>
-npm install
-
-# Create your local environment file from the template and fill in values
-cp .env.example .env
-
-npm start
+npm install && npm --prefix native/ui install
+npm run build        # → native/dist/Album Studio.app
+npm start            # opens it
 ```
 
-`.env` is git-ignored and never committed — each developer/deployment supplies
-their own. See `.env.example` for the required keys (Firebase, Google OAuth,
-license signing key).
+Sign-in reads a `.env` with the Firebase and Google OAuth settings; see `.env.example`.
+It's never committed, and by default never built into the app. The app looks for it in
+`~/Library/Application Support/Album Studio/`, then in the Album Toolkit's folder.
 
-### Useful scripts
+## Licence
 
-| Command | Description |
-|---|---|
-| `npm start` | Launch the app in development (Electron) |
-| `npm run lint` | ESLint over `app.js` and `src/**/*.js` |
-| `npm run lint:fix` | ESLint with autofix |
-| `npm run typecheck` | `node --check` syntax pass over all source files |
-| `npm run build:mac` | Build the signed macOS DMG (runs typecheck + lint first) |
-
-### Building the DMG
-
-```bash
-npm run build:mac
-# → dist/Creative Hubb Album Toolkit Pro-<version>-arm64.dmg
-```
-
-The DMG is ad-hoc signed. On first launch, right-click the app → **Open** to get
-past Gatekeeper.
-
-> **Note:** standalone scripts that use `sharp` must run under Electron's ABI:
-> `ELECTRON_RUN_AS_NODE=1 npx electron <script.js>`
-
----
-
-## Project Structure
-
-```
-app.js                  Electron main process (windows, IPC, MCP/Photoshop bridge)
-src/
-  main.js               Renderer: album state, compose loop, export data
-  proof_renderer.js     libvips page compositor (the Live Design Engine)
-  editor.html / editor_renderer.js   Spread Editor window
-  renamer*.{js,html}    Batch renamer feature
-  sharp_config.js       Tuned sharp instance
-scripts/                Photoshop JSX builders + the colormatch harness
-docs/ideas/             Design one-pagers and the running status handoff
-assets/                 App icon and DMG artwork
-```
-
----
-
-## Contributing
-
-Contributions are welcome! To get started:
-
-1. Fork the repo and create a feature branch (`git checkout -b feature/my-change`).
-2. Make your change. Keep edits non-destructive and frame-constrained where the
-   Spread Editor is concerned (see `docs/ideas/spread-editor.md`).
-3. Run `npm run typecheck && npm run lint` before committing.
-4. Open a pull request describing the change and how you tested it.
-
-A pre-commit hook (husky + lint-staged) runs ESLint and a syntax check on
-staged JavaScript.
-
-Please review `SECURITY.md` before reporting security issues.
-
----
-
-## License
-
-See [LICENSE](LICENSE). _(Add a license file — MIT is recommended for an open,
-contributor-friendly project. Without one, default copyright law applies and
-others cannot legally reuse or contribute.)_
+See [LICENSE](LICENSE). Open-source notices for everything the app includes are in
+`native/NOTICE`, and in the app's About box.

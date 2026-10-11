@@ -1,67 +1,83 @@
-# Development & Verification
+# Development
 
-How to run, test, and smoke-check Creative Hubb Album Toolkit Pro. This is the
-canonical "cold start" doc — a fresh clone should be productive from here.
+How to build, run and test Album Studio. A fresh clone should be productive from here.
 
 ## Prerequisites
 
-- macOS on Apple Silicon (arm64)
-- Node.js 20+ and npm (repo currently developed on Node 22)
-- Adobe Photoshop (only needed for real PSD/JPEG rendering + the smoke-tests that
-  drive it; the live libvips preview does not need it)
+- macOS 13+ on Apple silicon, with Xcode's command-line tools.
+- Node.js 22 and npm, for the helper's tests and the interface's build. The packaged app
+  carries its own Node.js.
+- Rust (rustup, stable), for the shell and the PhotoCraft engine.
+- The PhotoCraft fork, checked out at `native/photocraft` (branch `album-studio`). It's a
+  separate repository and is ignored by this one.
 
-## Install & run
+## Install
 
 ```bash
-npm install
-cp .env.example .env      # fill in your own Firebase / Google / license values
-npm start                 # launches the Electron app
+npm install                  # the shared modules' and the helper's packages (sharp, ag-psd, …)
+npm --prefix native/ui install
+cp .env.example .env         # sign-in settings: Firebase project, Google OAuth client, licence key
 ```
 
-> `.env` is git-ignored and is never packaged into a build. Each machine supplies
-> its own.
+`.env` is git-ignored, and by default it isn't built into the app. Each Mac supplies its own:
+the helper reads it from `~/Library/Application Support/Album Studio/.env`, then from the
+repository root (when run from source), then from the Album Toolkit's folder.
 
-## The quality gates (run before every commit)
+## Build and run
 
-| Command | What it checks |
+```bash
+npm run build                # native/scripts/package-mac.sh → native/dist/Album Studio.app
+npm start                    # open it
+```
+
+The package script does the following:
+- builds the release shell and engine;
+- bundles the interface and the helper, with exactly the modules and packages it needs
+  (`native/scripts/collect-backend.mjs`);
+- bundles Node.js 22.23.3 from nodejs.org, pinned by SHA-256 and downloaded once into
+  `~/Library/Caches/AlbumStudioBuild`;
+- adds the licence texts and signs the app ad hoc (for this Mac).
+
+Options are documented at the top of the script, including Developer ID signing
+(`MACOS_SIGN_IDENTITY`).
+
+For work on the interface:
+
+```bash
+npm --prefix native/ui run watch           # rebuild on change
+node native/ui/dev/serve.mjs               # the interface in a browser (no helper: screens only)
+```
+
+A debug build of the shell (`cargo build -p album-studio` in `native/photocraft`) loads the
+interface from `native/ui/dist` and the helper from `native/backend`. With
+`ALBUM_STUDIO_DEBUG_SOCKET=dbg.sock`, it also runs scripts in the page for automated checks.
+
+Two environment settings help with testing:
+- `ALBUM_STUDIO_DATA_DIR` and `ALBUM_STUDIO_CACHE_DIR` keep a test run's data out of the real
+  folders.
+- `ALBUM_STUDIO_ACCOUNT=skip` skips the subscription check. It never works in the packaged
+  app.
+
+## Quality gates (before every commit)
+
+| Command | Checks |
 |---|---|
-| `npm run lint` | ESLint over `app.js` + `src/**/*.js` |
-| `npm run typecheck` | Syntax/type pass over all source (currently `node --check`; becomes `tsc --noEmit` after the TypeScript migration) |
-| `npm test` | Unit tests (`node:test`) |
-| `npm run test:coverage` | Same tests + a coverage summary |
+| `npm run lint` | ESLint over `src/`, `test/` and `native/backend/` |
+| `npm run typecheck` | `tsc` over the shared modules (opt-in `// @ts-check`) and the interface |
+| `npm test` | Shared modules (`test/`), the helper (`native/backend/test`), the interface (`native/ui/test`) |
+| `cargo fmt --check`, `cargo clippy -p album-studio`, `cargo test -p album-studio` | The shell (in `native/photocraft`) |
 
-CI (`.github/workflows/ci.yml`) runs lint + typecheck + test on every push/PR to
-`main`. Keep it green.
+The helper's tests that build real sheets need the engine (`photocraft-cli` in the build
+cache). Without it they say they skip.
 
-## Test layout
+## Accounts
 
-```
-test/           Unit tests (pure logic) — node:test, no GUI, no Photoshop
-e2e/            End-to-end tests (Playwright-Electron) — ADDED in Phase 1
-e2e/fixtures/   Sample project .json + assets used by E2E + manual smoke-tests
-```
+Sign-in uses the same Creative Hubb accounts as the Album Toolkit:
+- Google sign-in happens in the user's browser.
+- The user's record lives in Firestore (`firestore.rules`): activated, an expiry date, one
+  machine.
+- The licence is saved to `~/.ch_toolkit_license`, signed with the key in
+  `src/license_public_key.pem`. The owner's activation tool is in `server/`.
 
-## Manual smoke-test (the live verification)
-
-Because the app drives a real GUI + Photoshop, some changes must be verified by
-hand against a saved project. Standard pass:
-
-1. **Boot** — app launches, no red errors in the console (⌥⌘I).
-2. **Load** the sample project `.json`.
-3. **Build a page** into Photoshop.
-4. **Spread Editor** — reposition, zoom, adjust sliders, swap, Done.
-5. **Undo/redo** several mixed edits — album restores exactly.
-6. **Export** — completes.
-
-Report failures with: the step, expected vs. actual, and any console error text.
-
-## Branching
-
-- `main` stays shippable at all times.
-- Risky phases (state refactor, security migration) happen on feature branches,
-  merged only after their checkpoint passes (CI green + smoke-test).
-
-## Roadmap
-
-The path to 9.5+ lives in `tasks/spec.md` (what/why) and `tasks/plan.md` (how),
-executed phase by phase via `tasks/todo.md`.
+The code is in `native/backend/lib/account.js`, and the helper refuses album work until the
+check passes.

@@ -86,18 +86,31 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    - Settings (⌘,, gear): appearance, templates follow photos, default spreads, print size,
      storage per cache with Clear.
    Not ported: Retouch (Photoshop actions; use the editor's own adjustments), the floating Tools
-   Bar and image swap (Photoshop-only). Open: licence / sign-in (Creative Hubb accounts) — needs
-   the owner's decision on how the native app is licensed.
+   Bar and image swap (Photoshop-only).
+   - Account (done 2026-10-11): Creative Hubb sign-in and subscription check, the Album
+     Toolkit's rules and accounts (`native/backend/lib/account.js`): Google sign-in in the
+     browser (loopback 127.0.0.1:9842, `state` checked), Firebase session, Firestore record
+     (activated, expiry, one machine), signed licence for offline use; it shares
+     `~/.ch_toolkit_license` / `~/.ch_toolkit_session` with the Album Toolkit. The helper answers
+     only account.* / system.* until the check passes. Sign-in screen, Settings › Account.
 7. ~~Packaging~~ (done 2026-10-11, ahead of 6): `native/scripts/package-mac.sh` builds
    `native/dist/Album Studio.app` (124 MB): release shell + PhotoCraft engine, the interface,
    the helper with exactly the Electron modules and packages it needs
    (`collect-backend.mjs`), the Album Studio icon, NOTICE + licence texts (npm, PhotoCraft,
    fonts, icons, every Rust crate), ad-hoc signature. Tested from the bundle: opened an
    album, rendered 3 sheets with the bundled engine, drew the previews.
-   Open: bundling the official Node.js runtime (needs a download from nodejs.org; until then
-   the app uses Homebrew's Node, so it runs on this Mac only); Developer ID signing and
-   notarisation for other Macs (needs Creative Hubb's Apple developer certificate).
-8. **Retire Electron**.
+   Node.js 22.23.3 (nodejs.org, SHA-256 pinned) is bundled (done 2026-10-11), so nothing needs
+   installing. Sign-in settings are never built in by default (`ALBUM_STUDIO_SIGNIN_ENV` opts
+   in): each Mac supplies its `.env`, as with the Album Toolkit.
+   Open: Developer ID signing and notarisation for other Macs (needs Creative Hubb's Apple
+   developer certificate; the script signs Node with the hardened runtime when given one).
+8. ~~Retire Electron~~ (done 2026-10-11, in this copy; the original folder keeps the Album
+   Toolkit): the Electron main process, renderer, Photoshop bridge and JSX scripts, Playwright
+   e2e, electron-builder and their tests are gone. `src/` keeps only the 15 shared modules the
+   helper uses (planning, proofs, PSD, curation, licence) and their tests; `server/` (licence
+   activation) and the Firebase rules stay. `package.json`: `npm run build | start | test |
+   lint | typecheck`; CI runs lint, typecheck, audit and all tests on macOS. Albums made by
+   the Album Toolkit open unchanged (same `project.json`).
 
 ## Known behaviour (not a bug)
 

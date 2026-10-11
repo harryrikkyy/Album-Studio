@@ -14,6 +14,7 @@ const { listTemplates } = require('./templates')
 const { ensureThumbnails, surveyFolder } = require('./thumbs')
 
 /** Characters macOS Finder or the Electron app can't take in a folder name. */
+// eslint-disable-next-line no-control-regex -- control characters are exactly what a folder name can't hold
 const BAD_NAME = /[/:\\\u0000-\u001f]/
 
 /** What is in each folder: photos, RAWs, thumbnails still to make, a few thumbnails to show. */

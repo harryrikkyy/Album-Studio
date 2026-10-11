@@ -1,116 +1,27 @@
 {
-  "name": "creative-hubb-album-toolkit-pro",
-  "productName": "Creative Hubb Album Toolkit Pro",
+  "name": "album-studio",
+  "productName": "Album Studio",
   "version": "1.0.0",
-  "description": "Professional Album Production Software by Creative Hubb",
+  "private": true,
+  "description": "Album Studio by Creative Hubb: plan, render, edit and deliver photo albums on the Mac. A native app: the PhotoCraft editor and engine, a web interface, and a Node.js helper. No Photoshop.",
   "license": "MIT",
-  "main": "app.js",
   "scripts": {
-    "start": "electron .",
-    "test": "node --test test/*.test.js",
+    "build": "native/scripts/package-mac.sh",
+    "start": "open \"native/dist/Album Studio.app\"",
+    "test": "node --test test/*.test.js && npm --prefix native/backend test && npm --prefix native/ui test",
+    "test:shared": "node --test test/*.test.js",
     "test:coverage": "node --experimental-test-coverage --test test/*.test.js",
-    "test:e2e": "playwright test",
-    "lint": "eslint app.js \"src/**/*.js\"",
-    "lint:fix": "eslint --fix app.js \"src/**/*.js\"",
-    "typecheck": "tsc --noEmit",
-    "prebuild:mac": "npm run typecheck && npm run lint",
-    "build:mac": "electron-builder --mac",
-    "prepare": "husky || true",
-    "build:renderer": "esbuild src/renderer_entry.js --bundle --format=iife --platform=browser --sourcemap --outfile=src/dist/renderer.bundle.js --alias:electron=./src/shims/electron.js --alias:fs=./src/shims/fs.js --alias:os=./src/shims/os.js --alias:path=./src/shims/path.js",
-    "prestart": "npm run build:renderer",
-    "pretest:e2e": "npm run build:renderer"
-  },
-  "build": {
-    "appId": "com.creativehubb.albumtoolkit",
-    "productName": "Creative Hubb Album Toolkit Pro",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "app.js",
-      "src/**/*",
-      "scripts/**/*",
-      "assets/**/*",
-      "package.json",
-      "!**/*.map",
-      "!**/.DS_Store",
-      "!**/.claude/**",
-      "!**/.qodo/**",
-      "!**/node_modules/.cache/**"
-    ],
-    "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns",
-      "category": "public.app-category.photography",
-      "hardenedRuntime": true,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "extendInfo": {
-        "NSAppleEventsUsageDescription": "Album Toolkit sends commands to Adobe Photoshop to swap images, export JPEGs, run actions, and keep the floating Tools Bar docked to Photoshop's window."
-      }
-    },
-    "dmg": {
-      "background": "assets/dmg_background.png",
-      "iconSize": 128,
-      "window": {
-        "width": 660,
-        "height": 453
-      },
-      "contents": [
-        {
-          "x": 160,
-          "y": 200,
-          "type": "file"
-        },
-        {
-          "x": 500,
-          "y": 200,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 330,
-          "y": 360,
-          "type": "file",
-          "path": "build/Uninstall.command",
-          "name": "Uninstall.command"
-        }
-      ]
-    },
-    "asarUnpack": [
-      "scripts/**/*.jsx",
-      "node_modules/sharp/**/*",
-      "node_modules/@img/**/*"
-    ]
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "node --check"
-    ]
+    "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"native/backend/**/*.js\"",
+    "typecheck": "tsc --noEmit && npm --prefix native/ui run typecheck"
   },
   "dependencies": {
     "ag-psd": "^31.0.2",
-    "electron-log": "^5.4.4",
-    "exifr": "^7.1.3",
     "node-machine-id": "^1.1.12",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
-    "@electron-forge/cli": "^7.0.0",
-    "@electron-forge/maker-dmg": "^7.11.1",
-    "@electron-forge/maker-zip": "^7.11.1",
-    "@playwright/test": "^1.61.1",
     "@types/node": "^26.1.0",
-    "axe-core": "^4.12.1",
-    "electron": "^36.0.0",
-    "electron-builder": "^26.8.1",
-    "electron-reloader": "^1.2.3",
-    "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^15.2.10",
     "typescript": "^6.0.3"
   }
 }

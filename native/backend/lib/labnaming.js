@@ -8,7 +8,6 @@ const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
 const { cacheRoot, fileKey } = require('./cache')
-const { jpegSizeFromBuffer } = require('./jpeg_size')
 
 const SHEET = /\.(jpe?g|png|psd|psb)$/i
 const THUMB_EDGE = 480
@@ -93,6 +92,7 @@ async function listSheets({ folder }) {
   return { folder, name: path.basename(folder), sheets: out }
 }
 
+// eslint-disable-next-line no-control-regex -- control characters are exactly what a file name can't hold
 const BAD = /[/:\\\u0000-\u001f]/
 
 /**

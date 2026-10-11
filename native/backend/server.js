@@ -12,7 +12,7 @@
 const readline = require('readline')
 const util = require('util')
 
-// stdout is the protocol: anything a module prints (the reused Electron modules log with
+// stdout is the protocol: anything a module prints (some shared modules log with
 // console.log) goes to stderr, the shell's log, instead of breaking a reply line.
 for (const level of ['log', 'info', 'debug']) {
   console[level] = (...args) => process.stderr.write(util.format(...args) + '\n')

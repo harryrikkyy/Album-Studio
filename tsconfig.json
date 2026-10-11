@@ -1,5 +1,5 @@
 {
-  "// note": "Type-checking only (noEmit). The app still loads the same .js at runtime \u2014 no build step. Type-checking is opt-in per file via `// @ts-check` (checkJs is false), so the whole codebase is parsed for syntax while we migrate module-by-module toward full strict TS.",
+  "// note": "Type-checking only (noEmit) of the shared modules in src/ and their tests; opt-in per file via `// @ts-check`. The interface (native/ui) has its own tsconfig.",
   "compilerOptions": {
     "target": "ES2020",
     "module": "NodeNext",
@@ -22,17 +22,12 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "app.js",
     "src/**/*.js",
-    "src/**/*.ts",
-    "test/**/*.js",
-    "e2e/**/*.js"
+    "test/**/*.js"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "build",
     "impeccable",
-    "src/dist"
+    "native"
   ]
 }

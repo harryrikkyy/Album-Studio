@@ -1,11 +1,11 @@
 // collect-backend.mjs — what the background helper needs at run time, for packaging: every
 // JavaScript file reachable by require() from native/backend/server.js (its own code and the
-// Electron app's modules it reuses), and the npm packages they use with their dependencies.
+// shared modules in src/), and the npm packages they use with their dependencies.
 //
 //   node native/scripts/collect-backend.mjs   → JSON { files: [...repo-relative], packages: [...] }
 //
-// Static: lazily required files count too (a require inside a function still ships). Packages
-// that only the Electron app needs (electron itself) are left out.
+// Static: lazily required files count too (a require inside a function still ships). `electron`
+// is never packaged, should an old module still mention it.
 
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { builtinModules } from 'node:module'
