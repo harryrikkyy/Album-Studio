@@ -17,11 +17,17 @@ interface Coll { path: string; name: string; exists: boolean; templates: number;
 
 const PAGE = 160
 
+const usedBy = (albums: string[]) =>
+  !albums.length ? 'No album uses it yet'
+    : albums.length <= 3 ? `Used by ${albums.join(', ')}`
+      : `Used by ${albums.slice(0, 2).join(', ')} and ${albums.length - 2} more`
+
 export function Library() {
   const a = album.value
   const [colls, setColls] = useState<Coll[] | null>(null)
   const [current, setCurrent] = useState<string | null>(null)
   const [templates, setTemplates] = useState<Template[] | null>(null)
+  const [frames, setFrames] = useState<number | null>(null)
   const [layout, setLayout] = useState<string | null>(null)
   const [text, setText] = useState('')
   const [limit, setLimit] = useState(PAGE)
@@ -37,21 +43,31 @@ export function Library() {
   }
   useEffect(() => { void reload() }, [])
   useEffect(() => {
-    setTemplates(null); setLayout(null); setText(''); setLimit(PAGE)
+    setTemplates(null); setFrames(null); setLayout(null); setText(''); setLimit(PAGE)
     if (current) void call<Template[]>('library.templates', { path: current }, 60_000).then(setTemplates).catch(() => setTemplates([]))
   }, [current])
+  useEffect(() => setLimit(PAGE), [frames, layout, text])
 
   const coll = colls?.find((c) => c.path === current) ?? null
-  const layouts = useMemo(() => {
-    const m = new Map<string, number>()
-    for (const t of templates ?? []) m.set(`${t.h}|${t.v}`, (m.get(`${t.h}|${t.v}`) ?? 0) + 1)
-    return [...m].sort((x, y) => {
-      const [xh, xv] = x[0].split('|').map(Number)
-      const [yh, yv] = y[0].split('|').map(Number)
-      return xh! + xv! - (yh! + yv!) || xh! - yh!
-    })
+  // Filter in two steps, photos per spread and then the landscape/portrait split, so a collection
+  // with sixty layouts still fits in two rows.
+  const counts = useMemo(() => {
+    const m = new Map<number, Map<string, number>>()
+    for (const t of templates ?? []) {
+      const n = t.h + t.v
+      const splits = m.get(n) ?? new Map<string, number>()
+      splits.set(`${t.h}|${t.v}`, (splits.get(`${t.h}|${t.v}`) ?? 0) + 1)
+      m.set(n, splits)
+    }
+    return [...m].sort((x, y) => x[0] - y[0]).map(([n, splits]) => ({
+      n,
+      total: [...splits.values()].reduce((s, c) => s + c, 0),
+      splits: [...splits].sort((x, y) => Number(y[0].split('|')[0]) - Number(x[0].split('|')[0])),
+    }))
   }, [templates])
-  const shown = (templates ?? []).filter((t) => (!layout || `${t.h}|${t.v}` === layout) && t.name.toLowerCase().includes(text.trim().toLowerCase()))
+  const splits = counts.find((c) => c.n === frames)?.splits ?? []
+  const shown = (templates ?? []).filter((t) => (frames === null || t.h + t.v === frames) && (!layout || `${t.h}|${t.v}` === layout) && t.name.toLowerCase().includes(text.trim().toLowerCase()))
+  const pickFrames = (n: number | null) => { setFrames(n); setLayout(null) }
 
   const add = async () => {
     const r = await call<string | string[] | null>('dialog.pickFolder', { title: 'Add template collections', multiple: true }).catch(() => null)
@@ -117,9 +133,10 @@ export function Library() {
         ) : (
           <div class="tool">
             <header class="tool__head">
-              <div>
-                <h2 class="tool__title"><LayoutTemplate size={17} /> {coll.name}</h2>
-                <p class="tool__sub"><span class="mono" title={coll.path}>{shortPath(coll.path, 3)}</span>{coll.albums.length ? ` · used by ${coll.albums.slice(0, 3).join(', ')}${coll.albums.length > 3 ? '…' : ''}` : ''}</p>
+              <div class="tool__id">
+                <h2 class="tool__title"><LayoutTemplate size={17} /> <span class="tool__name">{coll.name}</span></h2>
+                <p class="tool__sub tool__path mono" title={coll.path}>{shortPath(coll.path, 3)}</p>
+                <p class="tool__sub tool__path" title={coll.albums.join('\n')}>{usedBy(coll.albums)}</p>
               </div>
               <div class="place__actions">
                 <label class="check check--inline" title="New albums start with this collection ticked">
@@ -138,19 +155,33 @@ export function Library() {
             {!coll.exists ? <p class="notice notice--error">This collection’s drive isn’t connected.</p> : (
               <>
                 <div class="lab-bar lib-filter">
-                  <div class="lib-layouts" role="radiogroup" aria-label="Frame layout">
-                    <button type="button" role="radio" aria-checked={!layout} class={`chip-btn ${!layout ? 'is-on' : ''}`} onClick={() => setLayout(null)}>All {templates?.length ?? ''}</button>
-                    {layouts.map(([k, n]) => {
-                      const [h, v] = k.split('|').map(Number)
-                      return <button type="button" role="radio" aria-checked={layout === k} class={`chip-btn ${layout === k ? 'is-on' : ''}`} onClick={() => setLayout(layout === k ? null : k)}>{signature(h!, v!)} <span class="count">{n}</span></button>
-                    })}
-                  </div>
                   <label class="search">
                     <Search size={14} aria-hidden="true" />
                     <span class="visually-hidden">Search templates by name</span>
                     <input type="search" placeholder="Name, e.g. 0019" value={text} onInput={(e) => setText((e.target as HTMLInputElement).value)} />
                   </label>
+                  <div class="lib-layouts" role="radiogroup" aria-label="Photos per spread">
+                    <span class="lab-bar__label" aria-hidden="true">Photos</span>
+                    <button type="button" role="radio" aria-checked={frames === null} class={`chip-btn ${frames === null ? 'is-on' : ''}`} onClick={() => pickFrames(null)}>All<span class="count">{templates?.length ?? ''}</span></button>
+                    {counts.map((c) => (
+                      <button type="button" role="radio" aria-checked={frames === c.n} aria-label={`${plural(c.n, 'photo')}: ${plural(c.total, 'template')}`} class={`chip-btn ${frames === c.n ? 'is-on' : ''}`} onClick={() => pickFrames(frames === c.n ? null : c.n)}>
+                        {c.n}<span class="count">{c.total}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+                {splits.length > 1 ? (
+                  <div class="lab-bar lib-filter lib-filter--splits">
+                    <div class="lib-layouts" role="radiogroup" aria-label="Landscape and portrait frames">
+                      <span class="lab-bar__label" aria-hidden="true">Layout</span>
+                      <button type="button" role="radio" aria-checked={!layout} class={`chip-btn ${!layout ? 'is-on' : ''}`} onClick={() => setLayout(null)}>Any</button>
+                      {splits.map(([k, n]) => {
+                        const [h, v] = k.split('|').map(Number)
+                        return <button type="button" role="radio" aria-checked={layout === k} class={`chip-btn ${layout === k ? 'is-on' : ''}`} onClick={() => setLayout(layout === k ? null : k)}>{signature(h!, v!)}<span class="count">{n}</span></button>
+                      })}
+                    </div>
+                  </div>
+                ) : null}
                 {templates === null ? (
                   <ul class="tpl-grid" aria-busy="true">{Array.from({ length: 12 }, () => <li class="tpl-card tpl-card--skeleton"><span class="tpl-card__img" /></li>)}</ul>
                 ) : (

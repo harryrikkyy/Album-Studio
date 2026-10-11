@@ -27,7 +27,7 @@ test('signature and labels', () => {
   assert.equal(signature(6, 1), '6 H · 1 V')
   assert.equal(signature(0, 8), '8 V')
   assert.equal(signature(0, 0), 'Empty')
-  assert.equal(templateLabel('1h7v_0003 (2).psd'), '1h7v_0003')
+  assert.equal(templateLabel('1h7v_0003 (2).psd'), '1h7v_0003 (2)', 'a numbered variant is a different design')
   assert.equal(templateLabel(null), 'No template')
   assert.equal(shortPath('/Volumes/Harry/ALBUM BOOKINGS/Sai BFA/Wedding Album', 2), '…/Sai BFA/Wedding Album')
   assert.equal(shortPath('/a/b', 2), '/a/b')

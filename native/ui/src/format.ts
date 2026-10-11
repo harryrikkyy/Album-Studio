@@ -37,8 +37,11 @@ export function shortPath(p: string | null | undefined, keep = 2): string {
   return parts.length <= keep ? p : '…/' + parts.slice(-keep).join('/')
 }
 
-/** A template file name without extension or Photoshop's " (2)" copy suffix. */
+/**
+ * A template file name without its extension. A " (2)" suffix stays: in real collections it marks
+ * a different design with the same frame layout, and without it the two look like one template.
+ */
 export function templateLabel(name: string | null | undefined): string {
   if (!name) return 'No template'
-  return name.replace(/\.psd$/i, '').replace(/\s*\(\d+\)$/, '')
+  return name.replace(/\.psd$/i, '')
 }

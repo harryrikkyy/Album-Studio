@@ -153,29 +153,33 @@ export function LabNaming() {
           <div class="lab-bar">
             <label class="lab-field">
               <span>Order</span>
-              <input class="field" type="text" value={name} onInput={(e) => setName((e.target as HTMLInputElement).value)} aria-label="Order name or number" />
+              <input class="field" type="text" value={name} placeholder="e.g. 256" onInput={(e) => setName((e.target as HTMLInputElement).value)} aria-label="Order name or number" />
             </label>
-            <Segmented
-              label="Page names"
-              value={custom === null ? 'order' : 'custom'}
-              onChange={(v) => setCustom(v === 'custom' ? (custom ?? 'page') : null)}
-              options={[{ value: 'order', label: `${name.trim() || 'order'} (01)` }, { value: 'custom', label: 'Custom_001' }]}
-            />
-            {custom !== null ? <input class="field" type="text" value={custom} onInput={(e) => setCustom((e.target as HTMLInputElement).value)} aria-label="Custom page name" /> : null}
-            <span class="lab-bar__sep" />
-            <span class="lab-bar__label">Cover pad</span>
-            <label class="select"><span class="visually-hidden">Lamination</span>
-              <select value={cover?.lamination ?? ''} disabled={!coverTile} onChange={(e) => setCover({ lamination: (e.target as HTMLSelectElement).value, size: cover?.size ?? SIZES[0]! })}>
-                {!cover ? <option value="">Lamination</option> : null}
-                {LAMINATIONS.map((l) => <option value={l}>{l}</option>)}
-              </select>
-            </label>
-            <label class="select"><span class="visually-hidden">Size</span>
-              <select value={cover?.size ?? ''} disabled={!coverTile} onChange={(e) => setCover({ lamination: cover?.lamination ?? LAMINATIONS[0]!, size: (e.target as HTMLSelectElement).value })}>
-                {!cover ? <option value="">Size</option> : null}
-                {SIZES.map((s) => <option value={s}>{s.replace('x', ' × ')}</option>)}
-              </select>
-            </label>
+            <span class="lab-group">
+              <span class="lab-bar__label">Pages</span>
+              <Segmented
+                label="Page names"
+                value={custom === null ? 'order' : 'custom'}
+                onChange={(v) => setCustom(v === 'custom' ? (custom ?? 'page') : null)}
+                options={[{ value: 'order', label: `${name.trim() || 'order'} (01)` }, { value: 'custom', label: 'Custom_001' }]}
+              />
+              {custom !== null ? <input class="field lab-group__field" type="text" value={custom} placeholder="Name" onInput={(e) => setCustom((e.target as HTMLInputElement).value)} aria-label="Custom page name" /> : null}
+            </span>
+            <span class="lab-group">
+              <span class="lab-bar__label">Cover pad</span>
+              <label class="select"><span class="visually-hidden">Lamination</span>
+                <select value={cover?.lamination ?? ''} disabled={!coverTile} onChange={(e) => setCover({ lamination: (e.target as HTMLSelectElement).value, size: cover?.size ?? SIZES[0]! })}>
+                  {!cover ? <option value="">Lamination</option> : null}
+                  {LAMINATIONS.map((l) => <option value={l}>{l}</option>)}
+                </select>
+              </label>
+              <label class="select"><span class="visually-hidden">Size</span>
+                <select value={cover?.size ?? ''} disabled={!coverTile} onChange={(e) => setCover({ lamination: cover?.lamination ?? LAMINATIONS[0]!, size: (e.target as HTMLSelectElement).value })}>
+                  {!cover ? <option value="">Size</option> : null}
+                  {SIZES.map((s) => <option value={s}>{s.replace('x', ' × ')}</option>)}
+                </select>
+              </label>
+            </span>
           </div>
 
           <div class="lab-bar lab-bar--sel" aria-live="polite">
