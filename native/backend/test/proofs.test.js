@@ -196,6 +196,54 @@ test('a spread layout says where each frame is and which photo fills it', async 
   assert.deepEqual(three.frames, [], 'no template, no frames')
 })
 
+/** A flat 600×200 PSD of one colour, with its stored composite: a "rendered sheet". */
+function writeFlatPsd(file, rgb) {
+  const data = new Uint8ClampedArray(W * H * 4)
+  for (let i = 0; i < W * H; i++) data.set([...rgb, 255], i * 4)
+  const img = { width: W, height: H, data }
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, agpsd.writePsdBuffer({ width: W, height: H, imageData: img, children: [{ name: 'Layer 1', left: 0, top: 0, right: W, bottom: H, imageData: img }] }))
+}
+
+test('a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders', async () => {
+  const { proj, root } = await makeAlbum()
+  const { openAlbum } = require('../lib/album')
+  const { renderPlan, spreadHash, startRender } = require('../lib/render')
+  const { recordSheetProof } = require('../lib/proofs')
+  const { fileStamp } = require('../lib/cache')
+  await refresh(proj)
+  // As a render leaves it: the sheet, its cache entry, and the proof recorded as the sheet's.
+  const sheet = path.join(root, 'out', 'Page_001.psd')
+  writeFlatPsd(sheet, [200, 30, 30])
+  const album = await openAlbum({ path: proj })
+  const ws = JSON.parse(fs.readFileSync(path.join(proj, 'project.json'), 'utf8')).workspace
+  const hash = await spreadHash(album.spreads[0], album, ws)
+  fs.mkdirSync(path.join(root, 'out', '.album-studio'), { recursive: true })
+  fs.writeFileSync(path.join(root, 'out', '.album-studio', 'render-cache.json'), JSON.stringify({ 1: { hash, sheet: await fileStamp(sheet) } }))
+  await recordSheetProof(album, ws, album.spreads[0], sheet)
+  let plan = await renderPlan({ album: proj })
+  assert.deepEqual([plan.spreads[0].state, plan.spreads[0].edited], ['current', false])
+
+  // Edited in the editor and saved.
+  await new Promise((r) => setTimeout(r, 20))
+  writeFlatPsd(sheet, [30, 30, 200])
+  plan = await renderPlan({ album: proj })
+  assert.deepEqual([plan.spreads[0].state, plan.spreads[0].edited], ['current', true], 'the plan still matches; the sheet was edited by hand')
+
+  const ev = await refresh(proj)
+  const upd = ev.find((e) => e.event === 'proofs.updated' && e.n === 1)
+  assert.ok(upd && upd.source === 'sheet', 'the preview is redrawn from the saved sheet')
+  assert.ok(near(await pixel(upd.proof, 300, 100), [30, 30, 200]))
+  assert.deepEqual(await refresh(proj), [{ event: 'proofs.idle', album: proj, rendered: 0, failed: 0 }], 'once')
+
+  // "Render all again" keeps the hand edits.
+  const events = []
+  await new Promise((resolve) => startRender({ album: proj, spreads: [1], force: true }, { emit: (e, d) => { events.push([e, d]); if (e === 'render.finished') resolve() } }))
+  const done = events.find(([e]) => e === 'render.finished')[1]
+  assert.deepEqual(done.results, [{ n: 1, state: 'skipped', reason: 'edited' }])
+  assert.ok(near(await pixel(upd.proof, 300, 100), [30, 30, 200]), 'and the sheet is untouched')
+})
+
 test('proofs made elsewhere are trusted once, not redrawn', async () => {
   const { proj } = await makeAlbum()
   await refresh(proj)

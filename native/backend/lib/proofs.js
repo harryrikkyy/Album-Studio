@@ -13,7 +13,7 @@
 const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
-const { cacheRoot, writeAtomic } = require('./cache')
+const { cacheRoot, fileStamp, writeAtomic } = require('./cache')
 const { inputsHash } = require('./inputs')
 const { templateArt, framesByName } = require('./psd_template')
 const { isRaw, previewable } = require('./raw')
@@ -59,11 +59,29 @@ function saveManifest(m) {
   return m.chain
 }
 
-/** A rendered sheet's own image became spread n's proof: it is current until the spread changes. */
-async function recordSheetProof(album, ws, spread) {
+/**
+ * A rendered sheet's own image became spread n's proof: it is current until the spread changes,
+ * or until the sheet is saved again from the editor (then the proof is redrawn from it).
+ */
+async function recordSheetProof(album, ws, spread, sheetPath) {
   const m = await manifestOf(album.path)
-  m.data.spreads[spread.n] = { hash: await proofHash(spread, album, ws), source: 'sheet' }
+  m.data.spreads[spread.n] = { hash: await proofHash(spread, album, ws), source: 'sheet', sheet: sheetPath ? await fileStamp(sheetPath) : null }
   await saveManifest(m)
+}
+
+/** A proof from a sheet's own flattened image (after it was edited in the editor). */
+async function proofFromSheet(sheetPath, out) {
+  const sharp = getSharp()
+  const px = await require('./deliver').sheetPixels(sheetPath)
+  try {
+    let p = sharp(px.input, px.raw ? { raw: px.raw } : { failOn: 'none' })
+    if (px.raw) p = p.flatten({ background: '#ffffff' })
+    const tmp = `${out}.tmp-${process.pid}.jpg`
+    await p.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' }).jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
+    await fs.promises.rename(tmp, out)
+  } finally {
+    if (px.cleanup) await px.cleanup()
+  }
 }
 
 // ── drawing ─────────────────────────────────────────────────────────────────
@@ -325,6 +343,11 @@ async function refreshOnce(albumPath, r) {
       // An empty spread has no picture: an old one would show photos it no longer has.
       if (e || s.proof === proofPath(album.path, s.n)) todo.push({ s, remove: true })
     } else if (e && e.hash === hashes[i]) {
+      // A sheet saved from the editor since its proof was made: show what the sheet looks like now.
+      if (e.source === 'sheet' && e.sheet && s.sheet) {
+        const stamp = await fileStamp(s.sheet)
+        if (stamp !== e.sheet) todo.push({ s, hash: hashes[i], fromSheet: s.sheet, sheetStamp: stamp })
+      }
       continue
     } else if (!e && s.proof && s.proof === proofPath(album.path, s.n)) {
       // Made before this manifest existed (the Electron app, or an older version): trust it once.
@@ -370,9 +393,10 @@ async function refreshOnce(albumPath, r) {
       }
       const re = reuse.get(n)
       let skipped = []
-      if (re) await writeAtomic(out, re.buf)
+      if (t.fromSheet) await proofFromSheet(t.fromSheet, out)
+      else if (re) await writeAtomic(out, re.buf)
       else ({ skipped } = await drawProof(t.s, album, ws, out))
-      known[n] = { hash: t.hash, source: re ? re.source : 'live' }
+      known[n] = t.fromSheet ? { hash: t.hash, source: 'sheet', sheet: t.sheetStamp } : { hash: t.hash, source: re ? re.source : 'live' }
       await saveManifest(m)
       rendered++
       r.emit('proofs.updated', { album: album.path, n, proof: out, source: known[n].source, ms: Date.now() - t0, skipped })

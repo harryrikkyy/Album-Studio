@@ -43,6 +43,7 @@ function SheetState({ n, rendered }: { n: number; rendered: boolean }) {
   const st = sheetStateOf(n)
   if (!st) return <>{rendered ? 'Rendered' : 'Not rendered'}</>
   if (st.state === 'blocked') return <span class="muted">{st.reason ?? 'Can’t render yet'}</span>
+  if (st.edited) return <span class="is-ok" title="Saved from the editor after it was rendered; renders keep it">Edited in the editor</span>
   return <span class={st.state === 'stale' ? 'is-warn' : st.state === 'current' ? 'is-ok' : ''}>{SHEET_WORDS[st.state]}</span>
 }
 

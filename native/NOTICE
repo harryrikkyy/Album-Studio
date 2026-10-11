@@ -1,0 +1,24 @@
+Album Studio
+Copyright (c) 2026 Creative Hubb.
+
+Album Studio is built on the following open-source software. Each keeps its own licence; the
+full licence texts are bundled with the app in Contents/Resources/licenses/.
+
+PhotoCraft (the editor and the sheet renderer)
+  Copyright (c) 2026 ArtCraft Team and the PhotoCraft contributors.
+  Licensed under the MIT License or the Apache License, Version 2.0, at your option.
+  Album Studio's editor is based on PhotoCraft by the ArtCraft team. Album Studio is not made,
+  sponsored or endorsed by the ArtCraft team, and carries none of the ArtCraft marks.
+  PhotoCraft's own notices (bundled fonts Inter and JetBrains Mono under the SIL Open Font
+  License 1.1; Lucide icons under ISC, Feather-derived icons under MIT; the SCOWL word list)
+  apply to the editor and are reproduced in licenses/photocraft-NOTICE.
+
+sharp — Apache License 2.0.
+libvips (bundled with sharp) — GNU Lesser General Public License 2.1 or later; dynamically
+  linked, and replaceable.
+ag-psd — MIT License.
+Preact, @preact/signals — MIT License.
+Lucide icons (lucide-preact) — ISC License.
+wry, muda, rfd and the Rust crates PhotoCraft depends on — MIT and/or Apache License 2.0
+  (per crate; listed in licenses/rust-crates).
+Node.js (bundled runtime) — MIT License, with the third-party notices in its LICENSE file.

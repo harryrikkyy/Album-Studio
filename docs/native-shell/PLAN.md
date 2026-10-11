@@ -58,9 +58,18 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    Same as before: page backgrounds don't apply to template spreads; a vignette is preview-only.
    Open: a font chosen for a template text layer (warned; the template's font is kept); the
    preview of a spread with template overrides loses frame strokes (the sheet is right).
-5. **Editor**: merge the "← Album" strip into PhotoCraft's title bar, remove ArtCraft brand
-   and Discord link (licence), colour-profile policy, Album Studio menu bar, actions on the
-   open sheet (place photo, swap, wallpaper/PNG/mask) via `PhotocraftApp::run`.
+5. ~~Editor~~ (done 2026-10-11): "← Album" leads the editor's own title bar; no ArtCraft mark,
+   Discord or community links anywhere (brand licence), plain-text credit in About (editor and
+   album) and `native/NOTICE`; window title "… — Album Studio". macOS menu bars: the album's
+   own (standard Edit items, so web text fields copy and paste; album commands to the page)
+   and PhotoCraft's in the editor only; Quit/close go through the editor's unsaved-work prompt.
+   Colour policy checked, unchanged: sRGB working space, embedded profiles kept, no prompt for
+   profile-less sheets, a prompt on a real mismatch. Sheets saved from the editor: marked
+   "Edited in the editor", kept by every render unless chosen one by one (with a warning), and
+   their previews redrawn from them on return to the album.
+   Open: album actions inside the editor (place photo, swap, wallpaper/PNG/mask) — use Plan for
+   now; upstream test `mask_thumbs_ui::a_new_mask_is_targeted…` fails on the fork as received,
+   and `gpu_startup::returned_non_graphics_errors…` is flaky (both upstream).
 6. **Library, Tools** (renamer, curation, retouch), settings, licence/sign-in.
 7. **Packaging**: .app with bundled Node runtime, `photocraft-cli`, built UI; icon; signing.
 8. **Retire Electron**.

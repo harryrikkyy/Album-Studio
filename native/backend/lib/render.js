@@ -11,6 +11,7 @@ const { execFile } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
+const { fileStamp } = require('./cache')
 const { inputsHash } = require('./inputs')
 const { PhotoCraftSession } = require('./photocraft')
 const { recordSheetProof } = require('./proofs')
@@ -37,6 +38,13 @@ function cachePaths(outputFolder) {
   const dir = path.join(outputFolder, '.album-studio')
   return { dir, file: path.join(dir, 'render-cache.json'), raw: path.join(dir, 'raw'), adjusted: path.join(dir, 'adjusted'), previews: path.join(dir, 'previews') }
 }
+
+/**
+ * A cache entry: the spread's hash when its sheet was rendered, and the sheet file's size and time
+ * then (`sheet`), which tells a sheet saved later from the editor. Older entries are the hash alone.
+ */
+const entryHash = (e) => (typeof e === 'string' ? e : e && e.hash)
+const editedSince = async (e, psd) => !!(e && typeof e === 'object' && e.sheet && e.sheet !== (await fileStamp(psd)))
 
 async function readCache(file) {
   try { return JSON.parse(await fs.promises.readFile(file, 'utf8')) } catch (_) { return {} }
@@ -69,7 +77,9 @@ function unsupportedEdits(spread, ws) {
 /**
  * Start rendering. Returns at once with the job id; progress arrives as `render.progress`
  * events and the end as `render.finished`.
- * @param {{ album: string, spreads?: number[]|null, force?: boolean }} p
+ * Sheets saved from the editor since they were rendered are kept, unless `overwriteEdited` (the
+ * user chose those spreads knowing it replaces their edits).
+ * @param {{ album: string, spreads?: number[]|null, force?: boolean, overwriteEdited?: boolean }} p
  * @param {{ emit: (event: string, data: object) => void }} ctx
  */
 async function startRender(p, { emit }) {
@@ -86,11 +96,11 @@ async function startRender(p, { emit }) {
   const job = { id: jobSeq++, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now(), outputFolder }
   current = job
   emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
-  void runJob(job, { album, ws, spreads, force: !!p.force }, emit).finally(() => { current = null })
+  void runJob(job, { album, ws, spreads, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit).finally(() => { current = null })
   return { jobId: job.id, total: job.total, outputFolder }
 }
 
-async function runJob(job, { album, ws, spreads, force }, emit) {
+async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit) {
   const paths = cachePaths(job.outputFolder)
   const cache = await readCache(paths.file)
   const proofDir = path.join(album.path, 'proofs', 'pages')
@@ -111,7 +121,14 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
         if (!s.photoIds.length) throw new Error('the spread has no photos')
         const hash = await spreadHash(s, album, ws)
         const exists = await fs.promises.access(outPsd).then(() => true, () => false)
-        if (!force && exists && cache[s.n] === hash) {
+        if (exists && !overwriteEdited && (await editedSince(cache[s.n], outPsd))) {
+          // Edited by hand in the editor: never replaced without being asked.
+          job.skipped++
+          report('skipped', { reason: 'edited' })
+          results.push({ n: s.n, state: 'skipped', reason: 'edited' })
+          continue
+        }
+        if (!force && exists && entryHash(cache[s.n]) === hash) {
           job.skipped++
           report('skipped')
           results.push({ n: s.n, state: 'skipped' })
@@ -146,9 +163,9 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
         // The sheet's own render becomes the spread's preview in Plan and Review.
         await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
         await fs.promises.unlink(preview).catch(() => {})
-        await recordSheetProof(album, ws, s)
+        await recordSheetProof(album, ws, s, outPsd)
         emit('proofs.updated', { album: album.path, n: s.n, proof: path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), source: 'sheet' })
-        cache[s.n] = hash
+        cache[s.n] = { hash, sheet: await fileStamp(outPsd) }
         await writeCache(paths.file, cache)
         job.done++
         const r = { n: s.n, state: 'done', ms: Date.now() - t0, path: outPsd, warnings: [...warnings, ...built.warnings] }
@@ -177,6 +194,7 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
  * Each spread's render state without rendering anything: `current` (the sheet exists and nothing
  * changed since), `stale` (it exists but its photos, template or edits changed), `missing` (no
  * sheet yet), or `blocked` (it can't render: no template or no photos, with the reason).
+ * `edited`: the sheet was saved from the editor after it was rendered (renders keep it).
  */
 async function renderPlan({ album: albumPath }) {
   if (!albumPath) throw new Error('missing `album`')
@@ -192,7 +210,7 @@ async function renderPlan({ album: albumPath }) {
     const exists = await fs.promises.access(out).then(() => true, () => false)
     if (!exists) return { n: s.n, state: 'missing' }
     const hash = await spreadHash(s, album, ws)
-    return { n: s.n, state: cache[s.n] === hash ? 'current' : 'stale', unsupported: unsupportedEdits(s, ws) }
+    return { n: s.n, state: entryHash(cache[s.n]) === hash ? 'current' : 'stale', edited: await editedSince(cache[s.n], out), unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
 }

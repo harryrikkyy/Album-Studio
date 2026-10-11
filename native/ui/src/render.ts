@@ -7,7 +7,7 @@ import { plural } from './format'
 import { album, assetVersion, openAlbumQuietly, toast } from './state'
 
 export type SheetState = 'current' | 'stale' | 'missing' | 'blocked'
-export interface PlanEntry { n: number; state: SheetState; reason?: string; unsupported?: string[] }
+export interface PlanEntry { n: number; state: SheetState; edited?: boolean; reason?: string; unsupported?: string[] }
 export interface Plan { outputFolder: string; spreads: PlanEntry[] }
 
 export interface SheetResult { n: number; state: 'done' | 'failed' | 'skipped'; ms?: number; error?: string; warnings?: string[] }
@@ -39,11 +39,12 @@ export async function loadPlan() {
   }
 }
 
-export async function startRender(spreads: number[] | null, force = false) {
+/** `overwriteEdited`: the user chose sheets edited in the editor, knowing this replaces them. */
+export async function startRender(spreads: number[] | null, force = false, overwriteEdited = false) {
   const a = album.value
   if (!a || running.value) return
   try {
-    await call('render.start', { album: a.path, spreads, force })
+    await call('render.start', { album: a.path, spreads, force, overwriteEdited })
   } catch (e) {
     toast('error', (e as Error).message, 8000)
   }
@@ -64,6 +65,13 @@ function duration(ms: number): string {
 onEvent('render.started', (d) => {
   const data = d as { jobId: number; total: number; album: string }
   job.value = { jobId: data.jobId, album: data.album, total: data.total, index: 0, current: null, phase: 'Starting', startedAt: Date.now(), results: [], finished: null }
+})
+
+// Back from the editor: a sheet may have been saved there. Look at the album, its sheets and
+// their previews again.
+onEvent('shell.albumShown', () => {
+  const a = album.value
+  if (a) void openAlbumQuietly(a.path).then(loadPlan)
 })
 
 onEvent('render.progress', (d) => {

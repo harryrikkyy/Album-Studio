@@ -202,7 +202,10 @@ export function Deliver() {
   const ep = exportPlanSig.value
   const byN = new Map((p?.spreads ?? []).map((s) => [s.n, s]))
   const exportByN = new Map((ep?.spreads ?? []).map((s) => [s.n, s.state]))
-  const toRender = (p?.spreads ?? []).filter((s) => s.state === 'missing' || s.state === 'stale').map((s) => s.n)
+  // Sheets edited by hand in the editor are only rendered again when chosen one by one.
+  const toRender = (p?.spreads ?? []).filter((s) => (s.state === 'missing' || s.state === 'stale') && !s.edited).map((s) => s.n)
+  const editedChosen = [...selected].filter((n) => byN.get(n)?.edited)
+  const editedCount = (p?.spreads ?? []).filter((s) => s.edited).length
   const current = job.value && !job.value.finished ? job.value.current : null
   const busy = running.value || exporting.value
 
@@ -228,13 +231,14 @@ export function Deliver() {
           {selected.size ? (
             <>
               <Button variant="ghost" onClick={() => setSelected(new Set())} disabled={busy}>Clear selection</Button>
-              <Button variant="primary" icon={<Play size={14} />} disabled={busy} onClick={() => startRender([...selected].sort((x, y) => x - y), true)}>
+              {editedChosen.length ? <span class="deliver__warn">Replaces the hand edits in spread{editedChosen.length > 1 ? 's' : ''} {editedChosen.join(', ')}</span> : null}
+              <Button variant="primary" icon={<Play size={14} />} disabled={busy} onClick={() => startRender([...selected].sort((x, y) => x - y), true, editedChosen.length > 0)}>
                 Render {plural(selected.size, 'spread')}
               </Button>
             </>
           ) : (
             <>
-              <Button variant="ghost" disabled={busy || !p} onClick={() => startRender(null, true)} title="Render every spread again, even unchanged ones">Render all again</Button>
+              <Button variant="ghost" disabled={busy || !p} onClick={() => startRender(null, true)} title={editedCount ? `Render every spread again, even unchanged ones. ${plural(editedCount, 'sheet')} edited in the editor ${editedCount > 1 ? 'are' : 'is'} kept.` : 'Render every spread again, even unchanged ones'}>Render all again</Button>
               <Button variant="primary" icon={<Play size={14} />} disabled={busy || !toRender.length} onClick={() => startRender(toRender)}>
                 {running.value ? 'Rendering…' : toRender.length ? `Render ${plural(toRender.length, 'sheet')}` : 'All sheets up to date'}
               </Button>
@@ -265,8 +269,11 @@ export function Deliver() {
                     <span class="sheet__n">{s.n}</span>
                     <span class="sheet__tpl">{templateLabel(s.template?.name)}</span>
                     {ex === 'ready' ? <span class="sheet__jpeg" title="Print and review JPEGs are made from this sheet">JPEG</span> : null}
-                    <span class={`chip chip--${isNow ? 'now' : state ?? 'loading'}`}>
-                      {isNow ? (running.value ? 'Rendering…' : 'Exporting…') : state ? (state === 'blocked' ? st?.reason : STATE_LABEL[state]) : '…'}
+                    <span
+                      class={`chip chip--${isNow ? 'now' : st?.edited ? 'edited' : state ?? 'loading'}`}
+                      title={st?.edited ? 'Saved from the editor after it was rendered. Renders keep it unless you choose this spread and render it.' : undefined}
+                    >
+                      {isNow ? (running.value ? 'Rendering…' : 'Exporting…') : st?.edited ? (state === 'stale' ? 'Edited · plan changed' : 'Edited in the editor') : state ? (state === 'blocked' ? st?.reason : STATE_LABEL[state]) : '…'}
                     </span>
                   </span>
                 </button>

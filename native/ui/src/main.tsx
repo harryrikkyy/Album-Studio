@@ -2,7 +2,8 @@
 
 import { effect } from '@preact/signals'
 import { Component, render, type ComponentChildren } from 'preact'
-import { call, inShell } from './bridge'
+import { call, inShell, onEvent } from './bridge'
+import { AboutDialog, openAbout } from './app/About'
 import { Frame, goToPlace, placeForKey } from './app/Frame'
 import { Albums } from './places/Albums'
 import { Deliver } from './places/Deliver'
@@ -10,10 +11,12 @@ import { Pending } from './places/Pending'
 import { Plan } from './places/Plan'
 import { Review } from './places/Review'
 import { redo, spreadSelection, undo } from './edit'
+import { openNewAlbum } from './places/albums/NewAlbum'
 import { moveSpread, removePhotos, shuffleTemplate } from './plan_actions'
 import { loadPlan, plan, startRender } from './render'
 import {
-  album, currentSpread, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, templateBrowserOpen, theme,
+  album, currentSpread, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
+  toggleInspector,
 } from './state'
 import './styles/tokens.css'
 import './styles/base.css'
@@ -106,7 +109,34 @@ class Boundary extends Component<{ children: ComponentChildren }, { error: Error
   }
 }
 
-render(<Boundary><Frame><Current /></Frame></Boundary>, document.getElementById('app')!)
+// The menu bar (the shell's album menu): each command as if its button or key was used.
+onEvent('menu', (d) => {
+  const command = (d as { command: string }).command
+  const typing = isTyping({ target: document.activeElement } as unknown as KeyboardEvent)
+  if (command === 'undo' || command === 'redo') {
+    // In a text field the menu's Undo is the field's own; elsewhere it is the album's.
+    if (typing) document.execCommand(command)
+    else if (album.value) void (command === 'undo' ? undo() : redo())
+  } else if (command === 'about') openAbout()
+  else if (command === 'newAlbum') { place.value = 'albums'; openNewAlbum() }
+  else if (command === 'openAlbum') { place.value = 'albums'; void pickAndOpenAlbum() }
+  else if (command === 'editSpread') void editCurrentSpread()
+  else if (command.startsWith('place.')) goToPlace(command.slice(6) as Parameters<typeof goToPlace>[0])
+  else if (command === 'templates' && album.value) { place.value = 'plan'; templateBrowserOpen.value = !templateBrowserOpen.value }
+  else if (command === 'inspector' && album.value) { place.value = 'plan'; toggleInspector() }
+  else if (command === 'theme') setTheme(theme.value === 'studio-dark' ? 'studio-light' : 'studio-dark')
+})
+
+async function pickAndOpenAlbum() {
+  try {
+    const path = await call<string | null>('dialog.pickFolder', { title: 'Open an album project folder' })
+    if (path) await openAlbum(path)
+  } catch (e) {
+    report('menu', e)
+  }
+}
+
+render(<Boundary><Frame><Current /><AboutDialog /></Frame></Boundary>, document.getElementById('app')!)
 
 // Deep links: ?open=<album folder>&place=plan|review&spread=<n>&theme=studio-light. The shell uses
 // them to open an album straight away (from Finder, or the last session).
