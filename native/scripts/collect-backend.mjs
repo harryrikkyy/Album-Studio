@@ -24,7 +24,10 @@ function resolveFile(base) {
   return null
 }
 
-const files = new Set()
+// Files read at run time rather than required: the licence verification key.
+const DATA = ['src/license_public_key.pem']
+
+const files = new Set(DATA.map((f) => join(ROOT, f)))
 const packages = new Set()
 const queue = [ENTRY]
 while (queue.length) {

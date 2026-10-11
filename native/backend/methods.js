@@ -4,6 +4,7 @@
 
 'use strict'
 
+const account = require('./lib/account')
 const { openAlbum } = require('./lib/album')
 const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('./lib/newalbum')
 const { redo, undo, updateAlbum } = require('./lib/project')
@@ -28,6 +29,14 @@ function withProofs(fn) {
 
 const methods = {
   'system.ping': async (p) => ({ pong: p.n ?? null, node: process.version }),
+
+  // The Creative Hubb account: until its check passes, only these answer (see server.js).
+  // account.signIn answers when the browser sign-in is done (or failed, cancelled, timed out).
+  'account.status': async (p) => account.status(p),
+  'account.signIn': async (p, ctx) => account.signIn(p, ctx),
+  'account.cancelSignIn': async () => account.cancelSignIn(),
+  'account.retry': async () => account.retry(),
+  'account.signOut': async () => account.signOut(),
 
   'album.open': withProofs(async (p) => {
     const album = await openAlbum(p)

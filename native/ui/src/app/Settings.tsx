@@ -2,11 +2,14 @@
 // exports, and the space the caches take (all of it can be made again, so clearing loses nothing).
 
 import { signal } from '@preact/signals'
-import { HardDrive, Settings as SettingsIcon, X } from 'lucide-preact'
+import { HardDrive, LogOut, Settings as SettingsIcon, UserRound, X } from 'lucide-preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import { account, signOut } from '../account'
+import { expiryNote, subscriptionLine } from '../account_logic'
 import { call } from '../bridge'
 import { autoTemplate, setAutoTemplate } from '../edit'
 import { exportSettings, megabytes, setExportSettings } from '../exporting'
+import { running } from '../render'
 import { album, setTheme, stored, store, theme, toast } from '../state'
 import { Button, IconButton, Segmented } from '../ui/controls'
 
@@ -52,6 +55,8 @@ export function SettingsDialog() {
           <h2 id="settings-title" class="dialog__title"><SettingsIcon size={18} /> Settings</h2>
           <IconButton label="Close" onClick={() => (open.value = false)}><X size={16} /></IconButton>
         </div>
+
+        {account.value ? <AccountSection /> : null}
 
         <section class="set-section">
           <h3>Appearance</h3>
@@ -104,5 +109,27 @@ export function SettingsDialog() {
         </section>
       </div>
     </dialog>
+  )
+}
+
+function AccountSection() {
+  const a = account.value!
+  const warn = expiryNote(a.daysLeft)
+  return (
+    <section class="set-section">
+      <h3><UserRound size={14} class="inline-icon" /> Account</h3>
+      <div class="set-account">
+        <div class="set-account__who">
+          <strong>{a.name || a.email || 'Signed in'}</strong>
+          {a.name && a.email ? <span>{a.email}</span> : null}
+          <span class={warn && !a.bypass ? 'is-warn' : ''}>{subscriptionLine(a)}</span>
+        </div>
+        {a.bypass ? null : (
+          <Button size="sm" variant="ghost" icon={<LogOut size={14} />} disabled={running.value} title={running.value ? 'Wait for the render to finish' : undefined} onClick={() => { open.value = false; void signOut() }}>
+            Sign out
+          </Button>
+        )}
+      </div>
+    </section>
   )
 }

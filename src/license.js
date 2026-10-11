@@ -21,7 +21,8 @@ const SECRET_KEY = process.env.LICENSE_SECRET_KEY || 'CH-TOOLKIT-PRO-2025-SECRET
 if (!process.env.LICENSE_SECRET_KEY) {
   console.warn('[license] WARNING: LICENSE_SECRET_KEY not set — using insecure fallback. Set it in .env before distributing.')
 }
-const LICENSE_FILE = path.join(os.homedir(), '.ch_toolkit_license')
+// Overridable for tests.
+const LICENSE_FILE = process.env.CH_LICENSE_FILE || path.join(os.homedir(), '.ch_toolkit_license')
 
 function generateChecksum(data) {
   return crypto.createHmac('sha256', SECRET_KEY).update(JSON.stringify(data)).digest('hex')

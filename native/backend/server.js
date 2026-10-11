@@ -10,6 +10,15 @@
 'use strict'
 
 const readline = require('readline')
+const util = require('util')
+
+// stdout is the protocol: anything a module prints (the reused Electron modules log with
+// console.log) goes to stderr, the shell's log, instead of breaking a reply line.
+for (const level of ['log', 'info', 'debug']) {
+  console[level] = (...args) => process.stderr.write(util.format(...args) + '\n')
+}
+
+const { permits } = require('./lib/account')
 const { methods } = require('./methods')
 
 /** @param {object} msg */
@@ -34,6 +43,10 @@ async function dispatch(line) {
   const fn = Object.prototype.hasOwnProperty.call(methods, method) ? methods[method] : null
   if (!fn) {
     send({ id, ok: false, error: `unknown method \`${method}\`` })
+    return
+  }
+  if (!permits(method)) {
+    send({ id, ok: false, error: 'Sign in to Album Studio first.', code: 'signedOut' })
     return
   }
   try {

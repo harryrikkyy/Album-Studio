@@ -10,6 +10,9 @@
 #   ALBUM_STUDIO_NODE_RUNTIME  folder of another official Node.js build (node-vXX-darwin-arm64,
 #                              as unpacked from nodejs.org) to bundle instead; "none" bundles
 #                              nothing and the app uses the Node.js installed on the Mac.
+#   ALBUM_STUDIO_SIGNIN_ENV    the sign-in settings file to build in (Firebase project, Google
+#                              OAuth client, licence key; default: the repository's .env); "none"
+#                              builds none in, and the app then reads them from its data folder.
 #   MACOS_SIGN_IDENTITY        codesign identity; default "-" (ad-hoc, for this Mac). A Developer
 #                              ID identity signs with the hardened runtime, ready to notarise.
 #
@@ -68,6 +71,16 @@ for p in $(print -r -- "$COLLECT" | node -e "let s='';process.stdin.on('data',d=
     if [ -f "$ROOT/node_modules/$p/$l" ]; then cp "$ROOT/node_modules/$p/$l" "$RES/licenses/npm-${p//\//-}-LICENSE.txt"; break; fi
   done
 done
+
+# Sign-in settings (only the keys the helper reads; see native/backend/lib/account.js).
+SIGNIN_ENV="${ALBUM_STUDIO_SIGNIN_ENV:-$ROOT/.env}"
+if [ "$SIGNIN_ENV" != "none" ] && [ -f "$SIGNIN_ENV" ]; then
+  grep -E '^(FIREBASE_API_KEY|FIREBASE_PROJECT_ID|GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|LICENSE_SECRET_KEY)=' "$SIGNIN_ENV" > "$RES/app/.env" || true
+  chmod 600 "$RES/app/.env"
+  print "  Sign-in settings built in ($(wc -l < "$RES/app/.env" | tr -d ' ') keys)"
+else
+  print "  (No sign-in settings built in: sign-in needs a .env in Album Studio's data folder)"
+fi
 
 # Node.js: the pinned official build (fetched and checked once), or the one given.
 NODE_RUNTIME="${ALBUM_STUDIO_NODE_RUNTIME:-}"

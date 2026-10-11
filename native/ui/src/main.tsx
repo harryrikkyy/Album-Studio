@@ -3,6 +3,8 @@
 import { effect } from '@preact/signals'
 import { Component, render, type ComponentChildren } from 'preact'
 import { call, inShell, onEvent } from './bridge'
+import { account, checkAccount, whenAllowed } from './account'
+import { SignIn } from './app/SignIn'
 import { AboutDialog, openAbout } from './app/About'
 import { AlbumSettingsDialog } from './app/AlbumSettings'
 import { SettingsDialog, openSettings } from './app/Settings'
@@ -120,6 +122,7 @@ class Boundary extends Component<{ children: ComponentChildren }, { error: Error
 // The menu bar (the shell's album menu): each command as if its button or key was used.
 onEvent('menu', (d) => {
   const command = (d as { command: string }).command
+  if (account.value?.state !== 'allowed') return // the sign-in screen has no album commands
   const typing = isTyping({ target: document.activeElement } as unknown as KeyboardEvent)
   if (command === 'undo' || command === 'redo') {
     // In a text field the menu's Undo is the field's own; elsewhere it is the album's.
@@ -144,7 +147,14 @@ async function pickAndOpenAlbum() {
   }
 }
 
-render(<Boundary><Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame></Boundary>, document.getElementById('app')!)
+/** The app, once the Creative Hubb account lets it open; the sign-in screen until then. */
+function Root() {
+  if (account.value?.state !== 'allowed') return <SignIn />
+  return <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>
+}
+
+void checkAccount()
+render(<Boundary><Root /></Boundary>, document.getElementById('app')!)
 
 // Deep links: ?open=<album folder>&place=plan|review&spread=<n>&theme=studio-light. The shell uses
 // them to open an album straight away (from Finder, or the last session).
@@ -154,6 +164,7 @@ void (async () => {
   if (t === 'studio-dark' || t === 'studio-light') theme.value = t
   const open = q.get('open')
   if (!open) return
+  await whenAllowed()
   await openAlbum(open)
   const n = Number(q.get('spread'))
   if (n > 0) goToSpread(n - 1)

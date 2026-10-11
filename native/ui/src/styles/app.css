@@ -1206,3 +1206,31 @@
 .set-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); font-size: var(--fs-12); color: var(--ink-2); }
 .set-caches { display: flex; flex-direction: column; gap: 2px; }
 .set-caches li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--sp-5); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-1); background: var(--bg-well); font-size: var(--fs-12); }
+
+/* Sign-in: the window before the app opens */
+.signin { position: fixed; inset: 0; display: grid; grid-template-rows: 44px minmax(0, 1fr) auto; background: var(--bg-app); }
+.signin__panel { align-self: center; justify-self: center; display: flex; flex-direction: column; gap: var(--sp-5); width: min(420px, calc(100% - 2 * var(--sp-8))); padding-bottom: 8vh; }
+.signin__brand { font-size: 28px; font-weight: var(--fw-semibold); letter-spacing: -0.02em; }
+.signin__title { font-size: var(--fs-17); text-wrap: balance; }
+.signin__text { color: var(--ink-2); line-height: 1.55; text-wrap: pretty; }
+.signin__status { display: flex; align-items: center; gap: var(--sp-3); color: var(--ink-2); }
+.signin__wait, .signin__blocked { display: flex; flex-direction: column; gap: var(--sp-4); }
+.signin__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); margin-top: var(--sp-2); }
+.signin__signout { display: inline-flex; align-items: center; gap: var(--sp-2); align-self: flex-start; color: var(--ink-3); font-size: var(--fs-12); text-decoration: none; }
+.signin__signout:hover { color: var(--ink); }
+.signin__error { padding: var(--sp-3) var(--sp-4); border-radius: var(--r-2); background: var(--danger-soft); color: var(--ink); font-size: var(--fs-12); line-height: 1.5; }
+.signin__foot { padding: var(--sp-6) var(--sp-8); color: var(--ink-3); font-size: var(--fs-12); text-align: center; }
+/* Google's sign-in button, in its own colours (dark and light variants) */
+.gbtn { display: inline-flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px 0 12px; border: 1px solid #8e918f; border-radius: 20px; background: #131314; color: #e3e3e3; font-size: 14px; font-weight: var(--fw-medium); white-space: nowrap; }
+.gbtn:hover:not(:disabled) { background: #202124; }
+.gbtn:disabled { opacity: 0.6; }
+.gbtn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+[data-theme="studio-light"] .gbtn { border-color: #747775; background: #fff; color: #1f1f1f; }
+[data-theme="studio-light"] .gbtn:hover:not(:disabled) { background: #f8f9fa; }
+
+/* Settings › Account */
+.set-account { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--sp-2) var(--sp-5); padding: var(--sp-4); border-radius: var(--r-2); background: var(--bg-well); }
+.set-account__who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.set-account__who strong { font-weight: var(--fw-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-account__who span { color: var(--ink-3); font-size: var(--fs-12); }
+.set-account__who .is-warn { color: var(--warn); }
