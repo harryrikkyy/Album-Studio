@@ -9,7 +9,7 @@ export type Place = 'albums' | 'plan' | 'review' | 'edit' | 'deliver' | 'library
 export type Theme = 'studio-dark' | 'studio-light'
 
 /** Per-viewer conveniences only; the album itself never lives in browser storage. */
-function stored<T>(key: string, fallback: T): T {
+export function stored<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
     return raw === null ? fallback : (JSON.parse(raw) as T)
@@ -17,7 +17,7 @@ function stored<T>(key: string, fallback: T): T {
     return fallback
   }
 }
-function store(key: string, value: unknown) {
+export function store(key: string, value: unknown) {
   try {
     localStorage.setItem(key, JSON.stringify(value))
   } catch {
@@ -41,6 +41,11 @@ export const orientFilter = signal<'any' | Orient>('any')
 export const thumbSize = signal<number>(stored('as.thumbSize', 72))
 export const inspectorOpen = signal<boolean>(stored('as.inspectorOpen', true))
 export const hoveredPhoto = signal<string | null>(null)
+/** Photos selected in the pool (to drag or add together), and the last one clicked. */
+export const poolSelection = signal<ReadonlySet<string>>(new Set())
+export const poolAnchor = signal<string | null>(null)
+/** The template browser, open under the spread. */
+export const templateBrowserOpen = signal(false)
 
 export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string }
 export const toasts = signal<Toast[]>([])
@@ -133,6 +138,9 @@ export async function openAlbum(path: string) {
       album.value = a
       spreadIndex.value = 0
       place.value = 'plan'
+      poolSelection.value = new Set()
+      poolAnchor.value = null
+      templateBrowserOpen.value = false
     })
     void loadRecent()
   } catch (e) {

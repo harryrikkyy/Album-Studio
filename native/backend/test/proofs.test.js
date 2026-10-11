@@ -12,7 +12,7 @@ process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 const sharp = require('sharp')
 const agpsd = require('ag-psd')
 const { templateArt, erode } = require('../lib/psd_template')
-const { refreshProofs, proofsSettled } = require('../lib/proofs')
+const { refreshProofs, proofsSettled, spreadLayout } = require('../lib/proofs')
 const { updateAlbum } = require('../lib/project')
 const { embeddedJpeg } = require('../lib/raw')
 
@@ -177,6 +177,23 @@ test('proofs: drawn once, kept while nothing changes, moved with their spread, r
   await updateAlbum({ album: proj, ops: [{ op: 'removeSpread', n: 3 }, { op: 'removeSpread', n: 1 }] })
   ev = await refresh(proj)
   assert.deepEqual(fs.readdirSync(path.join(proj, 'proofs', 'pages')).filter((f) => f.endsWith('.jpg')), ['live_page_001.jpg'], 'proofs past the end are removed')
+})
+
+test('a spread layout says where each frame is and which photo fills it', async () => {
+  const { proj, id } = await makeAlbum()
+  const l = await spreadLayout({ album: proj, n: 1 })
+  assert.deepEqual([l.width, l.height], [W, H])
+  assert.deepEqual(l.frames.map((f) => [f.name, f.photoId]), [
+    ['ToolkitHFrame_001', id('A')],
+    ['ToolkitVFrame_001', id('C')],
+    ['ToolkitHFrame_002', id('B')],
+  ])
+  assert.deepEqual(l.frames[0], { name: 'ToolkitHFrame_001', orient: 'h', x: 20 / W, y: 20 / H, w: 200 / W, h: 150 / H, z: 0, photoId: id('A') })
+  assert.deepEqual(l.unplaced, [])
+  const two = await spreadLayout({ album: proj, n: 2 })
+  assert.deepEqual(two.frames.map((f) => f.photoId), [id('B'), null, null], 'empty frames are listed too')
+  const three = await spreadLayout({ album: proj, n: 3 })
+  assert.deepEqual(three.frames, [], 'no template, no frames')
 })
 
 test('proofs made elsewhere are trusted once, not redrawn', async () => {

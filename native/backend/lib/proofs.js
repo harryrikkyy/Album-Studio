@@ -119,6 +119,58 @@ async function photoSource(ph, dirs) {
 }
 
 /**
+ * Which photo goes in which frame, as in the sheet: by frame name, H and V apart, photos in the
+ * spread's order. Returned in drawing order.
+ * @template {{ orient: string }} P
+ * @param {any[]} frames
+ * @param {P[]} photos
+ * @returns {{ frame: any, photo: P }[]}
+ */
+function pairFrames(frames, photos) {
+  const pairs = []
+  for (const orient of ['h', 'v']) {
+    const list = photos.filter((p) => p.orient === orient)
+    const fr = framesByName(frames, orient)
+    for (let i = 0; i < Math.min(fr.length, list.length); i++) pairs.push({ frame: fr[i], photo: list[i] })
+  }
+  return pairs.sort((a, b) => a.frame.z - b.frame.z)
+}
+
+/**
+ * Where spread n's frames are (as fractions of the page, so the interface can lay them over any
+ * size of preview) and which photo each one shows.
+ */
+async function spreadLayout({ album: albumPath, n }) {
+  if (!albumPath) throw new Error('missing `album`')
+  const album = await openAlbum({ path: albumPath })
+  const s = album.spreads[Number(n) - 1]
+  if (!s) throw new Error(`There is no spread ${n}.`)
+  if (!s.template || !s.template.file) return { n: s.n, template: s.template ? s.template.id : null, width: null, height: null, backdrop: null, frames: [], unplaced: s.photoIds }
+  const art = await templateArt(s.template.file, MAX_EDGE)
+  const photos = s.photoIds.filter((id) => album.photos[id]).map((id) => ({ id, orient: album.photos[id].orient === 'v' ? 'v' : 'h' }))
+  const byFrame = new Map(pairFrames(art.frames, photos).map((p) => [p.frame.z, p.photo.id]))
+  const placed = new Set(byFrame.values())
+  return {
+    n: s.n,
+    template: s.template.id,
+    width: art.width,
+    height: art.height,
+    backdrop: art.backdrop,
+    frames: art.frames.filter((f) => !f.hidden).map((f) => ({
+      name: f.name,
+      orient: f.orient,
+      x: f.x / art.width,
+      y: f.y / art.height,
+      w: f.w / art.width,
+      h: f.h / art.height,
+      z: f.z,
+      photoId: byFrame.get(f.z) || null,
+    })),
+    unplaced: photos.filter((p) => !placed.has(p.id)).map((p) => p.id),
+  }
+}
+
+/**
  * Draw spread `spread` to `out`.
  * @returns {Promise<{ skipped: string[] }>}
  */
@@ -181,14 +233,7 @@ async function drawProof(spread, album, ws, out) {
     ? sharp(backdrop, { failOn: 'none' }).resize(W, H, { fit: 'fill' })
     : sharp({ create: { width: W, height: H, channels: 3, background: pr.parseHexColor(background) || { r: 255, g: 255, b: 255 } } })
 
-  // Photos pair with frames as in the sheet (by name, H and V apart), then draw in layer order.
-  const pairs = []
-  for (const orient of ['h', 'v']) {
-    const frames = framesByName(art.frames, orient)
-    const list = photos.filter((p) => p.orient === orient)
-    for (let i = 0; i < Math.min(frames.length, list.length); i++) pairs.push({ frame: frames[i], photo: list[i] })
-  }
-  pairs.sort((a, b) => a.frame.z - b.frame.z)
+  const pairs = pairFrames(art.frames, photos)
   const skipped = []
   const drawn = await Promise.all(pairs.map(async ({ frame, photo }) => {
     if (frame.hidden) return [] // clipped to a hidden layer: hidden in the sheet too
@@ -339,4 +384,4 @@ async function refreshOnce(albumPath, r) {
   r.emit('proofs.idle', { album: album.path, rendered, failed })
 }
 
-module.exports = { refreshProofs, proofsSettled, recordSheetProof, drawProof, proofHash, PROOF_VERSION }
+module.exports = { refreshProofs, proofsSettled, recordSheetProof, drawProof, proofHash, spreadLayout, pairFrames, PROOF_VERSION }

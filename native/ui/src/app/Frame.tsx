@@ -1,12 +1,14 @@
 // Frame.tsx — the window's frame: the top bar (with room for the traffic lights), the rail of
 // places, and the toast stack. The current place renders inside.
 
-import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Sun, Wrench, X } from 'lucide-preact'
+import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Sun, Undo2, Wrench, X } from 'lucide-preact'
 import type { ComponentChildren } from 'preact'
 import { call, inShell } from '../bridge'
+import { canRedo, canUndo, editing, redo, undo } from '../edit'
 import { plural } from '../format'
 import { job, running } from '../render'
 import { album, dismissToast, editCurrentSpread, place, setTheme, theme, toasts, type Place } from '../state'
+import { IconButton } from '../ui/controls'
 
 const PLACES: { id: Place; label: string; icon: ComponentChildren; key: string; needsAlbum: boolean }[] = [
   { id: 'albums', label: 'Albums', icon: <BookImage size={20} strokeWidth={1.6} />, key: '1', needsAlbum: false },
@@ -47,12 +49,19 @@ function TopBar() {
           <>
             <span class="topbar__album">{a.name}</span>
             <span class="topbar__meta">{plural(a.stats.spreads, 'spread')} · {plural(a.stats.photos, 'photo')}</span>
+            <span class={`topbar__save ${editing.value ? 'is-saving' : ''}`} role="status">{editing.value ? 'Saving…' : ''}</span>
           </>
         ) : (
           <span class="topbar__album">Album Studio</span>
         )}
       </div>
       <div class="topbar__actions">
+        {a ? (
+          <div class="topbar__history">
+            <IconButton label="Undo (⌘Z)" disabled={!canUndo.value} onClick={() => void undo()}><Undo2 size={16} strokeWidth={1.8} /></IconButton>
+            <IconButton label="Redo (⇧⌘Z)" disabled={!canRedo.value} onClick={() => void redo()}><Redo2 size={16} strokeWidth={1.8} /></IconButton>
+          </div>
+        ) : null}
         {running.value && job.value ? (
           <button type="button" class="topbar__job" onClick={() => goToPlace('deliver')} title="Show the render">
             <LoaderCircle size={14} /> Rendering {job.value.index} of {job.value.total}

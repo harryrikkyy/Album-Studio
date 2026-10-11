@@ -1,7 +1,7 @@
 // render.ts — render jobs as seen by the interface: the per-spread plan, the running job's
 // progress (pushed by the background helper as events), and the actions that start or cancel it.
 
-import { batch, computed, signal } from '@preact/signals'
+import { batch, computed, effect, signal } from '@preact/signals'
 import { call, onEvent } from './bridge'
 import { plural } from './format'
 import { album, assetVersion, openAlbumQuietly, toast } from './state'
@@ -99,5 +99,29 @@ onEvent('render.finished', (d) => {
   // Pick up the new sheets and previews.
   if (album.value && album.value.path === j.album) void openAlbumQuietly(j.album).then(loadPlan)
 })
+
+// After edits settle (the previews are redrawn), sheets may have gone out of date: ask again.
+// The plan is cheap (a hash per spread), so it follows the album rather than being cached.
+let planTimer = 0
+function refreshPlanSoon() {
+  window.clearTimeout(planTimer)
+  planTimer = window.setTimeout(() => { if (!running.value) void loadPlan() }, 250)
+}
+onEvent('proofs.idle', (d) => {
+  if (album.value && (d as { album: string }).album === album.value.path) refreshPlanSoon()
+})
+let planFor: string | null = null
+effect(() => {
+  const p = album.value?.path ?? null
+  if (p === planFor) return
+  planFor = p
+  plan.value = null
+  if (p) refreshPlanSoon()
+})
+
+/** A spread's sheet as the plan sees it; null until the plan has loaded. */
+export function sheetStateOf(n: number): PlanEntry | null {
+  return plan.value?.spreads.find((s) => s.n === n) ?? null
+}
 
 export { duration }

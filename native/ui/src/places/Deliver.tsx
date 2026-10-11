@@ -4,7 +4,8 @@ import { CircleAlert, CircleCheck, FolderOutput, Play, Square } from 'lucide-pre
 import { useEffect, useState } from 'preact/hooks'
 import { plural, shortPath, templateLabel } from '../format'
 import { cancelRender, duration, job, loadPlan, plan, planError, running, startRender, type SheetState } from '../render'
-import { album, previewUrl } from '../state'
+import { proofUrl } from '../edit'
+import { album } from '../state'
 import { Button } from '../ui/controls'
 
 const STATE_LABEL: Record<SheetState, string> = {
@@ -129,7 +130,7 @@ export function Deliver() {
                   onClick={() => toggle(s.n)}
                   title={st?.reason || (st?.unsupported?.length ? st.unsupported.join('; ') : '')}
                 >
-                  <span class="sheet__img">{s.proof ? <img src={previewUrl(s.proof)} alt="" loading="lazy" decoding="async" /> : null}</span>
+                  <span class="sheet__img">{s.proof ? <img src={proofUrl(s)} alt="" loading="lazy" decoding="async" /> : null}</span>
                   <span class="sheet__cap">
                     <span class="sheet__n">{s.n}</span>
                     <span class="sheet__tpl">{templateLabel(s.template?.name)}</span>

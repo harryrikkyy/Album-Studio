@@ -1,4 +1,4 @@
-# Native shell: status and remaining plan (2026-10-10)
+# Native shell: status and remaining plan (2026-10-11)
 
 ## Done (branch `native-shell`; fork `native/photocraft` branch `album-studio`)
 
@@ -9,8 +9,23 @@
   11 tests (one builds a real sheet with the engine).
 - `render` — sheets built by PhotoCraft (no Photoshop): Wedding album 23 sheets in 3 min 49 s,
   cache + deleted-file re-render, RAW via macOS `sips`, frame-resolution embedding.
-- `ui` — new interface: Albums, Plan (read-only), Review, Deliver (render with live progress),
-  dark + light themes, error boundary. 4 tests.
+- `ui` — new interface: Albums, Plan, Review, Deliver (render with live progress),
+  dark + light themes, error boundary. 10 tests.
+- **Plan editing (step 1, done 2026-10-11)** — every edit is one undo step (⌘Z / ⇧⌘Z, top-bar
+  buttons), saved at once in the Electron format (atomic, `project.json.bak`):
+  - drag photos (one or a selection) from the pool onto the spread, a frame (replace/swap) or a
+    spread in the strip; ⌥ copies; double-click or "Add to spread N" adds; drag off to the pool
+    or ⌫ takes off; inspector rows reorder and accept drops;
+  - templates: browser under the spread (fits / all, collection, search), Shuffle (S), and
+    "Follow photos": a fitting template is picked when photos change (same collection first);
+  - spreads: add before/after/end, move (strip drag, ⌥←/⌥→), clear, delete; Auto-fill dialog
+    (exact count or min–max, capture-time order);
+  - live proofs in the background after each edit (only changed spreads; moved ones keep their
+    picture): PSD composite backdrop, real frame shapes/opacity/strokes, layer order, RAW via
+    the camera's embedded preview. 20 spreads in 13 s, one spread 0.3–1 s;
+  - print-sheet status from the render cache ("Changed since render").
+  Backend 27 tests, UI 10 tests; interactions checked in the real web view through the
+  debug-build script hook (`ALBUM_STUDIO_DEBUG_SOCKET`); browser preview: `node native/ui/dev/serve.mjs`.
 
 Reusable from the Electron app without changes (checked): `src/proof_renderer.js`,
 `src/psd_layers.js`, `src/overlay_render.js`, `src/renderer_pure.js`, `src/curation.js`,
@@ -19,11 +34,8 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
 
 ## Next, in order
 
-1. **Plan editing** (album creation): backend `album.update` ops (set spread photos, template,
-   add/remove/move spread, auto-fill desired-sheets/min-max with EXIF order via
-   `planAutoFillCounts`), atomic project.json writes (Electron-compatible format, `.bak`),
-   undo/redo snapshots; `templates.list` (matching H/V); UI drag photo → spread, swap, remove,
-   template picker, ⌘Z. Live proofs via `proof_renderer.renderProofBatch`.
+1. ~~Plan editing~~ (done, above). Open: per-photo crop/zoom and colour on the spread; the undo
+   history is per helper session (it starts empty when the app restarts).
 2. **New album flow**: photo folders → thumbnails (`thumbnailer.js` + RAW via `sips`),
    template collections, output folder, sheet count.
 3. **Deliver**: JPEG high/low (PhotoCraft `doc.save` + sharp), proof PDF (pure-JS writer),
@@ -37,7 +49,8 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
 7. **Packaging**: .app with bundled Node runtime, `photocraft-cli`, built UI; icon; signing.
 8. **Retire Electron**.
 
-## Known issue to watch
+## Known behaviour (not a bug)
 
-A web view left covered by other windows for ~10 minutes was captured blank once; it did
-not reproduce in a 2-minute run and no interface error was logged. Recheck during step 1.
+WebKit stops painting a window that other windows cover, so a screenshot of a covered Album
+Studio window is blank; the window repaints as soon as it shows. Tests verify through the page
+(debug script hook) and capture only while the window is visible.

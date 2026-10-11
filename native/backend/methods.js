@@ -6,7 +6,7 @@
 
 const { openAlbum } = require('./lib/album')
 const { redo, undo, updateAlbum } = require('./lib/project')
-const { refreshProofs } = require('./lib/proofs')
+const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
 const { cancelRender, renderPlan, renderStatus, startRender } = require('./lib/render')
 const { listTemplates } = require('./lib/templates')
@@ -41,6 +41,8 @@ const methods = {
     const album = await openAlbum({ path: p.album })
     return listTemplates(album.templateCollections.map((c) => c.path))
   },
+
+  'spread.layout': async (p) => spreadLayout(p),
 
   // Proofs refresh on their own after edits; this asks for one explicitly (e.g. after the
   // photos changed on disk).

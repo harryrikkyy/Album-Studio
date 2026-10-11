@@ -124,14 +124,39 @@ const OPS = {
     ctx.pages[n - 1].photos = (photoIds || []).map((id) => photoEntry(ctx.model, id))
   },
 
-  /** Put a photo on a spread (moving it off any other spread), at `index` or the end. */
-  addPhoto(ctx, { n, id, index }) {
+  /**
+   * Put photos on a spread at `index` (or the end), in the order given. They move off any other
+   * spread unless `copy` is set (a photo may appear on several spreads, as in the Electron app).
+   */
+  addPhoto(ctx, { n, id, ids, index, copy }) {
     checkSpread(ctx.pages, n)
-    removeEverywhere(ctx.pages, id, n)
-    const list = ctx.pages[n - 1].photos.filter((x) => x.id !== id)
-    const at = Number.isInteger(index) ? Math.max(0, Math.min(list.length, index)) : list.length
-    list.splice(at, 0, photoEntry(ctx.model, id))
-    ctx.pages[n - 1].photos = list
+    const list = ids || [id]
+    const entries = list.map((x) => photoEntry(ctx.model, x))
+    if (!copy) for (const x of list) removeEverywhere(ctx.pages, x, n)
+    const rest = ctx.pages[n - 1].photos.filter((p) => !list.includes(p.id))
+    const at = Number.isInteger(index) ? Math.max(0, Math.min(rest.length, index)) : rest.length
+    rest.splice(at, 0, ...entries)
+    ctx.pages[n - 1].photos = rest
+  },
+
+  /** Two photos of one spread trade places (and so frames, when they lie the same way). */
+  swapPhotos(ctx, { n, a, b }) {
+    checkSpread(ctx.pages, n)
+    const list = ctx.pages[n - 1].photos
+    const i = list.findIndex((x) => x.id === a)
+    const j = list.findIndex((x) => x.id === b)
+    if (i < 0 || j < 0) throw new Error('That photo is no longer on this spread.')
+    ;[list[i], list[j]] = [list[j], list[i]]
+  },
+
+  /** Move a photo within its spread (photos fill frames of their orientation in this order). */
+  movePhoto(ctx, { n, id, index }) {
+    checkSpread(ctx.pages, n)
+    const list = ctx.pages[n - 1].photos
+    const from = list.findIndex((x) => x.id === id)
+    if (from < 0) throw new Error('That photo is no longer on this spread.')
+    const [entry] = list.splice(from, 1)
+    list.splice(Math.max(0, Math.min(list.length, index)), 0, entry)
   },
 
   removePhoto(ctx, { n, id }) {
@@ -165,6 +190,34 @@ const OPS = {
     const t = (await ctx.templates()).find((x) => x.id === templateId)
     if (!t) throw new Error('That template isn’t in this album’s collections.')
     ctx.pages[n - 1].template = templateEntry(t, ctx.pages[n - 1].template)
+  },
+
+  /**
+   * Give the spread a template with exactly its photos' frames, when its own doesn't fit. Picks at
+   * random among the fitting ones, from the current template's collection when it has any. With
+   * `another`, always changes to a different fitting template ("Shuffle").
+   */
+  async fitTemplate(ctx, { n, another }) {
+    checkSpread(ctx.pages, n)
+    const page = ctx.pages[n - 1]
+    const h = page.photos.filter((p) => p.orient === 'h').length
+    const v = page.photos.length - h
+    const cur = page.template
+    if (!page.photos.length) return
+    if (!another && cur && cur.h === h && cur.v === v) return
+    const catalogue = await ctx.templates()
+    const choices = catalogue.filter((t) => t.h === h && t.v === v && (!cur || t.id !== cur.id))
+    if (!choices.length) {
+      ;(ctx.report.noTemplate ??= []).push({ n, h, v })
+      return
+    }
+    const known = cur && catalogue.find((t) => t.id === cur.id)
+    const same = known ? choices.filter((t) => t.collection === known.collection) : []
+    const pool = same.length ? same : choices
+    const t = pool[Math.floor(ctx.rng() * pool.length)]
+    page.template = templateEntry(t, cur)
+    // `auto`: chosen because the photos changed (worth telling the user), not asked for.
+    ;(ctx.report.templates ??= []).push({ n, name: t.name, auto: !another })
   },
 
   clearSpread(ctx, { n }) {

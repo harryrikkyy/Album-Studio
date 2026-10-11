@@ -9,8 +9,12 @@ import { Deliver } from './places/Deliver'
 import { Pending } from './places/Pending'
 import { Plan } from './places/Plan'
 import { Review } from './places/Review'
+import { redo, spreadSelection, undo } from './edit'
+import { moveSpread, removePhotos, shuffleTemplate } from './plan_actions'
 import { loadPlan, plan, startRender } from './render'
-import { album, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, theme } from './state'
+import {
+  album, currentSpread, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, templateBrowserOpen, theme,
+} from './state'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
@@ -40,11 +44,37 @@ document.addEventListener('keydown', (e) => {
     if (p) { e.preventDefault(); goToPlace(p) }
     return
   }
-  if (isTyping(e) || e.metaKey || e.ctrlKey || e.altKey) return
+  // Undo and redo work everywhere an album is open, except while typing (the field has its own).
+  if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'z' && album.value && !isTyping(e)) {
+    e.preventDefault()
+    void (e.shiftKey ? redo() : undo())
+    return
+  }
+  if (isTyping(e) || e.metaKey || e.ctrlKey) return
   if (place.value === 'plan' || place.value === 'review') {
+    const s = currentSpread.value
+    if (e.altKey) {
+      // ⌥← ⌥→ move the current spread.
+      if (place.value === 'plan' && s && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault()
+        void moveSpread(s.n, s.n + (e.key === 'ArrowRight' ? 1 : -1))
+      }
+      return
+    }
     if (e.key === 'ArrowRight') { e.preventDefault(); nextSpread(1) }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); nextSpread(-1) }
-    else if (e.key === 'Enter' && place.value === 'plan') { e.preventDefault(); void editCurrentSpread() }
+    else if (place.value !== 'plan' || !s) return
+    else if (e.key === 'Enter') { e.preventDefault(); void editCurrentSpread() }
+    else if (e.key === 't' || e.key === 'T') { e.preventDefault(); templateBrowserOpen.value = !templateBrowserOpen.value }
+    else if ((e.key === 's' || e.key === 'S') && s.photoIds.length) { e.preventDefault(); void shuffleTemplate(s.n) }
+    else if ((e.key === 'Backspace' || e.key === 'Delete') && spreadSelection.value && s.photoIds.includes(spreadSelection.value)) {
+      e.preventDefault()
+      void removePhotos(s.n, [spreadSelection.value])
+    } else if (e.key === 'Escape') {
+      if (templateBrowserOpen.value) templateBrowserOpen.value = false
+      else if (spreadSelection.value) spreadSelection.value = null
+      else { poolSelection.value = new Set(); poolAnchor.value = null }
+    }
   }
 })
 

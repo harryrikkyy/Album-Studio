@@ -9,6 +9,8 @@ declare global {
     ipc?: { postMessage(message: string): void }
     __asReply?: (reply: Reply) => void
     __asEvent?: (event: ShellEvent) => void
+    /** Where local files are served from: the shell's as://file, or the browser preview's /file. */
+    __asFileBase?: string
   }
 }
 
@@ -60,5 +62,6 @@ export function onEvent(name: string, fn: (data: unknown) => void): () => void {
 /** A local image (thumbnail, proof, preview) as a URL the web view can load. */
 export function fileUrl(path: string | null | undefined): string | undefined {
   if (!path) return undefined
-  return 'as://file' + path.split('/').map(encodeURIComponent).join('/')
+  const base = (typeof window !== 'undefined' && window.__asFileBase) || 'as://file'
+  return base + path.split('/').map(encodeURIComponent).join('/')
 }

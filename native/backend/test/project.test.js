@@ -6,7 +6,7 @@ const fs = require('fs')
 const path = require('path')
 
 const { updateAlbum, undo, redo } = require('../lib/project')
-const { makeProject } = require('./fixtures')
+const { fakeJpeg, makeProject } = require('./fixtures')
 
 const A = 'img_My_Shoot_A1_jpg'
 const B = 'img_My_Shoot_B2_jpg'
@@ -138,6 +138,56 @@ test('auto-fill re-plans the album from every photo, as one undoable step', asyn
   await assert.rejects(edit(proj, { op: 'autoFill', mode: 'range', min: 3, max: 2 }), /Invalid Min\/Max/)
   await undo({ album: proj })
   assert.deepEqual(ids(read(proj), 1), [A, B], 'one undo brings the whole previous album back')
+})
+
+test('several photos are added at once, copied on request, and reordered', async () => {
+  const { proj } = makeProject()
+  await edit(proj, { op: 'addPhoto', n: 2, ids: [C, A], index: 0 })
+  let d = read(proj)
+  assert.deepEqual([ids(d, 1), ids(d, 2)], [[B], [C, A, GONE]], 'moved off spread 1, in the order given')
+
+  await edit(proj, { op: 'addPhoto', n: 1, id: A, copy: true })
+  d = read(proj)
+  assert.deepEqual([ids(d, 1), ids(d, 2)], [[B, A], [C, A, GONE]], 'a copy leaves the photo where it was too')
+
+  await edit(proj, { op: 'movePhoto', n: 2, id: GONE, index: 0 })
+  assert.deepEqual(ids(read(proj), 2), [GONE, C, A])
+  await edit(proj, { op: 'swapPhotos', n: 2, a: A, b: GONE })
+  assert.deepEqual(ids(read(proj), 2), [A, C, GONE])
+  await assert.rejects(edit(proj, { op: 'movePhoto', n: 1, id: C, index: 0 }), /no longer on this spread/)
+})
+
+test('fitTemplate picks a template whose frames fit the photos, from the same collection first', async () => {
+  const { proj, root, tpls, shoot } = makeProject()
+  fs.writeFileSync(path.join(shoot, '_Thumbnails', 'D4.jpg'), fakeJpeg(400, 266))
+  const D = 'img_My_Shoot_D4_jpg'
+  fs.writeFileSync(path.join(tpls, '2h0v_0001.psd'), 'x')
+  fs.writeFileSync(path.join(tpls, '2h0v_0002.psd'), 'x')
+  const other = path.join(root, 'Other')
+  fs.mkdirSync(other)
+  fs.writeFileSync(path.join(other, '2h0v_0009.psd'), 'x')
+  fs.writeFileSync(path.join(other, '1h0v_0001.psd'), 'x')
+  const d0 = read(proj)
+  d0.workspace.templateTokens.push(other)
+  fs.writeFileSync(fileOf(proj), JSON.stringify(d0))
+
+  // Spread 1 is A (H) + B (V) on a 1H 1V template: it fits, so nothing changes.
+  let r = await edit(proj, { op: 'fitTemplate', n: 1 })
+  assert.equal(r.canUndo, false, 'a fitting template is left alone')
+
+  // Two landscape photos no longer fit 1H 1V.
+  r = await updateAlbum({ album: proj, ops: [{ op: 'setPhotos', n: 1, photoIds: [A, D] }, { op: 'fitTemplate', n: 1 }] }, { rng: () => 0.99 })
+  let d = read(proj)
+  assert.equal(d.albumPages[1].template.name, '2h0v_0002.psd', 'the same collection is preferred')
+  assert.deepEqual(r.report.templates, [{ n: 1, name: '2h0v_0002.psd', auto: true }])
+
+  await updateAlbum({ album: proj, ops: [{ op: 'fitTemplate', n: 1, another: true }] }, { rng: () => 0 })
+  d = read(proj)
+  assert.equal(d.albumPages[1].template.name, '2h0v_0001.psd', 'another: never the current one')
+
+  r = await edit(proj, { op: 'setPhotos', n: 1, photoIds: [A, B, C] }, { op: 'fitTemplate', n: 1 })
+  assert.deepEqual(r.report.noTemplate, [{ n: 1, h: 1, v: 2 }], 'no 1H 2V template: said so, template kept')
+  assert.equal(read(proj).albumPages[1].template.name, '2h0v_0001.psd')
 })
 
 test('edits sent together apply in order, none lost', async () => {
