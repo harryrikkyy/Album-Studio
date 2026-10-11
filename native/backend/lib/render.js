@@ -14,6 +14,7 @@ const { openAlbum } = require('./album')
 const { inputsHash } = require('./inputs')
 const { PhotoCraftSession } = require('./photocraft')
 const { recordSheetProof } = require('./proofs')
+const { bakeAdjustments } = require('./parity')
 const { placeable } = require('./raw')
 const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
 
@@ -34,7 +35,7 @@ function spreadHash(spread, album, ws) {
 
 function cachePaths(outputFolder) {
   const dir = path.join(outputFolder, '.album-studio')
-  return { dir, file: path.join(dir, 'render-cache.json'), raw: path.join(dir, 'raw'), previews: path.join(dir, 'previews') }
+  return { dir, file: path.join(dir, 'render-cache.json'), raw: path.join(dir, 'raw'), adjusted: path.join(dir, 'adjusted'), previews: path.join(dir, 'previews') }
 }
 
 async function readCache(file) {
@@ -54,14 +55,14 @@ function sipsResize(src, dst, maxSide) {
   })
 }
 
-/** What a spread can't carry over yet, said plainly in the job's report. */
+/**
+ * What a spread can't carry over, said plainly in the job's report. Template overrides, text,
+ * shapes and colour adjustments all reach the sheet; a vignette shows in the preview only, as it
+ * did with Photoshop.
+ */
 function unsupportedEdits(spread, ws) {
   const out = []
-  const n = spread.n
-  if ((ws.pageOverlays || {})[n]) out.push('text and shapes added in the spread editor are not in the sheet yet')
-  if ((ws.pageLayerEdits || {})[n]) out.push('template layer changes (hidden layers, edited text) are not in the sheet yet')
-  if ((ws.pageBackgrounds || {})[n]) out.push('the spread background is not in the sheet yet')
-  if (spread.photoIds.some((id) => (ws.imageAdjustments || {})[id])) out.push('colour adjustments are not in the sheet yet')
+  if (spread.photoIds.some((id) => ((ws.imageAdjustments || {})[id] || {}).vignette)) out.push('a vignette shows in the preview only, not in the sheet')
   return out
 }
 
@@ -125,7 +126,7 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
           if (!ph.original) warnings.push(`${ph.base}: the original isn't in the photo folder; the thumbnail was used`)
           const src = ph.original || ph.thumb
           photos.push({
-            file: await placeable(src, paths.raw),
+            file: await bakeAdjustments(await placeable(src, paths.raw), (ws.imageAdjustments || {})[id], paths.adjusted),
             orient: ph.orient === 'v' ? 'v' : 'h',
             name: ph.base,
             edit: { rotation: (ws.imageRotations || {})[id] || 0, ...((ws.imagePlacements || {})[id] || {}) },
@@ -134,7 +135,14 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
         report('building')
         if (!pc) pc = new PhotoCraftSession({ writeRoot: job.outputFolder })
         const preview = path.join(paths.previews, `${name}.jpg`)
-        const built = await buildSheet(pc, { template: s.template.file, photos, outPsd, outJpg: preview })
+        const built = await buildSheet(pc, {
+          template: s.template.file,
+          photos,
+          layerEdits: (ws.pageLayerEdits || {})[s.n] || null,
+          overlays: (ws.pageOverlays || {})[s.n] || null,
+          outPsd,
+          outJpg: preview,
+        })
         // The sheet's own render becomes the spread's preview in Plan and Review.
         await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
         await fs.promises.unlink(preview).catch(() => {})

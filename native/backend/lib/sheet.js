@@ -13,6 +13,7 @@
 'use strict'
 
 const { PhotoCraftSession } = require('./photocraft')
+const { addOverlays, applyLayerEdits } = require('./parity')
 
 /** Pixels kept beyond what the frame needs, so the photo can be re-cropped later. */
 const HEADROOM = 1.25
@@ -119,6 +120,8 @@ function findLayer(layers, id) {
  * @param {{
  *   template: string,
  *   photos: {file: string, orient: 'h'|'v', name: string, edit?: object}[],
+ *   layerEdits?: object | null,   the spread editor's template overrides for this page
+ *   overlays?: any[] | null,      the spread editor's text and shapes for this page
  *   outPsd: string,
  *   outJpg?: string | null,
  * }} job   `file` must already be placeable (RAW developed).
@@ -128,6 +131,8 @@ async function buildSheet(pc, job) {
   await pc.call('doc.open', { path: PhotoCraftSession.readPath(job.template) })
   const tplIdx = (await pc.call('session.list', {})).active
   try {
+    // Template overrides from the spread editor go first: a moved frame takes its photo along.
+    warnings.push(...(await applyLayerEdits(pc, job.template, job.layerEdits)))
     const doc = await pc.call('doc.inspect', {})
     const { pairs, frames, unplaced } = pairFrames(doc.layers, job.photos)
     if (unplaced) warnings.push(`${unplaced} photo(s) had no matching frame (template has ${frames.h} H and ${frames.v} V frames)`)
@@ -159,6 +164,7 @@ async function buildSheet(pc, job) {
       const { quad } = coverQuad(area, { w: b.w, h: b.h }, edit)
       await pc.run('edit.transform', { layer: id, rect: [b.x, b.y, b.x + b.w, b.y + b.h], quad })
     }
+    warnings.push(...(await addOverlays(pc, job.overlays, { width: doc.width, height: doc.height, tplIdx })))
     await pc.call('doc.save', { path: pc.writePath(job.outPsd) })
     if (job.outJpg) await pc.call('doc.save', { path: pc.writePath(job.outJpg), quality: 92 })
     return { placed: pairs.length, frames, warnings }

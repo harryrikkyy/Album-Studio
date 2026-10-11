@@ -49,8 +49,15 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    stored composite (engine export when it has none); unchanged sheets skipped. 23 sheets in 27 s,
    PDF 26 MB (Photoshop flow: 114 MB). Output folder change (undoable), Show in Finder.
    Not done: an HTML client gallery (the PDF covers proofing for now).
-4. **Render parity**: overlays (text/shapes PNG + text layers), template layer edits,
-   page backgrounds, colour adjustments (bake via `proof_renderer.applyAdjust`).
+4. ~~Render parity~~ (done 2026-10-11): sheets carry the Electron spread editor's edits —
+   template layer overrides (shown/hidden, opacity, moved/resized, retyped and resized/recoloured
+   text; matched by PSD order and name, a renamed layer is skipped and reported), text as live
+   type layers (family/weight/italic, size, leading, tracking, rotation about the box centre),
+   shapes as one layer under the text, colour adjustments baked into a copy of the photo (same
+   code as the previews). Checked on a real template and photos: sheet and preview agree.
+   Same as before: page backgrounds don't apply to template spreads; a vignette is preview-only.
+   Open: a font chosen for a template text layer (warned; the template's font is kept); the
+   preview of a spread with template overrides loses frame strokes (the sheet is right).
 5. **Editor**: merge the "← Album" strip into PhotoCraft's title bar, remove ArtCraft brand
    and Discord link (licence), colour-profile policy, Album Studio menu bar, actions on the
    open sheet (place photo, swap, wallpaper/PNG/mask) via `PhotocraftApp::run`.
