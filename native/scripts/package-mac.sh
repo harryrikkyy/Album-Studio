@@ -3,11 +3,15 @@
 #
 #   native/scripts/package-mac.sh
 #
+# Node.js: the official build pinned below is bundled, so the app needs nothing installed. It is
+# downloaded from nodejs.org once, checked against the pinned SHA-256, and kept in the build cache.
+#
 # Optional:
-#   ALBUM_STUDIO_NODE_RUNTIME  folder of an official Node.js build (node-vXX-darwin-arm64, as
-#                              unpacked from nodejs.org) to bundle; without it the app uses the
-#                              Node.js installed on the Mac (Homebrew or /usr/local).
-#   MACOS_SIGN_IDENTITY        codesign identity; default "-" (ad-hoc, for this Mac).
+#   ALBUM_STUDIO_NODE_RUNTIME  folder of another official Node.js build (node-vXX-darwin-arm64,
+#                              as unpacked from nodejs.org) to bundle instead; "none" bundles
+#                              nothing and the app uses the Node.js installed on the Mac.
+#   MACOS_SIGN_IDENTITY        codesign identity; default "-" (ad-hoc, for this Mac). A Developer
+#                              ID identity signs with the hardened runtime, ready to notarise.
 #
 # Layout (see apps/album-studio/src/resources.rs, which finds these at run time):
 #   Contents/MacOS/album-studio                 the app (window, editor, web interface)
@@ -15,7 +19,7 @@
 #   Contents/Resources/app/native/backend/      the background helper
 #   Contents/Resources/app/src/, node_modules/  the Electron app's modules it reuses, and packages
 #   Contents/Resources/bin/photocraft-cli       the PhotoCraft engine for sheets
-#   Contents/Resources/node/                    Node.js (when ALBUM_STUDIO_NODE_RUNTIME is given)
+#   Contents/Resources/node/bin/node            Node.js (unless ALBUM_STUDIO_NODE_RUNTIME=none)
 #   Contents/Resources/NOTICE, licenses/        open-source notices and licence texts
 
 set -euo pipefail
@@ -30,6 +34,8 @@ export PATH="$HOME/.cargo/bin:$PATH"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$HOME/Library/Caches/AlbumStudioBuild/target}"
 export MACOSX_DEPLOYMENT_TARGET=13.0
 VERSION=$(node -p "require('$NATIVE/ui/package.json').version")
+NODE_VERSION=22.23.3
+NODE_SHA256=23b25245dcfb9af7262f8ff142e9e2e0af025368117329e7a7458a51e5922f53  # node-v22.23.3-darwin-arm64.tar.gz
 SHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
 
 step() { print -P "%F{blue}▸%f $1" }
@@ -63,11 +69,24 @@ for p in $(print -r -- "$COLLECT" | node -e "let s='';process.stdin.on('data',d=
   done
 done
 
-# Node.js, when an official build is given.
-if [ -n "${ALBUM_STUDIO_NODE_RUNTIME:-}" ]; then
+# Node.js: the pinned official build (fetched and checked once), or the one given.
+NODE_RUNTIME="${ALBUM_STUDIO_NODE_RUNTIME:-}"
+if [ -z "$NODE_RUNTIME" ]; then
+  NODE_RUNTIME="$HOME/Library/Caches/AlbumStudioBuild/node-v$NODE_VERSION-darwin-arm64"
+  if [ ! -x "$NODE_RUNTIME/bin/node" ]; then
+    step "Node.js $NODE_VERSION (download from nodejs.org, once)"
+    TMP=$(mktemp -d)
+    curl -fsSL -o "$TMP/node.tar.gz" "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-darwin-arm64.tar.gz"
+    print -r -- "$NODE_SHA256  $TMP/node.tar.gz" | shasum -a 256 -c - >/dev/null || { print "Node.js download does not match its pinned SHA-256" >&2; exit 1 }
+    tar -xzf "$TMP/node.tar.gz" -C "$(dirname "$NODE_RUNTIME")"
+    rm -rf "$TMP"
+  fi
+fi
+if [ "$NODE_RUNTIME" != "none" ]; then
   mkdir -p "$RES/node/bin"
-  cp "$ALBUM_STUDIO_NODE_RUNTIME/bin/node" "$RES/node/bin/node"
-  cp "$ALBUM_STUDIO_NODE_RUNTIME/LICENSE" "$RES/licenses/nodejs-LICENSE.txt"
+  cp "$NODE_RUNTIME/bin/node" "$RES/node/bin/node"
+  cp "$NODE_RUNTIME/LICENSE" "$RES/licenses/nodejs-LICENSE.txt"
+  print "  Node.js $("$RES/node/bin/node" --version) bundled"
 else
   print "  (Node.js not bundled: the app will use the one installed on this Mac)"
 fi
@@ -120,7 +139,11 @@ step "Sign ($([ "$IDENTITY" = "-" ] && echo "ad-hoc, for this Mac" || echo "$IDE
 # Inside out: native modules and helpers first, the app last.
 find "$RES" -type f \( -name '*.node' -o -name '*.dylib' \) -print0 | xargs -0 -I{} codesign --force --sign "$IDENTITY" {} 2>/dev/null
 codesign --force --sign "$IDENTITY" "$RES/bin/photocraft-cli"
-[ -f "$RES/node/bin/node" ] && codesign --force --sign "$IDENTITY" "$RES/node/bin/node"
+# Node.js keeps the Node.js Foundation's own signature on an ad-hoc build; with a real identity it
+# is signed again with the hardened runtime and the entitlements Node needs (JIT, native modules).
+if [ -f "$RES/node/bin/node" ] && [ "$IDENTITY" != "-" ]; then
+  codesign --force --options runtime --entitlements "$NATIVE/scripts/node.entitlements" --sign "$IDENTITY" "$RES/node/bin/node"
+fi
 codesign --force --sign "$IDENTITY" "$APP"
 codesign --verify --strict --verbose=1 "$APP" 2>&1 | tail -1
 
