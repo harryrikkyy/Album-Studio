@@ -10,9 +10,10 @@
 #   ALBUM_STUDIO_NODE_RUNTIME  folder of another official Node.js build (node-vXX-darwin-arm64,
 #                              as unpacked from nodejs.org) to bundle instead; "none" bundles
 #                              nothing and the app uses the Node.js installed on the Mac.
-#   ALBUM_STUDIO_SIGNIN_ENV    the sign-in settings file to build in (Firebase project, Google
-#                              OAuth client, licence key; default: the repository's .env); "none"
-#                              builds none in, and the app then reads them from its data folder.
+#   ALBUM_STUDIO_SIGNIN_ENV    a sign-in settings file (Firebase project, Google OAuth client,
+#                              licence key) to build into the app. By default none is: like the
+#                              Electron app, each Mac supplies its own .env (Album Studio's data
+#                              folder, or the Album Toolkit's), and the app reads it from there.
 #   MACOS_SIGN_IDENTITY        codesign identity; default "-" (ad-hoc, for this Mac). A Developer
 #                              ID identity signs with the hardened runtime, ready to notarise.
 #
@@ -20,7 +21,7 @@
 #   Contents/MacOS/album-studio                 the app (window, editor, web interface)
 #   Contents/Resources/ui/                      the interface
 #   Contents/Resources/app/native/backend/      the background helper
-#   Contents/Resources/app/src/, node_modules/  the Electron app's modules it reuses, and packages
+#   Contents/Resources/app/src/, node_modules/  the shared modules it uses, and packages
 #   Contents/Resources/bin/photocraft-cli       the PhotoCraft engine for sheets
 #   Contents/Resources/node/bin/node            Node.js (unless ALBUM_STUDIO_NODE_RUNTIME=none)
 #   Contents/Resources/NOTICE, licenses/        open-source notices and licence texts
@@ -58,7 +59,7 @@ cp "$NATIVE/ui/index.html" "$RES/ui/"
 cp "$NATIVE/ui/dist/app.js" "$NATIVE/ui/dist/app.css" "$RES/ui/dist/"
 [ -f "$NATIVE/ui/dist/app.js.LEGAL.txt" ] && cp "$NATIVE/ui/dist/app.js.LEGAL.txt" "$RES/licenses/interface-bundled-code.txt"
 
-# The helper, the Electron modules it reuses and its packages (see collect-backend.mjs).
+# The helper, the shared modules it uses and its packages (see collect-backend.mjs).
 COLLECT=$(node "$NATIVE/scripts/collect-backend.mjs")
 for f in $(print -r -- "$COLLECT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).files.join('\n')))"); do
   mkdir -p "$RES/app/$(dirname "$f")"
@@ -72,14 +73,15 @@ for p in $(print -r -- "$COLLECT" | node -e "let s='';process.stdin.on('data',d=
   done
 done
 
-# Sign-in settings (only the keys the helper reads; see native/backend/lib/account.js).
-SIGNIN_ENV="${ALBUM_STUDIO_SIGNIN_ENV:-$ROOT/.env}"
-if [ "$SIGNIN_ENV" != "none" ] && [ -f "$SIGNIN_ENV" ]; then
+# Sign-in settings, only when asked for (only the keys the helper reads; see
+# native/backend/lib/account.js).
+SIGNIN_ENV="${ALBUM_STUDIO_SIGNIN_ENV:-}"
+if [ -n "$SIGNIN_ENV" ] && [ -f "$SIGNIN_ENV" ]; then
   grep -E '^(FIREBASE_API_KEY|FIREBASE_PROJECT_ID|GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|LICENSE_SECRET_KEY)=' "$SIGNIN_ENV" > "$RES/app/.env" || true
   chmod 600 "$RES/app/.env"
   print "  Sign-in settings built in ($(wc -l < "$RES/app/.env" | tr -d ' ') keys)"
 else
-  print "  (No sign-in settings built in: sign-in needs a .env in Album Studio's data folder)"
+  print "  (No sign-in settings built in: the app reads this Mac's .env)"
 fi
 
 # Node.js: the pinned official build (fetched and checked once), or the one given.

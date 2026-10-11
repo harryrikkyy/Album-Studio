@@ -178,3 +178,22 @@ test('sign out forgets the licence and the session', async () => {
   assert.equal(fs.existsSync(process.env.CH_SESSION_FILE), false)
   assert.equal(account.permits('album.open'), false)
 })
+
+test('settings: a key left empty in one file comes from the next', () => {
+  const a = path.join(dir, 'a.env')
+  const b = path.join(dir, 'b.env')
+  fs.writeFileSync(a, '# Album Studio\nFIREBASE_PROJECT_ID=\nGOOGLE_CLIENT_ID="from-a"\n')
+  fs.writeFileSync(b, 'FIREBASE_PROJECT_ID=from-b\nGOOGLE_CLIENT_ID=from-b\nOTHER=ignored\n')
+  const saved = { p: process.env.FIREBASE_PROJECT_ID, c: process.env.GOOGLE_CLIENT_ID }
+  delete process.env.FIREBASE_PROJECT_ID
+  delete process.env.GOOGLE_CLIENT_ID
+  try {
+    account.loadSettings([a, path.join(dir, 'missing.env'), b])
+    assert.equal(process.env.FIREBASE_PROJECT_ID, 'from-b')
+    assert.equal(process.env.GOOGLE_CLIENT_ID, 'from-a', 'the first file with a value wins, quotes removed')
+    assert.equal(process.env.OTHER, undefined, 'only sign-in settings are read')
+  } finally {
+    process.env.FIREBASE_PROJECT_ID = saved.p
+    process.env.GOOGLE_CLIENT_ID = saved.c
+  }
+})

@@ -20,16 +20,17 @@ const path = require('path')
 const { execFile } = require('child_process')
 const { dataDir } = require('./recent')
 
-// Sign-in settings (Firebase project, Google OAuth client, the older licences' key), taken from
-// the environment or the first files that have them: Album Studio's data folder, the app itself
-// (packaged next to the helper; the repository root when run from source), the Electron app's.
+// Sign-in settings (Firebase project, Google OAuth client, the older licences' key): each from
+// the environment or the first of these files that gives it a value: Album Studio's data folder,
+// the app itself (built in on request; the repository root when run from source), the Album
+// Toolkit's folder. A key left empty in one file is looked for in the next.
 const SETTINGS = ['FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'LICENSE_SECRET_KEY']
-function loadSettings() {
-  const files = [
-    path.join(dataDir(), '.env'),
-    path.resolve(__dirname, '../../../.env'),
-    path.join(os.homedir(), 'Library', 'Application Support', 'Creative Hubb Album Toolkit Pro', '.env'),
-  ]
+const settingsFiles = () => [
+  path.join(dataDir(), '.env'),
+  path.resolve(__dirname, '../../../.env'),
+  path.join(os.homedir(), 'Library', 'Application Support', 'Creative Hubb Album Toolkit Pro', '.env'),
+]
+function loadSettings(files = settingsFiles()) {
   for (const file of files) {
     let text
     try { text = fs.readFileSync(file, 'utf8') } catch (_) { continue }
@@ -40,7 +41,7 @@ function loadSettings() {
       const key = line.slice(0, eq).trim()
       let value = line.slice(eq + 1).trim()
       if (value.length > 1 && (value[0] === '"' || value[0] === "'") && value.endsWith(value[0])) value = value.slice(1, -1)
-      if (SETTINGS.includes(key) && process.env[key] === undefined) process.env[key] = value
+      if (SETTINGS.includes(key) && value && !process.env[key]) process.env[key] = value
     }
   }
 }
@@ -57,7 +58,14 @@ const SIGN_IN_TIMEOUT_MS = 3 * 60 * 1000
 
 const deps = {
   fetch: (...a) => fetch(...a),
-  machineId: () => require('node-machine-id').machineId(),
+  // node-machine-id runs `ioreg` (in /usr/sbin) through the shell: make sure the system folders are
+  // on the PATH, whatever the app was started with.
+  machineId: () => {
+    const dirs = (process.env.PATH || '').split(':').filter(Boolean)
+    for (const d of ['/usr/bin', '/bin', '/usr/sbin', '/sbin']) if (!dirs.includes(d)) dirs.push(d)
+    process.env.PATH = dirs.join(':')
+    return require('node-machine-id').machineId()
+  },
   open: (url) => new Promise((resolve) => execFile('/usr/bin/open', [url], () => resolve())),
   port: PORT,
 }
@@ -325,4 +333,4 @@ function cancelSignIn() {
 /** Tests: forget the session state (not the files). */
 function _reset() { current = null; checking = null; cancelSignIn() }
 
-module.exports = { status, signIn, cancelSignIn, retry, signOut, permits, verify, _setDeps, _reset }
+module.exports = { status, signIn, cancelSignIn, retry, signOut, permits, verify, loadSettings, _setDeps, _reset }
