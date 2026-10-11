@@ -7,12 +7,13 @@
 
 'use strict'
 
-const crypto = require('crypto')
 const { execFile } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
+const { inputsHash } = require('./inputs')
 const { PhotoCraftSession } = require('./photocraft')
+const { recordSheetProof } = require('./proofs')
 const { placeable } = require('./raw')
 const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
 
@@ -26,24 +27,9 @@ async function readProject(file) {
   return JSON.parse(await fs.promises.readFile(file, 'utf8'))
 }
 
-async function fileStamp(p) {
-  const st = await fs.promises.stat(p).catch(() => null)
-  return st ? `${st.size}:${Math.round(st.mtimeMs)}` : 'missing'
-}
-
 /** Everything that decides how spread `n` looks, as one hash. */
-async function spreadHash(spread, album, ws) {
-  const n = spread.n
-  const photos = await Promise.all(spread.photoIds.map(async (id) => {
-    const p = album.photos[id]
-    const file = p && (p.original || p.thumb)
-    return [id, file, file ? await fileStamp(file) : 'missing', p && p.orient,
-      (ws.imageRotations || {})[id] || 0, (ws.imagePlacements || {})[id] || null, (ws.imageAdjustments || {})[id] || null]
-  }))
-  const tpl = spread.template && spread.template.file
-  const inputs = [BUILDER_VERSION, HEADROOM, tpl, tpl ? await fileStamp(tpl) : null, photos,
-    (ws.pageOverlays || {})[n] || null, (ws.pageLayerEdits || {})[n] || null, (ws.pageBackgrounds || {})[n] || null]
-  return crypto.createHash('sha256').update(JSON.stringify(inputs)).digest('hex')
+function spreadHash(spread, album, ws) {
+  return inputsHash([BUILDER_VERSION, HEADROOM], spread, album, ws)
 }
 
 function cachePaths(outputFolder) {
@@ -151,6 +137,8 @@ async function runJob(job, { album, ws, spreads, force }, emit) {
         // The sheet's own render becomes the spread's preview in Plan and Review.
         await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
         await fs.promises.unlink(preview).catch(() => {})
+        await recordSheetProof(album, ws, s)
+        emit('proofs.updated', { album: album.path, n: s.n, proof: path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), source: 'sheet' })
         cache[s.n] = hash
         await writeCache(paths.file, cache)
         job.done++

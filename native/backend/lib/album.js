@@ -38,10 +38,31 @@ async function locateProject(p) {
   return { file: p, folder: path.dirname(p) }
 }
 
-/** Photos of one source folder: thumbnails (from _Thumbnails when present) and originals. */
+async function mtimeOf(p) {
+  const st = await fs.promises.stat(p).catch(() => null)
+  return st ? st.mtimeMs : 0
+}
+
+/** Folder scans by folder path; reused until the folder (or its _Thumbnails) changes. */
+const folderCache = new Map()
+
+/**
+ * Photos of one source folder: thumbnails (from _Thumbnails when present), originals, and each
+ * thumbnail's pixel size. Cached until a file is added, removed or renamed in either folder
+ * (which changes the folder's modification time), so an edit doesn't rescan thousands of photos.
+ */
 async function scanPhotoFolder(master) {
-  const display = path.basename(master)
   const thumbDir = path.join(master, '_Thumbnails')
+  const key = `${await mtimeOf(master)}|${await mtimeOf(thumbDir)}`
+  const hit = folderCache.get(master)
+  if (hit && hit.key === key) return hit.result
+  const result = await scanPhotoFolderUncached(master, thumbDir)
+  folderCache.set(master, { key, result })
+  return result
+}
+
+async function scanPhotoFolderUncached(master, thumbDir) {
+  const display = path.basename(master)
   const hasThumbs = await exists(thumbDir)
   const masterEntries = (await readdirSafe(master)).filter((e) => e.isFile() && !e.name.startsWith('.'))
   // Originals by lower-case base name; RAW/TIFF preferred over a same-named JPEG, as getTrueFile does.
@@ -54,17 +75,21 @@ async function scanPhotoFolder(master) {
   const listed = hasThumbs
     ? (await readdirSafe(thumbDir)).filter((e) => e.isFile() && IMAGE_EXT.test(e.name) && !e.name.startsWith('.'))
     : masterEntries.filter((e) => IMAGE_EXT.test(e.name))
-  const photos = listed.map((e) => {
+  const photos = await Promise.all(listed.map(async (e) => {
     const base = e.name.replace(/\.[^.]+$/, '')
     const orig = originals.get(base.toLowerCase())
+    const thumb = path.join(hasThumbs ? thumbDir : master, e.name)
+    const size = await jpegSize(thumb)
     return {
       id: 'img_' + sanitize(display + '_' + e.name),
       base,
       folder: master,
-      thumb: path.join(hasThumbs ? thumbDir : master, e.name),
+      thumb,
       original: orig ? path.join(master, orig) : null,
+      width: size ? size.width : null,
+      height: size ? size.height : null,
     }
-  })
+  }))
   photos.sort((a, b) => a.base.localeCompare(b.base, undefined, { numeric: true }))
   return { path: master, name: display, exists: await exists(master), hasThumbs, photos }
 }
@@ -131,7 +156,7 @@ async function openAlbum({ path: projectPath }) {
   const folders = await Promise.all((ws.imageTokens || []).map(scanPhotoFolder))
   /** @type {Record<string, any>} */
   const photos = {}
-  for (const f of folders) for (const p of f.photos) photos[p.id] = { ...p, orient: null, width: null, height: null, usedOn: [] }
+  for (const f of folders) for (const p of f.photos) photos[p.id] = { ...p, orient: null, usedOn: [] }
 
   // Templates referenced by spreads → their PSD and preview.
   const tplIndex = new Map()
@@ -167,15 +192,12 @@ async function openAlbum({ path: projectPath }) {
   }
 
   // Orientation for photos no spread recorded: from the thumbnail's size and the user's rotation.
-  await Promise.all(Object.values(photos).map(async (ph) => {
-    const size = await jpegSize(ph.thumb)
-    if (size) { ph.width = size.width; ph.height = size.height }
-    if (!ph.orient && size) {
-      const quarter = [90, 270].includes(((Number(rotations[ph.id]) || 0) % 360 + 360) % 360)
-      const landscape = size.width >= size.height
-      ph.orient = landscape !== quarter ? 'h' : 'v'
-    }
-  }))
+  for (const ph of Object.values(photos)) {
+    if (ph.orient || !ph.width || !ph.height) continue
+    const quarter = [90, 270].includes(((Number(rotations[ph.id]) || 0) % 360 + 360) % 360)
+    const landscape = ph.width >= ph.height
+    ph.orient = landscape !== quarter ? 'h' : 'v'
+  }
 
   const used = Object.values(photos).filter((p) => p.usedOn.length).length
   return {

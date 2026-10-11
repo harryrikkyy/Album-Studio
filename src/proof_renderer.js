@@ -705,6 +705,8 @@ module.exports = {
   rasterizeOverlays,
   templateKey,
   applyAdjust,
+  // The native app's proofs draw photos with this, so both apps crop and colour them alike.
+  buildPhotoLayer,
   // Exposed for unit tests — pure geometry helpers that must stay identical
   // between the preview and the final export.
   proofDims,
