@@ -74,10 +74,10 @@ export function NewAlbumDialog() {
     if (open.value && !d.open) {
       setFolders([]); setName(''); setNameTouched(false); setParent(null); setOutput(null); setError(null); setProgress(null)
       d.showModal()
-      void call<Collection[]>('templates.collections').then((list) => {
+      void call<{ collections: (Collection & { isDefault: boolean })[] }>('library.collections').then(({ collections: list }) => {
         setCollections(list)
-        // The collections the last albums used are the likely ones again.
-        setChosen(new Set(list.filter((c) => c.exists && c.templates).map((c) => c.path)))
+        // The Library's defaults for new albums (until chosen there: every collection in use).
+        setChosen(new Set(list.filter((c) => c.exists && c.templates && c.isDefault).map((c) => c.path)))
       }).catch(() => setCollections([]))
     } else if (!open.value && d.open) d.close()
   }, [open.value])

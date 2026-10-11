@@ -16,7 +16,6 @@ import { album, currentSpread, editCurrentSpread, goToSpread, inspectorOpen, nex
 import type { Spread } from '../types'
 import { Button, IconButton } from '../ui/controls'
 import { Menu } from '../ui/Menu'
-import { AutoFillDialog } from './plan/AutoFill'
 import { Inspector } from './plan/Inspector'
 import { Pool } from './plan/Pool'
 import { SpreadView } from './plan/SpreadView'
@@ -190,7 +189,6 @@ export function Plan() {
       <Pool />
       <Stage />
       <Inspector />
-      <AutoFillDialog />
     </div>
   )
 }

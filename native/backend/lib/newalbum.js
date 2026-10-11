@@ -151,4 +151,29 @@ async function createAlbum(p, { emit }) {
   }
 }
 
-module.exports = { inspectFolders, inspectCollections, knownCollections, suggestAlbum, createAlbum }
+/**
+ * Change an album's photo folders and template collections (one undo step). Folders new to the
+ * album get their missing thumbnails first, with progress as `album.folders` events.
+ * @param {{ album: string, photoFolders?: string[], templateCollections?: string[] }} p
+ */
+async function setAlbumFolders(p, { emit }) {
+  if (!p.album) throw new Error('missing `album`')
+  const before = await openAlbum({ path: p.album })
+  const ops = []
+  if (Array.isArray(p.photoFolders)) {
+    const known = new Set(before.photoFolders.map((f) => f.path))
+    const added = p.photoFolders.filter((f) => !known.has(f))
+    for (let i = 0; i < added.length; i++) {
+      const f = added[i]
+      if (!(await fs.promises.stat(f).then((st) => st.isDirectory(), () => false))) throw new Error(`The photo folder ${f} isn’t there.`)
+      emit('album.folders', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: added.length, done: 0, total: 0 })
+      await ensureThumbnails(f, (pr) => emit('album.folders', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: added.length, ...pr }))
+    }
+    ops.push({ op: 'setPhotoFolders', folders: p.photoFolders })
+  }
+  if (Array.isArray(p.templateCollections)) ops.push({ op: 'setCollections', collections: p.templateCollections })
+  if (!ops.length) throw new Error('Nothing to change.')
+  return updateAlbum({ album: p.album, ops })
+}
+
+module.exports = { inspectFolders, inspectCollections, knownCollections, suggestAlbum, createAlbum, setAlbumFolders }

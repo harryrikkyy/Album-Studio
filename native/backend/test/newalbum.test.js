@@ -12,7 +12,8 @@ process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 
 const sharp = require('sharp')
 const { surveyFolder, ensureThumbnails } = require('../lib/thumbs')
-const { createAlbum, inspectCollections, inspectFolders, knownCollections, suggestAlbum } = require('../lib/newalbum')
+const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('../lib/newalbum')
+const { undo } = require('../lib/project')
 
 const noise = (w, h) => sharp({ create: { width: w, height: h, channels: 3, noise: { type: 'gaussian', mean: 128, sigma: 40 } } })
 
@@ -112,4 +113,24 @@ test('creating an album: thumbnails, the project in the Electron format, a first
   assert.deepEqual(known.map((k) => [k.name, k.templates, k.albums]), [['Templates', 7, ['Wedding Album']]])
   const [c, gone] = await inspectCollections({ paths: [tpls, path.join(root, 'nope')] })
   assert.deepEqual([c.templates, c.exists, gone.exists, gone.templates], [7, true, false, 0])
+})
+
+test('an album’s folders change later: new photo folders get thumbnails, and it undoes', async () => {
+  const root = tmpdir()
+  const one = await makeShoot(root, 'haldi')
+  const two = await makeShoot(root, 'wedding')
+  const tpls = path.join(root, 'Templates')
+  fs.mkdirSync(tpls)
+  fs.writeFileSync(path.join(tpls, '1h1v_0001.psd'), 'x')
+  await createAlbum({ name: 'Album', parent: root, photoFolders: [one], templateCollections: [] }, { emit() {} })
+  const proj = path.join(root, 'Album')
+  const events = []
+  const r = await setAlbumFolders({ album: proj, photoFolders: [one, two], templateCollections: [tpls] }, { emit: (e, d) => events.push([e, d.stage]) })
+  assert.equal(r.album.stats.photos, 8, 'both shoots’ photos')
+  assert.deepEqual(r.album.templateCollections.map((c) => c.name), ['Templates'])
+  assert.ok(fs.existsSync(path.join(two, '_Thumbnails', 'A.jpg')), 'thumbnails made for the new folder')
+  assert.ok(events.every(([e]) => e === 'album.folders'))
+  const back = await undo({ album: proj })
+  assert.deepEqual([back.album.stats.photos, back.album.templateCollections.length], [4, 0], 'one undo puts both back')
+  await assert.rejects(setAlbumFolders({ album: proj, photoFolders: [] }, { emit() {} }), /at least one photo folder/)
 })

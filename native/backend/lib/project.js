@@ -83,6 +83,8 @@ function snapshot(d) {
     totalActivePages: d.totalActivePages || 1,
     keyed: Object.fromEntries(PAGE_KEYED.map((k) => [k, ws[k] || {}])),
     output: ws.outputToken ?? null,
+    photoFolders: ws.imageTokens || [],
+    collections: ws.templateTokens || [],
   })
 }
 
@@ -94,6 +96,8 @@ function restore(d, snap) {
   for (const k of PAGE_KEYED) ws[k] = s.keyed[k]
   if (s.output) ws.outputToken = s.output
   else delete ws.outputToken
+  if (s.photoFolders) ws.imageTokens = s.photoFolders
+  if (s.collections) ws.templateTokens = s.collections
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -230,6 +234,25 @@ const OPS = {
     workspaceOf(ctx.d).outputToken = folder
   },
 
+  /**
+   * The album's photo folders, in order. Photos of a folder taken away stay on their spreads
+   * (shown as missing) until they are replaced, so nothing is lost if it was a mistake.
+   */
+  setPhotoFolders(ctx, { folders }) {
+    if (!Array.isArray(folders) || !folders.length || !folders.every((f) => typeof f === 'string' && path.isAbsolute(f))) {
+      throw new Error('An album needs at least one photo folder.')
+    }
+    workspaceOf(ctx.d).imageTokens = [...new Set(folders)]
+  },
+
+  /** The template collections the album draws from. */
+  setCollections(ctx, { collections }) {
+    if (!Array.isArray(collections) || !collections.every((f) => typeof f === 'string' && path.isAbsolute(f))) {
+      throw new Error('Choose template collection folders.')
+    }
+    workspaceOf(ctx.d).templateTokens = [...new Set(collections)]
+  },
+
   clearSpread(ctx, { n }) {
     checkSpread(ctx.pages, n)
     ctx.pages[n - 1] = emptyPage()
@@ -269,7 +292,9 @@ const OPS = {
 
   /** Re-plan the whole album from all its photos (undoable as one step). */
   async autoFill(ctx, opts) {
-    const photos = ctx.model.pool.map((id) => ctx.model.photos[id]).filter(Boolean)
+    // `ids`: only these photos (Best picks); otherwise every photo of the album.
+    const ids = Array.isArray(opts && opts.ids) ? ctx.model.pool.filter((id) => opts.ids.includes(id)) : ctx.model.pool
+    const photos = ids.map((id) => ctx.model.photos[id]).filter(Boolean)
     const planned = await planAlbum(photos, await ctx.templates(), opts || {}, ctx.rng)
     ctx.pages.length = 0
     for (const p of planned.pages) {

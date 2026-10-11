@@ -1,7 +1,7 @@
 // Frame.tsx — the window's frame: the top bar (with room for the traffic lights), the rail of
 // places, and the toast stack. The current place renders inside.
 
-import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Sun, Undo2, Wrench, X } from 'lucide-preact'
+import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Settings, Sun, Undo2, Wrench, X } from 'lucide-preact'
 import type { ComponentChildren } from 'preact'
 import { call, inShell } from '../bridge'
 import { canRedo, canUndo, editing, redo, undo } from '../edit'
@@ -9,6 +9,8 @@ import { plural } from '../format'
 import { job, running } from '../render'
 import { album, dismissToast, editCurrentSpread, place, setTheme, theme, toasts, type Place } from '../state'
 import { IconButton } from '../ui/controls'
+import { openAlbumSettings } from './AlbumSettings'
+import { openSettings } from './Settings'
 
 const PLACES: { id: Place; label: string; icon: ComponentChildren; key: string; needsAlbum: boolean }[] = [
   { id: 'albums', label: 'Albums', icon: <BookImage size={20} strokeWidth={1.6} />, key: '1', needsAlbum: false },
@@ -47,7 +49,7 @@ function TopBar() {
       <div class="topbar__title">
         {a ? (
           <>
-            <span class="topbar__album">{a.name}</span>
+            <button type="button" class="topbar__album topbar__album--btn" onClick={openAlbumSettings} title="Album folders and template collections">{a.name}</button>
             <span class="topbar__meta">{plural(a.stats.spreads, 'spread')} · {plural(a.stats.photos, 'photo')}</span>
             <span class={`topbar__save ${editing.value ? 'is-saving' : ''}`} role="status">{editing.value ? 'Saving…' : ''}</span>
           </>
@@ -67,6 +69,7 @@ function TopBar() {
             <LoaderCircle size={14} /> Rendering {job.value.index} of {job.value.total}
           </button>
         ) : null}
+        <IconButton label="Settings (⌘,)" onClick={openSettings}><Settings size={16} strokeWidth={1.7} /></IconButton>
         <button
           type="button"
           class="icon-btn"

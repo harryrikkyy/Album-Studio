@@ -5,12 +5,16 @@
 'use strict'
 
 const { openAlbum } = require('./lib/album')
-const { createAlbum, inspectCollections, inspectFolders, knownCollections, suggestAlbum } = require('./lib/newalbum')
+const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('./lib/newalbum')
 const { redo, undo, updateAlbum } = require('./lib/project')
 const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
 const { cancelExport, exportPlan, exportStatus, startExport } = require('./lib/deliver')
 const { cancelRender, renderPlan, renderStatus, startRender } = require('./lib/render')
+const { addCollections, collectionTemplates, libraryCollections, removeCollection, setDefaults } = require('./lib/library')
+const { listSheets, renameSheets } = require('./lib/labnaming')
+const { analyzePhotos, copyPicks } = require('./lib/picks')
+const { clearStorage, storageUsage } = require('./lib/storage')
 const { listTemplates } = require('./lib/templates')
 
 /** After anything that can change how spreads look: redraw their proofs in the background. */
@@ -40,6 +44,7 @@ const methods = {
   'templates.inspect': async (p) => inspectCollections(p),
   'album.suggest': async (p) => suggestAlbum(p),
   'album.create': withProofs((p, ctx) => createAlbum(p, ctx)),
+  'album.setFolders': withProofs((p, ctx) => setAlbumFolders(p, ctx)),
 
   // Edits. Each call is one undo step; the reply carries the updated album.
   'album.update': withProofs((p) => updateAlbum(p)),
@@ -53,6 +58,25 @@ const methods = {
   },
 
   'spread.layout': async (p) => spreadLayout(p),
+
+  // Library: the template collections across albums, and which ones new albums start with.
+  'library.collections': async () => libraryCollections(),
+  'library.add': async (p) => addCollections(p),
+  'library.remove': async (p) => removeCollection(p),
+  'library.setDefaults': async (p) => setDefaults(p),
+  'library.templates': async (p) => collectionTemplates(p),
+
+  // Settings › Storage: what the caches take, and clearing them (all of it can be made again).
+  'storage.usage': async (p) => storageUsage(p),
+  'storage.clear': async (p) => clearStorage(p),
+
+  // Tools › Lab naming: an order folder's sheets, and a collision-safe, undoable rename.
+  'lab.list': async (p) => listSheets(p),
+  'lab.rename': async (p) => renameSheets(p),
+
+  // Tools › Best picks: scores for a shoot's photos (progress as events), and copying the picks.
+  'picks.analyze': async (p, ctx) => analyzePhotos(p, ctx),
+  'picks.copy': async (p) => copyPicks(p),
 
   // Proofs refresh on their own after edits; this asks for one explicitly (e.g. after the
   // photos changed on disk).

@@ -78,6 +78,8 @@ export interface AutoFillOptions {
   min: number
   max: number
   chronological: boolean
+  /** Only these photos (Best picks). */
+  ids?: string[]
 }
 
 export async function autoFill(o: AutoFillOptions) {

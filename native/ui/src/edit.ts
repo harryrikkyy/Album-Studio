@@ -16,7 +16,7 @@ interface Report {
   templates?: { n: number; name: string; auto: boolean }[]
   noTemplate?: { n: number; h: number; v: number }[]
 }
-interface UpdateResult { album: Album; report?: Report; canUndo: boolean; canRedo: boolean; changed?: boolean }
+export interface UpdateResult { album: Album; report?: Report; canUndo: boolean; canRedo: boolean; changed?: boolean }
 
 export const canUndo = signal(false)
 export const canRedo = signal(false)
@@ -162,6 +162,18 @@ onEvent('proofs.idle', (d) => {
 export const templates = signal<Template[] | null>(null)
 export const templatesError = signal<string | null>(null)
 let templatesFor: string | null = null
+
+/** Collections changed: the next look at templates reads the catalogue again. */
+export function forgetTemplateCatalogue() {
+  templates.value = null
+  templatesFor = null
+}
+
+/** Apply the result of an edit made outside `edit()` (album settings), so undo knows of it. */
+export function applyUpdate(r: UpdateResult) {
+  const a = album.value
+  if (a) apply(a, r)
+}
 
 /** The album's template catalogue (loaded once per album). */
 export async function loadTemplates(force = false) {

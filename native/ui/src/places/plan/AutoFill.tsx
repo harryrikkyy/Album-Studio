@@ -10,7 +10,10 @@ import { album, stored, store } from '../../state'
 import { Button } from '../../ui/controls'
 
 const open = signal(false)
-export const openAutoFill = () => { open.value = true }
+/** Photos to plan with (Best picks); null: every photo of the album. */
+const onlyIds = signal<string[] | null>(null)
+export const openAutoFill = () => { onlyIds.value = null; open.value = true }
+export const openAutoFillWith = (ids: string[]) => { onlyIds.value = ids; open.value = true }
 
 const DEFAULTS: AutoFillOptions = { mode: 'desired', desiredSheets: 23, min: 3, max: 6, chronological: true }
 
@@ -29,7 +32,8 @@ export function AutoFillDialog() {
 
   if (!a) return null
   const planned = a.stats.planned
-  const photos = a.stats.photos
+  const ids = onlyIds.value
+  const photos = ids ? ids.length : a.stats.photos
   const valid = o.mode === 'desired' ? o.desiredSheets >= 1 : o.min >= 1 && o.max >= o.min
   const set = (patch: Partial<AutoFillOptions>) => setO({ ...o, ...patch })
   const num = (v: string) => Math.max(0, Math.floor(Number(v) || 0))
@@ -39,7 +43,7 @@ export function AutoFillDialog() {
     if (!valid || busy) return
     setBusy(true)
     store('as.autoFill', o)
-    const ok = await autoFill(o)
+    const ok = await autoFill(ids ? { ...o, ids } : o)
     setBusy(false)
     if (ok) open.value = false
   }
@@ -49,7 +53,7 @@ export function AutoFillDialog() {
       <form method="dialog" class="dialog__body" onSubmit={submit}>
         <h2 id="autofill-title" class="dialog__title"><WandSparkles size={18} /> Auto-fill the album</h2>
         <p class="dialog__lead">
-          Places all {plural(photos, 'photo')} across the album in order, and gives each spread a template
+          Places {ids ? `the ${plural(photos, 'picked photo')}` : `all ${plural(photos, 'photo')}`} across the album in order, and gives each spread a template
           whose frames fit its photos.
         </p>
 

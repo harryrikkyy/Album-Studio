@@ -70,7 +70,24 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    Open: album actions inside the editor (place photo, swap, wallpaper/PNG/mask) — use Plan for
    now; upstream test `mask_thumbs_ui::a_new_mask_is_targeted…` fails on the fork as received,
    and `gpu_startup::returned_non_graphics_errors…` is flaky (both upstream).
-6. **Library, Tools** (renamer, curation, retouch), settings, licence/sign-in.
+6. ~~Library, Tools, settings~~ (done 2026-10-11):
+   - Album settings (click the album name): photo folders and template collections changed
+     after creation, thumbnails for new folders, one undo step; removing a folder keeps its
+     placed photos (shown missing).
+   - Library: the template collections albums use plus added ones, browsable by frame layout and
+     name, "for new albums" defaults (New album uses them), use/remove in the open album; it
+     only remembers folders.
+   - Tools › Lab naming (the Renamer): an order folder or the album's print JPEGs, live names
+     (00, zz, "<order> (NN)", custom_NNN, cover pad "ZZZ--…--N+1", special laminations),
+     drag to reorder, collision-safe rename with undo; renamed folders open as they were left.
+   - Tools › Best picks (curation): scores from thumbnails (RAW included, cached), live limits,
+     bursts among nearby frames only, keep/drop by hand, copy picks (RAW + JPEG) to _Selected,
+     or plan the album from the picks. Wedding: 176 → 171 picks in seconds.
+   - Settings (⌘,, gear): appearance, templates follow photos, default spreads, print size,
+     storage per cache with Clear.
+   Not ported: Retouch (Photoshop actions; use the editor's own adjustments), the floating Tools
+   Bar and image swap (Photoshop-only). Open: licence / sign-in (Creative Hubb accounts) — needs
+   the owner's decision on how the native app is licensed.
 7. ~~Packaging~~ (done 2026-10-11, ahead of 6): `native/scripts/package-mac.sh` builds
    `native/dist/Album Studio.app` (124 MB): release shell + PhotoCraft engine, the interface,
    the helper with exactly the Electron modules and packages it needs

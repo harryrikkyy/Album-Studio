@@ -4,12 +4,17 @@ import { effect } from '@preact/signals'
 import { Component, render, type ComponentChildren } from 'preact'
 import { call, inShell, onEvent } from './bridge'
 import { AboutDialog, openAbout } from './app/About'
+import { AlbumSettingsDialog } from './app/AlbumSettings'
+import { SettingsDialog, openSettings } from './app/Settings'
+import { AutoFillDialog } from './places/plan/AutoFill'
 import { Frame, goToPlace, placeForKey } from './app/Frame'
 import { Albums } from './places/Albums'
 import { Deliver } from './places/Deliver'
 import { Pending } from './places/Pending'
 import { Plan } from './places/Plan'
 import { Review } from './places/Review'
+import { Tools } from './places/Tools'
+import { Library } from './places/Library'
 import { redo, spreadSelection, undo } from './edit'
 import { openNewAlbum } from './places/albums/NewAlbum'
 import { moveSpread, removePhotos, shuffleTemplate } from './plan_actions'
@@ -32,6 +37,8 @@ function Current() {
     case 'plan': return album.value ? <Plan /> : <Albums />
     case 'review': return album.value ? <Review /> : <Albums />
     case 'deliver': return album.value ? <Deliver /> : <Albums />
+    case 'tools': return <Tools />
+    case 'library': return <Library />
     default: return <Pending which={place.value} />
   }
 }
@@ -47,6 +54,7 @@ document.addEventListener('keydown', (e) => {
     if (p) { e.preventDefault(); goToPlace(p) }
     return
   }
+  if (e.metaKey && e.key === ',') { e.preventDefault(); openSettings(); return }
   // Undo and redo work everywhere an album is open, except while typing (the field has its own).
   if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'z' && album.value && !isTyping(e)) {
     e.preventDefault()
@@ -136,7 +144,7 @@ async function pickAndOpenAlbum() {
   }
 }
 
-render(<Boundary><Frame><Current /><AboutDialog /></Frame></Boundary>, document.getElementById('app')!)
+render(<Boundary><Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame></Boundary>, document.getElementById('app')!)
 
 // Deep links: ?open=<album folder>&place=plan|review&spread=<n>&theme=studio-light. The shell uses
 // them to open an album straight away (from Finder, or the last session).
