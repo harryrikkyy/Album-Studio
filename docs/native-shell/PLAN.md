@@ -42,8 +42,13 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
    start empty. Thumbnails are made only where missing (`_Thumbnails`, 400 px, sharp; RAW from
    the camera's embedded preview, `sips` fallback; same sizes as the Photoshop-made ones, 6 in
    0.1 s), then the project (Electron format) and the first plan; progress shown live.
-3. **Deliver**: JPEG high/low (PhotoCraft `doc.save` + sharp), proof PDF (pure-JS writer),
-   client gallery; output folder change.
+3. ~~Deliver~~ (done 2026-10-11): step 2 under the render, "Files for the lab and the client":
+   JPEG-High-Res (print height × ppi, default 12 in at 300 ppi = 10800 × 3600, quality 97, 4:4:4,
+   sRGB, ppi set), JPEG-Low-Res (mozjpeg 25), "<Album> - Low Res.pdf" (JPEGs embedded as they are)
+   — same folders and names as the Electron export, next to the sheets' folder. From the PSD's
+   stored composite (engine export when it has none); unchanged sheets skipped. 23 sheets in 27 s,
+   PDF 26 MB (Photoshop flow: 114 MB). Output folder change (undoable), Show in Finder.
+   Not done: an HTML client gallery (the PDF covers proofing for now).
 4. **Render parity**: overlays (text/shapes PNG + text layers), template layer edits,
    page backgrounds, colour adjustments (bake via `proof_renderer.applyAdjust`).
 5. **Editor**: merge the "← Album" strip into PhotoCraft's title bar, remove ArtCraft brand

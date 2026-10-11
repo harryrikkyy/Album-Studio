@@ -190,6 +190,16 @@ test('fitTemplate picks a template whose frames fit the photos, from the same co
   assert.equal(read(proj).albumPages[1].template.name, '2h0v_0001.psd')
 })
 
+test('the print-sheet folder changes like any edit, and undoes', async () => {
+  const { proj, root } = makeProject()
+  const before = read(proj).workspace.outputToken
+  await edit(proj, { op: 'setOutputFolder', folder: path.join(root, 'Prints') })
+  assert.equal(read(proj).workspace.outputToken, path.join(root, 'Prints'))
+  await undo({ album: proj })
+  assert.equal(read(proj).workspace.outputToken, before)
+  await assert.rejects(edit(proj, { op: 'setOutputFolder', folder: 'relative/path' }), /Choose a folder/)
+})
+
 test('edits sent together apply in order, none lost', async () => {
   const { proj } = makeProject()
   await Promise.all([

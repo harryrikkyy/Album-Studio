@@ -9,6 +9,7 @@ const { createAlbum, inspectCollections, inspectFolders, knownCollections, sugge
 const { redo, undo, updateAlbum } = require('./lib/project')
 const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
+const { cancelExport, exportPlan, exportStatus, startExport } = require('./lib/deliver')
 const { cancelRender, renderPlan, renderStatus, startRender } = require('./lib/render')
 const { listTemplates } = require('./lib/templates')
 
@@ -65,6 +66,13 @@ const methods = {
   'render.cancel': async (p) => cancelRender(p),
   'render.status': async () => renderStatus(),
   'render.plan': async (p) => renderPlan(p),
+
+  // Files for the lab and the client (JPEG-High-Res, JPEG-Low-Res, the low-res PDF), made from
+  // the rendered sheets. export.start returns at once; progress comes as events.
+  'export.plan': async (p) => exportPlan(p),
+  'export.start': async (p, ctx) => startExport(p, ctx),
+  'export.cancel': async (p) => cancelExport(p),
+  'export.status': async () => exportStatus(),
 }
 
 module.exports = { methods }

@@ -8,6 +8,7 @@
 'use strict'
 
 const fs = require('fs')
+const path = require('path')
 const { openAlbum } = require('./album')
 const { planAlbum } = require('./autofill')
 const { listTemplates } = require('./templates')
@@ -81,6 +82,7 @@ function snapshot(d) {
     albumPages: d.albumPages || {},
     totalActivePages: d.totalActivePages || 1,
     keyed: Object.fromEntries(PAGE_KEYED.map((k) => [k, ws[k] || {}])),
+    output: ws.outputToken ?? null,
   })
 }
 
@@ -90,6 +92,8 @@ function restore(d, snap) {
   d.totalActivePages = s.totalActivePages
   const ws = workspaceOf(d)
   for (const k of PAGE_KEYED) ws[k] = s.keyed[k]
+  if (s.output) ws.outputToken = s.output
+  else delete ws.outputToken
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -218,6 +222,12 @@ const OPS = {
     page.template = templateEntry(t, cur)
     // `auto`: chosen because the photos changed (worth telling the user), not asked for.
     ;(ctx.report.templates ??= []).push({ n, name: t.name, auto: !another })
+  },
+
+  /** Where print sheets are saved (the JPEG folders and the PDF go next to it). */
+  setOutputFolder(ctx, { folder }) {
+    if (typeof folder !== 'string' || !path.isAbsolute(folder)) throw new Error('Choose a folder for the print sheets.')
+    workspaceOf(ctx.d).outputToken = folder
   },
 
   clearSpread(ctx, { n }) {

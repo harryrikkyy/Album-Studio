@@ -74,6 +74,7 @@ function unsupportedEdits(spread, ws) {
 async function startRender(p, { emit }) {
   if (current) throw new Error(`A render is already running (${current.done + current.skipped + current.failed} of ${current.total} done). Wait for it, or cancel it.`)
   if (!p.album) throw new Error('missing `album`')
+  if (require('./deliver').exportStatus().running) throw new Error('Files are being exported. Render when the export has finished.')
   const album = await openAlbum({ path: p.album })
   const data = await readProject(album.file)
   const ws = data.workspace || data
