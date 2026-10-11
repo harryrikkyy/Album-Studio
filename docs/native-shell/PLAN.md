@@ -36,8 +36,12 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
 
 1. ~~Plan editing~~ (done, above). Open: per-photo crop/zoom and colour on the spread; the undo
    history is per helper session (it starts empty when the app restarts).
-2. **New album flow**: photo folders → thumbnails (`thumbnailer.js` + RAW via `sips`),
-   template collections, output folder, sheet count.
+2. ~~New album flow~~ (done 2026-10-11): Albums → New album: photo folders (several, surveyed:
+   photos, RAW, thumbnails to make), template collections suggested from earlier albums, name and
+   place suggested ("Wedding Album" next to the shoot), print-sheet folder, plan N spreads now or
+   start empty. Thumbnails are made only where missing (`_Thumbnails`, 400 px, sharp; RAW from
+   the camera's embedded preview, `sips` fallback; same sizes as the Photoshop-made ones, 6 in
+   0.1 s), then the project (Electron format) and the first plan; progress shown live.
 3. **Deliver**: JPEG high/low (PhotoCraft `doc.save` + sharp), proof PDF (pure-JS writer),
    client gallery; output folder change.
 4. **Render parity**: overlays (text/shapes PNG + text layers), template layer edits,

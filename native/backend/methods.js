@@ -5,6 +5,7 @@
 'use strict'
 
 const { openAlbum } = require('./lib/album')
+const { createAlbum, inspectCollections, inspectFolders, knownCollections, suggestAlbum } = require('./lib/newalbum')
 const { redo, undo, updateAlbum } = require('./lib/project')
 const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
@@ -14,7 +15,7 @@ const { listTemplates } = require('./lib/templates')
 /** After anything that can change how spreads look: redraw their proofs in the background. */
 function withProofs(fn) {
   return async (p, ctx) => {
-    const result = await fn(p)
+    const result = await fn(p, ctx)
     refreshProofs(result.album ? result.album.path : result.path, ctx.emit)
     return result
   }
@@ -30,6 +31,14 @@ const methods = {
   }),
 
   'album.recent': async () => listRecent(),
+
+  // Starting an album: what the chosen folders hold, collections earlier albums used, a name
+  // and place to suggest, and creation (thumbnails → project → first plan; progress as events).
+  'folders.inspect': async (p) => inspectFolders(p),
+  'templates.collections': async () => knownCollections(),
+  'templates.inspect': async (p) => inspectCollections(p),
+  'album.suggest': async (p) => suggestAlbum(p),
+  'album.create': withProofs((p, ctx) => createAlbum(p, ctx)),
 
   // Edits. Each call is one undo step; the reply carries the updated album.
   'album.update': withProofs((p) => updateAlbum(p)),
