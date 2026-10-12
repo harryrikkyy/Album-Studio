@@ -34,8 +34,20 @@ Reusable from the Electron app without changes (checked): `src/proof_renderer.js
 
 ## Next, in order
 
-1. ~~Plan editing~~ (done, above). Open: per-photo crop/zoom and colour on the spread; the undo
-   history is per helper session (it starts empty when the app restarts).
+1. ~~Plan editing~~ (done, above). Added 2026-10-12, from the owner's first real use:
+   - turning photos (corner buttons, the selection bar, the spread's photo tools, ⌘L/⌘R, the
+     Photo menu): `imageRotations`, page photos' orientation swapped, templates follow;
+   - templates for the photos selected in the pool (the selection bar's Templates button), and a
+     click puts them on the spread (empty) or a new one after it;
+   - move and zoom a photo in its frame (double-click it): `imagePlacements`;
+   - Inspector › Photo: turn, move & zoom, take off, colour (exposure, contrast, saturation,
+     warmth, black & white): `imageAdjustments`, previewed live on its thumbnail;
+   - Edit spread renders the spread first when its sheet is missing or out of date;
+   - one page shape per album: automatic picks keep to it, other sizes are marked; templates
+     with a frame parked off the page are skipped by automatic picks.
+   Open: the undo history is per helper session (it starts empty when the app restarts); text,
+   shapes and template-layer edits made in the Electron spread editor still render but are
+   edited in the PhotoCraft editor, not on the spread.
 2. ~~New album flow~~ (done 2026-10-11): Albums → New album: photo folders (several, surveyed:
    photos, RAW, thumbnails to make), template collections suggested from earlier albums, name and
    place suggested ("Wedding Album" next to the shoot), print-sheet folder, plan N spreads now or
