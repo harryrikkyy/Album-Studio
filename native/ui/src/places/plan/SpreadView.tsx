@@ -2,14 +2,15 @@
 // them, onto a photo to replace it, drag a photo to another frame to swap, or off to the pool.
 // Frames come from the template itself (spread.layout), laid over the preview as hit areas.
 
-import { FileWarning, ImagePlus, LoaderCircle, RotateCcw, RotateCw, X } from 'lucide-preact'
-import { useEffect, useState } from 'preact/hooks'
+import { Crop, FileWarning, ImagePlus, LoaderCircle, RotateCcw, RotateCw, X } from 'lucide-preact'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { call, fileUrl } from '../../bridge'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag, type DragPayload } from '../../dnd'
 import { proofPending, proofUrl, spreadSelection } from '../../edit'
-import { addPhotos, removePhotos, replacePhoto, rotatePhotos, swapPhotos } from '../../plan_actions'
+import { addPhotos, placePhoto, removePhotos, replacePhoto, rotatePhotos, swapPhotos } from '../../plan_actions'
 import { album, hoveredPhoto, selectionFocus } from '../../state'
 import type { Spread } from '../../types'
+import { FrameAdjust } from './FrameAdjust'
 
 interface LayoutFrame { name: string; orient: 'h' | 'v'; x: number; y: number; w: number; h: number; z: number; photoId: string | null }
 interface Layout { n: number; template: string | null; width: number | null; height: number | null; backdrop: string | null; frames: LayoutFrame[]; unplaced: string[] }
@@ -60,9 +61,21 @@ export function SpreadView({ s }: { s: Spread }) {
   const drag = dragging.value
   const ar = layout?.width && layout.height ? layout.width / layout.height : 3
   const sel = spreadSelection.value
+  // The photo being moved/zoomed in its frame (by frame z), and the spread's size on screen.
+  const [adjusting, setAdjusting] = useState<number | null>(null)
+  const spreadEl = useRef<HTMLDivElement>(null)
+  const [px, setPx] = useState({ w: 0, h: 0 })
+  useEffect(() => {
+    const el = spreadEl.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setPx({ w: el.clientWidth, h: el.clientHeight }))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [spreadEl.current])
 
-  // A drag that ends anywhere clears the highlight.
+  // A drag that ends anywhere clears the highlight; another spread or photo ends adjusting.
   useEffect(() => { if (!drag) setOver(null) }, [drag])
+  useEffect(() => setAdjusting(null), [s.n, s.photoIds.join('|'), s.template?.id])
 
   const onSpreadOver = (e: DragEvent) => {
     const p = payloadOf(e)
@@ -99,7 +112,7 @@ export function SpreadView({ s }: { s: Spread }) {
   return (
     <div class="spread-wrap" onDragOver={onSpreadOver} onDragLeave={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setOver(null) }} onDrop={onSpreadDrop}>
       {img ? (
-        <div class={`spread ${over === 'spread' ? 'is-drop' : ''} ${pending ? 'is-pending' : ''}`} style={{ '--ar': ar }}>
+        <div ref={spreadEl} class={`spread ${over === 'spread' ? 'is-drop' : ''} ${pending ? 'is-pending' : ''} ${adjusting !== null ? 'is-adjusting' : ''}`} style={{ '--ar': ar }}>
           <img class="spread__img" src={img} alt={`Spread ${s.n}`} decoding="async" draggable={false} />
           {layout?.frames.map((f) => {
             const act = drag ? frameAction(drag, f, s.n) : null
@@ -122,12 +135,14 @@ export function SpreadView({ s }: { s: Spread }) {
                 }}
                 onDrop={(e) => { if (frameAction(payloadOf(e), f, s.n)) onFrameDrop(e, f) }}
                 onClick={() => { selectionFocus.value = 'spread'; spreadSelection.value = f.photoId === sel ? null : f.photoId }}
+                onDblClick={() => { if (photo) { selectionFocus.value = 'spread'; spreadSelection.value = photo.id; setAdjusting(f.z) } }}
                 onMouseEnter={() => (hoveredPhoto.value = f.photoId)}
                 onMouseLeave={() => (hoveredPhoto.value = null)}
               >
                 {over === f.z && act ? <span class="frame-hit__label">{act}</span> : null}
-                {sel && sel === f.photoId && !drag && photo ? (
-                  <span class="frame-tools" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                {sel && sel === f.photoId && !drag && photo && adjusting === null ? (
+                  <span class="frame-tools" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
+                    <button type="button" class="frame-tools__btn" title="Move and zoom in the frame (double-click the photo)" aria-label={`Move and zoom ${photo.base} in its frame`} onClick={() => setAdjusting(f.z)}><Crop size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn left (⌘L)" aria-label={`Turn ${photo.base} left`} onClick={() => void rotatePhotos([photo.id], -90)}><RotateCcw size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn right (⌘R)" aria-label={`Turn ${photo.base} right`} onClick={() => void rotatePhotos([photo.id], 90)}><RotateCw size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Take off this spread (⌫)" aria-label={`Take ${photo.base} off this spread`} onClick={() => void removePhotos(s.n, [photo.id])}><X size={13} /></button>
@@ -136,6 +151,21 @@ export function SpreadView({ s }: { s: Spread }) {
               </div>
             )
           })}
+          {(() => {
+            const f = adjusting !== null ? layout?.frames.find((x) => x.z === adjusting) : null
+            const photo = f?.photoId ? a.photos[f.photoId] : null
+            if (!f || !photo || !px.w) return null
+            return (
+              <FrameAdjust
+                key={`${photo.id}-${f.z}`}
+                frame={f}
+                photo={photo}
+                spreadPx={px}
+                onCancel={() => setAdjusting(null)}
+                onDone={(pl) => { setAdjusting(null); void placePhoto(photo.id, pl) }}
+              />
+            )
+          })()}
           {pending ? <span class="spread__busy" role="status"><LoaderCircle size={13} /> Updating preview</span> : null}
           {over === 'spread' ? <span class="spread__droplabel">Add {count > 1 ? `${count} photos` : 'photo'} to spread {s.n}</span> : null}
         </div>

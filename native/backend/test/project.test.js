@@ -279,3 +279,31 @@ test('templates picked for the photos skip ones with a frame parked off the page
   await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 2 }, { op: 'addPhoto', n: 2, id: A }, { op: 'fitTemplate', n: 2 }] }, { rng: () => 0 })
   assert.equal(read(proj).albumPages[2].template.name, '1h0v_0002.psd')
 })
+
+test('templates picked for the photos keep to the album’s page shape', async () => {
+  const { shapeOf, commonShape } = require('../lib/templates')
+  assert.equal(shapeOf({ width: 7200, height: 2400 }), shapeOf({ width: 10800, height: 3600 }), 'same shape at another resolution')
+  assert.equal(commonShape([{ width: 7200, height: 2400 }, { width: 7200, height: 4500 }, { width: 10800, height: 3600 }]), 3)
+
+  const { proj, tpls } = makeProject()
+  const frame = { name: 'ToolkitHFrame_001', left: 10, top: 10, w: 50, h: 30 }
+  // The album's spread 1 template becomes a 3:1 page; 1h0v_0001 is 16:10, 1h0v_0002 is 3:1.
+  framePsd(path.join(tpls, '1h1v_0001.psd'), { width: 300, height: 100, ...frame })
+  framePsd(path.join(tpls, '1h0v_0001.psd'), { width: 160, height: 100, ...frame })
+  framePsd(path.join(tpls, '1h0v_0002.psd'), { width: 600, height: 200, ...frame })
+  await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 2 }, { op: 'addPhoto', n: 2, id: C }, { op: 'rotatePhotos', ids: [C], by: 90 }, { op: 'fitTemplate', n: 2 }] }, { rng: () => 0 })
+  assert.equal(read(proj).albumPages[2].template.name, '1h0v_0002.psd', 'rng 0 would take the 16:10 page; the 3:1 one is chosen')
+})
+
+test('a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it', async () => {
+  const { proj } = makeProject()
+  let r = await edit(proj, { op: 'placePhoto', id: A, scale: 1.8, ox: -0.4, oy: 2 })
+  assert.deepEqual(read(proj).workspace.imagePlacements, { [A]: { scale: 1.8, ox: -0.4, oy: 1 } }, 'kept as the Electron app does; pan clamped to the edge')
+  assert.deepEqual(r.album.photos[A].placement, { scale: 1.8, ox: -0.4, oy: 1 })
+  r = await edit(proj, { op: 'placePhoto', id: A })
+  assert.deepEqual(read(proj).workspace.imagePlacements, {}, 'no values: fitted again, nothing kept')
+  assert.equal(r.album.photos[A].placement, null)
+  await undo({ album: proj })
+  assert.deepEqual(read(proj).workspace.imagePlacements, { [A]: { scale: 1.8, ox: -0.4, oy: 1 } })
+  await assert.rejects(edit(proj, { op: 'placePhoto', id: 'img_nope', scale: 2 }), /isn't in this album/)
+})

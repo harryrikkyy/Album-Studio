@@ -13,7 +13,16 @@ export interface Photo {
   height: number | null
   /** The user's turn, clockwise: 0, 90, 180 or 270. */
   rotation: number
+  /** How it sits in its frame (zoom, pan); null: fitted, centred. */
+  placement?: Placement | null
   usedOn: number[]
+}
+
+/** Zoom on the cover fit (≥ 1) and pan across what is cropped (-1 … 1; 1 = right/bottom edge). */
+export interface Placement {
+  scale: number
+  ox: number
+  oy: number
 }
 
 export interface SpreadTemplate {

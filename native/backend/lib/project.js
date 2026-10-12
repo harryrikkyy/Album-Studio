@@ -12,7 +12,7 @@ const path = require('path')
 const { openAlbum } = require('./album')
 const { planAlbum } = require('./autofill')
 const { firstUsable, offPageFrames } = require('./template_check')
-const { listTemplates } = require('./templates')
+const { commonShape, listTemplates, shapeOf } = require('./templates')
 
 /** Workspace maps keyed by spread number: they move with their spread. */
 const PAGE_KEYED = ['pageOverlays', 'pageLayerEdits', 'pageBackgrounds']
@@ -87,6 +87,7 @@ function snapshot(d) {
     photoFolders: ws.imageTokens || [],
     collections: ws.templateTokens || [],
     rotations: ws.imageRotations || {},
+    placements: ws.imagePlacements || {},
   })
 }
 
@@ -101,6 +102,7 @@ function restore(d, snap) {
   if (s.photoFolders) ws.imageTokens = s.photoFolders
   if (s.collections) ws.templateTokens = s.collections
   if (s.rotations) ws.imageRotations = s.rotations
+  if (s.placements) ws.imagePlacements = s.placements
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -122,18 +124,29 @@ function checkSpread(pages, n) {
 }
 
 /**
- * A template for `h` landscape and `v` portrait photos, picked at random (`rng`) from the same
- * collection as `like` when it has one, skipping templates with a frame parked off the page (its
- * photo wouldn't show). Null when the catalogue has none with those frames.
+ * A template for `h` landscape and `v` portrait photos in the album's page `shape`, picked at
+ * random (`rng`) from the same collection as `like` when it has one, skipping templates with a
+ * frame parked off the page (its photo wouldn't show). Null when the catalogue has none.
  */
-async function pickFitting(catalogue, { h, v, like, except, rng }) {
-  const choices = catalogue.filter((t) => t.h === h && t.v === v && t.id !== except)
+async function pickFitting(catalogue, { h, v, like, except, rng, shape }) {
+  const choices = catalogue.filter((t) => t.h === h && t.v === v && t.id !== except && (!shape || !shapeOf(t) || shapeOf(t) === shape))
   if (!choices.length) return null
   const same = like ? choices.filter((t) => t.collection === like.collection) : []
   const pool = same.length ? same : choices
   const i = Math.floor(rng() * pool.length)
   const order = [...pool.slice(i), ...pool.slice(0, i)]
   return (await firstUsable(order)) || order[0]
+}
+
+/**
+ * The album's page shape: the one most of its spreads' templates have, else the one most of its
+ * collections' templates have (a new album). Null when no size is known.
+ */
+async function albumShape(ctx) {
+  const catalogue = await ctx.templates()
+  const byId = new Map(catalogue.map((t) => [t.id, t]))
+  const used = ctx.pages.map((p) => p.template && byId.get(p.template.id)).filter(Boolean)
+  return commonShape(used, catalogue) ?? commonShape(catalogue)
 }
 
 /** Remove a photo from every spread except `keep`. */
@@ -233,7 +246,7 @@ const OPS = {
     if (!another && cur && cur.h === h && cur.v === v) return
     const catalogue = await ctx.templates()
     const known = cur && catalogue.find((t) => t.id === cur.id)
-    const t = await pickFitting(catalogue, { h, v, like: known, except: cur && cur.id, rng: ctx.rng })
+    const t = await pickFitting(catalogue, { h, v, like: known, except: cur && cur.id, rng: ctx.rng, shape: await albumShape(ctx) })
     if (!t) {
       ;(ctx.report.noTemplate ??= []).push({ n, h, v })
       return
@@ -264,6 +277,23 @@ const OPS = {
         for (const e of page.photos) if (e.id === id) e.orient = e.orient === 'v' ? 'h' : 'v'
       }
     }
+  },
+
+  /**
+   * How a photo sits in its frame: `scale` ≥ 1 zooms in on the cover fit, `ox`/`oy` ∈ [-1, 1] pan
+   * across what is cropped (1 = its right/bottom edge); no values (or 1, 0, 0) fits it again.
+   * Kept as the Electron app does (workspace.imagePlacements, per photo), so it applies wherever the
+   * photo appears, in previews and print sheets.
+   */
+  placePhoto(ctx, { id, scale, ox, oy }) {
+    if (!ctx.model.photos[id]) throw new Error(`That photo isn't in this album's folders any more (${id}).`)
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || 0))
+    const round = (v) => Math.round(v * 1000) / 1000
+    const p = { scale: round(clamp(scale ?? 1, 1, 5)), ox: round(clamp(ox, -1, 1)), oy: round(clamp(oy, -1, 1)) }
+    const ws = workspaceOf(ctx.d)
+    const placements = (ws.imagePlacements = { ...(ws.imagePlacements || {}) })
+    if (p.scale === 1 && !p.ox && !p.oy) delete placements[id]
+    else placements[id] = p
   },
 
   /** Where print sheets are saved (the JPEG folders and the PDF go next to it). */
@@ -334,14 +364,17 @@ const OPS = {
     const ids = Array.isArray(opts && opts.ids) ? ctx.model.pool.filter((id) => opts.ids.includes(id)) : ctx.model.pool
     const photos = ids.map((id) => ctx.model.photos[id]).filter(Boolean)
     const catalogue = await ctx.templates()
-    const planned = await planAlbum(photos, catalogue, opts || {}, ctx.rng)
+    // One page shape for the whole album: the one it has now (or its collections mostly have).
+    const shape = await albumShape(ctx)
+    const sameShape = catalogue.filter((t) => !shape || !shapeOf(t) || shapeOf(t) === shape)
+    const planned = await planAlbum(photos, sameShape, opts || {}, ctx.rng)
     // A template with a frame parked off the page would hide a photo: swap it for another that
     // fits (checked a few at a time; each template is read once, then cached).
     const pages = planned.pages.filter((p) => p.template)
     for (let i = 0; i < pages.length; i += 4) {
       await Promise.all(pages.slice(i, i + 4).map(async (p) => {
         if (!(await offPageFrames(p.template.file)).length) return
-        const other = await pickFitting(catalogue, { h: p.template.h, v: p.template.v, like: p.template, except: p.template.id, rng: ctx.rng })
+        const other = await pickFitting(sameShape, { h: p.template.h, v: p.template.v, like: p.template, except: p.template.id, rng: ctx.rng, shape })
         if (other) p.template = other
       }))
     }

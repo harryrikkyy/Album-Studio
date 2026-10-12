@@ -9,7 +9,7 @@ import { fileUrl } from '../../bridge'
 import { autoTemplate, loadTemplates, setAutoTemplate, templates, templatesError } from '../../edit'
 import { plural, signature, templateLabel } from '../../format'
 import { placeWithTemplate, setTemplate, shuffleTemplate } from '../../plan_actions'
-import { filterTemplates, selectionSlots, slotsOf } from '../../plan_logic'
+import { albumShape, filterTemplates, selectionSlots, shapeOf, sizeWords, slotsOf } from '../../plan_logic'
 import { album, currentSpread, poolSelection, selectionFocus, stored, store, templateBrowserOpen } from '../../state'
 import { Button, IconButton, Segmented } from '../../ui/controls'
 
@@ -35,8 +35,10 @@ export function TemplateBrowser() {
   const slots = forSelection ? selectionSlots(a, selIds) : s ? slotsOf(a, s) : { h: 0, v: 0 }
   const all = templates.value
   const collections = useMemo(() => [...new Set((all ?? []).map((t) => t.collection))], [all])
-  const fitting = useMemo(() => (all ? filterTemplates(all, { fits: true, ...slots, collection, text: '' }).length : 0), [all, slots.h, slots.v, collection])
-  const list = useMemo(() => (all ? filterTemplates(all, { fits, ...slots, collection, text }) : []), [all, fits, slots.h, slots.v, collection, text])
+  // The album keeps to one page shape: "fits" means that shape too; others are marked.
+  const shape = useMemo(() => (all ? albumShape(a, all) : null), [all, a.spreads])
+  const fitting = useMemo(() => (all ? filterTemplates(all, { fits: true, ...slots, collection, text: '', shape }).length : 0), [all, slots.h, slots.v, collection, shape])
+  const list = useMemo(() => (all ? filterTemplates(all, { fits, ...slots, collection, text, shape }) : []), [all, fits, slots.h, slots.v, collection, text, shape])
 
   if (!s) return null
   const close = () => (templateBrowserOpen.value = false)
@@ -117,7 +119,7 @@ export function TemplateBrowser() {
       ) : !list.length ? (
         <div class="tpl-browser__empty">
           {fits && !text
-            ? <>No template in {collection ?? 'these collections'} has exactly {signature(slots.h, slots.v)} frames.{forSelection ? ' Turn sideways photos upright first if some are portraits.' : ''} <button type="button" class="link" onClick={() => setFits(false)}>Show all templates</button></>
+            ? <>No template in {collection ?? 'these collections'} has exactly {signature(slots.h, slots.v)} frames{shape ? ' in this album’s page size' : ''}.{forSelection ? ' Turn sideways photos upright first if some are portraits.' : ''} <button type="button" class="link" onClick={() => setFits(false)}>Show all templates</button></>
             : <>No templates match. <button type="button" class="link" onClick={() => { setText(''); setCollection(null) }}>Clear the search</button></>}
         </div>
       ) : (
@@ -125,6 +127,7 @@ export function TemplateBrowser() {
           {list.slice(0, limit).map((t) => {
             const current = !forSelection && s.template?.id === t.id
             const fitsThis = t.h === slots.h && t.v === slots.v
+            const otherSize = !!shape && !!shapeOf(t) && shapeOf(t) !== shape
             return (
               <li key={t.id}>
                 <button
@@ -135,11 +138,12 @@ export function TemplateBrowser() {
                     if (forSelection) void placeWithTemplate(selIds, t.id, t.name)
                     else if (!current) void setTemplate(s.n, t.id)
                   }}
-                  title={forSelection ? `${t.name} · ${t.collection}\nPut the selected photos on ${target} with this template` : `${t.name} · ${t.collection}`}
+                  title={`${t.name} · ${t.collection} · ${sizeWords(t)}${otherSize ? ' (not this album’s page size)' : ''}${forSelection ? `\nPut the selected photos on ${target} with this template` : ''}`}
                 >
                   <span class="tpl-card__img">
                     {t.preview ? <img src={fileUrl(t.preview)} alt="" loading="lazy" decoding="async" /> : null}
                     {current ? <span class="tpl-card__current"><Check size={12} /> Current</span> : null}
+                    {otherSize ? <span class="tpl-card__size">Other size</span> : null}
                   </span>
                   <span class="tpl-card__cap">
                     <span class="tpl-card__name">{templateLabel(t.name)}</span>

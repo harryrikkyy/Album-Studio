@@ -1,6 +1,6 @@
 // plan_logic.ts — the pure parts of editing a plan (tested in test/plan_logic.test.ts).
 
-import type { Album, Orient, Photo, Spread } from './types'
+import type { Album, Orient, Photo, Placement, Spread } from './types'
 
 export interface Template {
   id: string
@@ -10,6 +10,49 @@ export interface Template {
   collection: string
   h: number
   v: number
+  /** Page size in pixels, from the PSD; null when it couldn't be read. */
+  width?: number | null
+  height?: number | null
+}
+
+/** Width ÷ height to two places (7200×2400 and 10800×3600 are the same shape); null if unknown. */
+export function shapeOf(t: { width?: number | null; height?: number | null } | null | undefined): number | null {
+  return t && t.width && t.height ? Math.round((t.width / t.height) * 100) / 100 : null
+}
+
+type Sized = { width?: number | null; height?: number | null }
+
+function shapeCounts(list: Iterable<Sized>): Map<number, number> {
+  const counts = new Map<number, number>()
+  for (const t of list) {
+    const s = shapeOf(t)
+    if (s) counts.set(s, (counts.get(s) ?? 0) + 1)
+  }
+  return counts
+}
+
+/** The page shape most of these templates have (ties go to the one `tiebreak` has most); null if none. */
+export function commonShape(list: Iterable<Sized>, tiebreak: Iterable<Sized> = []): number | null {
+  const counts = shapeCounts(list)
+  const second = shapeCounts(tiebreak)
+  let best: number | null = null
+  for (const [s, n] of counts) {
+    const b = best === null ? -1 : counts.get(best)!
+    if (n > b || (n === b && (second.get(s) ?? 0) > (second.get(best!) ?? 0))) best = s
+  }
+  return best
+}
+
+/** The album's page shape: most of its spreads' templates have it, else most of its catalogue. */
+export function albumShape(a: Album, all: Template[]): number | null {
+  const byId = new Map(all.map((t) => [t.id, t]))
+  const used = a.spreads.map((s) => (s.template ? byId.get(s.template.id) : undefined)).filter((t): t is Template => !!t)
+  return commonShape(used, all) ?? commonShape(all)
+}
+
+/** A template's page size in pixels, as words: "7200 × 2400". */
+export function sizeWords(t: { width?: number | null; height?: number | null }): string {
+  return t.width && t.height ? `${t.width} × ${t.height}` : 'size unknown'
 }
 
 /** Landscape and portrait counts of a spread's photos (photos missing from disk don't count). */
@@ -64,12 +107,39 @@ export function templateFits(a: Album, s: Spread): boolean | null {
  */
 export function changedSpreads(prev: Album | null, next: Album): number[] {
   const out: number[] = []
-  const turns = (a: Album, s: Spread) => s.photoIds.map((id) => a.photos[id]?.rotation ?? 0).join('|')
+  const turns = (a: Album, s: Spread) => s.photoIds.map((id) => `${a.photos[id]?.rotation ?? 0}:${JSON.stringify(a.photos[id]?.placement ?? null)}`).join('|')
   for (const s of next.spreads) {
     const old = prev?.spreads[s.n - 1]
     if (!old || old.template?.id !== s.template?.id || old.photoIds.join('|') !== s.photoIds.join('|') || turns(prev!, old) !== turns(next, s)) out.push(s.n)
   }
   return out
+}
+
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+/**
+ * Where a photo's picture goes in its frame, in the frame's pixels: cover the frame, zoom by
+ * `scale`, pan by `ox`/`oy` across the overflow — the same as the previews and print sheets.
+ * `photoW`/`photoH` are the photo as seen (after its turn).
+ */
+export function placementLayout(frameW: number, frameH: number, photoW: number, photoH: number, pl: Placement | null | undefined) {
+  const s = Math.max(frameW / photoW, frameH / photoH) * Math.max(1, pl?.scale ?? 1)
+  const width = photoW * s
+  const height = photoH * s
+  const overflowX = Math.max(0, width - frameW)
+  const overflowY = Math.max(0, height - frameH)
+  const ox = clamp(pl?.ox ?? 0, -1, 1)
+  const oy = clamp(pl?.oy ?? 0, -1, 1)
+  return { left: (-overflowX * (1 + ox)) / 2, top: (-overflowY * (1 + oy)) / 2, width, height, overflowX, overflowY }
+}
+
+/** The placement after dragging the picture by (dx, dy) frame pixels: it follows the pointer. */
+export function panBy(start: Placement, dx: number, dy: number, overflowX: number, overflowY: number): Placement {
+  return {
+    scale: start.scale,
+    ox: overflowX > 0.5 ? clamp(start.ox - (2 * dx) / overflowX, -1, 1) : 0,
+    oy: overflowY > 0.5 ? clamp(start.oy - (2 * dy) / overflowY, -1, 1) : 0,
+  }
 }
 
 /** Shift-click selection: everything between the anchor and the clicked item, in list order. */
@@ -87,6 +157,8 @@ export interface TemplateQuery {
   v: number
   collection: string | null
   text: string
+  /** With `fits`: only this page shape too (templates of unknown size pass). */
+  shape?: number | null
 }
 
 /** The templates to offer: fitting ones first-class, then by collection, name and search text. */
@@ -94,6 +166,7 @@ export function filterTemplates(all: Template[], q: TemplateQuery): Template[] {
   const words = q.text.toLowerCase().split(/\s+/).filter(Boolean)
   return all.filter((t) => {
     if (q.fits && (t.h !== q.h || t.v !== q.v)) return false
+    if (q.fits && q.shape && shapeOf(t) && shapeOf(t) !== q.shape) return false
     if (q.collection && t.collection !== q.collection) return false
     const name = t.name.toLowerCase()
     return words.every((w) => name.includes(w))

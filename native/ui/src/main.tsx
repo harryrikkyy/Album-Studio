@@ -20,9 +20,9 @@ import { Library } from './places/Library'
 import { redo, spreadSelection, undo } from './edit'
 import { openNewAlbum } from './places/albums/NewAlbum'
 import { moveSpread, removePhotos, rotatePhotos, shuffleTemplate, turnTargets } from './plan_actions'
-import { loadPlan, plan, startRender } from './render'
+import { editCurrentSpread, loadPlan, plan, startRender } from './render'
 import {
-  album, currentSpread, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
+  album, currentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
   toggleInspector,
 } from './state'
 import './styles/tokens.css'

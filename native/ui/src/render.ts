@@ -4,7 +4,7 @@
 import { batch, computed, effect, signal } from '@preact/signals'
 import { call, onEvent } from './bridge'
 import { plural } from './format'
-import { album, assetVersion, openAlbumQuietly, toast } from './state'
+import { album, assetVersion, currentSpread, openAlbumQuietly, toast } from './state'
 
 export type SheetState = 'current' | 'stale' | 'missing' | 'blocked'
 export interface PlanEntry { n: number; state: SheetState; edited?: boolean; reason?: string; unsupported?: string[] }
@@ -62,6 +62,39 @@ function duration(ms: number): string {
   return s < 60 ? `${s} s` : `${Math.floor(s / 60)} min ${s % 60} s`
 }
 
+// ── Editing a spread ───────────────────────────────────────────────────────
+
+/** A spread to open in the editor as soon as the render making its sheet finishes. */
+let editAfterRender: { album: string; n: number } | null = null
+
+async function openSheet(path: string) {
+  try {
+    await call('editor.open', { path })
+  } catch (e) {
+    toast('error', (e as Error).message, 8000)
+  }
+}
+
+/**
+ * Open the current spread in the PhotoCraft editor. A sheet that is up to date, or was edited
+ * there by hand, opens as it is; otherwise this spread is rendered first and opens when done.
+ */
+export async function editCurrentSpread() {
+  const a = album.value
+  const s = currentSpread.value
+  if (!a || !s) return
+  if (!s.photoIds.length) { toast('info', `Spread ${s.n} is empty. Add photos to it first.`, 5000); return }
+  if (!s.template) { toast('info', `Spread ${s.n} has no template yet. Choose one under Templates (T).`, 5000); return }
+  if (!s.template.file) { toast('error', `Spread ${s.n}’s template isn’t on disk. Connect its drive, or choose another template.`, 7000); return }
+  const st = sheetStateOf(s.n)
+  if (s.sheet && (!st || st.edited || st.state === 'current')) { await openSheet(s.sheet); return }
+  if (st?.state === 'blocked') { toast('error', st.reason ?? `Spread ${s.n} can’t be rendered yet.`, 7000); return }
+  if (running.value) { toast('info', 'A render is running. Edit this spread when it has finished.', 5000); return }
+  editAfterRender = { album: a.path, n: s.n }
+  toast('info', `${s.sheet ? 'Spread changed since its sheet was made: rendering' : 'Rendering'} spread ${s.n} for the editor…`, 6000)
+  await startRender([s.n])
+}
+
 onEvent('render.started', (d) => {
   const data = d as { jobId: number; total: number; album: string }
   job.value = { jobId: data.jobId, album: data.album, total: data.total, index: 0, current: null, phase: 'Starting', startedAt: Date.now(), results: [], finished: null }
@@ -104,8 +137,17 @@ onEvent('render.finished', (d) => {
   const parts = [f.done ? `${plural(f.done, 'sheet')} rendered` : null, f.skipped ? `${f.skipped} unchanged` : null, f.failed ? `${f.failed} failed` : null].filter(Boolean)
   const verb = f.cancelled ? 'Render stopped' : 'Render finished'
   toast(f.failed ? 'error' : 'ok', `${verb}: ${parts.join(', ') || 'nothing to do'} · ${duration(f.ms)}`, 9000)
-  // Pick up the new sheets and previews.
-  if (album.value && album.value.path === j.album) void openAlbumQuietly(j.album).then(loadPlan)
+  // Pick up the new sheets and previews, then open the spread waiting for the editor.
+  const wanted = editAfterRender && editAfterRender.album === j.album ? editAfterRender : null
+  editAfterRender = null
+  if (album.value && album.value.path === j.album) {
+    void openAlbumQuietly(j.album).then(async () => {
+      await loadPlan()
+      const done = wanted && j.results.some((r) => r.n === wanted.n && r.state !== 'failed') && !f.cancelled
+      const sheet = wanted ? album.value?.spreads[wanted.n - 1]?.sheet : null
+      if (done && sheet) await openSheet(sheet)
+    })
+  }
 })
 
 // After edits settle (the previews are redrawn), sheets may have gone out of date: ask again.

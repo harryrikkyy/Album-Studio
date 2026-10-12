@@ -175,18 +175,3 @@ export function goToSpread(i: number) {
 export function nextSpread(step = 1) {
   goToSpread(spreadIndex.value + step)
 }
-
-/** Open the current spread's rendered sheet in the PhotoCraft editor. */
-export async function editCurrentSpread() {
-  const s = currentSpread.value
-  if (!s) return
-  if (!s.sheet) {
-    toast('info', `Spread ${s.n} hasn’t been rendered yet. Render it in Deliver, then edit it here.`, 6000)
-    return
-  }
-  try {
-    await call('editor.open', { path: s.sheet })
-  } catch (e) {
-    toast('error', (e as Error).message, 8000)
-  }
-}

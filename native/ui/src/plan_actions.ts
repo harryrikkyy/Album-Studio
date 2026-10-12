@@ -4,6 +4,7 @@
 import { autoTemplate, edit, spreadSelection, type Op } from './edit'
 import { plural, templateLabel } from './format'
 import { album, currentSpread, goToSpread, poolAnchor, poolSelection, selectionFocus, spreadIndex, toast } from './state'
+import type { Placement } from './types'
 
 /** Spreads a set of photos is on now, other than `except`. */
 function spreadsOf(ids: string[], except: number): number[] {
@@ -85,6 +86,11 @@ export async function placeWithTemplate(ids: string[], templateId: string, templ
   poolSelection.value = new Set()
   poolAnchor.value = null
   toast('ok', `${plural(ids.length, 'photo')} on ${empty ? '' : 'a new '}spread ${n} with ${templateLabel(templateName)}. ⌘Z undoes it.`)
+}
+
+/** How a photo sits in its frame (wherever it appears); null fits it again, centred. */
+export function placePhoto(id: string, pl: Placement | null) {
+  return edit([pl ? { op: 'placePhoto', id, scale: pl.scale, ox: pl.ox, oy: pl.oy } : { op: 'placePhoto', id }])
 }
 
 export function setTemplate(n: number, templateId: string) {

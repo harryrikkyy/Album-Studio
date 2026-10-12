@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { changedSpreads, describeSlots, filterTemplates, rangeSelect, seenAspect, selectionSlots, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
+import { albumShape, changedSpreads, commonShape, describeSlots, filterTemplates, panBy, placementLayout, rangeSelect, seenAspect, selectionSlots, shapeOf, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
 import type { Album, Photo, Spread } from '../src/types.ts'
 
 const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, rotation: 0, usedOn: [] })
@@ -82,4 +82,34 @@ test('turning a photo changes the picture of every spread it is on', () => {
   const prev = album([spread(1, ['a', 'b'], { id: 't', h: 1, v: 1 }), spread(2, ['c'], null)])
   const next: Album = { ...prev, photos: { ...prev.photos, b: { ...prev.photos.b!, rotation: 90 } } }
   assert.deepEqual(changedSpreads(prev, next), [1])
+})
+
+test('an album keeps to one page shape: its spreads’ templates decide, else its catalogue', () => {
+  const t = (id: string, width: number, height: number): Template => ({ id, name: `${id}.psd`, file: `/t/${id}.psd`, preview: null, collection: 'C', h: 1, v: 0, width, height })
+  const wide = t('wide', 7200, 2400)
+  const wideHiRes = t('wide2', 10800, 3600)
+  const tall = t('tall', 7200, 4500)
+  assert.equal(shapeOf(wide), shapeOf(wideHiRes), 'another resolution, the same shape')
+  assert.equal(shapeOf({ width: null, height: 100 }), null)
+  assert.equal(commonShape([wide, tall, tall]), shapeOf(tall))
+  const a = album([spread(1, ['a'], { id: 'wide', h: 1, v: 0 }), spread(2, ['c'], { id: 'wide2', h: 1, v: 0 }), spread(3, [], null)])
+  assert.equal(albumShape(a, [wide, wideHiRes, tall, tall, tall]), 3, 'what the spreads use, not what the catalogue has most of')
+  assert.equal(albumShape(album([spread(1, [], null)]), [wide, tall, tall]), 1.6, 'a new album: the catalogue’s most common shape')
+  const tie = album([spread(1, ['a'], { id: 'tall', h: 1, v: 0 }), spread(2, ['c'], { id: 'wide', h: 1, v: 0 })])
+  assert.equal(albumShape(tie, [wide, wideHiRes, tall]), 3, 'a tie goes to the shape the catalogue has most of')
+  const fits = filterTemplates([wide, wideHiRes, tall], { fits: true, h: 1, v: 0, collection: null, text: '', shape: 3 })
+  assert.deepEqual(fits.map((x) => x.id), ['wide', 'wide2'])
+})
+
+test('a photo covers its frame, zooms on that, and pans across what is cropped, as the sheets do', () => {
+  // A 300×200 photo in a 100×100 frame: covered at height, 150 wide, 50 cropped.
+  const fit = placementLayout(100, 100, 300, 200, null)
+  assert.deepEqual(fit, { left: -25, top: -0, width: 150, height: 100, overflowX: 50, overflowY: 0 })
+  assert.equal(placementLayout(100, 100, 300, 200, { scale: 1, ox: 1, oy: 0 }).left, -50, 'ox 1: its right edge shows')
+  assert.equal(placementLayout(100, 100, 300, 200, { scale: 1, ox: -1, oy: 0 }).left, -0, 'ox -1: its left edge')
+  const z = placementLayout(100, 100, 300, 200, { scale: 2, ox: 0, oy: 0 })
+  assert.deepEqual([z.width, z.height, z.left, z.top], [300, 200, -100, -50], 'zoom ×2 about the centre')
+  // Dragging the picture right shows more of its left side: ox goes down.
+  assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, 10, 0, 50, 0), { scale: 1, ox: -0.4, oy: 0 })
+  assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, -500, 30, 50, 0), { scale: 1, ox: 1, oy: 0 }, 'stops at the edge; no overflow, no pan')
 })

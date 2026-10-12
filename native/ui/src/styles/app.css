@@ -887,6 +887,7 @@
 .tpl-card__slots { color: var(--ink-3); white-space: nowrap; }
 .tpl-card__slots.is-off { color: var(--warn); }
 .tpl-card--skeleton .tpl-card__img { animation: pulse 1.4s var(--ease-in-out) infinite; }
+.tpl-card__size { position: absolute; left: 6px; bottom: 6px; padding: 1px 7px; border-radius: 999px; background: oklch(0.2 0.03 70 / 0.85); color: var(--warn); font-size: var(--fs-11); font-weight: var(--fw-semibold); }
 .tpl-card__coll { margin-top: -4px; padding: 0 2px; color: var(--ink-3); font-size: var(--fs-11); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Form bits shared by the browser and dialogs */
@@ -1258,3 +1259,30 @@
 .thumb--turn90 img, .thumb--turn270 img { position: absolute; left: 50%; top: 50%; width: 100cqh; height: 100cqw; max-width: none; translate: -50% -50%; }
 .thumb--turn90 img { rotate: 90deg; }
 .thumb--turn270 img { rotate: 270deg; }
+
+/* Moving and zooming a photo in its frame (FrameAdjust.tsx). What the frame crops away shows
+   faintly around it; the spread clips that to its own edges. */
+.spread.is-adjusting { overflow: hidden; }
+.spread.is-adjusting::after { content: ""; position: absolute; inset: 0; z-index: 1; background: oklch(0 0 0 / 0.45); pointer-events: none; }
+.spread.is-adjusting .frame-hit { pointer-events: none; }
+.adjust { position: absolute; z-index: 2; cursor: grab; outline: none; touch-action: none; container-type: size; }
+/* A small frame keeps the essentials: zoom by scrolling, icons only. */
+@container (max-width: 300px) {
+  .adjust__bar input[type="range"], .adjust__word { display: none; }
+}
+.adjust:active { cursor: grabbing; }
+.adjust img { position: absolute; max-width: none; pointer-events: none; user-select: none; }
+.adjust__ghost { opacity: 0.32; }
+.adjust__clip { position: absolute; inset: 0; overflow: hidden; box-shadow: 0 0 0 2px var(--accent); }
+.adjust__bar {
+  position: absolute; left: 50%; bottom: 8px; translate: -50% 0; z-index: 1;
+  display: flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 999px;
+  background: oklch(0.16 0 0 / 0.88); color: oklch(0.97 0 0); box-shadow: 0 4px 16px oklch(0 0 0 / 0.4);
+  cursor: default; white-space: nowrap;
+}
+.adjust__bar input[type="range"] { width: 96px; accent-color: var(--accent); }
+.adjust__btn { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border: 0; border-radius: 999px; background: transparent; color: inherit; font-size: var(--fs-12); cursor: pointer; }
+.adjust__btn:hover { background: oklch(1 0 0 / 0.14); }
+.adjust__btn--done { background: var(--accent); color: var(--accent-ink); font-weight: var(--fw-semibold); }
+.adjust__btn--done:hover { background: var(--accent-hover); }
+.adjust__btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }

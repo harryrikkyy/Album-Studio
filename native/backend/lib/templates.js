@@ -1,6 +1,10 @@
 // templates.js — the template catalogue of an album's collections: every PSD with its id (the
-// Electron app's scheme), its slot counts parsed from the name ("6h1v_0019" → 6 H, 1 V) and its
-// preview image. Cached per collection until the collection folder changes or 5 minutes pass.
+// Electron app's scheme), its slot counts parsed from the name ("6h1v_0019" → 6 H, 1 V), its page
+// size (from the PSD header) and its preview image. Cached per collection until the collection
+// folder changes or 5 minutes pass.
+//
+// A collection may mix page sizes (Market PSD's has 36×12 and 16×10 pages): an album keeps to one
+// page shape, so automatic picks compare shapes (`shapeOf`).
 
 'use strict'
 
@@ -19,6 +23,48 @@ async function readdirSafe(dir) {
 function slotsFromName(name) {
   const m = String(name).toLowerCase().match(/(\d+)h(\d+)v/)
   return m ? { h: parseInt(m[1], 10), v: parseInt(m[2], 10) } : { h: 0, v: 0 }
+}
+
+/** A PSD's canvas size from its header ("8BPS", height at byte 14, width at 18); null if unreadable. */
+async function canvasOf(file) {
+  let fh
+  try {
+    fh = await fs.promises.open(file, 'r')
+    const b = Buffer.alloc(26)
+    const { bytesRead } = await fh.read(b, 0, 26, 0)
+    if (bytesRead < 26 || b.toString('latin1', 0, 4) !== '8BPS') return null
+    return { width: b.readUInt32BE(18), height: b.readUInt32BE(14) }
+  } catch (_) {
+    return null
+  } finally {
+    if (fh) await fh.close().catch(() => {})
+  }
+}
+
+/** Width ÷ height to two places, so 7200×2400 and 10800×3600 are the same shape; null if unknown. */
+function shapeOf(t) {
+  return t && t.width && t.height ? Math.round((t.width / t.height) * 100) / 100 : null
+}
+
+function shapeCounts(list) {
+  const counts = new Map()
+  for (const t of list) {
+    const s = shapeOf(t)
+    if (s) counts.set(s, (counts.get(s) || 0) + 1)
+  }
+  return counts
+}
+
+/** The page shape most of these templates have (ties go to the one `tiebreak` has most); null if none. */
+function commonShape(list, tiebreak = []) {
+  const counts = shapeCounts(list)
+  const second = shapeCounts(tiebreak)
+  let best = null
+  for (const [s, n] of counts) {
+    const b = best === null ? -1 : counts.get(best)
+    if (n > b || (n === b && (second.get(s) || 0) > (second.get(best) || 0))) best = s
+  }
+  return best
 }
 
 async function scanCollection(dir) {
@@ -42,8 +88,15 @@ async function scanCollection(dir) {
     // contains it.
     let preview = images.get(base) || null
     if (!preview) for (const [k, v] of images) if (k.includes(base)) { preview = v; break }
-    return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, ...slotsFromName(name) }
+    return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, ...slotsFromName(name), width: null, height: null }
   })
+  // Page sizes, many headers at a time (thousands take well under a second).
+  for (let i = 0; i < list.length; i += 64) {
+    await Promise.all(list.slice(i, i + 64).map(async (t) => {
+      const c = await canvasOf(t.file)
+      if (c) { t.width = c.width; t.height = c.height }
+    }))
+  }
   list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
   return list
 }
@@ -66,4 +119,4 @@ async function listTemplates(collections) {
   return out
 }
 
-module.exports = { listTemplates, slotsFromName }
+module.exports = { listTemplates, slotsFromName, canvasOf, shapeOf, commonShape }

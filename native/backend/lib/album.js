@@ -163,6 +163,7 @@ async function openAlbum({ path: projectPath }) {
   await Promise.all((ws.templateTokens || []).map((d) => scanTemplateFolder(d, tplIndex)))
 
   const rotations = ws.imageRotations || {}
+  const placements = ws.imagePlacements || {}
   const spreads = []
   for (let n = 1; n <= spreadCount; n++) {
     const page = pages[n] || pages[String(n)] || { photos: [], template: null }
@@ -195,6 +196,7 @@ async function openAlbum({ path: projectPath }) {
   // recorded: from the thumbnail's size and that turn.
   for (const ph of Object.values(photos)) {
     ph.rotation = ((Number(rotations[ph.id]) || 0) % 360 + 360) % 360
+    ph.placement = placements[ph.id] || null
     if (ph.orient || !ph.width || !ph.height) continue
     const quarter = ph.rotation === 90 || ph.rotation === 270
     const landscape = ph.width >= ph.height
