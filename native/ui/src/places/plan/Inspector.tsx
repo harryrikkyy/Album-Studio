@@ -2,16 +2,17 @@
 // its photos in order (drag to reorder, drop a photo on one to replace it, × to take it off), and
 // where it stands.
 
-import { CircleCheck, GripVertical, LayoutTemplate, RotateCw, Shuffle, TriangleAlert, X } from 'lucide-preact'
-import { useState } from 'preact/hooks'
+import { CircleCheck, Crop, GripVertical, LayoutTemplate, RotateCcw, RotateCw, Shuffle, TriangleAlert, Undo2, X } from 'lucide-preact'
+import { useEffect, useState } from 'preact/hooks'
 import { fileUrl } from '../../bridge'
 import { allowDrop, endDrag, payloadOf, startDrag } from '../../dnd'
 import { spreadSelection } from '../../edit'
 import { shortPath, signature, templateLabel } from '../../format'
-import { addPhotos, movePhoto, removePhotos, replacePhoto, rotatePhotos, shuffleTemplate } from '../../plan_actions'
-import { slotsOf, templateFits } from '../../plan_logic'
+import { addPhotos, adjustPhoto, movePhoto, removePhotos, replacePhoto, rotatePhotos, shuffleTemplate } from '../../plan_actions'
+import { colourMatrix, slotsOf, templateFits } from '../../plan_logic'
 import { sheetStateOf } from '../../render'
-import { album, currentPhotos, currentSpread, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen } from '../../state'
+import { album, currentPhotos, currentSpread, frameAdjusting, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen } from '../../state'
+import type { Adjust, Photo } from '../../types'
 import { Button, Kbd } from '../../ui/controls'
 import { Thumb } from '../../ui/Thumb'
 
@@ -38,6 +39,70 @@ function FitNote() {
   )
 }
 
+const SLIDERS: { key: keyof Adjust; label: string }[] = [
+  { key: 'exposure', label: 'Exposure' },
+  { key: 'contrast', label: 'Contrast' },
+  { key: 'saturation', label: 'Saturation' },
+  { key: 'warmth', label: 'Warmth' },
+]
+
+/**
+ * The photo picked on the spread: turn it, move and zoom it in its frame, take it off, and its
+ * colour. The thumbnail shows colour changes as the sliders move; the spread's preview is redrawn
+ * when one is let go.
+ */
+function PhotoSection({ p, n }: { p: Photo; n: number }) {
+  const [adj, setAdj] = useState<Adjust>(p.adjust ?? {})
+  const saved = JSON.stringify(p.adjust ?? {})
+  useEffect(() => setAdj(p.adjust ?? {}), [p.id, saved])
+  const commit = (next: Adjust) => { if (JSON.stringify(next) !== saved) void adjustPhoto(p.id, next) }
+  const matrix = colourMatrix(adj)
+  const changed = SLIDERS.some((s) => adj[s.key]) || !!adj.bw || Object.keys(p.adjust ?? {}).length > 0
+  return (
+    <section class="insp-section insp-photo">
+      <h3 class="insp-section__title">Photo <span class="count insp-photo__name">{p.base}</span></h3>
+      <div class="insp-photo__thumb" style={matrix ? { filter: 'url(#insp-colour)' } : undefined}><Thumb p={p} /></div>
+      {matrix ? (
+        <svg class="visually-hidden" aria-hidden="true" width="0" height="0">
+          <filter id="insp-colour" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values={matrix.join(' ')} /></filter>
+        </svg>
+      ) : null}
+      <div class="insp-photo__actions">
+        <Button size="sm" variant="ghost" icon={<RotateCcw size={14} />} onClick={() => void rotatePhotos([p.id], -90)} title="Turn left (⌘L)" aria-label="Turn left" />
+        <Button size="sm" variant="ghost" icon={<RotateCw size={14} />} onClick={() => void rotatePhotos([p.id], 90)} title="Turn right (⌘R)" aria-label="Turn right" />
+        <Button size="sm" icon={<Crop size={14} />} onClick={() => (frameAdjusting.value = p.id)} title="Move and zoom it in its frame (or double-click it on the spread)">Move &amp; zoom</Button>
+        <Button size="sm" variant="ghost" icon={<X size={14} />} onClick={() => void removePhotos(n, [p.id])} title="Take off this spread (⌫)" aria-label="Take off this spread" />
+      </div>
+      <div class="insp-photo__sliders">
+        {SLIDERS.map(({ key, label }) => (
+          <label class="insp-slider" key={key}>
+            <span class="insp-slider__label">{label}</span>
+            <input
+              type="range"
+              min={-100}
+              max={100}
+              step={1}
+              value={(adj[key] as number | undefined) ?? 0}
+              onInput={(e) => setAdj({ ...adj, [key]: Number((e.target as HTMLInputElement).value) })}
+              onChange={(e) => commit({ ...adj, [key]: Number((e.target as HTMLInputElement).value) })}
+              onDblClick={() => { const next = { ...adj, [key]: 0 }; setAdj(next); commit(next) }}
+              title="Double-click to reset"
+            />
+            <span class="insp-slider__value">{((adj[key] as number | undefined) ?? 0) > 0 ? '+' : ''}{(adj[key] as number | undefined) ?? 0}</span>
+          </label>
+        ))}
+        <div class="insp-photo__row">
+          <label class="check check--inline">
+            <input type="checkbox" checked={!!adj.bw} onChange={(e) => { const next = { ...adj, bw: (e.target as HTMLInputElement).checked }; setAdj(next); commit(next) }} />
+            <span>Black &amp; white</span>
+          </label>
+          <Button size="sm" variant="ghost" icon={<Undo2 size={13} />} disabled={!changed} onClick={() => { setAdj({}); commit({}) }} title="The photo as shot">Reset colour</Button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 const SHEET_WORDS = { current: 'Up to date', stale: 'Changed since render', missing: 'Not rendered' } as const
 
 function SheetState({ n, rendered }: { n: number; rendered: boolean }) {
@@ -55,8 +120,10 @@ export function Inspector() {
   const photos = currentPhotos.value
   const sel = spreadSelection.value
 
+  const picked = sel && s.photoIds.includes(sel) ? album.value?.photos[sel] ?? null : null
   return (
     <aside class="inspector" aria-label="Inspector">
+      {picked ? <PhotoSection p={picked} n={s.n} key={picked.id} /> : null}
       <section class="insp-section">
         <h3 class="insp-section__title">Template</h3>
         {s.template ? (

@@ -1,6 +1,6 @@
 // plan_logic.ts — the pure parts of editing a plan (tested in test/plan_logic.test.ts).
 
-import type { Album, Orient, Photo, Placement, Spread } from './types'
+import type { Adjust, Album, Orient, Photo, Placement, Spread } from './types'
 
 export interface Template {
   id: string
@@ -107,7 +107,10 @@ export function templateFits(a: Album, s: Spread): boolean | null {
  */
 export function changedSpreads(prev: Album | null, next: Album): number[] {
   const out: number[] = []
-  const turns = (a: Album, s: Spread) => s.photoIds.map((id) => `${a.photos[id]?.rotation ?? 0}:${JSON.stringify(a.photos[id]?.placement ?? null)}`).join('|')
+  const turns = (a: Album, s: Spread) => s.photoIds.map((id) => {
+    const p = a.photos[id]
+    return `${p?.rotation ?? 0}:${JSON.stringify(p?.placement ?? null)}:${JSON.stringify(p?.adjust ?? null)}`
+  }).join('|')
   for (const s of next.spreads) {
     const old = prev?.spreads[s.n - 1]
     if (!old || old.template?.id !== s.template?.id || old.photoIds.join('|') !== s.photoIds.join('|') || turns(prev!, old) !== turns(next, s)) out.push(s.n)
@@ -140,6 +143,51 @@ export function panBy(start: Placement, dx: number, dy: number, overflowX: numbe
     ox: overflowX > 0.5 ? clamp(start.ox - (2 * dx) / overflowX, -1, 1) : 0,
     oy: overflowY > 0.5 ? clamp(start.oy - (2 * dy) / overflowY, -1, 1) : 0,
   }
+}
+
+type Affine = number[][] // 4 rows × 5 columns: R, G, B, A, offset
+
+function compose(outer: Affine, inner: Affine): Affine {
+  // (outer ∘ inner) as 5×5 matrices with an implicit last row [0 0 0 0 1].
+  return outer.map((row) => [0, 1, 2, 3, 4].map((c) => {
+    let v = 0
+    for (let k = 0; k < 4; k++) v += row[k]! * inner[k]![c]!
+    return v + (c === 4 ? row[4]! : 0)
+  }))
+}
+
+const IDENTITY: Affine = [[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0], [0, 0, 0, 1, 0]]
+const LUMA = [0.2126, 0.7152, 0.0722]
+
+/**
+ * A colour matrix (SVG feColorMatrix values, sRGB 0–1) that approximates the previews' colour
+ * adjustments, for a live look at a thumbnail: greyscale → exposure → saturation → contrast with
+ * warmth/tint gains → fade. Null when nothing changes.
+ */
+export function colourMatrix(adj: Adjust | null | undefined): number[] | null {
+  if (!adj) return null
+  const e = adj.exposure ?? 0, s = adj.saturation ?? 0, c = adj.contrast ?? 0
+  const w = adj.warmth ?? 0, t = adj.tint ?? 0, f = adj.fade ?? 0
+  if (!e && !s && !c && !w && !t && !f && !adj.bw) return null
+  let m = IDENTITY
+  if (adj.bw) m = compose([[...LUMA, 0, 0], [...LUMA, 0, 0], [...LUMA, 0, 0], [0, 0, 0, 1, 0]], m)
+  if (e) { const b = Math.pow(2, e / 100); m = compose([[b, 0, 0, 0, 0], [0, b, 0, 0, 0], [0, 0, b, 0, 0], [0, 0, 0, 1, 0]], m) }
+  if (s && !adj.bw) {
+    const k = Math.max(0, 1 + s / 100)
+    const row = (i: number) => [0, 1, 2].map((j) => (1 - k) * LUMA[j]! + (i === j ? k : 0))
+    m = compose([[...row(0), 0, 0], [...row(1), 0, 0], [...row(2), 0, 0], [0, 0, 0, 1, 0]], m)
+  }
+  if (c || w || t || f) {
+    const slope = Math.max(0, 1 + c / 100)
+    const gains = [1 + w / 200 + t / 200, 1 - t / 200, 1 - w / 200 + t / 200]
+    const lift = (f / 100) * (64 / 255)
+    m = compose(gains.map((g, i) => {
+      const r = [0, 0, 0, 0, g * 0.5 * (1 - slope) + lift]
+      r[i] = g * slope
+      return r
+    }).concat([[0, 0, 0, 1, 0]]), m)
+  }
+  return m.flat().map((v) => Math.round(v * 10000) / 10000)
 }
 
 /** Shift-click selection: everything between the anchor and the clicked item, in list order. */

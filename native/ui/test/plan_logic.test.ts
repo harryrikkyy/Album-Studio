@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { albumShape, changedSpreads, commonShape, describeSlots, filterTemplates, panBy, placementLayout, rangeSelect, seenAspect, selectionSlots, shapeOf, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
+import { albumShape, changedSpreads, colourMatrix, commonShape, describeSlots, filterTemplates, panBy, placementLayout, rangeSelect, seenAspect, selectionSlots, shapeOf, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
 import type { Album, Photo, Spread } from '../src/types.ts'
 
 const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, rotation: 0, usedOn: [] })
@@ -112,4 +112,17 @@ test('a photo covers its frame, zooms on that, and pans across what is cropped, 
   // Dragging the picture right shows more of its left side: ox goes down.
   assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, 10, 0, 50, 0), { scale: 1, ox: -0.4, oy: 0 })
   assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, -500, 30, 50, 0), { scale: 1, ox: 1, oy: 0 }, 'stops at the edge; no overflow, no pan')
+})
+
+test('the live colour look follows the sliders', () => {
+  assert.equal(colourMatrix(null), null)
+  assert.equal(colourMatrix({ exposure: 0, contrast: 0 }), null, 'all zero: no filter')
+  const ex = colourMatrix({ exposure: 100 })!
+  assert.deepEqual([ex[0], ex[6], ex[12], ex[18]], [2, 2, 2, 1], '+100 exposure: one stop brighter')
+  const bw = colourMatrix({ bw: true })!
+  assert.deepEqual(bw.slice(0, 3), bw.slice(5, 8), 'black & white: every channel the same mix')
+  const warm = colourMatrix({ warmth: 100 })!
+  assert.ok(warm[0]! > 1 && warm[12]! < 1, 'warmer: more red, less blue')
+  const hard = colourMatrix({ contrast: 100 })!
+  assert.deepEqual([hard[0], hard[4]], [2, -0.5], 'contrast pivots on mid-grey')
 })

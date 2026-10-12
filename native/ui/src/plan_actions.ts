@@ -4,7 +4,7 @@
 import { autoTemplate, edit, spreadSelection, type Op } from './edit'
 import { plural, templateLabel } from './format'
 import { album, currentSpread, goToSpread, poolAnchor, poolSelection, selectionFocus, spreadIndex, toast } from './state'
-import type { Placement } from './types'
+import type { Adjust, Placement } from './types'
 
 /** Spreads a set of photos is on now, other than `except`. */
 function spreadsOf(ids: string[], except: number): number[] {
@@ -86,6 +86,11 @@ export async function placeWithTemplate(ids: string[], templateId: string, templ
   poolSelection.value = new Set()
   poolAnchor.value = null
   toast('ok', `${plural(ids.length, 'photo')} on ${empty ? '' : 'a new '}spread ${n} with ${templateLabel(templateName)}. ⌘Z undoes it.`)
+}
+
+/** A photo's colour (wherever it appears); all zero restores it. */
+export function adjustPhoto(id: string, adjust: Adjust) {
+  return edit([{ op: 'adjustPhoto', id, adjust }])
 }
 
 /** How a photo sits in its frame (wherever it appears); null fits it again, centred. */

@@ -8,7 +8,7 @@ import { call, fileUrl } from '../../bridge'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag, type DragPayload } from '../../dnd'
 import { proofPending, proofUrl, spreadSelection } from '../../edit'
 import { addPhotos, placePhoto, removePhotos, replacePhoto, rotatePhotos, swapPhotos } from '../../plan_actions'
-import { album, hoveredPhoto, selectionFocus } from '../../state'
+import { album, frameAdjusting, hoveredPhoto, selectionFocus } from '../../state'
 import type { Spread } from '../../types'
 import { FrameAdjust } from './FrameAdjust'
 
@@ -61,8 +61,10 @@ export function SpreadView({ s }: { s: Spread }) {
   const drag = dragging.value
   const ar = layout?.width && layout.height ? layout.width / layout.height : 3
   const sel = spreadSelection.value
-  // The photo being moved/zoomed in its frame (by frame z), and the spread's size on screen.
-  const [adjusting, setAdjusting] = useState<number | null>(null)
+  // The photo being moved/zoomed in its frame, and the spread's size on screen.
+  const adjusting = frameAdjusting.value
+  const setAdjusting = (id: string | null) => (frameAdjusting.value = id)
+  const adjustFrame = adjusting ? layout?.frames.find((x) => x.photoId === adjusting) ?? null : null
   const spreadEl = useRef<HTMLDivElement>(null)
   const [px, setPx] = useState({ w: 0, h: 0 })
   useEffect(() => {
@@ -75,7 +77,7 @@ export function SpreadView({ s }: { s: Spread }) {
 
   // A drag that ends anywhere clears the highlight; another spread or photo ends adjusting.
   useEffect(() => { if (!drag) setOver(null) }, [drag])
-  useEffect(() => setAdjusting(null), [s.n, s.photoIds.join('|'), s.template?.id])
+  useEffect(() => { setAdjusting(null) }, [s.n, s.photoIds.join('|'), s.template?.id])
 
   const onSpreadOver = (e: DragEvent) => {
     const p = payloadOf(e)
@@ -112,7 +114,7 @@ export function SpreadView({ s }: { s: Spread }) {
   return (
     <div class="spread-wrap" onDragOver={onSpreadOver} onDragLeave={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setOver(null) }} onDrop={onSpreadDrop}>
       {img ? (
-        <div ref={spreadEl} class={`spread ${over === 'spread' ? 'is-drop' : ''} ${pending ? 'is-pending' : ''} ${adjusting !== null ? 'is-adjusting' : ''}`} style={{ '--ar': ar }}>
+        <div ref={spreadEl} class={`spread ${over === 'spread' ? 'is-drop' : ''} ${pending ? 'is-pending' : ''} ${adjustFrame ? 'is-adjusting' : ''}`} style={{ '--ar': ar }}>
           <img class="spread__img" src={img} alt={`Spread ${s.n}`} decoding="async" draggable={false} />
           {layout?.frames.map((f) => {
             const act = drag ? frameAction(drag, f, s.n) : null
@@ -135,14 +137,14 @@ export function SpreadView({ s }: { s: Spread }) {
                 }}
                 onDrop={(e) => { if (frameAction(payloadOf(e), f, s.n)) onFrameDrop(e, f) }}
                 onClick={() => { selectionFocus.value = 'spread'; spreadSelection.value = f.photoId === sel ? null : f.photoId }}
-                onDblClick={() => { if (photo) { selectionFocus.value = 'spread'; spreadSelection.value = photo.id; setAdjusting(f.z) } }}
+                onDblClick={() => { if (photo) { selectionFocus.value = 'spread'; spreadSelection.value = photo.id; setAdjusting(photo.id) } }}
                 onMouseEnter={() => (hoveredPhoto.value = f.photoId)}
                 onMouseLeave={() => (hoveredPhoto.value = null)}
               >
                 {over === f.z && act ? <span class="frame-hit__label">{act}</span> : null}
-                {sel && sel === f.photoId && !drag && photo && adjusting === null ? (
+                {sel && sel === f.photoId && !drag && photo && !adjustFrame ? (
                   <span class="frame-tools" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
-                    <button type="button" class="frame-tools__btn" title="Move and zoom in the frame (double-click the photo)" aria-label={`Move and zoom ${photo.base} in its frame`} onClick={() => setAdjusting(f.z)}><Crop size={13} /></button>
+                    <button type="button" class="frame-tools__btn" title="Move and zoom in the frame (double-click the photo)" aria-label={`Move and zoom ${photo.base} in its frame`} onClick={() => setAdjusting(photo.id)}><Crop size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn left (⌘L)" aria-label={`Turn ${photo.base} left`} onClick={() => void rotatePhotos([photo.id], -90)}><RotateCcw size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn right (⌘R)" aria-label={`Turn ${photo.base} right`} onClick={() => void rotatePhotos([photo.id], 90)}><RotateCw size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Take off this spread (⌫)" aria-label={`Take ${photo.base} off this spread`} onClick={() => void removePhotos(s.n, [photo.id])}><X size={13} /></button>
@@ -152,7 +154,7 @@ export function SpreadView({ s }: { s: Spread }) {
             )
           })}
           {(() => {
-            const f = adjusting !== null ? layout?.frames.find((x) => x.z === adjusting) : null
+            const f = adjustFrame
             const photo = f?.photoId ? a.photos[f.photoId] : null
             if (!f || !photo || !px.w) return null
             return (

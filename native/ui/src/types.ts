@@ -15,7 +15,24 @@ export interface Photo {
   rotation: number
   /** How it sits in its frame (zoom, pan); null: fitted, centred. */
   placement?: Placement | null
+  /** Its colour; null: as shot. */
+  adjust?: Adjust | null
   usedOn: number[]
+}
+
+/** Colour sliders in [-100, 100] (0 or missing: unchanged), and black & white. */
+export interface Adjust {
+  exposure?: number
+  contrast?: number
+  saturation?: number
+  warmth?: number
+  tint?: number
+  fade?: number
+  clarity?: number
+  sharpen?: number
+  blur?: number
+  vignette?: number
+  bw?: boolean
 }
 
 /** Zoom on the cover fit (≥ 1) and pan across what is cropped (-1 … 1; 1 = right/bottom edge). */

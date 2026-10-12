@@ -88,6 +88,7 @@ function snapshot(d) {
     collections: ws.templateTokens || [],
     rotations: ws.imageRotations || {},
     placements: ws.imagePlacements || {},
+    adjustments: ws.imageAdjustments || {},
   })
 }
 
@@ -103,6 +104,7 @@ function restore(d, snap) {
   if (s.collections) ws.templateTokens = s.collections
   if (s.rotations) ws.imageRotations = s.rotations
   if (s.placements) ws.imagePlacements = s.placements
+  if (s.adjustments) ws.imageAdjustments = s.adjustments
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -294,6 +296,26 @@ const OPS = {
     const placements = (ws.imagePlacements = { ...(ws.imagePlacements || {}) })
     if (p.scale === 1 && !p.ox && !p.oy) delete placements[id]
     else placements[id] = p
+  },
+
+  /**
+   * A photo's colour: sliders in [-100, 100] (exposure, contrast, saturation, warmth, tint, fade,
+   * clarity, sharpen, blur, vignette) and `bw`; all zero / missing restores it. Kept as the Electron
+   * app does (workspace.imageAdjustments, per photo): previews apply it, print sheets bake it in.
+   */
+  adjustPhoto(ctx, { id, adjust }) {
+    if (!ctx.model.photos[id]) throw new Error(`That photo isn't in this album's folders any more (${id}).`)
+    const SLIDERS = ['exposure', 'contrast', 'saturation', 'warmth', 'tint', 'fade', 'clarity', 'sharpen', 'blur', 'vignette']
+    const a = {}
+    for (const k of SLIDERS) {
+      const v = Math.round(Math.max(-100, Math.min(100, Number((adjust || {})[k]) || 0)))
+      if (v) a[k] = v
+    }
+    if ((adjust || {}).bw) a.bw = true
+    const ws = workspaceOf(ctx.d)
+    const all = (ws.imageAdjustments = { ...(ws.imageAdjustments || {}) })
+    if (Object.keys(a).length) all[id] = a
+    else delete all[id]
   },
 
   /** Where print sheets are saved (the JPEG folders and the PDF go next to it). */

@@ -511,8 +511,13 @@
 /* ── Narrow windows ────────────────────────────────────────────────────── */
 
 @media (max-width: 1100px) {
-  .place--plan { grid-template-columns: minmax(220px, 260px) minmax(0, 1fr); }
-  .place--plan .inspector { display: none; }
+  /* Too narrow for three columns: the inspector, when shown, slides over the spread's right side. */
+  .place--plan, .place--plan.no-inspector { position: relative; grid-template-columns: minmax(220px, 260px) minmax(0, 1fr); }
+  .place--plan .inspector {
+    position: absolute; top: 0; right: 0; bottom: 0; z-index: var(--z-sticky);
+    width: min(300px, 90%);
+    box-shadow: -12px 0 32px oklch(0 0 0 / 0.35);
+  }
 }
 @media (max-width: 800px) {
   .place--plan { grid-template-columns: minmax(0, 1fr); }
@@ -1286,3 +1291,14 @@
 .adjust__btn--done { background: var(--accent); color: var(--accent-ink); font-weight: var(--fw-semibold); }
 .adjust__btn--done:hover { background: var(--accent-hover); }
 .adjust__btn:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Inspector › Photo: the photo picked on the spread. */
+.insp-photo__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insp-photo__thumb { height: 120px; border-radius: var(--r-1); overflow: hidden; background: var(--bg-well); }
+.insp-photo__thumb .thumb img { object-fit: contain; }
+.insp-photo__actions { display: flex; align-items: center; gap: var(--sp-1); flex-wrap: wrap; }
+.insp-photo__sliders { display: flex; flex-direction: column; gap: var(--sp-2); }
+.insp-slider { display: grid; grid-template-columns: 74px minmax(0, 1fr) 32px; align-items: center; gap: var(--sp-3); font-size: var(--fs-12); color: var(--ink-2); }
+.insp-slider input[type="range"] { width: 100%; accent-color: var(--accent); }
+.insp-slider__value { text-align: right; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.insp-photo__row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); margin-top: var(--sp-1); }

@@ -307,3 +307,14 @@ test('a photo is zoomed and panned in its frame, clamped, and fits again; undo c
   assert.deepEqual(read(proj).workspace.imagePlacements, { [A]: { scale: 1.8, ox: -0.4, oy: 1 } })
   await assert.rejects(edit(proj, { op: 'placePhoto', id: 'img_nope', scale: 2 }), /isn't in this album/)
 })
+
+test('a photo’s colour is set, clamped and cleared; undo covers it', async () => {
+  const { proj } = makeProject()
+  let r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 30.4, warmth: -250, contrast: 0, bw: true, junk: 9 } })
+  assert.deepEqual(read(proj).workspace.imageAdjustments, { [B]: { exposure: 30, warmth: -100, bw: true } }, 'kept as the Electron app does')
+  assert.deepEqual(r.album.photos[B].adjust, { exposure: 30, warmth: -100, bw: true })
+  r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 0 } })
+  assert.deepEqual(read(proj).workspace.imageAdjustments, {}, 'all zero: the photo as it was')
+  await undo({ album: proj })
+  assert.deepEqual(read(proj).workspace.imageAdjustments, { [B]: { exposure: 30, warmth: -100, bw: true } })
+})

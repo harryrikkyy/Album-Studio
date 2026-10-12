@@ -22,7 +22,7 @@ import { openNewAlbum } from './places/albums/NewAlbum'
 import { moveSpread, removePhotos, rotatePhotos, shuffleTemplate, turnTargets } from './plan_actions'
 import { editCurrentSpread, loadPlan, plan, startRender } from './render'
 import {
-  album, currentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
+  album, currentSpread, frameAdjusting, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
   toggleInspector,
 } from './state'
 import './styles/tokens.css'
@@ -70,6 +70,8 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (isTyping(e) || e.metaKey || e.ctrlKey) return
+  // Moving a photo in its frame has its own keys (Return, Esc).
+  if (frameAdjusting.value) return
   if (place.value === 'plan' || place.value === 'review') {
     const s = currentSpread.value
     if (e.altKey) {

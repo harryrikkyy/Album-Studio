@@ -51,6 +51,8 @@ export const templateBrowserOpen = signal(false)
  * template browser shows templates for the pool's selection while it is 'pool'.
  */
 export const selectionFocus = signal<'pool' | 'spread'>('pool')
+/** The photo being moved and zoomed in its frame on the spread (its id), if any. */
+export const frameAdjusting = signal<string | null>(null)
 
 export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string }
 export const toasts = signal<Toast[]>([])
