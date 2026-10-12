@@ -190,6 +190,16 @@ export function colourMatrix(adj: Adjust | null | undefined): number[] | null {
   return m.flat().map((v) => Math.round(v * 10000) / 10000)
 }
 
+/**
+ * How many spreads to offer for a first plan: the user's usual count when there are photos enough
+ * for it (3 or more a spread), otherwise about five photos a spread.
+ */
+export function suggestSpreads(photos: number, usual: number): number {
+  if (photos <= 0) return Math.max(1, usual)
+  if (photos >= usual * 3) return usual
+  return Math.max(1, Math.min(usual, Math.round(photos / 5)))
+}
+
 /** Shift-click selection: everything between the anchor and the clicked item, in list order. */
 export function rangeSelect(list: string[], anchor: string | null, target: string): string[] {
   const j = list.indexOf(target)

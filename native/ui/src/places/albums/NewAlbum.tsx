@@ -7,6 +7,7 @@ import { BookPlus, CircleAlert, FolderPlus, Images, LayoutTemplate, X } from 'lu
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { call, fileUrl, onEvent } from '../../bridge'
 import { plural, shortPath } from '../../format'
+import { suggestSpreads } from '../../plan_logic'
 import { loadRecent, openAlbum, stored, store, toast } from '../../state'
 import { Button, IconButton } from '../../ui/controls'
 
@@ -62,7 +63,9 @@ export function NewAlbumDialog() {
   const [parent, setParent] = useState<string | null>(null)
   const [output, setOutput] = useState<string | null>(null)
   const [plan, setPlan] = useState<boolean>(stored('as.newAlbum.plan', true))
-  const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
+  const usual = stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23
+  const [spreads, setSpreads] = useState<number>(usual)
+  const [spreadsTouched, setSpreadsTouched] = useState(false)
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState<Progress | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +76,7 @@ export function NewAlbumDialog() {
     if (!d) return
     if (open.value && !d.open) {
       setFolders([]); setName(''); setNameTouched(false); setParent(null); setOutput(null); setError(null); setProgress(null)
+      setSpreads(usual); setSpreadsTouched(false)
       d.showModal()
       void call<{ collections: (Collection & { isDefault: boolean })[] }>('library.collections').then(({ collections: list }) => {
         setCollections(list)
@@ -110,6 +114,8 @@ export function NewAlbumDialog() {
   }
 
   const photos = folders.reduce((n, f) => n + f.photos, 0)
+  // Until the user types a number, offer one that suits the photos.
+  useEffect(() => { if (!spreadsTouched) setSpreads(suggestSpreads(photos, usual)) }, [photos])
   const raws = folders.reduce((n, f) => n + f.raws, 0)
   const missing = folders.reduce((n, f) => n + f.missing, 0)
   const chosenList = (collections ?? []).filter((c) => chosen.has(c.path))
@@ -267,9 +273,9 @@ export function NewAlbumDialog() {
             <label class={`choice__row ${plan ? 'is-on' : ''}`}>
               <input type="radio" name="plan" checked={plan} onChange={() => setPlan(true)} />
               <span class="choice__text">Plan</span>
-              <input class="field field--num" type="number" min={1} max={999} value={spreads} aria-label="Spreads" onFocus={() => setPlan(true)} onInput={(e) => setSpreads(Math.floor(Number((e.target as HTMLInputElement).value) || 0))} />
+              <input class="field field--num" type="number" min={1} max={999} value={spreads} aria-label="Spreads" onFocus={() => setPlan(true)} onInput={(e) => { setSpreadsTouched(true); setSpreads(Math.floor(Number((e.target as HTMLInputElement).value) || 0)) }} />
               <span class="choice__text">spreads now, in capture order</span>
-              {photos && spreads ? <span class="choice__hint">≈ {Math.round(photos / spreads)} photos each</span> : null}
+              {photos && spreads ? <span class="choice__hint">≈ {plural(Math.max(1, Math.round(photos / spreads)), 'photo')} each</span> : null}
             </label>
             <label class={`choice__row ${!plan ? 'is-on' : ''}`}>
               <input type="radio" name="plan" checked={!plan} onChange={() => setPlan(false)} />

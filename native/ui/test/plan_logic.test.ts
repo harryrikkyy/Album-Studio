@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { albumShape, changedSpreads, colourMatrix, commonShape, describeSlots, filterTemplates, panBy, placementLayout, rangeSelect, seenAspect, selectionSlots, shapeOf, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
+import { albumShape, changedSpreads, colourMatrix, commonShape, describeSlots, filterTemplates, panBy, placementLayout, rangeSelect, seenAspect, suggestSpreads, selectionSlots, shapeOf, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
 import type { Album, Photo, Spread } from '../src/types.ts'
 
 const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, rotation: 0, usedOn: [] })
@@ -125,4 +125,12 @@ test('the live colour look follows the sliders', () => {
   assert.ok(warm[0]! > 1 && warm[12]! < 1, 'warmer: more red, less blue')
   const hard = colourMatrix({ contrast: 100 })!
   assert.deepEqual([hard[0], hard[4]], [2, -0.5], 'contrast pivots on mid-grey')
+})
+
+test('a first plan offers spreads that suit the photos', () => {
+  assert.equal(suggestSpreads(131, 23), 23, 'enough photos for the usual album')
+  assert.equal(suggestSpreads(12, 23), 2, 'a dozen photos: about five a spread')
+  assert.equal(suggestSpreads(40, 23), 8)
+  assert.equal(suggestSpreads(2, 23), 1)
+  assert.equal(suggestSpreads(0, 23), 23, 'no photos yet: the usual count')
 })

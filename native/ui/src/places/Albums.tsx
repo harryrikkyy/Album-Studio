@@ -1,6 +1,6 @@
 // Albums.tsx — recent albums with their cover spreads; open one, or open another from disk.
 
-import { BookPlus, FolderOpen, HardDrive, RefreshCw } from 'lucide-preact'
+import { BookPlus, FolderOpen, HardDrive, ImageIcon, RefreshCw } from 'lucide-preact'
 import { useEffect } from 'preact/hooks'
 import { call, fileUrl, inShell } from '../bridge'
 import { plural, relativeTime, shortPath } from '../format'
@@ -34,7 +34,8 @@ function AlbumCard({ a }: { a: RecentAlbum }) {
           {a.cover && a.available ? (
             <img src={fileUrl(a.cover)} alt="" loading="lazy" decoding="async" />
           ) : (
-            <span class="album-card__nocover" aria-hidden="true"><HardDrive size={22} strokeWidth={1.4} /></span>
+            // No preview yet (a new album) is not the same as a drive that isn't connected.
+            <span class="album-card__nocover" aria-hidden="true">{a.available ? <ImageIcon size={22} strokeWidth={1.4} /> : <HardDrive size={22} strokeWidth={1.4} />}</span>
           )}
           {loading ? <span class="album-card__progress" aria-hidden="true" /> : null}
         </span>
