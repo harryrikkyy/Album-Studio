@@ -11,6 +11,7 @@ const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
 const { planAlbum } = require('./autofill')
+const { firstUsable, offPageFrames } = require('./template_check')
 const { listTemplates } = require('./templates')
 
 /** Workspace maps keyed by spread number: they move with their spread. */
@@ -85,6 +86,7 @@ function snapshot(d) {
     output: ws.outputToken ?? null,
     photoFolders: ws.imageTokens || [],
     collections: ws.templateTokens || [],
+    rotations: ws.imageRotations || {},
   })
 }
 
@@ -98,6 +100,7 @@ function restore(d, snap) {
   else delete ws.outputToken
   if (s.photoFolders) ws.imageTokens = s.photoFolders
   if (s.collections) ws.templateTokens = s.collections
+  if (s.rotations) ws.imageRotations = s.rotations
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -116,6 +119,21 @@ function templateEntry(t, previous) {
 
 function checkSpread(pages, n) {
   if (!Number.isInteger(n) || n < 1 || n > pages.length) throw new Error(`There is no spread ${n} (the album has ${pages.length}).`)
+}
+
+/**
+ * A template for `h` landscape and `v` portrait photos, picked at random (`rng`) from the same
+ * collection as `like` when it has one, skipping templates with a frame parked off the page (its
+ * photo wouldn't show). Null when the catalogue has none with those frames.
+ */
+async function pickFitting(catalogue, { h, v, like, except, rng }) {
+  const choices = catalogue.filter((t) => t.h === h && t.v === v && t.id !== except)
+  if (!choices.length) return null
+  const same = like ? choices.filter((t) => t.collection === like.collection) : []
+  const pool = same.length ? same : choices
+  const i = Math.floor(rng() * pool.length)
+  const order = [...pool.slice(i), ...pool.slice(0, i)]
+  return (await firstUsable(order)) || order[0]
 }
 
 /** Remove a photo from every spread except `keep`. */
@@ -214,18 +232,38 @@ const OPS = {
     if (!page.photos.length) return
     if (!another && cur && cur.h === h && cur.v === v) return
     const catalogue = await ctx.templates()
-    const choices = catalogue.filter((t) => t.h === h && t.v === v && (!cur || t.id !== cur.id))
-    if (!choices.length) {
+    const known = cur && catalogue.find((t) => t.id === cur.id)
+    const t = await pickFitting(catalogue, { h, v, like: known, except: cur && cur.id, rng: ctx.rng })
+    if (!t) {
       ;(ctx.report.noTemplate ??= []).push({ n, h, v })
       return
     }
-    const known = cur && catalogue.find((t) => t.id === cur.id)
-    const same = known ? choices.filter((t) => t.collection === known.collection) : []
-    const pool = same.length ? same : choices
-    const t = pool[Math.floor(ctx.rng() * pool.length)]
     page.template = templateEntry(t, cur)
     // `auto`: chosen because the photos changed (worth telling the user), not asked for.
     ;(ctx.report.templates ??= []).push({ n, name: t.name, auto: !another })
+  },
+
+  /**
+   * Turn photos by `by` degrees, clockwise (90, 180 or 270; -90 turns left), on top of any turn
+   * they have: everywhere they appear, in previews and print sheets. Kept as the Electron app does
+   * (workspace.imageRotations); a quarter turn swaps landscape and portrait on every spread.
+   */
+  rotatePhotos(ctx, { ids, by }) {
+    const turn = (((Number(by) || 0) % 360) + 360) % 360
+    if (![90, 180, 270].includes(turn)) throw new Error('Photos turn in quarter turns: 90°, 180° or 270°.')
+    if (!Array.isArray(ids) || !ids.length) throw new Error('Choose the photos to turn.')
+    const ws = workspaceOf(ctx.d)
+    const rotations = (ws.imageRotations = { ...(ws.imageRotations || {}) })
+    for (const id of new Set(ids)) {
+      if (!ctx.model.photos[id]) throw new Error(`That photo isn't in this album's folders any more (${id}).`)
+      const next = ((Number(rotations[id]) || 0) + turn) % 360
+      if (next) rotations[id] = next
+      else delete rotations[id]
+      if (turn === 180) continue
+      for (const page of ctx.pages) {
+        for (const e of page.photos) if (e.id === id) e.orient = e.orient === 'v' ? 'h' : 'v'
+      }
+    }
   },
 
   /** Where print sheets are saved (the JPEG folders and the PDF go next to it). */
@@ -295,7 +333,18 @@ const OPS = {
     // `ids`: only these photos (Best picks); otherwise every photo of the album.
     const ids = Array.isArray(opts && opts.ids) ? ctx.model.pool.filter((id) => opts.ids.includes(id)) : ctx.model.pool
     const photos = ids.map((id) => ctx.model.photos[id]).filter(Boolean)
-    const planned = await planAlbum(photos, await ctx.templates(), opts || {}, ctx.rng)
+    const catalogue = await ctx.templates()
+    const planned = await planAlbum(photos, catalogue, opts || {}, ctx.rng)
+    // A template with a frame parked off the page would hide a photo: swap it for another that
+    // fits (checked a few at a time; each template is read once, then cached).
+    const pages = planned.pages.filter((p) => p.template)
+    for (let i = 0; i < pages.length; i += 4) {
+      await Promise.all(pages.slice(i, i + 4).map(async (p) => {
+        if (!(await offPageFrames(p.template.file)).length) return
+        const other = await pickFitting(catalogue, { h: p.template.h, v: p.template.v, like: p.template, except: p.template.id, rng: ctx.rng })
+        if (other) p.template = other
+      }))
+    }
     ctx.pages.length = 0
     for (const p of planned.pages) {
       ctx.pages.push({ photos: p.photoIds.map((id) => photoEntry(ctx.model, id)), template: p.template ? templateEntry(p.template) : null })

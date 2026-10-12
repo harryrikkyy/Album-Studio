@@ -2,13 +2,13 @@
 // them, onto a photo to replace it, drag a photo to another frame to swap, or off to the pool.
 // Frames come from the template itself (spread.layout), laid over the preview as hit areas.
 
-import { FileWarning, ImagePlus, LoaderCircle } from 'lucide-preact'
+import { FileWarning, ImagePlus, LoaderCircle, RotateCcw, RotateCw, X } from 'lucide-preact'
 import { useEffect, useState } from 'preact/hooks'
 import { call, fileUrl } from '../../bridge'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag, type DragPayload } from '../../dnd'
 import { proofPending, proofUrl, spreadSelection } from '../../edit'
-import { addPhotos, replacePhoto, swapPhotos } from '../../plan_actions'
-import { album, hoveredPhoto } from '../../state'
+import { addPhotos, removePhotos, replacePhoto, rotatePhotos, swapPhotos } from '../../plan_actions'
+import { album, hoveredPhoto, selectionFocus } from '../../state'
 import type { Spread } from '../../types'
 
 interface LayoutFrame { name: string; orient: 'h' | 'v'; x: number; y: number; w: number; h: number; z: number; photoId: string | null }
@@ -121,11 +121,18 @@ export function SpreadView({ s }: { s: Spread }) {
                   if (over !== f.z) setOver(f.z)
                 }}
                 onDrop={(e) => { if (frameAction(payloadOf(e), f, s.n)) onFrameDrop(e, f) }}
-                onClick={() => (spreadSelection.value = f.photoId === sel ? null : f.photoId)}
+                onClick={() => { selectionFocus.value = 'spread'; spreadSelection.value = f.photoId === sel ? null : f.photoId }}
                 onMouseEnter={() => (hoveredPhoto.value = f.photoId)}
                 onMouseLeave={() => (hoveredPhoto.value = null)}
               >
                 {over === f.z && act ? <span class="frame-hit__label">{act}</span> : null}
+                {sel && sel === f.photoId && !drag && photo ? (
+                  <span class="frame-tools" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                    <button type="button" class="frame-tools__btn" title="Turn left (⌘L)" aria-label={`Turn ${photo.base} left`} onClick={() => void rotatePhotos([photo.id], -90)}><RotateCcw size={13} /></button>
+                    <button type="button" class="frame-tools__btn" title="Turn right (⌘R)" aria-label={`Turn ${photo.base} right`} onClick={() => void rotatePhotos([photo.id], 90)}><RotateCw size={13} /></button>
+                    <button type="button" class="frame-tools__btn" title="Take off this spread (⌫)" aria-label={`Take ${photo.base} off this spread`} onClick={() => void removePhotos(s.n, [photo.id])}><X size={13} /></button>
+                  </span>
+                ) : null}
               </div>
             )
           })}

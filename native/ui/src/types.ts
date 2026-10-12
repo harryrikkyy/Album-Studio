@@ -11,6 +11,8 @@ export interface Photo {
   orient: Orient | null
   width: number | null
   height: number | null
+  /** The user's turn, clockwise: 0, 90, 180 or 270. */
+  rotation: number
   usedOn: number[]
 }
 

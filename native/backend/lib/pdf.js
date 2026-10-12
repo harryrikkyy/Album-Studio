@@ -50,7 +50,7 @@ async function writeJpegPdf(file, pages, opts = {}) {
     await obj(3, `<< /Producer (Album Studio) /Title (${esc(opts.title || 'Album')}) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}Z) >>`)
     for (let i = 0; i < pages.length; i++) {
       const jpeg = await fs.promises.readFile(pages[i].path)
-      const size = jpegSizeFromBuffer(jpeg)
+      const size = jpegSizeFromBuffer(jpeg, { stored: true })
       if (!size) throw new Error(`${pages[i].path} isn't a JPEG that can go in a PDF.`)
       const ppi = pages[i].ppi || 300
       const w = +(size.width / ppi * 72).toFixed(2)

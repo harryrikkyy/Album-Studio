@@ -5,8 +5,10 @@ const assert = require('node:assert/strict')
 const fs = require('fs')
 const path = require('path')
 
+const { fakeJpeg, makeProject, tmpdir } = require('./fixtures')
+
+process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 const { updateAlbum, undo, redo } = require('../lib/project')
-const { fakeJpeg, makeProject } = require('./fixtures')
 
 const A = 'img_My_Shoot_A1_jpg'
 const B = 'img_My_Shoot_B2_jpg'
@@ -222,4 +224,58 @@ test('a very old project with a bare workspace stays bare', async () => {
   assert.equal(d.workspace, undefined)
   assert.deepEqual(Object.keys(d.pageOverlays), ['3'])
   assert.equal(d.totalActivePages, 3)
+})
+
+test('photos turn in quarter turns, everywhere they appear, and the turn undoes', async () => {
+  const { proj } = makeProject()
+  let r = await edit(proj, { op: 'rotatePhotos', ids: [A], by: 90 })
+  let d = read(proj)
+  assert.deepEqual(d.workspace.imageRotations, { [C]: 90, [A]: 90 }, 'kept as the Electron app does')
+  assert.equal(d.albumPages[1].photos[0].orient, 'v', 'a quarter turn makes a landscape photo portrait on its spread')
+  assert.deepEqual([r.album.photos[A].rotation, r.album.photos[A].orient], [90, 'v'])
+
+  r = await edit(proj, { op: 'rotatePhotos', ids: [A, C], by: -90 })
+  d = read(proj)
+  assert.deepEqual(d.workspace.imageRotations, {}, 'turned back upright: no entry left')
+  assert.deepEqual([r.album.photos[C].rotation, r.album.photos[C].orient], [0, 'h'], 'a photo on no spread follows its thumbnail and turn')
+  assert.equal(d.albumPages[1].photos[0].orient, 'h')
+
+  r = await edit(proj, { op: 'rotatePhotos', ids: [B], by: 180 })
+  assert.deepEqual([r.album.photos[B].rotation, r.album.photos[B].orient], [180, 'v'], 'a half turn keeps the orientation')
+
+  await undo({ album: proj })
+  r = await undo({ album: proj })
+  d = read(proj)
+  assert.deepEqual(d.workspace.imageRotations, { [C]: 90, [A]: 90 })
+  assert.equal(d.albumPages[1].photos[0].orient, 'v')
+  assert.equal(r.album.photos[A].rotation, 90)
+  await assert.rejects(edit(proj, { op: 'rotatePhotos', ids: [A], by: 45 }), /quarter turns/)
+  await assert.rejects(edit(proj, { op: 'rotatePhotos', ids: ['img_nope'], by: 90 }), /isn't in this album/)
+})
+
+/** A minimal PSD: a canvas and one photo frame layer at `left` (ag-psd writes it). */
+function framePsd(file, { width, height, name, left, top, w, h }) {
+  const ag = require('ag-psd')
+  const px = (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4).fill(255) })
+  ag.initializeCanvas((a, b) => ({ width: a, height: b, getContext: () => ({ createImageData: px, getImageData: () => px(a, b), putImageData: () => {} }) }))
+  const psd = { width, height, imageData: px(width, height), children: [{ name, left, top, right: left + w, bottom: top + h, imageData: px(w, h) }] }
+  fs.writeFileSync(file, Buffer.from(ag.writePsd(psd, { generateThumbnail: false })))
+}
+
+test('templates picked for the photos skip ones with a frame parked off the page', async () => {
+  const { framesOffPage, offPageFrames } = require('../lib/template_check')
+  assert.deepEqual(framesOffPage(300, 100, [
+    { name: 'in', x: 10, y: 10, w: 100, h: 80 },
+    { name: 'half', x: 250, y: 10, w: 100, h: 80 },
+    { name: 'parked', x: 298, y: 0, w: 80, h: 100 },
+    { name: 'hidden', x: 400, y: 0, w: 10, h: 10, hidden: true },
+  ]), ['parked'], 'half on the page still shows; hidden frames show nothing anyway')
+
+  const { proj, tpls } = makeProject()
+  framePsd(path.join(tpls, '1h0v_0001.psd'), { width: 300, height: 100, name: 'ToolkitHFrame_001', left: 296, top: 10, w: 100, h: 60 })
+  framePsd(path.join(tpls, '1h0v_0002.psd'), { width: 300, height: 100, name: 'ToolkitHFrame_001', left: 20, top: 10, w: 100, h: 60 })
+  assert.deepEqual(await offPageFrames(path.join(tpls, '1h0v_0001.psd')), ['ToolkitHFrame_001'])
+  // rng 0 tries 1h0v_0001 first: its frame is off the page, so 1h0v_0002 is chosen.
+  await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 2 }, { op: 'addPhoto', n: 2, id: A }, { op: 'fitTemplate', n: 2 }] }, { rng: () => 0 })
+  assert.equal(read(proj).albumPages[2].template.name, '1h0v_0002.psd')
 })

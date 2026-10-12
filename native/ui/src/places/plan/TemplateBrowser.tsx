@@ -1,15 +1,16 @@
-// TemplateBrowser.tsx — choose the current spread's template, under the spread so each choice
-// shows in the preview a moment later. Templates that fit the spread's photos come first; all of
-// the album's collections are a click away.
+// TemplateBrowser.tsx — templates, under the spread so each choice shows in the preview a moment
+// later. For the current spread: templates that fit its photos come first, a click sets one. For
+// photos selected in the pool: templates that fit them, and a click puts them on a spread with it
+// (the current one when empty, else a new one after it). All collections are a click away.
 
 import { Check, Search, Shuffle, X } from 'lucide-preact'
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { fileUrl } from '../../bridge'
 import { autoTemplate, loadTemplates, setAutoTemplate, templates, templatesError } from '../../edit'
 import { plural, signature, templateLabel } from '../../format'
-import { setTemplate, shuffleTemplate } from '../../plan_actions'
-import { filterTemplates, slotsOf } from '../../plan_logic'
-import { album, currentSpread, stored, store, templateBrowserOpen } from '../../state'
+import { placeWithTemplate, setTemplate, shuffleTemplate } from '../../plan_actions'
+import { filterTemplates, selectionSlots, slotsOf } from '../../plan_logic'
+import { album, currentSpread, poolSelection, selectionFocus, stored, store, templateBrowserOpen } from '../../state'
 import { Button, IconButton, Segmented } from '../../ui/controls'
 
 const PAGE = 120
@@ -23,10 +24,15 @@ export function TemplateBrowser() {
   const [limit, setLimit] = useState(PAGE)
   const search = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { void loadTemplates() }, [a.path])
-  useEffect(() => setLimit(PAGE), [fits, collection, text, s?.n])
+  // The pool's selection, in pool order, when templates are for it.
+  const picked = poolSelection.value
+  const selIds = useMemo(() => a.pool.filter((id) => picked.has(id)), [a.pool, picked])
+  const forSelection = selectionFocus.value === 'pool' && selIds.length > 0
 
-  const slots = s ? slotsOf(a, s) : { h: 0, v: 0 }
+  useEffect(() => { void loadTemplates() }, [a.path])
+  useEffect(() => setLimit(PAGE), [fits, collection, text, s?.n, forSelection, selIds.length])
+
+  const slots = forSelection ? selectionSlots(a, selIds) : s ? slotsOf(a, s) : { h: 0, v: 0 }
   const all = templates.value
   const collections = useMemo(() => [...new Set((all ?? []).map((t) => t.collection))], [all])
   const fitting = useMemo(() => (all ? filterTemplates(all, { fits: true, ...slots, collection, text: '' }).length : 0), [all, slots.h, slots.v, collection])
@@ -34,6 +40,7 @@ export function TemplateBrowser() {
 
   if (!s) return null
   const close = () => (templateBrowserOpen.value = false)
+  const target = !s.photoIds.length ? `spread ${s.n}` : `a new spread after spread ${s.n}`
 
   return (
     <section
@@ -47,12 +54,23 @@ export function TemplateBrowser() {
         <h2 class="tpl-browser__title">
           Templates <span class="count">for {signature(slots.h, slots.v)}</span>
         </h2>
+        {selIds.length ? (
+          <Segmented
+            label="Templates for"
+            value={forSelection ? 'selection' : 'spread'}
+            onChange={(v) => (selectionFocus.value = v === 'selection' ? 'pool' : 'spread')}
+            options={[
+              { value: 'selection', label: `${plural(selIds.length, 'selected photo')}`, title: 'Templates for the photos selected on the left' },
+              { value: 'spread', label: `Spread ${s.n}`, title: 'Templates for the photos on this spread' },
+            ]}
+          />
+        ) : null}
         <Segmented
           label="Which templates"
           value={fits ? 'fits' : 'all'}
           onChange={(v) => setFits(v === 'fits')}
           options={[
-            { value: 'fits', label: `Fits this spread ${all ? fitting : ''}`, title: 'A frame for each photo, no empty frames' },
+            { value: 'fits', label: `${forSelection ? 'Fits them' : 'Fits this spread'} ${all ? fitting : ''}`, title: 'A frame for each photo, no empty frames' },
             { value: 'all', label: 'All' },
           ]}
         />
@@ -80,12 +98,15 @@ export function TemplateBrowser() {
             <input type="checkbox" checked={autoTemplate.value} onChange={(e) => setAutoTemplate((e.target as HTMLInputElement).checked)} />
             <span>Follow photos</span>
           </label>
-          <Button size="sm" variant="ghost" icon={<Shuffle size={14} />} onClick={() => void shuffleTemplate(s.n)} disabled={!s.photoIds.length} title="Another template that fits (S)">
-            Shuffle
-          </Button>
+          {forSelection ? null : (
+            <Button size="sm" variant="ghost" icon={<Shuffle size={14} />} onClick={() => void shuffleTemplate(s.n)} disabled={!s.photoIds.length} title="Another template that fits (S)">
+              Shuffle
+            </Button>
+          )}
           <IconButton label="Close templates (Esc)" onClick={close}><X size={16} /></IconButton>
         </div>
       </header>
+      {forSelection ? <p class="tpl-browser__hint">Click a template to put the {plural(selIds.length, 'selected photo')} on {target} with it.</p> : null}
 
       {templatesError.value ? (
         <p class="notice notice--error" role="alert">{templatesError.value}</p>
@@ -96,22 +117,25 @@ export function TemplateBrowser() {
       ) : !list.length ? (
         <div class="tpl-browser__empty">
           {fits && !text
-            ? <>No template in {collection ?? 'these collections'} has exactly {signature(slots.h, slots.v)} frames. <button type="button" class="link" onClick={() => setFits(false)}>Show all templates</button></>
+            ? <>No template in {collection ?? 'these collections'} has exactly {signature(slots.h, slots.v)} frames.{forSelection ? ' Turn sideways photos upright first if some are portraits.' : ''} <button type="button" class="link" onClick={() => setFits(false)}>Show all templates</button></>
             : <>No templates match. <button type="button" class="link" onClick={() => { setText(''); setCollection(null) }}>Clear the search</button></>}
         </div>
       ) : (
         <ul class="tpl-grid" aria-label={plural(list.length, 'template')}>
           {list.slice(0, limit).map((t) => {
-            const current = s.template?.id === t.id
+            const current = !forSelection && s.template?.id === t.id
             const fitsThis = t.h === slots.h && t.v === slots.v
             return (
               <li key={t.id}>
                 <button
                   type="button"
                   class={`tpl-card ${current ? 'is-current' : ''}`}
-                  aria-pressed={current}
-                  onClick={() => { if (!current) void setTemplate(s.n, t.id) }}
-                  title={`${t.name} · ${t.collection}`}
+                  aria-pressed={forSelection ? undefined : current}
+                  onClick={() => {
+                    if (forSelection) void placeWithTemplate(selIds, t.id, t.name)
+                    else if (!current) void setTemplate(s.n, t.id)
+                  }}
+                  title={forSelection ? `${t.name} · ${t.collection}\nPut the selected photos on ${target} with this template` : `${t.name} · ${t.collection}`}
                 >
                   <span class="tpl-card__img">
                     {t.preview ? <img src={fileUrl(t.preview)} alt="" loading="lazy" decoding="async" /> : null}

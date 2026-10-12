@@ -1,9 +1,9 @@
 // plan_actions.ts — what the user can do to a plan, in their words. Buttons, drag and drop and the
 // keyboard all call these, so a change behaves the same however it was asked for.
 
-import { autoTemplate, edit, type Op } from './edit'
-import { plural } from './format'
-import { album, goToSpread, spreadIndex, toast } from './state'
+import { autoTemplate, edit, spreadSelection, type Op } from './edit'
+import { plural, templateLabel } from './format'
+import { album, currentSpread, goToSpread, poolAnchor, poolSelection, selectionFocus, spreadIndex, toast } from './state'
 
 /** Spreads a set of photos is on now, other than `except`. */
 function spreadsOf(ids: string[], except: number): number[] {
@@ -40,6 +40,51 @@ export function swapPhotos(n: number, a: string, b: string) {
 
 export function movePhoto(n: number, id: string, index: number) {
   return edit([{ op: 'movePhoto', n, id, index }])
+}
+
+/**
+ * Turn photos clockwise by `by` degrees (-90 turns left), wherever they appear. A quarter turn
+ * swaps landscape and portrait, so spreads holding them get a fitting template when templates
+ * follow photos.
+ */
+export function rotatePhotos(ids: string[], by: 90 | -90 | 180) {
+  if (!ids.length) {
+    toast('info', 'Select photos to turn first: in the photos on the left, or one on the spread.')
+    return Promise.resolve(null)
+  }
+  return edit(fit([{ op: 'rotatePhotos', ids, by }], by === 180 ? [] : spreadsOf(ids, 0)))
+}
+
+/** The photos a turn applies to: where the user last picked photos (the pool or the spread). */
+export function turnTargets(): string[] {
+  const a = album.value
+  if (!a) return []
+  const onSpread = spreadSelection.value && a.photos[spreadSelection.value] ? [spreadSelection.value] : []
+  const inPool = [...poolSelection.value].filter((id) => a.photos[id])
+  if (selectionFocus.value === 'spread') return onSpread.length ? onSpread : inPool
+  return inPool.length ? inPool : onSpread
+}
+
+/**
+ * Put photos on a spread with this template, as one undoable step: on the current spread when it
+ * is empty, otherwise on a new spread after it (nothing already planned is replaced). They move off
+ * any spread they were on; those spreads get a fitting template when templates follow photos.
+ */
+export async function placeWithTemplate(ids: string[], templateId: string, templateName: string) {
+  const s = currentSpread.value
+  if (!s || !ids.length) return
+  const empty = !s.photoIds.length
+  const n = empty ? s.n : s.n + 1
+  const ops: Op[] = empty ? [] : [{ op: 'insertSpread', at: n }]
+  // The spreads they leave, numbered as they will be once the new spread is in.
+  const left = spreadsOf(ids, 0).map((m) => (!empty && m >= n ? m + 1 : m)).filter((m) => m !== n)
+  ops.push({ op: 'addPhoto', n, ids }, { op: 'setTemplate', n, templateId })
+  const r = await edit(fit(ops, left))
+  if (!r) return
+  goToSpread(n - 1)
+  poolSelection.value = new Set()
+  poolAnchor.value = null
+  toast('ok', `${plural(ids.length, 'photo')} on ${empty ? '' : 'a new '}spread ${n} with ${templateLabel(templateName)}. ⌘Z undoes it.`)
 }
 
 export function setTemplate(n: number, templateId: string) {

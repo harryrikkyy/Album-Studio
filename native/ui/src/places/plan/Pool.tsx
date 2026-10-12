@@ -1,28 +1,30 @@
 // Pool.tsx — every photo of the album. Select (click, ⌘-click, ⇧-click), then drag onto a spread
 // or double-click to add to the current one. Dropping a photo from a spread here takes it off.
+// Each photo turns left or right from its corner buttons (or ⌘L / ⌘R with photos selected), and a
+// selection shows its landscape/portrait mix and the templates that fit it.
 
-import { Check, Undo2, WandSparkles } from 'lucide-preact'
+import { Check, LayoutTemplate, RotateCcw, RotateCw, Undo2, WandSparkles } from 'lucide-preact'
 import { useState } from 'preact/hooks'
-import { fileUrl } from '../../bridge'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag } from '../../dnd'
-import { plural } from '../../format'
-import { addPhotos, removePhotos } from '../../plan_actions'
-import { rangeSelect } from '../../plan_logic'
+import { plural, signature } from '../../format'
+import { addPhotos, removePhotos, rotatePhotos } from '../../plan_actions'
+import { rangeSelect, seenAspect, selectionSlots } from '../../plan_logic'
 import {
   album, currentSpread, goToSpread, hoveredPhoto, orientFilter, poolAnchor, poolFilter, poolPhotos, poolSelection,
-  setPoolFilter, setThumbSize, thumbSize,
+  selectionFocus, setPoolFilter, setThumbSize, templateBrowserOpen, thumbSize,
 } from '../../state'
 import type { Photo } from '../../types'
-import { Button, Segmented } from '../../ui/controls'
+import { Button, IconButton, Segmented } from '../../ui/controls'
+import { Thumb } from '../../ui/Thumb'
 import { openAutoFill } from './AutoFill'
 
-/** Width ÷ height, from the thumbnail; orientation decides when the size isn't known. */
+/** Width ÷ height as the photo is seen (after its turn), kept within reason for the rows. */
 function aspect(p: Photo): number {
-  if (p.width && p.height) return Math.min(3, Math.max(0.33, p.width / p.height))
-  return p.orient === 'v' ? 2 / 3 : 3 / 2
+  return Math.min(3, Math.max(0.33, seenAspect(p)))
 }
 
 function select(p: Photo, e: MouseEvent | KeyboardEvent) {
+  selectionFocus.value = 'pool'
   const sel = new Set(poolSelection.value)
   if (e.shiftKey) {
     const ids = poolPhotos.value.map((x) => x.id)
@@ -81,8 +83,16 @@ function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; se
         else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addToCurrent(dragSet(p)) }
       }}
     >
-      <img src={fileUrl(p.thumb)} alt={p.base} loading="lazy" decoding="async" draggable={false} />
+      <Thumb p={p} alt={p.base} />
       {selected ? <span class="tile__check" aria-hidden="true"><Check size={11} strokeWidth={3} /></span> : null}
+      <span class="tile__turns" onDblClick={(e) => e.stopPropagation()}>
+        <button type="button" class="tile__turn" tabIndex={-1} title="Turn left (⌘L)" aria-label={`Turn ${p.base} left`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], -90) }}>
+          <RotateCcw size={12} strokeWidth={2.2} />
+        </button>
+        <button type="button" class="tile__turn" tabIndex={-1} title="Turn right (⌘R)" aria-label={`Turn ${p.base} right`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], 90) }}>
+          <RotateCw size={12} strokeWidth={2.2} />
+        </button>
+      </span>
       {used ? (
         <button
           type="button"
@@ -178,13 +188,7 @@ export function Pool() {
       ) : null}
       <div class="pool__foot">
         {sel.size ? (
-          <div class="pool__selection">
-            <span>{plural(sel.size, 'photo')} selected</span>
-            <Button size="sm" variant="ghost" onClick={() => { poolSelection.value = new Set(); poolAnchor.value = null }}>Clear</Button>
-            <Button size="sm" variant="primary" disabled={!s} onClick={() => addToCurrent(poolPhotos.value.filter((x) => sel.has(x.id)).map((x) => x.id))}>
-              Add to spread {s?.n}
-            </Button>
-          </div>
+          <SelectionBar />
         ) : (
           <label class="slider">
             <span class="visually-hidden">Thumbnail size</span>
@@ -200,5 +204,33 @@ export function Pool() {
         )}
       </div>
     </aside>
+  )
+}
+
+/** What can be done with the photos selected in the pool. */
+function SelectionBar() {
+  const a = album.value!
+  const sel = poolSelection.value
+  const s = currentSpread.value
+  // In pool order; photos hidden by a filter stay selected.
+  const ids = [...a.pool.filter((id) => sel.has(id))]
+  const { h, v } = selectionSlots(a, ids)
+  const showTemplates = () => { selectionFocus.value = 'pool'; templateBrowserOpen.value = true }
+  return (
+    <div class="pool__selection">
+      <div class="pool__selection-row">
+        <span class="pool__selection-what">{plural(ids.length, 'photo')} selected <span class="count">{signature(h, v)}</span></span>
+        <Button size="sm" variant="ghost" onClick={() => { poolSelection.value = new Set(); poolAnchor.value = null }}>Clear</Button>
+      </div>
+      <div class="pool__selection-row">
+        <IconButton label="Turn left (⌘L)" onClick={() => void rotatePhotos(ids, -90)}><RotateCcw size={15} /></IconButton>
+        <IconButton label="Turn right (⌘R)" onClick={() => void rotatePhotos(ids, 90)}><RotateCw size={15} /></IconButton>
+        <span class="pool__selection-grow" />
+        <Button size="sm" icon={<LayoutTemplate size={14} />} onClick={showTemplates} title={`Templates with frames for ${signature(h, v)}`}>Templates</Button>
+        <Button size="sm" variant="primary" disabled={!s} onClick={() => addToCurrent(ids)}>
+          Add to spread {s?.n}
+        </Button>
+      </div>
+    </div>
   )
 }

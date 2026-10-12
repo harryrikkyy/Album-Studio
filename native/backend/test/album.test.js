@@ -79,3 +79,20 @@ test('the protocol answers unknown methods with an error, not a crash', async ()
   assert.equal(replies[1].result.pong, 3)
   assert.equal(replies.length, 2, 'a line that is not JSON gets no reply')
 })
+
+test('a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height', async () => {
+  const sharp = require('../../../src/sharp_config').getSharp()
+  const { jpegSize } = require('../lib/jpeg_size')
+  const dir = require('./fixtures').tmpdir()
+  const sizes = {}
+  for (const o of [1, 3, 6, 8]) {
+    const f = path.join(dir, `o${o}.jpg`)
+    await sharp({ create: { width: 300, height: 200, channels: 3, background: '#888' } }).jpeg().withMetadata({ orientation: o }).toFile(f)
+    sizes[o] = await jpegSize(f)
+  }
+  assert.deepEqual(sizes[1], { width: 300, height: 200 })
+  assert.deepEqual(sizes[3], { width: 300, height: 200 }, 'upside down is still landscape')
+  assert.deepEqual(sizes[6], { width: 200, height: 300 }, 'a portrait the camera stored sideways')
+  assert.deepEqual(sizes[8], { width: 200, height: 300 })
+  assert.deepEqual(jpegSizeFromBuffer(require('fs').readFileSync(path.join(dir, 'o6.jpg')), { stored: true }), { width: 300, height: 200 }, 'a PDF embeds the stored grid')
+})

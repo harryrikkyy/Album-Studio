@@ -1,9 +1,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { changedSpreads, describeSlots, filterTemplates, rangeSelect, slotsOf, templateFits, type Template } from '../src/plan_logic.ts'
+import { changedSpreads, describeSlots, filterTemplates, rangeSelect, seenAspect, selectionSlots, slotsOf, templateFits, turnOf, type Template } from '../src/plan_logic.ts'
 import type { Album, Photo, Spread } from '../src/types.ts'
 
-const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, usedOn: [] })
+const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, rotation: 0, usedOn: [] })
 const spread = (n: number, photoIds: string[], tpl: { id: string; h: number; v: number } | null): Spread => ({
   n,
   photoIds,
@@ -65,4 +65,21 @@ test('slots read as words', () => {
   assert.equal(describeSlots(2, 1), '2 landscape + 1 portrait')
   assert.equal(describeSlots(0, 3), '3 portrait')
   assert.equal(describeSlots(0, 0), 'no photos')
+})
+
+test('a turned photo is seen the other way round; a selection counts its landscape and portrait photos', () => {
+  const p = { width: 300, height: 200, orient: 'h' as const, rotation: 0 }
+  assert.equal(seenAspect(p), 1.5)
+  assert.equal(seenAspect({ ...p, rotation: 90 }), 200 / 300, 'a quarter turn: portrait')
+  assert.equal(seenAspect({ ...p, rotation: 180 }), 1.5, 'a half turn keeps the shape')
+  assert.equal(seenAspect({ ...p, width: null, height: null, orient: 'v' }), 2 / 3, 'no size: by orientation')
+  assert.deepEqual([turnOf({ rotation: -90 }), turnOf({ rotation: 450 }), turnOf({ rotation: 0 })], [270, 90, 0])
+  const a = album([])
+  assert.deepEqual(selectionSlots(a, ['a', 'b', 'c', 'gone']), { h: 2, v: 1 })
+})
+
+test('turning a photo changes the picture of every spread it is on', () => {
+  const prev = album([spread(1, ['a', 'b'], { id: 't', h: 1, v: 1 }), spread(2, ['c'], null)])
+  const next: Album = { ...prev, photos: { ...prev.photos, b: { ...prev.photos.b!, rotation: 90 } } }
+  assert.deepEqual(changedSpreads(prev, next), [1])
 })

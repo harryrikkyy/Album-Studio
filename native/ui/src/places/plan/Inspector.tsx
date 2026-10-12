@@ -2,17 +2,18 @@
 // its photos in order (drag to reorder, drop a photo on one to replace it, × to take it off), and
 // where it stands.
 
-import { CircleCheck, GripVertical, LayoutTemplate, Shuffle, TriangleAlert, X } from 'lucide-preact'
+import { CircleCheck, GripVertical, LayoutTemplate, RotateCw, Shuffle, TriangleAlert, X } from 'lucide-preact'
 import { useState } from 'preact/hooks'
 import { fileUrl } from '../../bridge'
 import { allowDrop, endDrag, payloadOf, startDrag } from '../../dnd'
 import { spreadSelection } from '../../edit'
 import { shortPath, signature, templateLabel } from '../../format'
-import { addPhotos, movePhoto, removePhotos, replacePhoto, shuffleTemplate } from '../../plan_actions'
+import { addPhotos, movePhoto, removePhotos, replacePhoto, rotatePhotos, shuffleTemplate } from '../../plan_actions'
 import { slotsOf, templateFits } from '../../plan_logic'
 import { sheetStateOf } from '../../render'
-import { album, currentPhotos, currentSpread, hoveredPhoto, inspectorOpen, templateBrowserOpen } from '../../state'
+import { album, currentPhotos, currentSpread, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen } from '../../state'
 import { Button, Kbd } from '../../ui/controls'
+import { Thumb } from '../../ui/Thumb'
 
 function FitNote() {
   const a = album.value!
@@ -113,12 +114,21 @@ export function Inspector() {
                 }}
                 onMouseEnter={() => (hoveredPhoto.value = p.id)}
                 onMouseLeave={() => (hoveredPhoto.value = null)}
-                onClick={() => (spreadSelection.value = sel === p.id ? null : p.id)}
+                onClick={() => { selectionFocus.value = 'spread'; spreadSelection.value = sel === p.id ? null : p.id }}
               >
                 <GripVertical size={14} class="insp-photos__grip" aria-hidden="true" />
-                <img src={fileUrl(p.thumb)} alt="" loading="lazy" decoding="async" draggable={false} />
+                <span class="insp-photos__thumb"><Thumb p={p} /></span>
                 <span class="insp-photos__name">{p.base}</span>
-                <span class="insp-photos__orient" title={p.orient === 'v' ? 'Portrait' : 'Landscape'}>{p.orient === 'v' ? 'V' : 'H'}</span>
+                <span class="insp-photos__orient" title={`${p.orient === 'v' ? 'Portrait' : 'Landscape'}${p.rotation ? `, turned ${p.rotation}°` : ''}`}>{p.orient === 'v' ? 'V' : 'H'}</span>
+                <button
+                  type="button"
+                  class="icon-btn icon-btn--sm insp-photos__turn"
+                  aria-label={`Turn ${p.base} right`}
+                  title="Turn right (⌘R)"
+                  onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], 90) }}
+                >
+                  <RotateCw size={13} />
+                </button>
                 <button
                   type="button"
                   class="icon-btn icon-btn--sm insp-photos__remove"

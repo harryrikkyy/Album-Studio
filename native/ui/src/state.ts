@@ -46,6 +46,11 @@ export const poolSelection = signal<ReadonlySet<string>>(new Set())
 export const poolAnchor = signal<string | null>(null)
 /** The template browser, open under the spread. */
 export const templateBrowserOpen = signal(false)
+/**
+ * Where the user last picked photos: in the pool or on the spread. Rotating acts there, and the
+ * template browser shows templates for the pool's selection while it is 'pool'.
+ */
+export const selectionFocus = signal<'pool' | 'spread'>('pool')
 
 export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string }
 export const toasts = signal<Toast[]>([])

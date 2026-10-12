@@ -19,7 +19,7 @@ import { Tools } from './places/Tools'
 import { Library } from './places/Library'
 import { redo, spreadSelection, undo } from './edit'
 import { openNewAlbum } from './places/albums/NewAlbum'
-import { moveSpread, removePhotos, shuffleTemplate } from './plan_actions'
+import { moveSpread, removePhotos, rotatePhotos, shuffleTemplate, turnTargets } from './plan_actions'
 import { loadPlan, plan, startRender } from './render'
 import {
   album, currentSpread, editCurrentSpread, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
@@ -57,6 +57,12 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (e.metaKey && e.key === ',') { e.preventDefault(); openSettings(); return }
+  // ⌘L / ⌘R turn the photos last picked (in the pool or on the spread) left or right, as in Preview.
+  if (e.metaKey && !e.shiftKey && !e.altKey && (e.key === 'l' || e.key === 'r') && place.value === 'plan' && album.value && !isTyping(e)) {
+    e.preventDefault()
+    void rotatePhotos(turnTargets(), e.key === 'l' ? -90 : 90)
+    return
+  }
   // Undo and redo work everywhere an album is open, except while typing (the field has its own).
   if (e.metaKey && !e.altKey && e.key.toLowerCase() === 'z' && album.value && !isTyping(e)) {
     e.preventDefault()
@@ -132,6 +138,10 @@ onEvent('menu', (d) => {
   else if (command === 'newAlbum') { place.value = 'albums'; openNewAlbum() }
   else if (command === 'openAlbum') { place.value = 'albums'; void pickAndOpenAlbum() }
   else if (command === 'editSpread') void editCurrentSpread()
+  else if ((command === 'rotateLeft' || command === 'rotateRight') && album.value && !typing) {
+    place.value = 'plan'
+    void rotatePhotos(turnTargets(), command === 'rotateLeft' ? -90 : 90)
+  }
   else if (command.startsWith('place.')) goToPlace(command.slice(6) as Parameters<typeof goToPlace>[0])
   else if (command === 'templates' && album.value) { place.value = 'plan'; templateBrowserOpen.value = !templateBrowserOpen.value }
   else if (command === 'inspector' && album.value) { place.value = 'plan'; toggleInspector() }

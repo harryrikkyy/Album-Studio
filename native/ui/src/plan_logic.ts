@@ -1,6 +1,6 @@
 // plan_logic.ts — the pure parts of editing a plan (tested in test/plan_logic.test.ts).
 
-import type { Album, Orient, Spread } from './types'
+import type { Album, Orient, Photo, Spread } from './types'
 
 export interface Template {
   id: string
@@ -25,6 +25,32 @@ export function slotsOf(a: Album, s: Spread): { h: number; v: number } {
   return { h, v }
 }
 
+/** Landscape and portrait counts of any photos (a selection in the pool). */
+export function selectionSlots(a: Album, ids: Iterable<string>): { h: number; v: number } {
+  let h = 0
+  let v = 0
+  for (const id of ids) {
+    const p = a.photos[id]
+    if (!p) continue
+    if (p.orient === 'v') v++
+    else h++
+  }
+  return { h, v }
+}
+
+/** The user's turn as one of 0, 90, 180, 270. */
+export function turnOf(p: Pick<Photo, 'rotation'>): 0 | 90 | 180 | 270 {
+  const t = (((Math.round((p.rotation || 0) / 90) * 90) % 360) + 360) % 360
+  return t as 0 | 90 | 180 | 270
+}
+
+/** Width ÷ height as the photo is seen, after its turn; orientation decides when the size isn't known. */
+export function seenAspect(p: Pick<Photo, 'width' | 'height' | 'orient' | 'rotation'>): number {
+  if (!p.width || !p.height) return p.orient === 'v' ? 2 / 3 : 3 / 2
+  const quarter = turnOf(p) % 180 === 90
+  return quarter ? p.height / p.width : p.width / p.height
+}
+
 /** Does the spread's template have a frame for each of its photos, and no more? */
 export function templateFits(a: Album, s: Spread): boolean | null {
   if (!s.template || s.template.h == null || s.template.v == null) return null
@@ -33,14 +59,15 @@ export function templateFits(a: Album, s: Spread): boolean | null {
 }
 
 /**
- * Spreads whose picture an edit changed: different photos or template than the spread that was
- * at the same place before. Their proofs are redrawn, so they show as updating until then.
+ * Spreads whose picture an edit changed: different photos, template or photo turns than the
+ * spread that was at the same place before. Their proofs are redrawn, so they show as updating.
  */
 export function changedSpreads(prev: Album | null, next: Album): number[] {
   const out: number[] = []
+  const turns = (a: Album, s: Spread) => s.photoIds.map((id) => a.photos[id]?.rotation ?? 0).join('|')
   for (const s of next.spreads) {
     const old = prev?.spreads[s.n - 1]
-    if (!old || old.template?.id !== s.template?.id || old.photoIds.join('|') !== s.photoIds.join('|')) out.push(s.n)
+    if (!old || old.template?.id !== s.template?.id || old.photoIds.join('|') !== s.photoIds.join('|') || turns(prev!, old) !== turns(next, s)) out.push(s.n)
   }
   return out
 }

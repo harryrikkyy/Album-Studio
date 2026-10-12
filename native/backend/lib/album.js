@@ -191,10 +191,12 @@ async function openAlbum({ path: projectPath }) {
     })
   }
 
-  // Orientation for photos no spread recorded: from the thumbnail's size and the user's rotation.
+  // The user's turn (0, 90, 180, 270, clockwise), and the orientation of photos no spread
+  // recorded: from the thumbnail's size and that turn.
   for (const ph of Object.values(photos)) {
+    ph.rotation = ((Number(rotations[ph.id]) || 0) % 360 + 360) % 360
     if (ph.orient || !ph.width || !ph.height) continue
-    const quarter = [90, 270].includes(((Number(rotations[ph.id]) || 0) % 360 + 360) % 360)
+    const quarter = ph.rotation === 90 || ph.rotation === 270
     const landscape = ph.width >= ph.height
     ph.orient = landscape !== quarter ? 'h' : 'v'
   }
