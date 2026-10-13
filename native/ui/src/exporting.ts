@@ -49,9 +49,9 @@ export function setExportKinds(patch: Partial<{ jpegs: boolean; pdf: boolean }>)
 let planRequest = 0
 export async function loadExportPlan() {
   const a = album.value
-  if (!a) return
   const request = ++planRequest, settings = { ...exportSettings.value }
   exportPlanSig.value = null
+  if (!a) return
   try {
     const result = await call<ExportPlan>('export.plan', { album: a.path, ...settings })
     if (request === planRequest && album.value?.path === a.path) exportPlanSig.value = result
@@ -95,6 +95,7 @@ onEvent('export.progress', (d) => {
   const p = d as { jobId: string; index: number; n: number | null; state: string; ms?: number; error?: string }
   const j = exportJob.value
   if (!j || j.jobId !== p.jobId) return
+  if (p.state === 'warning') { toast('error', p.error ?? 'Delivery needs recovery.', 12000); return }
   if (p.state === 'exporting') exportJob.value = { ...j, current: p.n, phase: 'exporting' }
   else if (p.state === 'pdf') exportJob.value = { ...j, current: null, phase: 'pdf' }
   else exportJob.value = { ...j, current: null, index: p.index, results: [...j.results, { n: p.n!, state: p.state as 'done' | 'skipped' | 'failed', ms: p.ms, error: p.error }] }
@@ -106,7 +107,7 @@ onEvent('export.finished', (d) => {
   if (!j || j.jobId !== f.jobId) return
   exportJob.value = { ...j, current: null, phase: null, finished: { done: f.done, skipped: f.skipped, failed: f.failed, cancelled: f.cancelled, ms: f.ms, pdf: f.pdf } }
   const parts = [f.done ? `${plural(f.done, 'sheet')} exported` : null, f.skipped ? `${f.skipped} unchanged` : null, f.failed ? `${f.failed} failed` : null, f.pdf?.pages ? `PDF of ${plural(f.pdf.pages, 'page')}` : null].filter(Boolean)
-  toast(f.failed || f.pdf?.error ? 'error' : 'ok', `${f.cancelled ? 'Export stopped' : 'Export finished'}: ${parts.join(', ') || 'nothing to do'}${f.error ? ` · ${f.error}` : f.pdf?.error ? ` · the PDF failed: ${f.pdf.error}` : ''}`, 9000)
+  toast(f.failed || f.pdf?.error || f.error ? 'error' : 'ok', `${f.cancelled ? 'Export stopped' : 'Export finished'}: ${parts.join(', ') || 'nothing to do'}${f.error ? ` · ${f.error}` : f.pdf?.error ? ` · the PDF failed: ${f.pdf.error}` : ''}`, 9000)
   void loadExportPlan()
 })
 

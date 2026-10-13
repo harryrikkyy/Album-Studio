@@ -76,6 +76,23 @@ test('PDF-only export refuses stale review JPEGs and preserves the previous PDF'
   assert.deepEqual(fs.readFileSync(before.pdf.path), pdfBytes)
 })
 
+test('preserved-size and timestamp JPEG edits invalidate readiness and cannot be overwritten as owned output', async () => {
+  const { proj } = await fixture(), previous = await run({ album: proj })
+  const file = path.join(proj, 'JPEG-Low-Res', 'Page_001.jpg'), st = fs.statSync(file), beforeStamp = await fileStamp(file)
+  const edited = fs.readFileSync(file)
+  edited[edited.length - 10] ^= 1
+  fs.writeFileSync(file, edited); fs.utimesSync(file, st.atime, st.mtime)
+  assert.equal(await fileStamp(file), beforeStamp, 'the regression bypasses stamp-only readiness')
+  assert.equal((await exportPlan({ album: proj, heightInches: 0.5 })).spreads[0].state, 'stale')
+  const pdfBytes = fs.readFileSync(previous.pdf.path)
+  await assert.rejects(run({ album: proj, jpegs: false }), /stale|missing/i)
+  const retry = await run({ album: proj, force: true })
+  assert.equal(retry.failed, 1)
+  assert.match(retry.error, /edited|unowned/i)
+  assert.deepEqual(fs.readFileSync(file), edited)
+  assert.deepEqual(fs.readFileSync(previous.pdf.path), pdfBytes)
+})
+
 test('production delivery refuses incomplete albums instead of silently omitting missing sheets', async () => {
   const { proj } = await fixture({ missing: true })
   await assert.rejects(run({ album: proj }), /spread 3|not rendered|missing/i)
@@ -102,14 +119,15 @@ test('failed publication restores all prior JPEGs, PDF and cache, and the next e
   const { proj, out } = await fixture(), previous = await run({ album: proj })
   const targets = [path.join(proj, 'JPEG-High-Res', 'Page_001.jpg'), path.join(proj, 'JPEG-Low-Res', 'Page_001.jpg'), path.join(proj, 'JPEG-High-Res', 'Page_002.jpg'), previous.pdf.path, path.join(out, '.album-studio', 'export-cache.json')]
   const bytes = targets.map((file) => fs.readFileSync(file))
-  const rename = fs.promises.rename
+  const failureTarget = await fs.promises.realpath(targets[2])
+  const link = fs.promises.link
   let injected = false
-  fs.promises.rename = async (source, target) => {
-    if (!injected && target === targets[2]) { injected = true; throw Object.assign(new Error('Simulated full destination during publication'), { code: 'ENOSPC' }) }
-    return rename.call(fs.promises, source, target)
+  fs.promises.link = async (source, target) => {
+    if (!injected && target === failureTarget) { injected = true; throw Object.assign(new Error('Simulated full destination during publication'), { code: 'ENOSPC' }) }
+    return link.call(fs.promises, source, target)
   }
   let result
-  try { result = await run({ album: proj, force: true }) } finally { fs.promises.rename = rename }
+  try { result = await run({ album: proj, force: true }) } finally { fs.promises.link = link }
   assert.equal(injected, true); assert.equal(result.failed, 1); assert.equal(result.done, 0)
   targets.forEach((file, i) => assert.deepEqual(fs.readFileSync(file), bytes[i]))
   assert.equal((await run({ album: proj, force: true })).failed, 0)

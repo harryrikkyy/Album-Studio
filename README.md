@@ -35,7 +35,7 @@ the lab and the client. Photoshop isn't needed at any step.
 | Interface | `native/ui` (Preact, TypeScript) | Albums, Plan, Review, Deliver, Library, Tools, Settings, sign-in. |
 | Helper | `native/backend` (Node.js) | Projects, plans, proofs, renders, exports, tools, account. Talks to the shell over stdio. |
 | Shared modules | `src/` | Planning, proof compositing, PSD reading, curation and licence code, used by the helper. |
-| Engine | `native/photocraft` (separate checkout of the PhotoCraft fork, branch `album-studio`) | Builds and edits the sheets. |
+| Engine | `native/photocraft` (separate checkout reconstructed from the exact source pin and tracked incremental bundle) | Builds and edits the sheets. |
 
 `docs/native-shell/PLAN.md` has the status and what's still open. `docs/DEVELOPMENT.md`
 covers building, running and testing.
@@ -47,10 +47,18 @@ The continuing quality work, verified results and unresolved production requirem
 ## Quick start
 
 ```bash
-npm install && npm --prefix native/ui install
+npm ci
+npm ci --prefix native/ui
+node native/scripts/engine.mjs setup
 npm run build        # → native/dist/Album Studio.app
 npm start            # opens it
 ```
+
+Developer builds require Xcode command-line tools, Node.js 22.23.3 and Rust/Cargo 1.99.0.
+See [engine setup and verification](docs/quality/ENGINE_PIN_AND_CI.md) for the exact setup,
+test gates and a new review-bundle destination. An existing app is preserved; choose a new
+`ALBUM_STUDIO_PACKAGE_PATH` to build another version. Signed/notarised customer installation
+is still an unverified release requirement.
 
 Sign-in reads a `.env` with the Firebase and Google OAuth settings; see `.env.example`.
 It's never committed, and by default never built into the app. The app looks for it in

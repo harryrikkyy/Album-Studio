@@ -1,0 +1,556 @@
+'use strict'
+
+const test = require('node:test')
+const assert = require('node:assert/strict')
+const fs = require('fs')
+const path = require('path')
+const crypto = require('crypto')
+const { execFile } = require('child_process')
+const { promisify } = require('util')
+const { tmpdir } = require('./fixtures')
+const { fileStamp } = require('../lib/cache')
+const { publishDelivery, recoverDeliveries, verifyOwnedArtifact } = require('../lib/delivery_transaction')
+const runFile = promisify(execFile)
+
+function digest(file) { return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') }
+
+async function fixture(t, { existing = true, strong = true } = {}) {
+  const root = fs.realpathSync(tmpdir())
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const sheets = path.join(root, 'exports'), metadata = path.join(sheets, '.album-studio')
+  const paths = { sheets, high: path.join(root, 'JPEG-High-Res'), low: path.join(root, 'JPEG-Low-Res'), pdf: path.join(root, 'Example - Low Res.pdf'), cache: path.join(metadata, 'export-cache.json') }
+  for (const folder of [metadata, paths.high, paths.low]) fs.mkdirSync(folder, { recursive: true })
+  const stage = fs.mkdtempSync(path.join(metadata, 'delivery-')), albumFile = path.join(root, 'project.json')
+  const targets = [path.join(paths.high, 'Page_001.jpg'), path.join(paths.low, 'Page_001.jpg'), paths.pdf]
+  const files = targets.map((target, i) => ({ target, source: path.join(stage, `prepared-${i}`) }))
+  const cache = { version: 2, albumFile, spreads: {}, ownedFiles: {}, ...(strong ? { ownedDigests: {} } : {}) }
+  for (const [i, file] of files.entries()) {
+    fs.writeFileSync(file.source, `next delivery ${i}`)
+    fs.utimesSync(file.source, 1700000000, 1700000000)
+    if (existing) {
+      fs.writeFileSync(file.target, `previous delivery ${i}`)
+      fs.utimesSync(file.target, 1600000000, 1600000000)
+      cache.ownedFiles[file.target] = await fileStamp(file.target)
+      if (strong) cache.ownedDigests[file.target] = digest(file.target)
+    }
+  }
+  if (existing) {
+    cache.spreads.first = { n: 1, high: { path: targets[0], stamp: cache.ownedFiles[targets[0]] }, low: { path: targets[1], stamp: cache.ownedFiles[targets[1]] } }
+    cache.pdf = { path: targets[2], stamp: cache.ownedFiles[targets[2]] }
+    fs.writeFileSync(paths.cache, JSON.stringify(cache, null, 1))
+  }
+  const previous = targets.concat(paths.cache).map((file) => fs.existsSync(file) ? fs.readFileSync(file) : null)
+  const makeCache = (records) => ({ version: 2, albumFile, generation: 'next', spreads: { first: { n: 1, high: { path: targets[0], stamp: records[0].stamp }, low: { path: targets[1], stamp: records[1].stamp } } }, pdf: { path: paths.pdf, stamp: records[2].stamp } })
+  return { root, paths, stage, albumFile, targets, files, cache, previous, makeCache }
+}
+
+async function publish(f, extra = {}) { return publishDelivery(f.files, f.cache, f.stage, { paths: f.paths, albumFile: f.albumFile, makeCache: f.makeCache, ...extra }) }
+
+function assertPrevious(f) {
+  f.targets.concat(f.paths.cache).forEach((file, index) => {
+    if (f.previous[index] === null) assert.equal(fs.existsSync(file), false, `${file} stays absent`)
+    else assert.deepEqual(fs.readFileSync(file), f.previous[index], `${file} keeps its previous bytes`)
+  })
+}
+
+function assertNext(f) {
+  for (const [i, target] of f.targets.entries()) assert.equal(fs.readFileSync(target, 'utf8'), `next delivery ${i}`)
+  const cache = JSON.parse(fs.readFileSync(f.paths.cache, 'utf8'))
+  assert.equal(cache.generation, 'next')
+  for (const target of f.targets) {
+    assert.equal(cache.ownedDigests[target], digest(target))
+    assert.match(cache.ownedFiles[target], /^\d+:\d+$/)
+  }
+  assert.equal(cache.spreads.first.high.digest, digest(f.targets[0]))
+  assert.equal(cache.pdf.digest, digest(f.paths.pdf))
+}
+
+function assertClean(f) {
+  assert.equal(fs.existsSync(f.stage), false)
+  assert.deepEqual(fs.readdirSync(path.dirname(f.paths.cache)), ['export-cache.json'])
+}
+
+async function killedAt(f, boundary, operation = 'publish') {
+  const input = { files: f.files, cache: f.cache, stage: f.stage, paths: f.paths, albumFile: f.albumFile, targets: f.targets }
+  const script = `
+const fs = require('fs'), path = require('path')
+const input = ${JSON.stringify(input)}, boundary = ${JSON.stringify(boundary)}
+const die = () => process.kill(process.pid, 'SIGKILL')
+const rename = fs.promises.rename.bind(fs.promises), link = fs.promises.link.bind(fs.promises), copy = fs.promises.copyFile.bind(fs.promises), unlink = fs.promises.unlink.bind(fs.promises), open = fs.promises.open.bind(fs.promises)
+fs.promises.open = async (file, ...args) => {
+  const handle = await open(file, ...args)
+  if (boundary === 'reclaim-guard' && file === path.join(path.dirname(input.paths.cache), '.delivery.recovery.lock')) {
+    const write = handle.writeFile.bind(handle)
+    handle.writeFile = async (...values) => { await write(...values); die() }
+  }
+  return handle
+}
+fs.promises.rename = async (from, to) => {
+  await rename(from, to)
+  if (boundary === 'old-to-backup' && to === path.join(input.stage, 'backup-0')) die()
+  if (boundary === 'cache-to-backup' && to === path.join(input.stage, 'backup-3')) die()
+  if (boundary === 'rollback-discard' && to === path.join(input.stage, 'discard-0')) die()
+  if (boundary === 'committed-marker' && to === path.join(input.stage, 'journal.json') && JSON.parse(fs.readFileSync(to)).phase === 'committed') die()
+}
+fs.promises.link = async (from, to) => {
+  if (boundary === 'new-copy' && to === input.targets[0]) throw Object.assign(new Error('links unavailable'), { code: 'ENOTSUP' })
+  if (boundary === 'partial-copy' && to === input.targets[0]) throw Object.assign(new Error('links unavailable'), { code: 'ENOTSUP' })
+  await link(from, to)
+  if (boundary === 'prepared-journal' && to === path.join(input.stage, 'journal.json')) die()
+  if (boundary === 'new-link' && to === input.targets[0]) die()
+  if (boundary === 'cache-link' && to === input.paths.cache) die()
+  if (boundary === 'restored-link' && from === path.join(input.stage, 'backup-0')) die()
+}
+fs.promises.copyFile = async (from, to, flags) => {
+  if (boundary === 'partial-copy' && to === input.targets[0]) { await fs.promises.writeFile(to, 'part', { flag: 'wx' }); die() }
+  await copy(from, to, flags)
+  if (boundary === 'new-copy' && to === input.targets[0]) die()
+}
+fs.promises.unlink = async (file) => {
+  await unlink(file)
+  if (boundary === 'committed-cleanup' && file === path.join(input.stage, 'backup-0')) die()
+}
+const transaction = require(${JSON.stringify(require.resolve('../lib/delivery_transaction'))})
+const makeCache = (records) => ({ version: 2, albumFile: input.albumFile, generation: 'next', spreads: { first: { n: 1, high: { path: input.targets[0], stamp: records[0].stamp }, low: { path: input.targets[1], stamp: records[1].stamp } } }, pdf: { path: input.paths.pdf, stamp: records[2].stamp } })
+const work = ${JSON.stringify(operation)} === 'publish'
+  ? transaction.publishDelivery(input.files, input.cache, input.stage, { paths: input.paths, albumFile: input.albumFile, makeCache })
+  : transaction.recoverDeliveries(input.paths, { albumFile: input.albumFile })
+work.then(() => process.exit(0), (e) => { console.error(e.stack); process.exit(1) })
+`
+  await assert.rejects(runFile(process.execPath, ['-e', script], { timeout: 15000 }), (error) => {
+    assert.equal(error.signal, 'SIGKILL', error.stderr || error.message)
+    return true
+  })
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')), 'the killed process retains its recovery journal')
+}
+
+test('complete delivery and its cache publish together with content ownership', async (t) => {
+  const f = await fixture(t)
+  const records = await publish(f)
+  assert.equal(records.length, 3)
+  for (const record of records) { assert.equal(record.stamp, await fileStamp(record.target)); assert.equal(record.digest, digest(record.target)) }
+  assertNext(f); assertClean(f)
+})
+
+test('readiness verifies digest ownership and rejects same-stamp edits, symlinks and invalid records', async (t) => {
+  const f = await fixture(t), file = f.targets[0], stamp = await fileStamp(file), expected = digest(file)
+  assert.equal(await verifyOwnedArtifact(file, stamp, expected), true)
+  assert.equal(await verifyOwnedArtifact(file, stamp), true, 'legacy ownership preserves the existing stamp-only policy')
+  assert.equal(await verifyOwnedArtifact(file, stamp, 'invalid-digest'), false)
+  assert.equal(await verifyOwnedArtifact(file, 'invalid-stamp', expected), false)
+  assert.equal(await verifyOwnedArtifact(path.join(f.root, 'missing.jpg'), stamp, expected), false)
+  const alias = path.join(f.root, 'alias.jpg'); fs.symlinkSync(file, alias)
+  assert.equal(await verifyOwnedArtifact(alias, stamp, expected), false)
+  const st = fs.statSync(file)
+  fs.writeFileSync(file, 'external delivery 0'); fs.utimesSync(file, st.atime, st.mtime)
+  assert.equal(await fileStamp(file), stamp, 'the mutation deliberately preserves size and timestamp')
+  assert.equal(await verifyOwnedArtifact(file, stamp, expected), false)
+  assert.equal(await verifyOwnedArtifact(file, stamp), true, 'this known legacy limitation is explicit')
+})
+
+test('first publication and legacy stamp ownership upgrade to digest ownership', async (t) => {
+  for (const options of [{ existing: false }, { strong: false }]) await t.test(JSON.stringify(options), async (tt) => {
+    const f = await fixture(tt, options)
+    await publish(f); assertNext(f); assertClean(f)
+  })
+})
+
+test('caught data and cache failures restore every previous byte', async (t) => {
+  for (const index of [1, 3]) await t.test(`backup-${index}`, async (tt) => {
+    const f = await fixture(tt), rename = fs.promises.rename.bind(fs.promises)
+    tt.mock.method(fs.promises, 'rename', async (from, to) => {
+      if (to === path.join(f.stage, `backup-${index}`)) throw Object.assign(new Error('simulated full disk'), { code: 'ENOSPC' })
+      return rename(from, to)
+    })
+    await assert.rejects(publish(f), /simulated full disk/)
+    assertPrevious(f); assertClean(f)
+  })
+})
+
+test('cache construction fails before exposing any prepared delivery file', async (t) => {
+  const f = await fixture(t)
+  await assert.rejects(publish(f, { makeCache: () => { throw new Error('cache build failed') } }), /cache build failed/)
+  assertPrevious(f)
+  assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+})
+
+test('a cache or target edit while an asynchronous cache builder runs is rejected before publication', async (t) => {
+  for (const target of ['cache', 'jpeg']) await t.test(target, async (tt) => {
+    const f = await fixture(tt), changed = target === 'cache' ? f.paths.cache : f.targets[1]
+    const makeCache = async (records) => { await new Promise((resolve) => setImmediate(resolve)); fs.writeFileSync(changed, 'external edit during cache building'); return f.makeCache(records) }
+    await assert.rejects(publish(f, { makeCache }), /changed while its ownership cache was prepared/)
+    assert.equal(fs.readFileSync(changed, 'utf8'), 'external edit during cache building')
+    for (const [index, file] of f.targets.concat(f.paths.cache).entries()) if (file !== changed) assert.deepEqual(fs.readFileSync(file), f.previous[index])
+    assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+  })
+})
+
+test('cancellation before publication, between files and after cache publication restores the complete prior set', async (t) => {
+  for (const boundary of ['before', 'second-file', 'cache']) await t.test(boundary, async (tt) => {
+    const f = await fixture(tt), link = fs.promises.link.bind(fs.promises)
+    let stop = boundary === 'before'
+    tt.mock.method(fs.promises, 'link', async (from, to) => {
+      await link(from, to)
+      if (boundary === 'second-file' && to === f.targets[1] || boundary === 'cache' && to === f.paths.cache) stop = true
+    })
+    await assert.rejects(publish(f, { isCancelled: () => stop }), (error) => error.code === 'DELIVERY_CANCELLED')
+    assertPrevious(f)
+    if (boundary !== 'before') assertClean(f)
+  })
+})
+
+test('unowned, edited and same-stamp content edits cannot be replaced', async (t) => {
+  for (const kind of ['unowned', 'edited', 'same-stamp']) await t.test(kind, async (tt) => {
+    const f = await fixture(tt)
+    if (kind === 'unowned') { delete f.cache.ownedFiles[f.targets[0]]; delete f.cache.spreads.first.high }
+    else {
+      const st = fs.statSync(f.targets[0])
+      fs.writeFileSync(f.targets[0], kind === 'same-stamp' ? 'external delivery 0' : 'an external edit')
+      if (kind === 'same-stamp') fs.utimesSync(f.targets[0], st.atime, st.mtime)
+    }
+    const edited = fs.readFileSync(f.targets[0])
+    await assert.rejects(publish(f), /unowned|edited/)
+    assert.deepEqual(fs.readFileSync(f.targets[0]), edited)
+    for (const [i, file] of f.targets.slice(1).entries()) assert.deepEqual(fs.readFileSync(file), f.previous[i + 1])
+  })
+})
+
+test('ownership cache from another album or a concurrently changed cache is preserved', async (t) => {
+  for (const change of ['album', 'content']) await t.test(change, async (tt) => {
+    const f = await fixture(tt), disk = { ...f.cache, ...(change === 'album' ? { albumFile: path.join(f.root, 'other-project.json') } : { externalEdit: true }) }
+    fs.writeFileSync(f.paths.cache, JSON.stringify(disk))
+    const bytes = fs.readFileSync(f.paths.cache)
+    await assert.rejects(publish(f), /cache changed|another album/)
+    assert.deepEqual(fs.readFileSync(f.paths.cache), bytes)
+    f.targets.forEach((file, index) => assert.deepEqual(fs.readFileSync(file), f.previous[index]))
+  })
+})
+
+test('an absent ownership cache cannot be replaced by caller claims about existing files', async (t) => {
+  const f = await fixture(t)
+  fs.unlinkSync(f.paths.cache)
+  await assert.rejects(publish(f), /cache is missing|caller data/)
+  f.targets.forEach((file, index) => assert.deepEqual(fs.readFileSync(file), f.previous[index]))
+  assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+})
+
+test('a destination appearing at the exclusive install boundary survives with backups and journal', async (t) => {
+  const f = await fixture(t), link = fs.promises.link.bind(fs.promises)
+  let inserted = false
+  t.mock.method(fs.promises, 'link', async (from, to) => {
+    if (!inserted && to === f.targets[0]) { inserted = true; fs.writeFileSync(to, 'unrelated new file') }
+    return link(from, to)
+  })
+  const error = await publish(f).then(() => assert.fail('publication must reject a collision'), (e) => e)
+  assert.ok(error.recoveryJournal && fs.existsSync(error.recoveryJournal))
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'unrelated new file')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  t.mock.restoreAll()
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /rollback conflict/)
+  assert.ok(fs.existsSync(error.recoveryJournal))
+  fs.unlinkSync(f.targets[0])
+  await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assertPrevious(f); assertClean(f)
+})
+
+test('the copy fallback is exclusive, content-checked and preserves timestamps', async (t) => {
+  const f = await fixture(t)
+  t.mock.method(fs.promises, 'link', async () => { throw Object.assign(new Error('unsupported'), { code: 'ENOTSUP' }) })
+  await publish(f)
+  assertNext(f); assertClean(f)
+  for (const target of f.targets) assert.equal(fs.statSync(target).mtimeMs, 1700000000000)
+})
+
+test('a synchronous commit-journal flush failure restores the old set before a marker is installed', async (t) => {
+  const f = await fixture(t), open = fs.promises.open.bind(fs.promises)
+  let injected = false
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (file === path.join(f.stage, 'journal.json.new')) {
+      const sync = handle.sync.bind(handle)
+      t.mock.method(handle, 'sync', async () => {
+        if (!injected && JSON.parse(fs.readFileSync(file)).phase === 'committed') { injected = true; throw Object.assign(new Error('commit flush failed'), { code: 'EIO' }) }
+        return sync()
+      })
+    }
+    return handle
+  })
+  await assert.rejects(publish(f), /commit flush failed/)
+  assert.equal(injected, true)
+  assertPrevious(f); assertClean(f)
+})
+
+test('a cleanup failure after commit reports committed status and restart keeps the new set', async (t) => {
+  const f = await fixture(t), unlink = fs.promises.unlink.bind(fs.promises)
+  t.mock.method(fs.promises, 'unlink', async (file) => {
+    if (file === path.join(f.stage, 'backup-0')) throw Object.assign(new Error('backup cleanup refused'), { code: 'EIO' })
+    return unlink(file)
+  })
+  const error = await publish(f).then(() => assert.fail('cleanup must fail'), (e) => e)
+  assert.equal(error.deliveryCommitted, true)
+  assert.ok(fs.existsSync(error.recoveryJournal))
+  assertNext(f)
+  t.mock.restoreAll()
+  const result = await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assert.equal(result.recovered[0].state, 'committed')
+  assertNext(f); assertClean(f)
+})
+
+test('an edit racing the capture of an old target is preserved in its recovery backup', async (t) => {
+  const f = await fixture(t), rename = fs.promises.rename.bind(fs.promises)
+  let changed = false
+  t.mock.method(fs.promises, 'rename', async (from, to) => {
+    if (!changed && to === path.join(f.stage, 'backup-0')) { changed = true; fs.writeFileSync(from, 'external edit racing capture') }
+    return rename(from, to)
+  })
+  const error = await publish(f).then(() => assert.fail('concurrent edit must fail'), (e) => e)
+  assert.ok(error.recoveryJournal && fs.existsSync(error.recoveryJournal))
+  assert.equal(fs.readFileSync(path.join(f.stage, 'backup-0'), 'utf8'), 'external edit racing capture')
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'external edit racing capture')
+  f.targets.slice(1).forEach((file, index) => assert.deepEqual(fs.readFileSync(file), f.previous[index + 1]))
+})
+
+test('an edit racing rollback remains at its name and in a retained recovery copy', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  const rename = fs.promises.rename.bind(fs.promises)
+  let changed = false
+  t.mock.method(fs.promises, 'rename', async (from, to) => {
+    if (!changed && to === path.join(f.stage, 'discard-0')) { changed = true; fs.writeFileSync(from, 'external edit racing rollback') }
+    return rename(from, to)
+  })
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /rollback conflict/)
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'external edit racing rollback')
+  assert.equal(fs.readFileSync(path.join(f.stage, 'discard-0'), 'utf8'), 'external edit racing rollback')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+})
+
+test('a symlink or unknown file at the temporary journal name cannot be overwritten or deleted', async (t) => {
+  for (const kind of ['symlink', 'regular']) await t.test(kind, async (tt) => {
+    const f = await fixture(tt)
+    await killedAt(f, 'new-link')
+    const referent = path.join(f.root, 'customer-record'), temporary = path.join(f.stage, 'journal.json.new')
+    fs.writeFileSync(referent, 'keep customer record')
+    if (kind === 'symlink') fs.symlinkSync(referent, temporary)
+    else fs.writeFileSync(temporary, 'customer notes')
+    await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /regular file|Unexpected|JSON/)
+    assert.equal(fs.readFileSync(referent, 'utf8'), 'keep customer record')
+    assert.ok(fs.lstatSync(temporary))
+    assert.ok(fs.existsSync(path.join(f.stage, 'backup-0')))
+    assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+  })
+})
+
+test('restart restores the previous set at actual SIGKILL publication boundaries', async (t) => {
+  for (const boundary of ['prepared-journal', 'old-to-backup', 'new-link', 'new-copy', 'cache-to-backup', 'cache-link']) await t.test(boundary, async (tt) => {
+    const f = await fixture(tt)
+    await killedAt(f, boundary)
+    const recovery = await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+    assert.equal(recovery.recovered[0].state, 'restored')
+    assertPrevious(f); assertClean(f)
+  })
+})
+
+test('restart keeps the complete new set after committed marker and interrupted cleanup', async (t) => {
+  for (const boundary of ['committed-marker', 'committed-cleanup']) await t.test(boundary, async (tt) => {
+    const f = await fixture(tt)
+    await killedAt(f, boundary)
+    const recovery = await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+    assert.equal(recovery.recovered[0].state, 'committed')
+    assertNext(f); assertClean(f)
+  })
+})
+
+test('rollback can itself be killed and restarted without losing previous copies', async (t) => {
+  for (const boundary of ['rollback-discard', 'restored-link']) await t.test(boundary, async (tt) => {
+    const f = await fixture(tt)
+    await killedAt(f, 'new-link')
+    await killedAt(f, boundary, 'recover')
+    await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+    assertPrevious(f); assertClean(f)
+  })
+})
+
+test('a killed partial fallback copy is a recovery conflict, never an excuse to delete unknown bytes', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'partial-copy')
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /rollback conflict/)
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'part')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+  fs.renameSync(f.targets[0], path.join(f.root, 'preserved-partial-copy'))
+  await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assertPrevious(f); assertClean(f)
+})
+
+test('external edits after a kill retain all recovery copies and the journal', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  const edited = 'customer changed the published file'
+  fs.writeFileSync(f.targets[0], edited)
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /rollback conflict/)
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), edited)
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+})
+
+test('unknown stage files survive recovery and keep the journal and backups', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  const unknown = path.join(f.stage, 'customer-notes.txt')
+  fs.writeFileSync(unknown, 'keep this file')
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /Unexpected files/)
+  assert.equal(fs.readFileSync(unknown, 'utf8'), 'keep this file')
+  assert.ok(fs.existsSync(path.join(f.stage, 'backup-0')))
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+})
+
+test('malformed path and album journals fail before mutating delivery files', async (t) => {
+  for (const corruption of ['target', 'source', 'album', 'fingerprint']) await t.test(corruption, async (tt) => {
+    const f = await fixture(tt)
+    await killedAt(f, 'new-link')
+    const file = path.join(f.stage, 'journal.json'), journal = JSON.parse(fs.readFileSync(file))
+    const outside = path.join(f.root, 'outside.txt'); fs.writeFileSync(outside, 'unrelated outside file')
+    if (corruption === 'target') journal.entries[0].target = outside
+    if (corruption === 'source') journal.entries[0].source = '../outside.txt'
+    if (corruption === 'album') journal.albumFile = path.join(f.root, 'other-project.json')
+    if (corruption === 'fingerprint') journal.entries[0].after.digest = 'invalid'
+    fs.writeFileSync(file, JSON.stringify(journal))
+    await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /Invalid delivery/)
+    assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'next delivery 0')
+    assert.equal(fs.readFileSync(outside, 'utf8'), 'unrelated outside file')
+    assert.ok(fs.existsSync(file)); assert.ok(fs.existsSync(path.join(f.stage, 'backup-0')))
+  })
+})
+
+test('target-directory and staged-source symlinks are rejected without touching their referents', async (t) => {
+  for (const kind of ['directory', 'source']) await t.test(kind, async (tt) => {
+    const f = await fixture(tt), outside = path.join(f.root, 'outside')
+    fs.mkdirSync(outside)
+    if (kind === 'directory') {
+      fs.rmSync(f.paths.high, { recursive: true }); fs.symlinkSync(outside, f.paths.high)
+      fs.writeFileSync(path.join(outside, 'Page_001.jpg'), 'unrelated file')
+    } else {
+      const referent = path.join(outside, 'source'); fs.writeFileSync(referent, 'unrelated source')
+      fs.unlinkSync(f.files[0].source); fs.symlinkSync(referent, f.files[0].source)
+    }
+    await assert.rejects(publish(f), /symlink|regular file/)
+    assert.equal(fs.readFileSync(path.join(outside, kind === 'directory' ? 'Page_001.jpg' : 'source'), 'utf8'), kind === 'directory' ? 'unrelated file' : 'unrelated source')
+    assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+  })
+})
+
+test('another process cannot publish or recover while publication holds the album lock', async (t) => {
+  const f = await fixture(t), link = fs.promises.link.bind(fs.promises)
+  let release, entered
+  const paused = new Promise((resolve) => { release = resolve }), ready = new Promise((resolve) => { entered = resolve })
+  t.mock.method(fs.promises, 'link', async (from, to) => {
+    if (to === f.targets[0]) { entered(); await paused }
+    return link(from, to)
+  })
+  const work = publish(f)
+  try {
+    await ready
+    const script = `require(${JSON.stringify(require.resolve('../lib/delivery_transaction'))}).recoverDeliveries(${JSON.stringify(f.paths)}, {albumFile:${JSON.stringify(f.albumFile)}}).then(() => process.exit(2), (e) => {console.error(e.message); process.exit(3)})`
+    await assert.rejects(runFile(process.execPath, ['-e', script]), (error) => error.code === 3 && /already in progress/.test(error.stderr))
+    await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /already in progress/)
+  } finally { release(); await work }
+  assertNext(f); assertClean(f)
+})
+
+test('a prepared stage without a journal is preserved and cannot affect delivered files', async (t) => {
+  const f = await fixture(t)
+  const result = await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assert.deepEqual(result.recovered, [])
+  assert.deepEqual(result.orphanStages, [f.stage])
+  assertPrevious(f)
+  assert.ok(fs.existsSync(f.files[0].source))
+})
+
+test('competing restarted processes cannot unlink a newly acquired lock while reclaiming stale ownership', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  const script = `require(${JSON.stringify(require.resolve('../lib/delivery_transaction'))}).recoverDeliveries(${JSON.stringify(f.paths)}, {albumFile:${JSON.stringify(f.albumFile)}}).then(() => process.exit(0), (e) => {console.error(e.message); process.exit(3)})`
+  const results = await Promise.allSettled(Array.from({ length: 6 }, () => runFile(process.execPath, ['-e', script], { timeout: 15000 })))
+  assert.ok(results.some((result) => result.status === 'fulfilled'))
+  for (const result of results) if (result.status === 'rejected') {
+    assert.equal(result.reason.code, 3)
+    assert.match(result.reason.stderr, /already in progress/)
+  }
+  assertPrevious(f); assertClean(f)
+})
+
+test('an interrupted lock reclamation fails closed and preserves its guard without publishing', async (t) => {
+  const f = await fixture(t), guard = path.join(path.dirname(f.paths.cache), '.delivery.recovery.lock')
+  fs.writeFileSync(guard, 'interrupted recovery guard')
+  const error = await publish(f).then(() => assert.fail('the interrupted guard must block publication'), (e) => e)
+  assert.equal(error.recoveryLock, guard)
+  assert.equal(fs.readFileSync(guard, 'utf8'), 'interrupted recovery guard')
+  assertPrevious(f)
+  assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+})
+
+test('a real SIGKILL during stale-lock reclamation preserves the guard and all delivery recovery data', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  await killedAt(f, 'reclaim-guard', 'recover')
+  const guard = path.join(path.dirname(f.paths.cache), '.delivery.recovery.lock')
+  const bytes = fs.readFileSync(guard)
+  const error = await recoverDeliveries(f.paths, { albumFile: f.albumFile }).then(() => assert.fail('interrupted reclamation must fail closed'), (e) => e)
+  assert.equal(error.recoveryLock, guard)
+  assert.deepEqual(fs.readFileSync(guard), bytes)
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'next delivery 0')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+  fs.renameSync(guard, path.join(f.root, 'preserved-recovery-guard'))
+  await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assertPrevious(f); assertClean(f)
+})
+
+test('an edited reclamation guard cannot be removed as if it were still process-owned', async (t) => {
+  const f = await fixture(t)
+  await killedAt(f, 'new-link')
+  const open = fs.promises.open.bind(fs.promises), metadata = path.dirname(f.paths.cache), guard = path.join(metadata, '.delivery.recovery.lock')
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (file === path.join(metadata, '.delivery.lock') && args[0] === 'wx') {
+      const write = handle.writeFile.bind(handle)
+      t.mock.method(handle, 'writeFile', async (...values) => { await write(...values); fs.writeFileSync(guard, 'externally changed guard') })
+    }
+    return handle
+  })
+  await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /Invalid delivery lock/)
+  assert.equal(fs.readFileSync(guard, 'utf8'), 'externally changed guard')
+  assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'next delivery 0')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+})
+
+test('publication lock cleanup errors retain committed status and a later call clears its own stale owner', async (t) => {
+  const f = await fixture(t), lock = path.join(path.dirname(f.paths.cache), '.delivery.lock'), unlink = fs.promises.unlink.bind(fs.promises)
+  t.mock.method(fs.promises, 'unlink', async (file) => {
+    if (file === lock) throw Object.assign(new Error('lock cleanup refused'), { code: 'EIO' })
+    return unlink(file)
+  })
+  const error = await publish(f).then(() => assert.fail('lock cleanup must fail'), (e) => e)
+  assert.equal(error.deliveryCommitted, true)
+  assert.equal(error.recoveryLock, lock)
+  assertNext(f)
+  t.mock.restoreAll()
+  await recoverDeliveries(f.paths, { albumFile: f.albumFile })
+  assertNext(f); assertClean(f)
+})
+
+test('unsupported directory synchronization is a best-effort fallback while files are flushed', async (t) => {
+  const f = await fixture(t), open = fs.promises.open.bind(fs.promises)
+  let count = 0
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if ((await handle.stat()).isDirectory()) t.mock.method(handle, 'sync', async () => { count++; throw Object.assign(new Error('directory fsync unavailable'), { code: 'EINVAL' }) })
+    return handle
+  })
+  await publish(f)
+  assert.ok(count > 10)
+  assertNext(f); assertClean(f)
+})

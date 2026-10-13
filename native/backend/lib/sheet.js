@@ -14,6 +14,7 @@
 
 const { PhotoCraftSession } = require('./photocraft')
 const { addOverlays, applyLayerEdits } = require('./parity')
+const { printSettings, printCanvas } = require('./print_settings')
 
 /** Pixels kept beyond what the frame needs, so the photo can be re-cropped later. */
 const HEADROOM = 1.25
@@ -133,7 +134,16 @@ async function buildSheet(pc, job) {
   try {
     // Template overrides from the spread editor go first: a moved frame takes its photo along.
     warnings.push(...(await applyLayerEdits(pc, job.template, job.layerEdits)))
-    const doc = await pc.call('doc.inspect', {})
+    let doc = await pc.call('doc.inspect', {})
+    if (job.printSettings) {
+      const settings = printSettings(job.printSettings)
+      const target = printCanvas(doc.width, doc.height, settings)
+      // Resize template geometry before measuring frames and sampling originals. Upsampling
+      // the finished composite would keep the old downsampled photo detail.
+      await pc.run('image.imageSize', { width: target.width, height: target.height, resolution: settings.ppi, resample: target.width === doc.width && target.height === doc.height ? 'none' : 'bicubic' })
+      doc = await pc.call('doc.inspect', {})
+      if (doc.width !== target.width || doc.height !== target.height) throw new Error('The engine did not produce the requested print canvas.')
+    }
     const { pairs, frames, unplaced } = pairFrames(doc.layers, job.photos)
     if (unplaced) warnings.push(`${unplaced} photo(s) had no matching frame (template has ${frames.h} H and ${frames.v} V frames)`)
     for (const { frame, photo } of pairs) {

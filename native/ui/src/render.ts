@@ -4,6 +4,7 @@
 import { batch, computed, effect, signal } from '@preact/signals'
 import { call, onEvent } from './bridge'
 import { plural } from './format'
+import { exportSettings } from './exporting'
 import { album, assetVersion, currentSpread, openAlbumQuietly, toast } from './state'
 
 export type SheetState = 'current' | 'stale' | 'missing' | 'blocked'
@@ -28,14 +29,18 @@ export const planError = signal<string | null>(null)
 export const job = signal<Job | null>(null)
 export const running = computed(() => !!job.value && !job.value.finished)
 
+let planRequest = 0
 export async function loadPlan() {
   const a = album.value
-  if (!a) return
+  const request = ++planRequest, settings = { ...exportSettings.value }
+  plan.value = null
   planError.value = null
+  if (!a) return
   try {
-    plan.value = await call<Plan>('render.plan', { album: a.path })
+    const result = await call<Plan>('render.plan', { album: a.path, ...settings })
+    if (request === planRequest && album.value?.path === a.path) plan.value = result
   } catch (e) {
-    planError.value = (e as Error).message
+    if (request === planRequest && album.value?.path === a.path) planError.value = (e as Error).message
   }
 }
 
@@ -44,7 +49,7 @@ export async function startRender(spreads: number[] | null, force = false, overw
   const a = album.value
   if (!a || running.value) return
   try {
-    await call('render.start', { album: a.path, spreads, force, overwriteEdited })
+    await call('render.start', { album: a.path, spreads, force, overwriteEdited, ...exportSettings.value })
   } catch (e) {
     toast('error', (e as Error).message, 8000)
   }
@@ -161,10 +166,14 @@ onEvent('proofs.idle', (d) => {
   if (album.value && (d as { album: string }).album === album.value.path) refreshPlanSoon()
 })
 let planFor: string | null = null
+let planSettings = exportSettings.value
 effect(() => {
   const p = album.value?.path ?? null
-  if (p === planFor) return
+  const settings = exportSettings.value
+  if (p === planFor && settings === planSettings) return
   planFor = p
+  planSettings = settings
+  planRequest++
   plan.value = null
   if (p) refreshPlanSoon()
 })

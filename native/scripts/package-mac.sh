@@ -7,6 +7,8 @@
 # downloaded from nodejs.org once, checked against the pinned SHA-256, and kept in the build cache.
 #
 # Optional:
+#   ALBUM_STUDIO_PACKAGE_PATH   new .app destination. Existing bundles are never replaced;
+#                               choose a new path when Album Studio.app already exists.
 #   ALBUM_STUDIO_NODE_RUNTIME  folder of another official Node.js build (node-vXX-darwin-arm64,
 #                              as unpacked from nodejs.org) to bundle instead; "none" bundles
 #                              nothing and the app uses the Node.js installed on the Mac.
@@ -15,7 +17,8 @@
 #                              Electron app, each Mac supplies its own .env (Album Studio's data
 #                              folder, or the Album Toolkit's), and the app reads it from there.
 #   MACOS_SIGN_IDENTITY        codesign identity; default "-" (ad-hoc, for this Mac). A Developer
-#                              ID identity signs with the hardened runtime, ready to notarise.
+#                              ID identity alone does not prove hardened/notarised distribution;
+#                              the full release procedure and clean-Mac install must be verified.
 #
 # Layout (see apps/album-studio/src/resources.rs, which finds these at run time):
 #   Contents/MacOS/album-studio                 the app (window, editor, web interface)
@@ -31,8 +34,19 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 NATIVE="$ROOT/native"
 OUT="$NATIVE/dist"
-APP="$OUT/Album Studio.app"
+FINAL_APP="${ALBUM_STUDIO_PACKAGE_PATH:-$OUT/Album Studio.app}"
+FINAL_APP=$(node -e 'console.log(require("path").resolve(process.argv[1]))' "$FINAL_APP")
+if [ -e "$FINAL_APP" ] || [ -L "$FINAL_APP" ]; then
+  print "Existing bundle preserved: $FINAL_APP" >&2
+  print "Set ALBUM_STUDIO_PACKAGE_PATH to a new .app path before building." >&2
+  exit 1
+fi
+mkdir -p "$(dirname "$FINAL_APP")"
+STAGE=$(mktemp -d "$(dirname "$FINAL_APP")/.album-studio-stage.XXXXXX")
+APP="$STAGE/$(basename "$FINAL_APP")"
 RES="$APP/Contents/Resources"
+# A failed build stays reviewable in staging. Nothing deletes a previous customer app.
+trap 'result_code=$?; if [ "$result_code" -ne 0 ]; then print "Build failed; staging preserved at $STAGE" >&2; fi' EXIT
 IDENTITY="${MACOS_SIGN_IDENTITY:--}"
 export PATH="$HOME/.cargo/bin:$PATH"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$HOME/Library/Caches/AlbumStudioBuild/target}"
@@ -45,18 +59,18 @@ SHA=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)
 step() { print -P "%F{blue}▸%f $1" }
 
 step "Shell and engine (release build)"
-(cd "$NATIVE/photocraft" && cargo build --release --locked -p album-studio -p photocraft-cli)
+node "$NATIVE/scripts/engine.mjs" build --target-dir "$CARGO_TARGET_DIR"
 
 step "Interface"
 (cd "$NATIVE/ui" && node build.mjs >/dev/null)
 
 step "Bundle"
-rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$RES/bin" "$RES/ui/dist" "$RES/app" "$RES/licenses"
 cp "$CARGO_TARGET_DIR/release/album-studio" "$APP/Contents/MacOS/album-studio"
 cp "$CARGO_TARGET_DIR/release/photocraft-cli" "$RES/bin/photocraft-cli"
 cp "$NATIVE/ui/index.html" "$RES/ui/"
 cp "$NATIVE/ui/dist/app.js" "$NATIVE/ui/dist/app.css" "$RES/ui/dist/"
+cp "$NATIVE/scripts/engine/pin.json" "$RES/engine-pin.json"
 [ -f "$NATIVE/ui/dist/app.js.LEGAL.txt" ] && cp "$NATIVE/ui/dist/app.js.LEGAL.txt" "$RES/licenses/interface-bundled-code.txt"
 
 # The helper, the shared modules it uses and its packages (see collect-backend.mjs).
@@ -116,7 +130,7 @@ cp "$NATIVE/photocraft/assets/icons/LICENSE-lucide.txt" "$RES/licenses/photocraf
 for p in preact @preact/signals lucide-preact; do
   [ -f "$NATIVE/ui/node_modules/$p/LICENSE" ] && cp "$NATIVE/ui/node_modules/$p/LICENSE" "$RES/licenses/npm-${p//\//-}-LICENSE.txt"
 done
-(cd "$NATIVE/photocraft" && cargo metadata --format-version 1 --locked 2>/dev/null) | node -e "
+(cd "$NATIVE/photocraft" && cargo metadata --format-version 1 --locked --features heif 2>/dev/null) | node -e "
 let s=''; process.stdin.on('data', d => s += d).on('end', () => {
   const m = JSON.parse(s); const rows = m.packages.filter(p => p.source).map(p => p.name + ' ' + p.version + ' — ' + (p.license || 'see the crate'))
   console.log('Rust crates in Album Studio and the PhotoCraft engine, with their licences:\n\n' + [...new Set(rows)].sort().join('\n'))
@@ -162,4 +176,7 @@ fi
 codesign --force --sign "$IDENTITY" "$APP"
 codesign --verify --strict --verbose=1 "$APP" 2>&1 | tail -1
 
-step "Done: $APP ($(du -sh "$APP" | cut -f1))"
+step "Publish completed bundle"
+node "$NATIVE/scripts/publish-new-directory.mjs" "$APP" "$FINAL_APP"
+rmdir "$STAGE"
+step "Done: $FINAL_APP ($(du -sh "$FINAL_APP" | cut -f1))"

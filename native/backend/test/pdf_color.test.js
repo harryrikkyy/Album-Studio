@@ -75,9 +75,8 @@ test('ICC APP2 chunks are reconstructed by their declared sequence, including re
 test('grey and CMYK profiles use matching ICCBased channel counts', async () => {
   const dir = tmpdir()
   const grey = await image().toColourspace('b-w').jpeg().toBuffer()
-  // A structural ICC fixture isolates channel validation; rendering this fixture is not asserted.
-  const greyProfile = Buffer.alloc(132)
-  greyProfile.writeUInt32BE(132); greyProfile.write('GRAY', 16); greyProfile.write('XYZ ', 20); greyProfile.write('acsp', 36)
+  // Portable original gamma/XYZ profile generated from the public ICC tag definitions.
+  const greyProfile = require('./color_edge_fixtures').grayGammaProfile()
   const cmyk = await jpeg('cmyk'), cmykProfile = (await sharp(cmyk).metadata()).icc
   const sources = [tagged(grey, [app2(greyProfile, 1, 1)]), cmyk]
   const pages = sources.map((bytes, i) => { const file = path.join(dir, `${i}.jpg`); fs.writeFileSync(file, bytes); return { path: file } })

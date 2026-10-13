@@ -8,7 +8,7 @@
 const fs = require('fs')
 const crypto = require('crypto')
 const { jpegSizeFromBuffer } = require('./jpeg_size')
-const { validateProfile } = require('./color')
+const { validateProfile, assertProfileUsable } = require('./color')
 
 /** Validate JPEG markers before handing binary bytes to PDF's decoder; gather ICC APP2 chunks. */
 function jpegInfo(buf) {
@@ -106,6 +106,7 @@ async function writeJpegPdf(file, pages, opts = {}) {
       const alternate = comps === 1 ? '/DeviceGray' : comps === 4 ? '/DeviceCMYK' : '/DeviceRGB'
       let space = alternate
       if (size.profile) {
+        await assertProfileUsable(size.profile)
         const hash = crypto.createHash('sha256').update(size.profile).digest('hex')
         if (!profiles.has(hash)) {
           const id = count++

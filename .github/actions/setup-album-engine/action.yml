@@ -1,0 +1,25 @@
+name: Set up pinned Album Studio engine
+description: Reconstruct the exact fork and install the declared Rust compiler without signing credentials.
+runs:
+  using: composite
+  steps:
+    - name: Reconstruct pinned source
+      shell: bash
+      run: node native/scripts/engine.mjs setup
+    - name: Select exact toolchain and build provenance
+      shell: bash
+      run: |
+        toolchain=$(node -e 'console.log(require("./native/scripts/engine/pin.json").rustToolchain)')
+        engine_sha=$(node -e 'console.log(require("./native/scripts/engine/pin.json").commit)')
+        source_date=$(node -e 'console.log(require("./native/scripts/engine/pin.json").sourceDate)')
+        rustup toolchain install "$toolchain" --profile minimal --component clippy --component rustfmt
+        rustup override set "$toolchain"
+        {
+          echo "PHOTOCRAFT_BUILD_SHA=$engine_sha"
+          echo "PHOTOCRAFT_BUILD_DATE=$source_date"
+          echo "CARGO_INCREMENTAL=0"
+          echo "CARGO_BUILD_JOBS=2"
+          echo "CARGO_PROFILE_DEV_DEBUG=0"
+          echo "CARGO_PROFILE_TEST_DEBUG=0"
+        } >> "$GITHUB_ENV"
+        node native/scripts/engine.mjs check

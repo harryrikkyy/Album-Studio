@@ -199,7 +199,8 @@ async function changeOutputFolder(current: string | undefined) {
 export function Deliver() {
   const a = album.value!
   const [selected, setSelected] = useState<Set<number>>(new Set())
-  useEffect(() => { void loadPlan(); void loadExportPlan() }, [a])
+  const settings = exportSettings.value
+  useEffect(() => { void loadPlan(); void loadExportPlan() }, [a, settings])
   // A render that finishes changes what can be exported.
   useEffect(() => { if (job.value?.finished) void loadExportPlan() }, [job.value?.finished])
   const p = plan.value

@@ -109,4 +109,133 @@ Recovery checkpoint is committed only on `codex/album-quality-improvement`; no m
 
 Implementation source checkpoint: `d235d1ca1dd8a4faab97e388bdcfb0c9e8430ede`. The evidence follow-up explicitly includes diagnostic `.log` files, which the repository normally ignores. Source and artifact SHA-256 records still match. Root user folders remain untracked and unchanged.
 
+## Iteration 2 — resume verified checkpoint; production colour, print rendering and restart recovery
+
+The previous goal turn made concrete progress. This continuation verified both committed
+checkpoints (`d235d1c`, `a4fa791`), the saved source/artifact hashes, current Git state and the
+unchanged engine before continuing. It did not restart the original audit. The only initial
+root untracked folders were the preserved audit and `invoice-template/`.
+
+### Diagnosed, implemented and reviewed
+
+- Semantic ICC mutations (invalid PCS/version/profile class/TRC function) reproduced silently
+  unchanged values labelled sRGB. Headers/tags/curves and a bounded, cached native transform
+  probe now reject those failures. Valid independently authored Adobe-RGB-compatible v2/v4
+  matrix/TRC and LUT profiles pass separate source-container oracles. The fixture is not a
+  copied or certified vendor profile.
+- Native CMYK conversion through the engine differed from direct-ink TIFF under matched
+  perceptual intent. Delivery now decodes actual PSD/PSB ink planes within strict bounds, for
+  both depths and raw/RLE/ZIP/ZIP-prediction, and converts tagged TIFF samples through the same
+  source policy as RGB. Unknown inks, missing profiles/composites, truncation and decompression
+  overflow fail recoverably. Review found a fifth plane was assumed to be transparency without
+  its declaration; that assumption was removed and the positive alpha fixture corrected to
+  contain the required negative layer count. These tests do not certify engine CMYK editing.
+- Sheets and template backdrops now share verified original-pixel handling. Real black and
+  declared missing RGB composites are handled explicitly. Template edge regressions failed
+  0/6 against the checkpoint implementation and pass 6/6 after repair. Review found ag-psd
+  could decode a layerless 16-bit composite despite the requested skip, swapping bytes in
+  place before a second decode. Metadata parsing now avoids that second read. Framed CMYK and
+  high-depth template masks are explicitly unsupported with recovery instructions; full
+  template/camera corpora and independent PDF rendering remain open.
+- Rendering and delivery share print settings. Template geometry is resized before originals
+  are embedded, and preflight computes the embedding limit against scaled frames before
+  clamping to original detail. A real 600×300 output is verified from a 200×100 template,
+  including frame geometry, original smart-object sample dimensions, pixel placement and
+  decoration. Higher requested resolution invalidates plans; adequate larger owned sheets
+  remain preserved. Insufficient originals and unreasonable canvas requests fail before
+  publication. The 64 Mi-pixel cap is a safety policy, not a hardware performance result.
+- Delivery publication is a durable journal of the JPEG/PDF set and next ownership cache,
+  with flushed fingerprints, exclusive installation, restart reconciliation and process
+  locking. Real SIGKILL tests exercise pending/committed publication, rollback and cleanup;
+  competing stale-lock recovery is serialized. Cancellation and ENOSPC restore the old set.
+  External edits, malformed paths/journals and recovery conflicts are retained. New delivery
+  digests catch preserved-size/timestamp JPEG edits; legacy stamp-only records remain weaker.
+  Recovery is invoked before plans trust cached output. Committed cleanup errors are surfaced
+  without falsely claiming rollback. Physical-drive/power-loss guarantees remain unverified.
+- Queued edit/undo/redo requests capture their album at enqueue time and copy edit operations.
+  Three album-switch/failure regressions fail before the fix and pass afterwards. Late render
+  plans cannot replace a newer album/settings plan. Actual native interaction is unverified.
+- The exact eleven-commit engine fork is preserved in a checksum-pinned incremental Git
+  bundle with its upstream prerequisite, Cargo.lock, compiler and provenance. Anonymous fresh
+  reconstruction and a separate-target cold release engine/shell build completed. A fresh
+  provenance-tagged CLI runs the application gate with zero permitted skips. Setup never
+  resets an existing checkout. Packaging uses staging and atomic no-replace publication,
+  preserving even an empty existing destination. CI defines native workspace, adversarial,
+  formatting, Clippy, layering and real-file corpus gates. Hosted execution and full root
+  packaging/install were not verified. The `block 0.1.6` future-compiler incompatibility is
+  recorded rather than suppressed.
+
+### Final verification
+
+Final strict application gate: **273 shared + 307 helper + 33 interface = 613 passed**;
+zero failures, skips or cancellations. It uses the freshly reconstructed pinned CLI, not the
+old installed app. Shared/helper source coverage: 580 passing tests. Key source line/branch
+coverage: colour 96.20/82.78, delivery transaction 98.76/89.13, delivery 99.01/87.10,
+print settings 100/93.75, preflight 100/91.36, render 98.04/70.00. Gaps remain in RAW
+(65% lines), shared proof renderer (48.46% lines), interface/native coverage and real corpora.
+The aggregate coverage table includes tests and is not a product coverage score.
+
+Lint: zero errors/warnings. Shared/interface types and interface production build pass
+(167.2 KB JS, 54.5 KB CSS). Static backend collection contains 49 runtime files and 10
+installed packages, including both new helpers. Script syntax/source whitespace checks pass.
+The 96-test unchanged native baseline is retained as earlier evidence, not relabelled a fresh
+whole-workspace run. The dependency lockfiles are unchanged from the prior zero-advisory npm
+reports; Rust advisory and hosted/full native gates remain unverified.
+
+Exact logs, failing-before artifacts, source/artifact hashes and test scopes are preserved in
+`docs/quality/2026-10-13-iteration-2/verification.json`. Earlier checkpoint evidence remains
+unchanged. `RECOVERY_AND_VERIFICATION.md` and `ENGINE_PIN_AND_CI.md` describe supported paths,
+limitations and executable restart procedures.
+
+### All nine categories reassessed under the unchanged rubric
+
+| Category | Iteration 1 /10 | Iteration 2 /10 |
+|---|---:|---:|
+| Architecture | 6.5 | 6.5 |
+| UI and workflow | 4.5 | 4.5 |
+| Testing | 5.0 | 5.0 |
+| Performance and scalability | 1.5 | 1.5 |
+| Data integrity and recovery | 6.5 | 6.5 |
+| Documentation | 4.5 | 4.5 |
+| Security and licensing | 4.0 | 4.0 |
+| Print and delivery correctness | 4.0 | 4.0 |
+| Build and distribution | 2.5 | 4.0 |
+
+Build gains ten verified points for the exact dependency pin and five partial points for fresh
+engine/shell reconstruction/build; fresh root packaging and installation still lack evidence.
+Every other criterion retains its prior points. Stronger evidence within a partial criterion
+does not make it complete. Architecture still lacks complete runtime contracts/invalidation;
+UI lacks native accessibility/relink/scale workflows; testing lacks independent review and
+full CI/corpus/GUI coverage; performance lacks realistic hardware measurements; data lacks
+strong source freshness and whole-app durable/cross-process isolation; documentation lacks
+verified customer/release procedures; security lacks issuer/rules/device-bound migration;
+print lacks complete source/layer/corpus/lab proof; build lacks signed/notarised installation.
+No category is certified and the mission is not complete.
+
+### Precise execution limit and next executable steps
+
+Live agent inventory confirms all three review workers terminal with **"You've hit your usage
+limit"**, reporting retry at **"6:20 PM"** without a date/timezone. The parent completed the
+already drafted integrations and final verification, but a second-agent review of the final
+diff did not finish. This is the actual execution limit for this checkpoint; no review is
+claimed complete and no live check is still awaited. The goal remains active.
+
+The highest unresolved production defect is **source/render freshness still using size and
+time**: originals, templates, sheets and RAW/thumbnail/adjustment caches can miss content
+changes preserving those values. Next: add failing preserved-stamp source/sheet regressions,
+introduce bounded content evidence across those caches, and define conservative compatibility
+for old manual/unknown sheets without overwriting or retrospectively claiming ownership.
+Then independently review decoder/transaction/setup/UI changes, add whole-app cross-process
+leases and durable project/render/cache publication, complete framed high-depth/CMYK and PDF
+oracles, relink/ambiguity UI, accessibility and realistic distinct-photo benchmarks.
+
+Restart by verifying Git HEAD/branch plus the new manifest hashes, checking the engine pin,
+and running the no-skip gate with a freshly built tagged CLI. Do not repeat the old audit or
+count the previous app bundle as current. Run hosted/native workspace/Clippy/layering/corpus
+and a new staged package when execution capacity permits; preserve existing bundles. External
+dependencies remain the authorised lab spec/printed sample, approved GUI/accessibility session,
+issuer/Firestore test environment and customer migration, physical-drive/power-loss testing,
+Developer ID/notarisation access and a clean customer Mac. These remain unverified requirements.
+Root user folders and the engine's three existing `.DS_Store` files remain untouched.
+
 Diagnostic stdout logs retain their original trailing whitespace; only those raw evidence logs are excluded from the source whitespace check. Their recorded checksums are verified without normalisation.

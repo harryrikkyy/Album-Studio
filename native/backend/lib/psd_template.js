@@ -3,9 +3,8 @@
 // cached. Read with ag-psd once per template (about 0.1–0.3 s); afterwards it comes from the cache.
 //
 // The PSD's stored composite is what Photoshop drew, layer styles included, so it is a far better
-// backdrop than the collection's 600 px preview images. Files saved without "Maximize
-// Compatibility" store a blank composite; those report `backdrop: null` and callers fall back to
-// the preview image.
+// backdrop than the collection's 600 px preview images. Declared missing RGB composites are
+// rendered by the engine; unsupported source colour fails with an actionable recovery message.
 //
 // In the sheet, each photo is clipped to its frame layer. So a frame's mask here is the frame's
 // own shape (its pixels and its layer mask), times the layer's opacity, minus the frame's inside
@@ -17,9 +16,9 @@
 const fs = require('fs')
 const path = require('path')
 const { cacheRoot, fileKey, writeAtomic } = require('./cache')
-const { profiledRgba, psdProfile } = require('./color')
+const { psdPixels } = require('./color')
 
-const SCHEMA = 4
+const SCHEMA = 5
 /** Above this, layer pixels aren't decoded: frames are drawn as rectangles. */
 const DECODE_BUDGET = 900 * 1024 * 1024
 
@@ -214,12 +213,18 @@ async function templateArt(psdPath, maxEdge = 2400) {
     } catch (_) { /* not cached yet */ }
     const ag = getAgPsd()
     const buf = await fs.promises.readFile(psdPath)
-    const profile = psdProfile(buf)
-    const outline = ag.readPsd(buf, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
-    const withPixels = decodeEstimate(outline) <= DECODE_BUDGET
-    const psd = ag.readPsd(buf, { skipLayerImageData: !withPixels, skipCompositeImageData: false, skipThumbnail: true, useImageData: true })
+    const cmyk = buf.length >= 26 && buf.readUInt16BE(24) === 4
+    // ag-psd refuses CMYK at its header before metadata parsing. Only the colour-mode
+    // header in this private metadata copy is substituted; no colour samples are read here.
+    const metadata = cmyk ? Buffer.from(buf) : buf
+    if (cmyk) metadata.writeUInt16BE(3, 24)
+    const outline = ag.readPsd(metadata, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
+    const withPixels = !cmyk && outline.bitsPerChannel === 8 && !!outline.children?.length && decodeEstimate(outline) <= DECODE_BUDGET
+    const psd = withPixels ? ag.readPsd(metadata, { skipLayerImageData: false, skipCompositeImageData: true, skipThumbnail: true, useImageData: true }) : outline
     const { scale } = proofDims(psd.width, psd.height, maxEdge)
     const frames = collectFrames(psd.children)
+    if (cmyk && frames.length) throw new Error('CMYK template frame masks cannot yet be verified. Convert and save the template as RGB before using it for album proofs.')
+    if (outline.bitsPerChannel !== 8 && frames.length) throw new Error('High-depth template frame masks cannot yet be verified. Convert and save the template as 8-bit RGB before using it for album proofs.')
     for (const f of frames) {
       if (f.hidden) continue
       const file = path.join(dir, `mask-${maxEdge}-${f.z}.png`)
@@ -228,23 +233,18 @@ async function templateArt(psdPath, maxEdge = 2400) {
       if (made === 'stroke') f.stroke.revealed = true
     }
     const art = { schema: SCHEMA, width: psd.width, height: psd.height, scale, frames, backdrop: null }
-    const img = psd.imageData
-    if (img && psd.bitsPerChannel === 8 && img.data && img.data.length === img.width * img.height * 4) {
+    const source = await psdPixels(psdPath, { buffer: buf })
+    {
       const sharp = getSharp()
-      const pixels = Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length)
-      const source = profile && psd.colorMode === 3 ? await profiledRgba(pixels, img.width, img.height, profile) : { input: pixels, raw: { width: img.width, height: img.height, channels: 4 } }
       try {
-        const jpeg = await sharp(source.input, source.raw ? { raw: source.raw } : {})
+        const jpeg = await sharp(source.input, { ...(source.raw ? { raw: source.raw } : {}), failOn: 'warning' })
           .withIccProfile('srgb')
-          .resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)), { fit: 'fill' })
+          .resize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)), { fit: 'fill' })
           .flatten({ background: '#ffffff' })
           .jpeg({ quality: 90, mozjpeg: true })
           .toBuffer()
-        const stats = await sharp(jpeg).stats()
-        if (stats.channels.some((c) => c.stdev > 0.5)) {
-          art.backdrop = path.join(dir, `backdrop-${maxEdge}.jpg`)
-          await writeAtomic(art.backdrop, jpeg)
-        }
+        art.backdrop = path.join(dir, `backdrop-${maxEdge}.jpg`)
+        await writeAtomic(art.backdrop, jpeg)
       } finally { if (source.cleanup) await source.cleanup() }
     }
     await writeAtomic(infoFile, JSON.stringify(art))

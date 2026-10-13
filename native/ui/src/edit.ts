@@ -4,6 +4,7 @@
 
 import { batch, effect, signal } from '@preact/signals'
 import { call, fileUrl, onEvent } from './bridge'
+import { albumQueue } from './album_queue'
 import { templateLabel } from './format'
 import { describeSlots, changedSpreads, type Template } from './plan_logic'
 import { album, assetVersion, spreadIndex, stored, store, toast } from './state'
@@ -59,31 +60,25 @@ function apply(prev: Album, r: UpdateResult) {
   })
 }
 
-let chain: Promise<unknown> = Promise.resolve()
-
 /** Run after every earlier edit, so edits apply in the order they were made. */
-function queued<T>(fn: () => Promise<T>): Promise<T> {
-  const next = chain.then(fn, fn)
-  chain = next.catch(() => {})
-  return next
-}
+const queued = albumQueue<Album>(() => album.value)
 
 /**
  * Change the album. All `ops` are one undo step. Resolves with the helper's report, or null when
  * the edit failed (the reason is shown to the user).
  */
 export function edit(ops: Op[]): Promise<Report | null> {
-  return queued(async () => {
-    const a = album.value
-    if (!a || !ops.length) return null
+  if (!ops.length) return Promise.resolve(null)
+  const requested = structuredClone(ops)
+  return queued(async (a) => {
     editing.value++
     try {
-      const r = await call<UpdateResult>('album.update', { album: a.path, ops })
+      const r = await call<UpdateResult>('album.update', { album: a.path, ops: requested })
       apply(a, r)
-      explain(r.report)
+      if (album.value?.path === a.path) explain(r.report)
       return r.report ?? {}
     } catch (e) {
-      toast('error', (e as Error).message, 8000)
+      toast('error', `${album.value?.path === a.path ? '' : `${a.name}: `}${(e as Error).message}`, 8000)
       return null
     } finally {
       editing.value--
@@ -105,16 +100,14 @@ export function undo() { return step('album.undo', 'Nothing to undo.') }
 export function redo() { return step('album.redo', 'Nothing to redo.') }
 
 function step(method: string, nothing: string) {
-  return queued(async () => {
-    const a = album.value
-    if (!a) return
+  return queued(async (a) => {
     editing.value++
     try {
       const r = await call<UpdateResult>(method, { album: a.path })
-      if (r.changed === false) toast('info', nothing, 2500)
+      if (r.changed === false && album.value?.path === a.path) toast('info', nothing, 2500)
       apply(a, r)
     } catch (e) {
-      toast('error', (e as Error).message, 8000)
+      toast('error', `${album.value?.path === a.path ? '' : `${a.name}: `}${(e as Error).message}`, 8000)
     } finally {
       editing.value--
     }

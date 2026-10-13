@@ -22,6 +22,7 @@ const { migrateAlbum } = require('./project')
 const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
 const { preflightAlbum } = require('./preflight')
+const { printSettings, meetsPrintResolution } = require('./print_settings')
 
 /** Bump when the way sheets are built changes, so old caches don't hide the change. */
 const BUILDER_VERSION = 'photocraft-0.6.0/sheet-1'
@@ -81,6 +82,7 @@ function unsupportedEdits(spread, ws) {
  */
 async function startRender(p, { emit }) {
   if (!p.album) throw new Error('missing `album`')
+  const settings = printSettings(p)
   const lease = reserveJob('render', p.album)
   try {
     const album = await migrateAlbum({ album: p.album })
@@ -96,7 +98,7 @@ async function startRender(p, { emit }) {
     emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
     void (async () => {
       let results = [], error = null
-      try { results = await runJob(job, { album, ws, spreads, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
+      try { results = await runJob(job, { album, ws, spreads, settings, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
       catch (e) { error = e.message; job.failed = Math.max(1, job.failed) }
       finally {
         if (current === job) current = null
@@ -108,7 +110,7 @@ async function startRender(p, { emit }) {
   } catch (e) { releaseJob(lease); throw e }
 }
 
-async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit) {
+async function runJob(job, { album, ws, spreads, settings, force, overwriteEdited }, emit) {
   const paths = cachePaths(job.outputFolder)
   const previous = await readRenderCache(job.outputFolder)
   const cache = previous.version === 2 ? previous : { version: 2, spreads: {} }
@@ -140,14 +142,14 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
           results.push({ n: s.n, state: 'skipped', reason: 'edited' })
           continue
         }
-        if (!force && exists && entryHash(record) === hash) {
+        if (!force && exists && entryHash(record) === hash && await meetsPrintResolution(existingPath, settings)) {
           job.skipped++
           report('skipped')
           results.push({ n: s.n, state: 'skipped' })
           continue
         }
         report('preparing')
-        const preflight = await preflightAlbum(album, ws, { size: 'original', heightInches: 12, ppi: 300, phase: 'render' }, [s.n])
+        const preflight = await preflightAlbum(album, ws, { ...settings, phase: 'render' }, [s.n])
         if (preflight.errors.length) throw new Error(preflight.errors.map((e) => e.message).join(' '))
         const previousStamp = await fileStamp(outPsd)
         if (previousStamp !== 'missing' && existingPath !== outPsd) throw new Error(`An unowned sheet exists at ${outPsd}. Preserve it before rendering.`)
@@ -175,6 +177,7 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
           overlays: (ws.pageOverlays || {})[s.n] || null,
           outPsd: stagedPsd,
           outJpg: preview,
+          printSettings: settings,
         })
         if (built.warnings.length) throw new Error(`Sheet construction left edits or photos unapplied: ${built.warnings.join('; ')}`)
         if (await spreadHash(s, album, ws) !== hash || await fileStamp(outPsd) !== previousStamp) throw new Error('The source files or existing sheet changed during rendering. Retry from the current revision.')
@@ -183,7 +186,7 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
           await fs.promises.copyFile(stagedPsd, outPsd, fs.constants.COPYFILE_EXCL)
           await fs.promises.unlink(stagedPsd)
         } else await fs.promises.rename(stagedPsd, outPsd)
-        cache.spreads[s.id] = { path: outPsd, outputFolder: job.outputFolder, hash, sheet: await fileStamp(outPsd) }
+        cache.spreads[s.id] = { path: outPsd, outputFolder: job.outputFolder, hash, sheet: await fileStamp(outPsd), settings, resolutionEvidence: preflight.info.filter((e) => e.code === 'effective_ppi') }
         await writeCache(paths.file, cache)
         // The sheet's own render becomes the spread's preview in Plan and Review.
         await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
@@ -216,9 +219,10 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
  * sheet yet), or `blocked` (it can't render: no template or no photos, with the reason).
  * `edited`: the sheet was saved from the editor after it was rendered (renders keep it).
  */
-async function renderPlan({ album: albumPath }) {
+async function renderPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
   const album = await migrateAlbum({ album: albumPath })
+  const settings = printSettings(p)
   const data = await readProject(album.file)
   const ws = data.workspace || data
   const outputFolder = outputOf(ws, album.path)
@@ -232,7 +236,8 @@ async function renderPlan({ album: albumPath }) {
     const exists = await fs.promises.access(out).then(() => true, () => false)
     if (!exists) return { n: s.n, state: 'missing' }
     const hash = await spreadHash(s, album, ws)
-    return { n: s.n, id: s.id, state: !record.unverified && entryHash(record) === hash ? 'current' : 'stale', edited: !!record.unverified || await editedSince(record, out), unverified: !!record.unverified, unsupported: unsupportedEdits(s, ws) }
+    const resolutionReady = await meetsPrintResolution(out, settings)
+    return { n: s.n, id: s.id, state: !record.unverified && entryHash(record) === hash && resolutionReady ? 'current' : 'stale', reason: resolutionReady ? undefined : 'Render at the configured print resolution', edited: !!record.unverified || await editedSince(record, out), unverified: !!record.unverified, unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
 }

@@ -5,6 +5,7 @@ const path = require('path')
 const { collectFrames } = require('./psd_template')
 const { coverQuad, embedScale } = require('./sheet')
 const { placeable } = require('./raw')
+const { printCanvas } = require('./print_settings')
 const sharp = () => require('../../../src/sharp_config').getSharp()
 let ag
 function decoder() {
@@ -63,6 +64,8 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
       if (![psd.width, psd.height].every((v) => Number.isFinite(v) && v > 0)) throw new Error('Invalid template dimensions.')
     } catch (e) { fail('template_corrupt', `Spread ${sp.n}: ${e.message}`, sp); continue }
     const inches = settings.size === 'original' ? psd.height / settings.ppi : settings.heightInches
+    let canvas
+    try { canvas = printCanvas(psd.width, psd.height, settings) } catch (e) { fail('print_settings_invalid', e.message, sp); continue }
     if (spec && [spec.widthInches, spec.heightInches].every((v) => v > 0) && (Math.abs(inches - spec.heightInches) > 0.001 || Math.abs(inches * psd.width / psd.height - spec.widthInches) > 0.001)) fail('lab_dimensions_mismatch', `Spread ${sp.n}'s delivered dimensions differ from the configured lab dimensions.`, sp)
     const frames = collectFrames(psd.children).map((f) => ({ ...f, node: f.node }))
     const nodes = new Map(), nodeIds = new Map()
@@ -132,7 +135,8 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
         } catch (e) { fail('photo_corrupt', `Spread ${sp.n}: ${photo.base || id} cannot be fully decoded (${e.message}).`, sp); continue }
         const edit = { rotation, ...placement }, transform = coverQuad(f, meta, edit)
         const sourcePpi = psd.height / inches / transform.scale
-        const embeddedPpi = settings.phase === 'export' ? null : sourcePpi * Math.min(1, embedScale(f, meta, edit) * (settings.embeddingScale || 1))
+        const embeddingScale = settings.embeddingScale === undefined ? canvas.scale : settings.embeddingScale
+        const embeddedPpi = settings.phase === 'export' ? null : sourcePpi * embedScale({ w: f.w * embeddingScale, h: f.h * embeddingScale }, meta, edit)
         const effectivePpi = embeddedPpi === null ? sourcePpi : Math.min(sourcePpi, embeddedPpi)
         add('info', 'effective_ppi', `${photo.base || id}: ${effectivePpi.toFixed(1)} effective PPI.`, sp, { photoId: id, sourcePpi, embeddedPpi, effectivePpi })
         if (effectivePpi + 1e-7 < minimum) fail('low_effective_ppi', `Spread ${sp.n}: ${photo.base || id} is below the ${minimum} PPI policy (${effectivePpi.toFixed(1)}).`, sp)

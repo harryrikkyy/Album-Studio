@@ -49,7 +49,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Print canvas/settings and source pixel route are shared across rendering/preflight/delivery/template paths; complete domain invariant contracts remain partial. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "6",
@@ -92,12 +92,13 @@
           "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Shared print settings and pixel decoding reduce divergent rules; typed runtime contracts, complete invalidation and whole-app state isolation remain partial."
     },
     {
       "name": "UI and workflow",
       "historicalScore": 7.5,
-      "baselineVerifiedScore": 4.0,
+      "baselineVerifiedScore": 4,
       "currentScore": 4.5,
       "criteria": [
         {
@@ -122,7 +123,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Persistent spread/sheet ownership and distinct manual-proof reorder regressions pass; actual native workflows and relink UI remain unverified. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Captured-album queued edit/undo/failure regressions pass; actual native workflow remains unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "4",
@@ -130,7 +131,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Delivery recovery errors retain actionable paths, including committed cleanup; native progress/recovery interaction remains unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "5",
@@ -181,13 +182,14 @@
           "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Album-switch queue regressions pass and render plans reject obsolete requests; actual native workflows, focus/accessibility, relink and large grids remain unverified."
     },
     {
       "name": "Testing",
       "historicalScore": 7,
       "baselineVerifiedScore": 3.5,
-      "currentScore": 5.0,
+      "currentScore": 5,
       "criteria": [
         {
           "id": "1",
@@ -235,7 +237,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Expanded valid/semantic ICC, native CMYK 8/16-bit/compression and template pixel oracles pass; real corpus and independent PDF renderer incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "7",
@@ -243,7 +245,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Concurrent starts, late OAuth/refresh, killed rename subprocesses, cancellation, revision changes and ENOSPC publication rollback tested. Cross-process/export power loss unverified. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Real SIGKILL delivery boundaries, rollback/cleanup, competing stale-lock reclamation and cancellation pass; hardware power loss/whole-app cross-process isolation incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "8",
@@ -251,7 +253,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Durable coverage.log has per-source coverage; proof_renderer 48.46% lines and raw.js 65.00%. UI/Rust coverage and enforced thresholds absent. See docs/quality/2026-10-13/verification.json."
+          "evidence": "580 shared/helper coverage tests; retained per-source metrics expose RAW/proof gaps. UI/Rust coverage and enforced thresholds absent. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "9",
@@ -267,10 +269,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Pinned source/real-CLI no-skip gate passes locally. Full hosted CI/workspace/Clippy/layering/corpus definitions have not run here. See docs/quality/2026-10-13-iteration-2/verification.json."
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "613 no-skip application tests and 580 shared/helper coverage tests pass with the reconstructed engine; final independent review, native GUI and full hosted/workspace/corpus gates are incomplete."
     },
     {
       "name": "Performance and scalability",
@@ -359,7 +362,8 @@
           "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "No realistic current hardware benchmarks were added. Safety allocation limits and test durations do not establish throughput, peak memory or UI latency."
     },
     {
       "name": "Data integrity and recovery",
@@ -397,7 +401,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "New JPEG/PDF cache digests catch preserved-stamp edits; source/render/thumbnail/RAW/adjustment caches still use size/time. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "5",
@@ -405,7 +409,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Delivery cache/files are journaled and flushed together. Project/render publication and hardware durability remain incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "6",
@@ -421,7 +425,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Killed publication, rollback and cleanup recover on disposable local fixtures; interrupted reclaim guards and partial-copy conflicts fail closed for manual inspection. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "8",
@@ -437,7 +441,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Delivery publication/recovery has process locking; whole-app render/edit isolation remains incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "10",
@@ -448,12 +452,13 @@
           "evidence": "Legacy migration, undo/redo, initial failed operation, missing/colliding assets, monotonic root registry and spread overlay-history cases covered. See docs/quality/2026-10-13/verification.json."
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Delivery journals, SIGKILL boundary recovery and cross-process publication tests pass. Strong source/render freshness, durable project/render writes and physical-drive/whole-app isolation remain incomplete."
     },
     {
       "name": "Documentation",
       "historicalScore": 5,
-      "baselineVerifiedScore": 3.0,
+      "baselineVerifiedScore": 3,
       "currentScore": 4.5,
       "criteria": [
         {
@@ -470,7 +475,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Exact pin/fresh engine reconstruction commands documented and exercised; full root/customer setup remains incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "3",
@@ -502,7 +507,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Identity, protected legacy sheets, relinking, rename journals and incomplete export recovery documented; UI recovery and hardware verification pending. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Current journal/locks/conflict/manual recovery limitations and executable continuation steps documented; physical-drive and GUI procedures not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "7",
@@ -534,16 +539,17 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "All nine current limitations retained without certification; broad product/customer capability validation remains incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Current decoder, recovery, pin/setup and restart limitations are documented; customer setup, full release procedures, accessibility/performance and real lab compliance lack verification."
     },
     {
       "name": "Security and licensing",
       "historicalScore": 4.5,
-      "baselineVerifiedScore": 2.0,
-      "currentScore": 4.0,
+      "baselineVerifiedScore": 2,
+      "currentScore": 4,
       "criteria": [
         {
           "id": "1",
@@ -626,13 +632,14 @@
           "evidence": "Licensing/rules/runtime/distribution limitations and non-breaking issuer migration steps explicitly documented in recovery guide. See docs/quality/2026-10-13/verification.json."
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Filesystem recovery checks and pinned reconstruction improve partial evidence; legacy HMAC/device-omitting signatures, actual issuer/rules and hardened distribution remain unresolved."
     },
     {
       "name": "Print and delivery correctness",
       "historicalScore": 4,
       "baselineVerifiedScore": 1.5,
-      "currentScore": 4.0,
+      "currentScore": 4,
       "criteria": [
         {
           "id": "1",
@@ -640,7 +647,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "P3/sRGB, flat/transparent tagged RGB, template/backdrop and invalid structural ICC tests pass against independent PNG oracle. Other modes/semantic ICC/fallbacks not certified. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Semantic native transform probes, Adobe-compatible matrix/LUT, native CMYK ink and template oracles pass; full real corpus and high-depth/CMYK template masks remain unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "2",
@@ -656,7 +663,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current Plan hash, exact project snapshot and source/sheet stamps rechecked before publication; preserved-stamp content mutation still needs stronger detection. See docs/quality/2026-10-13/verification.json."
+          "evidence": "JPEG content evidence improved; preserved-stamp source and sheet changes remain unresolved. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "4",
@@ -672,7 +679,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Crop/zoom/rotation/source PPI and actual PSD raster policy checked; render-to-physical-size and per-embedded-layer evidence incomplete. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Render settings resize geometry before embedding; real original smart-object dimensions and placed pixels tested. Actual high-resolution/lab embedded-detail corpus not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "6",
@@ -704,7 +711,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Journaled files+cache, restart rollback/commit cleanup and SIGKILL boundaries tested; instantaneous outside-reader switch and physical power-loss/removable-drive claims not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "10",
@@ -715,21 +722,22 @@
           "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Semantic ICC, native CMYK and template oracles, physical canvas/embedded pixels and recoverable complete export are tested; exact source freshness, full masks/corpora/PDF rendering and actual lab approval remain open."
     },
     {
       "name": "Build and distribution",
       "historicalScore": 4,
       "baselineVerifiedScore": 2.5,
-      "currentScore": 2.5,
+      "currentScore": 4,
       "criteria": [
         {
           "id": "1",
           "criterion": "Exact engine dependency pin",
           "weight": 10,
-          "points": 0,
-          "status": "unverified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "points": 10,
+          "status": "verified",
+          "evidence": "Exact commit, prerequisite, incremental bundle/checksums and Cargo.lock reconstructed and tested. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "2",
@@ -743,9 +751,9 @@
           "id": "3",
           "criterion": "Verified clean checkout build",
           "weight": 10,
-          "points": 0,
-          "status": "unverified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "points": 5,
+          "status": "partial",
+          "evidence": "Fresh reconstructed engine/shell cold build observed; final strict application gate uses its tagged CLI. Full root fresh package/install not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
         },
         {
           "id": "4",
@@ -804,13 +812,17 @@
           "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
         }
       ],
-      "certified": false
+      "certified": false,
+      "assessment": "Exact engine pin is verified by reconstructed source/lock/bundle and real-engine tests. Fresh engine/shell build provides partial clean-build evidence; full root package, hosted gates and signed/notarised installation remain unverified."
     }
   ],
   "latestAssessment": {
     "date": "2026-10-13",
-    "evidence": "docs/quality/2026-10-13/verification.json",
+    "iteration": 2,
+    "evidence": "docs/quality/2026-10-13-iteration-2/verification.json",
     "missionComplete": false,
-    "independentReview": "Interrupted by provider execution limit; not counted as complete."
+    "independentReview": "Interrupted by account execution limit; final parent review and tests completed, second-agent final diff review unverified.",
+    "highestPriority": "Strong source/render and derived-cache freshness for content changes preserving size/time.",
+    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported retry 6:20 PM without date/timezone."
   }
 }
