@@ -18,7 +18,8 @@ the lab and the client. Photoshop isn't needed at any step.
 - **Edit**: the PhotoCraft editor in the same window. Sheets saved there are kept by later
   renders.
 - **Deliver**: renders the print sheets with the PhotoCraft engine, then exports
-  JPEG-High-Res, JPEG-Low-Res and the low-res PDF.
+  JPEG-High-Res, JPEG-Low-Res and the low-res PDF. Delivery checks originals, sheet freshness,
+  frame coverage and resolution; missing or stale pages must be resolved first.
 - **Library**: template collections across albums, browsable by layout.
 - **Tools**:
   - **Lab naming** names an order's sheets the way the print lab wants them.
@@ -38,6 +39,10 @@ the lab and the client. Photoshop isn't needed at any step.
 
 `docs/native-shell/PLAN.md` has the status and what's still open. `docs/DEVELOPMENT.md`
 covers building, running and testing.
+
+The continuing quality work, verified results and unresolved production requirements are in
+[QUALITY_IMPROVEMENT_LOG.md](QUALITY_IMPROVEMENT_LOG.md), with operating and recovery notes in
+[docs/quality/RECOVERY_AND_VERIFICATION.md](docs/quality/RECOVERY_AND_VERIFICATION.md).
 
 ## Quick start
 

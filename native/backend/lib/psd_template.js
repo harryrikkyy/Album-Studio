@@ -17,8 +17,9 @@
 const fs = require('fs')
 const path = require('path')
 const { cacheRoot, fileKey, writeAtomic } = require('./cache')
+const { profiledRgba, psdProfile } = require('./color')
 
-const SCHEMA = 3
+const SCHEMA = 4
 /** Above this, layer pixels aren't decoded: frames are drawn as rectangles. */
 const DECODE_BUDGET = 900 * 1024 * 1024
 
@@ -213,6 +214,7 @@ async function templateArt(psdPath, maxEdge = 2400) {
     } catch (_) { /* not cached yet */ }
     const ag = getAgPsd()
     const buf = await fs.promises.readFile(psdPath)
+    const profile = psdProfile(buf)
     const outline = ag.readPsd(buf, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
     const withPixels = decodeEstimate(outline) <= DECODE_BUDGET
     const psd = ag.readPsd(buf, { skipLayerImageData: !withPixels, skipCompositeImageData: false, skipThumbnail: true, useImageData: true })
@@ -229,16 +231,21 @@ async function templateArt(psdPath, maxEdge = 2400) {
     const img = psd.imageData
     if (img && psd.bitsPerChannel === 8 && img.data && img.data.length === img.width * img.height * 4) {
       const sharp = getSharp()
-      const jpeg = await sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length), { raw: { width: img.width, height: img.height, channels: 4 } })
-        .resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)), { fit: 'fill' })
-        .flatten({ background: '#ffffff' })
-        .jpeg({ quality: 90, mozjpeg: true })
-        .toBuffer()
-      const stats = await sharp(jpeg).stats()
-      if (stats.channels.some((c) => c.stdev > 0.5)) {
-        art.backdrop = path.join(dir, `backdrop-${maxEdge}.jpg`)
-        await writeAtomic(art.backdrop, jpeg)
-      }
+      const pixels = Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length)
+      const source = profile && psd.colorMode === 3 ? await profiledRgba(pixels, img.width, img.height, profile) : { input: pixels, raw: { width: img.width, height: img.height, channels: 4 } }
+      try {
+        const jpeg = await sharp(source.input, source.raw ? { raw: source.raw } : {})
+          .withIccProfile('srgb')
+          .resize(Math.max(1, Math.round(img.width * scale)), Math.max(1, Math.round(img.height * scale)), { fit: 'fill' })
+          .flatten({ background: '#ffffff' })
+          .jpeg({ quality: 90, mozjpeg: true })
+          .toBuffer()
+        const stats = await sharp(jpeg).stats()
+        if (stats.channels.some((c) => c.stdev > 0.5)) {
+          art.backdrop = path.join(dir, `backdrop-${maxEdge}.jpg`)
+          await writeAtomic(art.backdrop, jpeg)
+        }
+      } finally { if (source.cleanup) await source.cleanup() }
     }
     await writeAtomic(infoFile, JSON.stringify(art))
     return art

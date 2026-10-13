@@ -26,6 +26,7 @@ const SESSION_FILE = process.env.CH_SESSION_FILE || path.join(os.homedir(), '.ch
 
 // Refresh a minute early so a token never expires mid-request.
 const EXPIRY_SKEW_MS = 60 * 1000
+const REQUEST_TIMEOUT_MS = 20 * 1000
 
 // ── Pure response mappers (unit-tested) ──────────────────────────────────────
 
@@ -57,38 +58,65 @@ function mapRefreshResponse(r, prevRefresh, prevEmail, now = Date.now()) {
 
 // ── HTTP helpers ─────────────────────────────────────────────────────────────
 
-function httpsPostJson(hostname, urlPath, bodyObj) {
-  const body = JSON.stringify(bodyObj)
+// The deadline covers DNS, connection and the complete response, including a server
+// that opens a socket but never finishes. A session change can abort a refresh sooner.
+function httpsPost(hostname, urlPath, body, contentType, signal) {
   return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname, path: urlPath, method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-    }, (res) => {
-      let d = ''
-      res.on('data', (c) => (d += c))
-      res.on('end', () => { try { resolve(JSON.parse(d)) } catch (_) { reject(new Error('non-JSON response')) } })
-    })
-    req.on('error', reject)
-    req.write(body)
-    req.end()
+    const deadline = AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    const cancellation = signal ? AbortSignal.any([signal, deadline]) : deadline
+    let req
+    let response
+    let finished = false
+    const finish = (error, value) => {
+      if (finished) return
+      finished = true
+      cancellation.removeEventListener('abort', abort)
+      if (error) {
+        req?.destroy(error)
+        response?.destroy(error)
+        reject(error)
+      }
+      else resolve(value)
+    }
+    const abort = () => {
+      const error = cancellation.reason instanceof Error ? cancellation.reason : new Error('Firebase request cancelled.')
+      finish(error)
+    }
+    cancellation.addEventListener('abort', abort, { once: true })
+    if (cancellation.aborted) { abort(); return }
+    try {
+      req = https.request({
+        hostname, path: urlPath, method: 'POST',
+        headers: { 'Content-Type': contentType, 'Content-Length': Buffer.byteLength(body) },
+      }, (res) => {
+        if (finished) { res.destroy(); return }
+        response = res
+        let d = ''
+        res.on('error', (error) => finish(error))
+        res.on('aborted', () => finish(new Error('Firebase response interrupted.')))
+        res.on('data', (c) => (d += c))
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(d)
+            if (!(res.statusCode >= 200 && res.statusCode < 300)) {
+              finish(new Error(parsed?.error?.message || `Firebase request failed (${res.statusCode}).`))
+            } else finish(null, parsed)
+          } catch (_) { finish(new Error('non-JSON response')) }
+        })
+      })
+      req.on('error', (error) => finish(error))
+      req.write(body)
+      req.end()
+    } catch (error) { finish(error) }
   })
 }
 
-function httpsPostForm(hostname, urlPath, params) {
-  const body = new URLSearchParams(params).toString()
-  return new Promise((resolve, reject) => {
-    const req = https.request({
-      hostname, path: urlPath, method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(body) },
-    }, (res) => {
-      let d = ''
-      res.on('data', (c) => (d += c))
-      res.on('end', () => { try { resolve(JSON.parse(d)) } catch (_) { reject(new Error('non-JSON response')) } })
-    })
-    req.on('error', reject)
-    req.write(body)
-    req.end()
-  })
+function httpsPostJson(hostname, urlPath, bodyObj) {
+  return httpsPost(hostname, urlPath, JSON.stringify(bodyObj), 'application/json')
+}
+
+function httpsPostForm(hostname, urlPath, params, signal) {
+  return httpsPost(hostname, urlPath, new URLSearchParams(params).toString(), 'application/x-www-form-urlencoded', signal)
 }
 
 // ── Network calls ────────────────────────────────────────────────────────────
@@ -102,11 +130,11 @@ async function exchangeGoogleIdToken(googleIdToken, apiKey) {
   return mapSignInResponse(r)
 }
 
-async function refreshSession(refreshToken, apiKey, email = '') {
+async function refreshSession(refreshToken, apiKey, email = '', signal) {
   const r = await httpsPostForm('securetoken.googleapis.com', `/v1/token?key=${apiKey}`, {
     grant_type: 'refresh_token',
     refresh_token: refreshToken,
-  })
+  }, signal)
   return mapRefreshResponse(r, refreshToken, email)
 }
 
@@ -123,6 +151,7 @@ function loadSession() {
 }
 
 function clearSession() {
+  invalidateRefresh()
   _mem = null
   try { fs.unlinkSync(SESSION_FILE) } catch (_) {}
 }
@@ -130,9 +159,19 @@ function clearSession() {
 // ── In-memory session + token accessor ───────────────────────────────────────
 
 let _mem = null // { idToken, refreshToken, email, expiresAt }
+let _generation = 0
+let _refresh = null
+
+function invalidateRefresh() {
+  _generation += 1
+  const pending = _refresh
+  _refresh = null
+  pending?.controller.abort(new Error('Firebase session changed.'))
+}
 
 // Called right after a fresh Google sign-in with the exchanged session.
 function setSession(session) {
+  invalidateRefresh()
   _mem = session
   saveSession(session)
 }
@@ -142,18 +181,29 @@ function setSession(session) {
 // callers can fall back to the offline license path.
 async function getValidIdToken(apiKey) {
   if (_mem && _mem.idToken && _mem.expiresAt > Date.now()) return _mem.idToken
+  if (_refresh) return _refresh.promise
 
-  const refreshToken = (_mem && _mem.refreshToken) || (loadSession() || {}).refreshToken
+  const persisted = loadSession() || {}
+  const refreshToken = (_mem && _mem.refreshToken) || persisted.refreshToken
   if (!refreshToken) return null
-  const email = (_mem && _mem.email) || (loadSession() || {}).email || ''
+  const email = (_mem && _mem.email) || persisted.email || ''
 
-  try {
-    _mem = await refreshSession(refreshToken, apiKey, email)
-    saveSession(_mem)
-    return _mem.idToken
-  } catch (_) {
-    return null // let the caller degrade gracefully (offline / re-login)
-  }
+  const pending = { generation: _generation, controller: new AbortController(), promise: null }
+  pending.promise = (async () => {
+    try {
+      const session = await refreshSession(refreshToken, apiKey, email, pending.controller.signal)
+      if (_generation !== pending.generation || pending.controller.signal.aborted) return null
+      _mem = session
+      saveSession(session)
+      return session.idToken
+    } catch (_) {
+      return null // let the caller degrade gracefully (offline / re-login)
+    } finally {
+      if (_refresh === pending) _refresh = null
+    }
+  })()
+  _refresh = pending
+  return pending.promise
 }
 
 module.exports = {

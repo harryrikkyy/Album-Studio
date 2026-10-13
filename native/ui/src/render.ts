@@ -12,7 +12,7 @@ export interface Plan { outputFolder: string; spreads: PlanEntry[] }
 
 export interface SheetResult { n: number; state: 'done' | 'failed' | 'skipped'; ms?: number; error?: string; warnings?: string[] }
 export interface Job {
-  jobId: number
+  jobId: string
   album: string
   total: number
   index: number          // sheets handled so far
@@ -96,7 +96,7 @@ export async function editCurrentSpread() {
 }
 
 onEvent('render.started', (d) => {
-  const data = d as { jobId: number; total: number; album: string }
+  const data = d as { jobId: string; total: number; album: string }
   job.value = { jobId: data.jobId, album: data.album, total: data.total, index: 0, current: null, phase: 'Starting', startedAt: Date.now(), results: [], finished: null }
 })
 
@@ -108,7 +108,7 @@ onEvent('shell.albumShown', () => {
 })
 
 onEvent('render.progress', (d) => {
-  const p = d as { jobId: number; index: number; n: number; state: string; ms?: number; error?: string; warnings?: string[] }
+  const p = d as { jobId: string; index: number; n: number; state: string; ms?: number; error?: string; warnings?: string[] }
   const j = job.value
   if (!j || j.jobId !== p.jobId) return
   const phase = p.state === 'preparing' ? 'Preparing photos' : p.state === 'building' ? 'Building in PhotoCraft' : ''
@@ -127,7 +127,7 @@ onEvent('render.progress', (d) => {
 })
 
 onEvent('render.finished', (d) => {
-  const f = d as { jobId: number; done: number; skipped: number; failed: number; cancelled: boolean; ms: number }
+  const f = d as { jobId: string; done: number; skipped: number; failed: number; cancelled: boolean; ms: number }
   const j = job.value
   if (!j || j.jobId !== f.jobId) return
   batch(() => {

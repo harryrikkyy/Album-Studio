@@ -76,10 +76,10 @@ function loadLicense() {
 }
 
 function getDaysRemaining(expiresOn) {
-  const expiry = new Date(expiresOn)
-  const now = new Date()
-  const ms = expiry - now
-  if (ms <= 0) return 0          // already expired — never report a phantom day
+  let expiry
+  try { expiry = new Date(expiresOn).getTime() } catch (_) { return 0 }
+  const ms = expiry - Date.now()
+  if (!Number.isFinite(ms) || ms <= 0) return 0 // malformed or expired: no phantom day
   return Math.floor(ms / (1000 * 60 * 60 * 24))
 }
 
@@ -105,7 +105,7 @@ function validateOfflineLicense(currentMachineId, email) {
     return { allowed: false, reason: 'wrong_machine' }
   }
   const daysLeft = getDaysRemaining(localLicense.expiresOn)
-  if (daysLeft <= 0) {
+  if (!Number.isFinite(daysLeft) || daysLeft <= 0) {
     clearLicense()
     return { allowed: false, reason: 'expired' }
   }

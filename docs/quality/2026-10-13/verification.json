@@ -1,0 +1,396 @@
+{
+  "date": "2026-10-13",
+  "branch": "codex/album-quality-improvement",
+  "rootBaseCommit": "81bd5b4",
+  "engineCommit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "engineTrackedChanges": false,
+  "nodeTests": {
+    "shared": 262,
+    "helper": 187,
+    "interface": 30,
+    "total": 479,
+    "failed": 0,
+    "skipped": 0
+  },
+  "nativeTests": {
+    "passed": 96,
+    "failed": 0,
+    "ignored": 0,
+    "scope": "Baseline reverified in this mission; Rust checkout unchanged. Not a full engine workspace/corpus/Clippy gate."
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "typecheck": "passed",
+  "uiBuild": "passed",
+  "rootNpmAdvisories": 0,
+  "interfaceNpmAdvisories": 0,
+  "rustAdvisories": "unverified",
+  "packagingCollector": {
+    "files": 47,
+    "requiredNewModules": "present",
+    "installedDependencies": "present",
+    "actualBundle": "unverified"
+  },
+  "coverage": {
+    "scope": "Shared and helper sources exercised by 449 tests. UI and Rust coverage not measured. Overall table includes test files and is not product coverage.",
+    "perSourceFile": {
+      "account.js": {
+        "lines": 95.96,
+        "branches": 86.43,
+        "functions": 89.36
+      },
+      "album.js": {
+        "lines": 99.13,
+        "branches": 87.92,
+        "functions": 100.0
+      },
+      "autofill.js": {
+        "lines": 98.94,
+        "branches": 73.68,
+        "functions": 88.89
+      },
+      "cache.js": {
+        "lines": 100.0,
+        "branches": 100.0,
+        "functions": 100.0
+      },
+      "color.js": {
+        "lines": 94.34,
+        "branches": 60.61,
+        "functions": 85.71
+      },
+      "deliver.js": {
+        "lines": 95.2,
+        "branches": 84.58,
+        "functions": 90.91
+      },
+      "identity.js": {
+        "lines": 97.37,
+        "branches": 84.21,
+        "functions": 100.0
+      },
+      "inputs.js": {
+        "lines": 100.0,
+        "branches": 92.31,
+        "functions": 100.0
+      },
+      "jobs.js": {
+        "lines": 96.88,
+        "branches": 96.43,
+        "functions": 90.0
+      },
+      "jpeg_size.js": {
+        "lines": 95.89,
+        "branches": 61.76,
+        "functions": 83.33
+      },
+      "labnaming.js": {
+        "lines": 94.96,
+        "branches": 86.57,
+        "functions": 94.87
+      },
+      "library.js": {
+        "lines": 100.0,
+        "branches": 69.44,
+        "functions": 94.12
+      },
+      "newalbum.js": {
+        "lines": 100.0,
+        "branches": 69.12,
+        "functions": 85.19
+      },
+      "parity.js": {
+        "lines": 84.23,
+        "branches": 64.37,
+        "functions": 60.0
+      },
+      "pdf.js": {
+        "lines": 100.0,
+        "branches": 91.21,
+        "functions": 83.33
+      },
+      "photocraft.js": {
+        "lines": 100.0,
+        "branches": 85.07,
+        "functions": 91.67
+      },
+      "picks.js": {
+        "lines": 100.0,
+        "branches": 86.67,
+        "functions": 100.0
+      },
+      "preflight.js": {
+        "lines": 100.0,
+        "branches": 91.71,
+        "functions": 97.3
+      },
+      "project.js": {
+        "lines": 99.08,
+        "branches": 82.05,
+        "functions": 96.59
+      },
+      "proofs.js": {
+        "lines": 85.32,
+        "branches": 77.08,
+        "functions": 78.05
+      },
+      "psd_template.js": {
+        "lines": 92.61,
+        "branches": 73.23,
+        "functions": 96.15
+      },
+      "raw.js": {
+        "lines": 65.0,
+        "branches": 67.65,
+        "functions": 66.67
+      },
+      "recent.js": {
+        "lines": 100.0,
+        "branches": 93.33,
+        "functions": 100.0
+      },
+      "render.js": {
+        "lines": 95.2,
+        "branches": 59.09,
+        "functions": 81.48
+      },
+      "sheet.js": {
+        "lines": 94.12,
+        "branches": 80.0,
+        "functions": 88.89
+      },
+      "sheets.js": {
+        "lines": 100.0,
+        "branches": 89.83,
+        "functions": 100.0
+      },
+      "storage.js": {
+        "lines": 100.0,
+        "branches": 85.71,
+        "functions": 90.91
+      },
+      "template_check.js": {
+        "lines": 95.06,
+        "branches": 86.96,
+        "functions": 77.78
+      },
+      "templates.js": {
+        "lines": 99.18,
+        "branches": 87.5,
+        "functions": 85.71
+      },
+      "thumbs.js": {
+        "lines": 98.52,
+        "branches": 94.44,
+        "functions": 90.0
+      },
+      "methods.js": {
+        "lines": 88.5,
+        "branches": 75.0,
+        "functions": 4.88
+      },
+      "server.js": {
+        "lines": 72.15,
+        "branches": 75.0,
+        "functions": 25.0
+      },
+      "fixtures.js": {
+        "lines": 100.0,
+        "branches": 100.0,
+        "functions": 100.0
+      },
+      "curation.js": {
+        "lines": 91.16,
+        "branches": 87.76,
+        "functions": 90.91
+      },
+      "editor_geometry.js": {
+        "lines": 100.0,
+        "branches": 87.01,
+        "functions": 100.0
+      },
+      "firebase_auth.js": {
+        "lines": 100.0,
+        "branches": 82.05,
+        "functions": 95.65
+      },
+      "license_signing.js": {
+        "lines": 96.15,
+        "branches": 87.5,
+        "functions": 100.0
+      },
+      "license.js": {
+        "lines": 84.35,
+        "branches": 70.0,
+        "functions": 100.0
+      },
+      "firestore_rest.js": {
+        "lines": 94.64,
+        "branches": 64.29,
+        "functions": 85.71
+      },
+      "overlay_ps.js": {
+        "lines": 100.0,
+        "branches": 88.57,
+        "functions": 100.0
+      },
+      "overlay_render.js": {
+        "lines": 99.4,
+        "branches": 92.18,
+        "functions": 100.0
+      },
+      "proof_renderer.js": {
+        "lines": 48.46,
+        "branches": 67.09,
+        "functions": 52.63
+      },
+      "psd_layers.js": {
+        "lines": 91.58,
+        "branches": 85.16,
+        "functions": 91.3
+      },
+      "renderer_pure.js": {
+        "lines": 99.8,
+        "branches": 94.38,
+        "functions": 100.0
+      },
+      "sharp_config.js": {
+        "lines": 100.0,
+        "branches": 77.78,
+        "functions": 100.0
+      },
+      "shortcut_target.js": {
+        "lines": 100.0,
+        "branches": 92.0,
+        "functions": 100.0
+      },
+      "ui_icons.js": {
+        "lines": 95.58,
+        "branches": 50.0,
+        "functions": 66.67
+      }
+    }
+  },
+  "signingQuery": {
+    "visibleValidIdentities": 0,
+    "scope": "Current security find-identity command view; no credential access/installation verified."
+  },
+  "independentReview": {
+    "status": "incomplete",
+    "reason": "All three review agents terminal at provider usage limit; last live agent inventory confirmed this state."
+  },
+  "artifacts": {
+    "tests": {
+      "path": "docs/quality/2026-10-13/tests.log",
+      "sha256": "51ff074190bf79936760bbaf33f335a6dfcb5870c7950f520b258e965e3fbfa9"
+    },
+    "coverage": {
+      "path": "docs/quality/2026-10-13/coverage.log",
+      "sha256": "202bf3ec3b24f6aba6d9d677a1e39df53e4a5033f3450544e3b10aa1d8bb16a8"
+    },
+    "lint": {
+      "path": "docs/quality/2026-10-13/lint.log",
+      "sha256": "4aea5e24f1cb4fd0617a353c7153acb29a0d7ea4a0d28ec4c8fa2c0b2e8fab61"
+    },
+    "types": {
+      "path": "docs/quality/2026-10-13/types.log",
+      "sha256": "aadd77e54fdc94331f087a47a6f67abb71f4c3dd5cbb78cfdff6105b7eaa2ae3"
+    },
+    "ui-build": {
+      "path": "docs/quality/2026-10-13/ui-build.log",
+      "sha256": "6ad6f5b376a0d7b41d21161b0fdfba28934fd93e38662cca847f34aa7d79860a"
+    },
+    "native-baseline": {
+      "path": "docs/quality/2026-10-13/native-baseline.log",
+      "sha256": "486c561410988d487dbdb6ff186f60cd1025cb38dded2f48630b2fc0c227052f"
+    },
+    "root-audit": {
+      "path": "docs/quality/2026-10-13/root-audit.json",
+      "sha256": "88cb1523f433d6950d914cebb12b455d1afd54855f42b6ccd08d7451711b6fb9"
+    },
+    "ui-audit": {
+      "path": "docs/quality/2026-10-13/ui-audit.json",
+      "sha256": "7cce0b845dc1e86e9eb4e1d1b08eef2a4530226dd3cb15ba19a7195c9af1bbce"
+    },
+    "packaging-collection": {
+      "path": "docs/quality/2026-10-13/packaging-collection.json",
+      "sha256": "eb19170fa0f4ac8df96c60f218154b7dd4ab0e115868fd63fa8b7b1fa42072ca"
+    }
+  },
+  "changedSourceSHA256": {
+    "native/backend/lib/account.js": "bca06807f720b3b8f73414f6fdb3a248a0b41bf8e115d003f12f59e3d55d5aa9",
+    "native/backend/lib/album.js": "24376f7d5658d900b60307027e13d8f7fdf91e96a6eb14cd7c7cf39f2e2e48e5",
+    "native/backend/lib/color.js": "7f6517fd04ef93bbeff25294f38b81f770416087827a26777c13b006673b4b16",
+    "native/backend/lib/deliver.js": "514cebf1d53f771abd3b1f71226b7a09f81b6bba6b319a2ccdccbfacb337d6ca",
+    "native/backend/lib/identity.js": "571b291a4f01f108b150e4ddd138873e6c046cae2115ff770cce6adf71c9cbd7",
+    "native/backend/lib/jobs.js": "a464fc2ce904751e590223642e44c5c98f26194109a913ecb85a644d8f231094",
+    "native/backend/lib/labnaming.js": "add767404f73228d7ef171d03a8df01a56000a2e88b1a186f973487b40aea863",
+    "native/backend/lib/newalbum.js": "6b0ed62a954c71bfb315aeb4a248dae87ac4c3624eeaa38551eda2ee0694ea4a",
+    "native/backend/lib/pdf.js": "d668ca47c3f71ba586e84f39b9e9d5d4fede9cb2fa96234120ebdd04f9bef6a2",
+    "native/backend/lib/photocraft.js": "213835ebd7a8c968b306fafa73f40b4e398fa2b589e8b80e6e280cd0a430eb28",
+    "native/backend/lib/preflight.js": "3df7cacf4c892261ea8e876f55a672f652c665770d139559a65b7d1ccaa7a2ba",
+    "native/backend/lib/project.js": "a2852bdab75b14fdb3886b3c9841ff711fe26a0354a12390452e78c22e82991a",
+    "native/backend/lib/proofs.js": "b617d03be2bd94e98fbcb95adc9e4014d4feac7a1310a1b0c688f5d342a01ba9",
+    "native/backend/lib/psd_template.js": "2a4fab9b4242d715c96f5c031b5d3b27b44eadac1b2070fd9829a74a43085b93",
+    "native/backend/lib/render.js": "5e2e73c308ea335a8073c25d55250cac7f2cd568e8c5704d625012e24cf115ef",
+    "native/backend/lib/sheets.js": "e1cede2ccbb0946d9b928b1e65cf956807b2505bffefada7c545ad6132c21020",
+    "native/backend/lib/templates.js": "2b982c77f4dbf7b3b7aef645d4cf8554a3c75bd7ffc65e8cc836238d2da6f6a6",
+    "native/backend/methods.js": "44a2f2ab49fb1e80a468b6ec1e740ecea870507c3399e20bed9e53ae735dbab8",
+    "native/backend/test/account.test.js": "680ab01d8eb880e4f558faa850cf9df79502e6783e90409cd82c1c2dba74bdf6",
+    "native/backend/test/color.test.js": "5c0d83ea6b76c278a9a1b7530e2dee0b7bbdb341e4354976af9cda7876db558d",
+    "native/backend/test/deliver.test.js": "d3c96d492221b1f65646637afe99a852cc54278af47693f99627fbc01cd58ce5",
+    "native/backend/test/delivery_integrity.test.js": "ef1067bbe930e7b9c9ef5df3f43ac36dc5fbeb9ae388b36ae0056ab8ec559293",
+    "native/backend/test/identity.test.js": "e3ccad72c1505ddfa5b3af23d4aa673d6d9121de3e27c010dff9741b62bdb560",
+    "native/backend/test/labnaming_recovery.test.js": "228470d9d3d03a677c165addc0f6cde035767befb9ed36e0f98f5b16d82c98c8",
+    "native/backend/test/pdf_color.test.js": "1a46969ed677f422b76d60638e5bb5860924803eefa1848c972c87ddd466d115",
+    "native/backend/test/photocraft.test.js": "7250aacca3330cb9af39ac0504efbd0b917aba933d9cd14cb8a85738016627c4",
+    "native/backend/test/preflight.test.js": "e1fc6b1991810445c0244b41439fceeac8e84fad5a0da72dbaca82bf55afd7a8",
+    "native/backend/test/project.test.js": "0012c4c3340fd61b3990b29d81daf8f4de1a3884c09255bb893956e31413bad1",
+    "native/backend/test/proofs.test.js": "7d837eb3122540e3ad3d6bb6a52a887c54d0d81778f485c15a3836e890e7aa4a",
+    "native/backend/test/sheet_ownership.test.js": "a3bff51b7da84295cdebe684e4b7fd37f155131b26066a4e85b0292370318b63",
+    "native/ui/src/account_logic.ts": "d0e78f18c35f56378a339933b9576aea527d5061b00a08c0c386c918e8b44f60",
+    "native/ui/src/delivery_logic.ts": "495ca89c89e941ee50b5f33ace9fd399817ad611f9fa0a390d72fb786ae1cb2f",
+    "native/ui/src/exporting.ts": "be9ec0387c850e4359d1e296752c8a2bc5867ce49f9a8e1258bda87e3a90eb09",
+    "native/ui/src/places/Deliver.tsx": "73095366f44591af33d0973c7462d7b0d3adf0df6c6778156b03ca73f10deb1b",
+    "native/ui/src/render.ts": "36e2b64b1dc97bd2e5b27bd089d274305420d208a5c61861b126e591eb8512e6",
+    "native/ui/test/delivery_logic.test.ts": "adb6d502ec589708364433f6540390a101310caeab1e71d03a5f11f46f7d12fc",
+    "package-lock.json": "086e977707cb77bc7fac98985be5ce568fd4e8a46fc14fcbd7c1bcb9bbb2ae06",
+    "package.json": "2a154a2ad0cb66122e31f845454be244b0b80dd9331cbf7ac035faafbb2ecbb3",
+    "src/firebase_auth.js": "b4d45527fb9db12c49cdaf2268e55b007b619b22d99a219f2f661120dbb605ad",
+    "src/license.js": "113120f995fd0a02bece56f31b135776a31994b0bf2350020b241b8aed54d665",
+    "src/proof_renderer.js": "19786f76e538e8da16b27c9d4b07eeb0bc15685605b9eaea1896a6c00b6829ab",
+    "test/firebase_auth.test.js": "2ea8fc867980448bcf48d20e6c768be17297383c4bf630b89e7ba0e4264f96bd",
+    "test/license.test.js": "82574ea8b5b84ec3eca4818f83773abbbc41780770b7212aaead4c55e0ce8492",
+    "test/renderer_pure.test.js": "f06697a363a525da325660e0bc35c4d8ec9d17a222736f0a380d27fd71a4e1a1"
+  },
+  "notVerified": [
+    "Native GUI workflows/accessibility",
+    "Realistic scale and memory budgets",
+    "Actual deployed Firestore rules/issuer migration",
+    "Adobe RGB/CMYK/16-bit/absent-composite colour oracles",
+    "Power-loss recovery for export publication",
+    "Actual lab geometry/profile and printed output",
+    "Clean engine-pinned bundle build and installed customer setup",
+    "Developer ID signing/notarisation/clean Mac install"
+  ],
+  "failFirstArtifacts": [
+    {
+      "path": "docs/quality/2026-10-13/album-quality-color-before.log",
+      "sha256": "f3fb492b06f878281da2c2a8545f46afa96878c4af0aba5dbba6dbece3c91c1d"
+    },
+    {
+      "path": "docs/quality/2026-10-13/album-quality-delivery-before.log",
+      "sha256": "c89a33bc3abc78fcd82bfbdf92c16e901c4d83ae845a6f396922c17e36307d95"
+    },
+    {
+      "path": "docs/quality/2026-10-13/album-quality-ownership-before.log",
+      "sha256": "11e9f7e981ef2868ebd7eb6335173832391f1bd78a47dd9ddde4acbac26de0b3"
+    },
+    {
+      "path": "docs/quality/2026-10-13/album-quality-template-color-before.log",
+      "sha256": "317e5a35696e6d8a0ca10f2322f9b86b7eba170cd0c5fe82f925504a730c8913"
+    }
+  ]
+}

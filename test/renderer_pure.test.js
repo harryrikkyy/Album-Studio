@@ -331,8 +331,6 @@ test('effectiveOrientation normalises odd rotation values', () => {
 // The invariant that matters: every photo is placed exactly once, and the
 // planner always terminates.
 
-const seq = (values) => { let i = 0; return () => values[i++ % values.length] }
-
 test('planAutoFillCounts places every photo exactly once — range mode', () => {
   for (const total of [1, 5, 17, 100, 999]) {
     const r = planAutoFillCounts(total, { mode: 'range', min: 4, max: 6 })

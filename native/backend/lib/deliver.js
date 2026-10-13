@@ -16,13 +16,18 @@ const crypto = require('crypto')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
-const { openAlbum } = require('./album')
+const { migrateAlbum } = require('./project')
 const { fileStamp, writeAtomic } = require('./cache')
 const { writeJpegPdf } = require('./pdf')
 const { PhotoCraftSession } = require('./photocraft')
 const { outputName } = require('./sheet')
+const { profiledRgba, psdProfile } = require('./color')
+const { spreadHash } = require('./render')
+const { outputFolder, ownedSheetRecord, readRenderCache } = require('./sheets')
+const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
+const { preflightAlbum } = require('./preflight')
 
-const EXPORT_VERSION = 'export-1'
+const EXPORT_VERSION = 'export-2-colour'
 const DEFAULTS = { heightInches: 12, ppi: 300, highQuality: 97, lowQuality: 25 }
 
 let agpsd = null
@@ -40,10 +45,6 @@ const getSharp = () => require('../../../src/sharp_config').getSharp()
 
 let current = null
 
-async function readProject(file) {
-  return JSON.parse(await fs.promises.readFile(file, 'utf8'))
-}
-
 /** Where everything goes, for an album whose sheets are in `outputFolder`. */
 function deliverPaths(album, outputFolder) {
   const parent = path.dirname(outputFolder)
@@ -58,7 +59,11 @@ function deliverPaths(album, outputFolder) {
 
 function settingsOf(p) {
   const s = { ...DEFAULTS }
-  for (const k of Object.keys(DEFAULTS)) if (Number.isFinite(Number(p[k])) && Number(p[k]) > 0) s[k] = Number(p[k])
+  for (const k of Object.keys(DEFAULTS)) if (p[k] !== undefined) {
+    if (typeof p[k] !== 'number' || !Number.isFinite(p[k]) || p[k] <= 0 || /Quality$/.test(k) && p[k] > 100) throw new Error('Print settings must contain finite positive dimensions, resolution and JPEG quality up to 100.')
+    s[k] = p[k]
+  }
+  if (p.size !== undefined && !['print', 'original'].includes(p.size)) throw new Error('Choose print size or original size.')
   s.size = p.size === 'original' ? 'original' : 'print'
   return s
 }
@@ -70,28 +75,38 @@ function settingsOf(p) {
  */
 async function sheetPixels(psdPath) {
   const buf = await fs.promises.readFile(psdPath)
+  const profile = psdProfile(buf)
   let psd = null
   try {
     psd = getAgPsd().readPsd(buf, { skipLayerImageData: true, skipCompositeImageData: false, skipThumbnail: true, useImageData: true })
   } catch (_) { /* unreadable here: the engine tries */ }
   const img = psd && psd.imageData
-  if (img && psd.bitsPerChannel === 8 && img.data.length === img.width * img.height * 4) {
+  if (img && psd.bitsPerChannel === 8 && psd.colorMode === 3 && img.data.length === img.width * img.height * 4) {
     const input = Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length)
     const stats = await getSharp()(input, { raw: { width: img.width, height: img.height, channels: 4 } }).resize(64).stats()
-    if (stats.channels.slice(0, 3).some((c) => c.stdev > 0.5)) return { input, raw: { width: img.width, height: img.height, channels: 4 }, width: img.width, height: img.height }
+    if (stats.channels.slice(0, 3).some((c) => c.stdev > 0.5 || c.mean > 0.5)) {
+      if (profile) return profiledRgba(input, img.width, img.height, profile)
+      return { input, raw: { width: img.width, height: img.height, channels: 4 }, width: img.width, height: img.height }
+    }
   }
   // No usable composite (saved without one, or 16-bit): let PhotoCraft draw it.
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'as-export-'))
-  const out = path.join(dir, 'sheet.jpg')
+  const out = path.join(dir, 'sheet.png')
   const pc = new PhotoCraftSession({ writeRoot: dir })
   try {
     await pc.call('doc.open', { path: PhotoCraftSession.readPath(psdPath) })
-    await pc.call('doc.save', { path: pc.writePath(out), quality: 100 })
+    await pc.call('doc.save', { path: pc.writePath(out) })
+  } catch (e) {
+    await fs.promises.rm(dir, { recursive: true, force: true })
+    throw e
   } finally {
     await pc.close()
   }
-  const meta = await getSharp()(out).metadata()
-  return { input: out, width: meta.width, height: meta.height, cleanup: () => fs.promises.rm(dir, { recursive: true, force: true }) }
+  try {
+    const meta = await getSharp()(out).metadata()
+    if (profile && !meta.icc) throw new Error('The editor render did not retain a verifiable colour profile. Save an 8-bit RGB sheet with its compatibility composite before delivery.')
+    return { input: out, width: meta.width, height: meta.height, cleanup: () => fs.promises.rm(dir, { recursive: true, force: true }) }
+  } catch (e) { await fs.promises.rm(dir, { recursive: true, force: true }); throw e }
 }
 
 /** Write the print and/or review JPEGs of one sheet. */
@@ -103,12 +118,15 @@ async function exportSheet(psdPath, targets, s) {
     const width = Math.round((px.width * height) / px.height)
     // Resample once, then encode every target from the same pixels, side by side.
     let p = sharp(px.input, px.raw ? { raw: px.raw } : { failOn: 'none' })
-    if (px.raw) p = p.flatten({ background: '#ffffff' })
+    // Convert while source ICC metadata is still attached, before extracting raw pixels.
+    p = p.withIccProfile('srgb')
+    p = p.flatten({ background: '#ffffff' })
     if (width !== px.width || height !== px.height) p = p.resize(width, height, { fit: 'fill', kernel: 'lanczos3' })
     const pixels = await p.removeAlpha().raw().toBuffer({ resolveWithObject: true })
     await Promise.all(targets.map(async (t) => {
-      const tmp = `${t.file}.part.jpg`
+      const tmp = `${t.file}.${crypto.randomUUID()}.part.jpg`
       await fs.promises.mkdir(path.dirname(t.file), { recursive: true })
+      try {
       await sharp(pixels.data, { raw: { width: pixels.info.width, height: pixels.info.height, channels: pixels.info.channels } })
         .withIccProfile('srgb')
         .withMetadata({ density: s.ppi })
@@ -117,6 +135,7 @@ async function exportSheet(psdPath, targets, s) {
         .jpeg(t.quality >= 90 ? { quality: t.quality, chromaSubsampling: '4:4:4', optimiseCoding: true } : { quality: t.quality, mozjpeg: true })
         .toFile(tmp)
       await fs.promises.rename(tmp, t.file)
+      } finally { await fs.promises.unlink(tmp).catch(() => {}) }
     }))
     return { width, height }
   } finally {
@@ -130,24 +149,50 @@ async function exportSheet(psdPath, targets, s) {
  */
 async function exportPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
-  const album = await openAlbum({ path: albumPath })
-  const ws = (await readProject(album.file)).workspace || {}
-  const paths = deliverPaths(album, ws.outputToken || path.join(album.path, 'exports'))
+  return (await prepareExport({ album: albumPath, ...p })).plan
+}
+
+async function prepareExport(p) {
+  const album = await migrateAlbum({ album: p.album })
+  const projectText = await fs.promises.readFile(album.file, 'utf8')
+  const data = JSON.parse(projectText), ws = data.workspace || data
+  const paths = deliverPaths(album, outputFolder(ws, album.path))
   const s = settingsOf(p)
-  const cache = await readJson(paths.cache)
+  const old = await readJson(paths.cache)
+  const cache = old.version === 2 && old.albumFile === album.file ? old : { version: 2, albumFile: album.file, spreads: {} }
+  const rendered = await readRenderCache(paths.sheets)
   const spreads = await Promise.all(album.spreads.map(async (sp) => {
     const name = outputName(sp.n)
-    const psd = path.join(paths.sheets, `${name}.psd`)
-    const stamp = await fileStamp(psd)
-    if (stamp === 'missing') return { n: sp.n, state: 'nosheet' }
+    const record = await ownedSheetRecord(ws, album.path, sp.id, rendered)
+    const psd = record && record.path
+    const stamp = psd ? await fileStamp(psd) : 'missing'
+    const base = { n: sp.n, id: sp.id, psd, stamp }
+    if (stamp === 'missing') return { ...base, state: 'nosheet', reason: `Spread ${sp.n} is not rendered. Render the album first.` }
+    const hash = await spreadHash(sp, album, ws)
+    if (record.unverified || record.hash !== hash) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n} has changed or its sheet is unverified. Render this spread before delivery; preserve any manual edits first.` }
+    const handle = await fs.promises.open(psd, 'r')
+    const header = Buffer.alloc(26)
+    try { await handle.read(header, 0, 26, 0) } finally { await handle.close() }
+    const height = header.readUInt32BE(14), width = header.readUInt32BE(18)
+    if (header.toString('ascii', 0, 4) !== '8BPS' || ![1, 2].includes(header.readUInt16BE(4)) || !width || !height) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet has invalid dimensions. Recover or render it again.` }
+    if (s.size === 'print' && height / s.heightInches + 1e-7 < s.ppi) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet supplies ${(height / s.heightInches).toFixed(1)} PPI at this print size, below the configured ${s.ppi} PPI policy. Render a larger sheet or choose a smaller physical print size.` }
+    const spec = ws.printSpec
+    if (spec && spec.widthInches > 0 && spec.heightInches > 0 && Math.abs(width / height - spec.widthInches / spec.heightInches) > 0.001) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s actual sheet proportions differ from the configured lab dimensions.` }
     const key = exportKey(stamp, s)
-    const have = await Promise.all([path.join(paths.high, `${name}.jpg`), path.join(paths.low, `${name}.jpg`)].map((f) => fs.promises.access(f).then(() => true, () => false)))
-    const e = cache[name]
-    if (e && e.key === key && have[0] && have[1]) return { n: sp.n, state: 'ready' }
-    return { n: sp.n, state: e && have.some(Boolean) ? 'stale' : 'todo' }
+    const high = path.join(paths.high, `${name}.jpg`), low = path.join(paths.low, `${name}.jpg`)
+    const e = cache.spreads[sp.id]
+    const fresh = e && e.key === key && e.hash === hash && e.psd === psd && e.n === sp.n &&
+      e.high && e.high.path === high && e.high.stamp === await fileStamp(high) &&
+      e.low && e.low.path === low && e.low.stamp === await fileStamp(low)
+    return { ...base, hash, key, high, low, state: fresh ? 'ready' : e ? 'stale' : 'todo' }
   }))
+  const preflight = await preflightAlbum(album, ws, { ...s, phase: 'export' })
+  for (const sp of spreads) {
+    const failures = preflight.errors.filter((e) => e.n === undefined || e.n === sp.n)
+    if (failures.length && sp.state !== 'nosheet') { sp.state = 'blocked'; sp.reason = failures.map((e) => e.message).join(' ') }
+  }
   const pdf = await fs.promises.stat(paths.pdf).catch(() => null)
-  return { paths, settings: s, spreads, pdf: pdf ? { path: paths.pdf, bytes: pdf.size, at: pdf.mtime.toISOString() } : null, running: exportStatus() }
+  return { album, ws, projectText, cache, plan: { paths, settings: s, spreads, preflight, pdf: pdf ? { path: paths.pdf, bytes: pdf.size, at: pdf.mtime.toISOString() } : null, running: exportStatus() } }
 }
 
 function exportKey(stamp, s) {
@@ -166,85 +211,153 @@ async function readJson(file) {
  *   force?: boolean, size?: 'print'|'original', heightInches?: number, ppi?: number }} p
  */
 async function startExport(p, { emit }) {
-  if (current) throw new Error(`An export is already running (${current.done + current.skipped} of ${current.total}).`)
   if (!p.album) throw new Error('missing `album`')
-  // A sheet being rendered may be half written: one heavy job at a time.
-  if (require('./render').renderStatus().running) throw new Error('Sheets are rendering. Export when the render has finished.')
-  const want = { jpegs: p.jpegs !== false, pdf: p.pdf !== false }
-  if (!want.jpegs && !want.pdf) throw new Error('Choose at least one kind of file to export.')
-  const plan = await exportPlan(p)
-  const { paths, settings: s } = plan
-  const wanted = Array.isArray(p.spreads) && p.spreads.length ? new Set(p.spreads.map(Number)) : null
-  const withSheet = plan.spreads.filter((x) => x.state !== 'nosheet')
-  const spreads = want.jpegs ? withSheet.filter((x) => !wanted || wanted.has(x.n)) : []
-  if (want.jpegs && !spreads.length) throw new Error('No spread has a rendered sheet yet. Render the album first.')
-  const missingSheets = plan.spreads.filter((x) => x.state === 'nosheet').map((x) => x.n)
-  const job = { id: Date.now(), total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now() }
-  current = job
-  emit('export.started', { jobId: job.id, total: job.total, paths, missingSheets })
-  void runExport(job, { p, plan, spreads, want, s, paths, missingSheets }, emit).finally(() => { current = null })
-  return { jobId: job.id, total: job.total, paths, missingSheets }
+  const lease = reserveJob('export', p.album)
+  try {
+    const want = { jpegs: p.jpegs !== false, pdf: p.pdf !== false }
+    if (!want.jpegs && !want.pdf) throw new Error('Choose at least one kind of file to export.')
+    const prepared = await prepareExport(p)
+    identifyJob(lease, prepared.album)
+    const { plan } = prepared, { paths, settings: s } = plan
+    const wanted = spreadSelection(p.spreads, plan.spreads)
+    const spreads = want.jpegs ? plan.spreads.filter((sp) => !wanted || wanted.has(sp.n)) : []
+    const required = want.pdf ? plan.spreads : spreads
+    if (!required.length) throw new Error('No spread has a rendered sheet yet. Render the album first.')
+    for (const sp of required) {
+      if (sp.state === 'nosheet' || sp.state === 'blocked') throw new Error(sp.reason)
+      if (want.pdf && (!want.jpegs || wanted && !wanted.has(sp.n)) && sp.state !== 'ready') {
+        throw new Error(`Spread ${sp.n}'s review JPEG is stale or missing. Export its JPEGs before making the PDF.`)
+      }
+    }
+    const missingSheets = plan.spreads.filter((sp) => sp.state === 'nosheet').map((sp) => sp.n)
+    const job = { id: lease.id, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now() }
+    current = job
+    emit('export.started', { jobId: job.id, total: job.total, paths, missingSheets })
+    // runExport catches failures and releases the lease before its completion event.
+    void runExport(job, { ...prepared, p, spreads, want, s, paths, missingSheets, lease }, emit)
+    return { jobId: job.id, total: job.total, paths, missingSheets }
+  } catch (e) { releaseJob(lease); throw e }
 }
 
-async function runExport(job, { p, plan, spreads, want, s, paths, missingSheets }, emit) {
-  const cache = await readJson(paths.cache)
-  const results = []
-  let pdfResult = null
+async function assertSnapshot({ album, ws, projectText }, required) {
+  if (await fs.promises.readFile(album.file, 'utf8') !== projectText) throw new Error('The album changed during export. Export again from the current revision.')
+  for (const sp of required) {
+    const model = album.spreads.find((item) => item.id === sp.id)
+    if (!model || await spreadHash(model, album, ws) !== sp.hash || await fileStamp(sp.psd) !== sp.stamp) {
+      throw new Error(`Spread ${sp.n} or its source files changed during export. Render or export again.`)
+    }
+  }
+}
+
+/** Reversible publication: finish every page first, then publish, restoring old files on error. */
+async function publishDelivery(files, cache, stage) {
+  const owned = new Map(Object.entries(cache.ownedFiles || {}))
+  for (const e of Object.values(cache.spreads)) for (const k of ['high', 'low']) if (e[k]) owned.set(e[k].path, e[k].stamp)
+  if (cache.pdf) owned.set(cache.pdf.path, cache.pdf.stamp)
+  const previous = new Map()
+  for (const item of files) {
+    const stamp = await fileStamp(item.target)
+    if (stamp !== 'missing' && owned.get(item.target) !== stamp) throw new Error(`Delivery file ${item.target} is unowned or has been edited. Preserve it elsewhere before exporting.`)
+    previous.set(item.target, stamp)
+  }
+  const moved = []
   try {
+    for (let i = 0; i < files.length; i++) {
+      const item = files[i], backup = path.join(stage, `backup-${i}`)
+      await fs.promises.mkdir(path.dirname(item.target), { recursive: true })
+      if (await fileStamp(item.target) !== previous.get(item.target)) throw new Error(`Delivery file ${item.target} changed during export.`)
+      if (previous.get(item.target) !== 'missing') {
+        const st = await fs.promises.stat(item.target)
+        await fs.promises.copyFile(item.target, backup, fs.constants.COPYFILE_EXCL)
+        await fs.promises.utimes(backup, st.atime, st.mtime)
+      }
+      await fs.promises.rename(item.source, item.target)
+      moved.push({ ...item, backup, stamp: await fileStamp(item.target), existed: previous.get(item.target) !== 'missing' })
+    }
+    return moved
+  } catch (e) {
+    await restoreDelivery(moved)
+    throw e
+  }
+}
+
+async function restoreDelivery(moved) {
+  for (const item of [...moved].reverse()) {
+    if (await fileStamp(item.target) !== item.stamp) throw new Error(`Delivery rollback conflict: preserve ${item.target} and recovery copy ${item.backup}.`)
+    if (item.existed) await fs.promises.rename(item.backup, item.target)
+    else await fs.promises.unlink(item.target)
+  }
+}
+
+async function runExport(job, prepared, emit) {
+  const { p, plan, cache, spreads, want, s, paths, missingSheets, lease } = prepared
+  const next = JSON.parse(JSON.stringify(cache))
+  const results = []
+  let pdfResult = null, stage = null, error = null, published = []
+  const files = [], review = new Map(plan.spreads.filter((sp) => sp.state === 'ready').map((sp) => [sp.id, sp.low]))
+  try {
+    await fs.promises.mkdir(path.join(paths.sheets, '.album-studio'), { recursive: true })
+    stage = await fs.promises.mkdtemp(path.join(paths.sheets, '.album-studio', 'delivery-'))
     for (let i = 0; i < spreads.length; i++) {
       if (job.cancelled) break
-      const { n } = spreads[i]
+      const sp = spreads[i], { n, id, psd, key, hash } = sp
       const name = outputName(n)
-      const psd = path.join(paths.sheets, `${name}.psd`)
       const report = (state, extra = {}) => emit('export.progress', { jobId: job.id, index: i + 1, total: job.total, n, state, ...extra })
       const t0 = Date.now()
-      try {
-        const key = exportKey(await fileStamp(psd), s)
-        const targets = [
-          { file: path.join(paths.high, `${name}.jpg`), quality: s.highQuality },
-          { file: path.join(paths.low, `${name}.jpg`), quality: s.lowQuality },
-        ]
-        const fresh = !p.force && cache[name] && cache[name].key === key && plan.spreads.find((x) => x.n === n).state === 'ready'
-        if (fresh) {
-          job.skipped++
-          results.push({ n, state: 'skipped' })
-          report('skipped')
-          continue
-        }
-        report('exporting')
-        const size = await exportSheet(psd, targets, s)
-        cache[name] = { key, at: new Date().toISOString(), ...size }
-        await writeAtomic(paths.cache, JSON.stringify(cache, null, 1))
-        job.done++
-        results.push({ n, state: 'done', ms: Date.now() - t0, ...size })
-        report('done', { ms: Date.now() - t0, ...size })
-      } catch (e) {
-        job.failed++
-        const error = e && e.message ? e.message : String(e)
-        results.push({ n, state: 'failed', error })
-        report('failed', { error })
+      if (!p.force && sp.state === 'ready') {
+        job.skipped++
+        results.push({ n, state: 'skipped' }); report('skipped')
+        continue
       }
+      report('exporting')
+      const targets = [{ file: path.join(stage, `${name}-high.jpg`), quality: s.highQuality }, { file: path.join(stage, `${name}-low.jpg`), quality: s.lowQuality }]
+      const size = await exportSheet(psd, targets, s)
+      files.push({ source: targets[0].file, target: sp.high }, { source: targets[1].file, target: sp.low })
+      review.set(id, targets[1].file)
+      next.spreads[id] = { n, key, hash, psd, at: new Date().toISOString(), ...size, high: { path: sp.high }, low: { path: sp.low } }
+      results.push({ n, state: 'prepared', ms: Date.now() - t0, ...size })
     }
     if (want.pdf && !job.cancelled) {
-      // The PDF is the whole album, in order, from the review JPEGs that exist.
-      const pages = []
-      for (const sp of plan.spreads) {
-        const f = path.join(paths.low, `${outputName(sp.n)}.jpg`)
-        if (await fs.promises.access(f).then(() => true, () => false)) pages.push({ path: f, ppi: s.ppi })
-      }
+      const pages = plan.spreads.map((sp) => ({ path: review.get(sp.id), ppi: s.ppi }))
+      if (pages.some((page) => !page.path)) throw new Error('The review JPEGs are incomplete. Export the whole album first.')
       emit('export.progress', { jobId: job.id, index: job.total, total: job.total, n: null, state: 'pdf', pages: pages.length })
-      try {
-        await writeJpegPdf(paths.pdf, pages, { title: path.basename(paths.pdf, '.pdf') })
-        const st = await fs.promises.stat(paths.pdf)
-        pdfResult = { path: paths.pdf, pages: pages.length, bytes: st.size }
-      } catch (e) {
-        pdfResult = { error: e && e.message ? e.message : String(e) }
-      }
+      const source = path.join(stage, 'review.pdf')
+      await writeJpegPdf(source, pages, { title: path.basename(paths.pdf, '.pdf') })
+      files.push({ source, target: paths.pdf })
+      pdfResult = { path: paths.pdf, pages: pages.length, bytes: (await fs.promises.stat(source)).size }
     }
+    if (job.cancelled) return
+    const required = want.pdf ? plan.spreads : spreads
+    await assertSnapshot(prepared, required)
+    for (const sp of required.filter((sp) => sp.state === 'ready')) {
+      const e = cache.spreads[sp.id]
+      if (await fileStamp(e.high.path) !== e.high.stamp || await fileStamp(e.low.path) !== e.low.stamp) throw new Error(`Spread ${sp.n}'s JPEGs changed during export.`)
+    }
+    published = await publishDelivery(files, cache, stage)
+    const written = new Set(files.map((item) => item.target))
+    const generated = new Set(results.filter((item) => item.state === 'prepared').map((item) => plan.spreads.find((sp) => sp.n === item.n).id))
+    for (const [id, e] of Object.entries(next.spreads)) {
+      if (!generated.has(id) && ['high', 'low'].some((k) => e[k] && written.has(e[k].path))) { delete next.spreads[id]; continue }
+      if (generated.has(id)) for (const k of ['high', 'low']) e[k].stamp = await fileStamp(e[k].path)
+    }
+    next.ownedFiles = { ...(cache.ownedFiles || {}) }
+    for (const e of Object.values(cache.spreads)) for (const k of ['high', 'low']) if (e[k]) next.ownedFiles[e[k].path] = e[k].stamp
+    for (const item of published) next.ownedFiles[item.target] = item.stamp
+    if (pdfResult) next.pdf = { path: paths.pdf, stamp: await fileStamp(paths.pdf) }
+    try { await writeAtomic(paths.cache, JSON.stringify(next, null, 1)) } catch (e) { await restoreDelivery(published); published = []; throw e }
+    for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
+  } catch (e) {
+    error = e.message || String(e); job.failed++
+    pdfResult = want.pdf ? { error } : null
+    emit('export.progress', { jobId: job.id, total: job.total, n: null, state: 'failed', error })
   } finally {
+    // Keep backups if rollback itself failed; this is an explicit recovery dependency.
+    if (stage && !/rollback conflict/.test(error || '')) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {})
+    if (current === job) current = null
+    releaseJob(lease)
     emit('export.finished', {
       jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed, cancelled: job.cancelled,
-      ms: Date.now() - job.startedAt, paths, results, pdf: pdfResult, missingSheets,
+      ms: Date.now() - job.startedAt, paths, results, pdf: pdfResult, missingSheets, error,
     })
   }
 }

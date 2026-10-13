@@ -1,7 +1,7 @@
 // account_logic.ts — what the window says about the Creative Hubb account: why it can't open,
 // what to do next, and how long the subscription has left. Pure, so it is tested on its own.
 
-export type BlockedReason = 'not_activated' | 'expired' | 'wrong_machine' | 'wrong_account' | 'no_internet' | 'error'
+export type BlockedReason = 'not_activated' | 'expired' | 'wrong_machine' | 'wrong_account' | 'machine_binding_failed' | 'no_internet' | 'error'
 
 export interface Account {
   state: 'signedOut' | 'allowed' | 'blocked'
@@ -42,6 +42,8 @@ export function explainBlocked(a: Account): Explanation {
       }
     case 'wrong_account':
       return { title: 'The licence on this Mac is for another account', text: 'Connect to the internet and sign in with the account you want to use.', retry: false }
+    case 'machine_binding_failed':
+      return { title: 'Album Studio couldn’t confirm this computer', text: 'Connect to the internet and choose Check again. If it still fails, contact Creative Hubb to confirm this Mac’s activation.', retry: true }
     case 'no_internet':
       return { title: 'Album Studio can’t reach Creative Hubb', text: 'There’s no internet connection, and no licence saved on this Mac yet. Connect, then choose Check again.', retry: true }
     default:

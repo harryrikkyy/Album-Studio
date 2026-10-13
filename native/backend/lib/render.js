@@ -8,22 +8,25 @@
 'use strict'
 
 const { execFile } = require('child_process')
+const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { openAlbum } = require('./album')
-const { fileStamp } = require('./cache')
+const { fileStamp, writeAtomic } = require('./cache')
 const { inputsHash } = require('./inputs')
 const { PhotoCraftSession } = require('./photocraft')
 const { recordSheetProof } = require('./proofs')
 const { bakeAdjustments } = require('./parity')
 const { placeable } = require('./raw')
 const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
+const { migrateAlbum } = require('./project')
+const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache } = require('./sheets')
+const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
+const { preflightAlbum } = require('./preflight')
 
 /** Bump when the way sheets are built changes, so old caches don't hide the change. */
 const BUILDER_VERSION = 'photocraft-0.6.0/sheet-1'
 
 let current = null // the running job
-let jobSeq = 1
 
 async function readProject(file) {
   return JSON.parse(await fs.promises.readFile(file, 'utf8'))
@@ -46,14 +49,8 @@ function cachePaths(outputFolder) {
 const entryHash = (e) => (typeof e === 'string' ? e : e && e.hash)
 const editedSince = async (e, psd) => !!(e && typeof e === 'object' && e.sheet && e.sheet !== (await fileStamp(psd)))
 
-async function readCache(file) {
-  try { return JSON.parse(await fs.promises.readFile(file, 'utf8')) } catch (_) { return {} }
-}
-
 async function writeCache(file, cache) {
-  await fs.promises.mkdir(path.dirname(file), { recursive: true })
-  await fs.promises.writeFile(file + '.tmp', JSON.stringify(cache, null, 1))
-  await fs.promises.rename(file + '.tmp', file)
+  await writeAtomic(file, JSON.stringify(cache, null, 1))
 }
 
 function sipsResize(src, dst, maxSide) {
@@ -83,26 +80,38 @@ function unsupportedEdits(spread, ws) {
  * @param {{ emit: (event: string, data: object) => void }} ctx
  */
 async function startRender(p, { emit }) {
-  if (current) throw new Error(`A render is already running (${current.done + current.skipped + current.failed} of ${current.total} done). Wait for it, or cancel it.`)
   if (!p.album) throw new Error('missing `album`')
-  if (require('./deliver').exportStatus().running) throw new Error('Files are being exported. Render when the export has finished.')
-  const album = await openAlbum({ path: p.album })
-  const data = await readProject(album.file)
-  const ws = data.workspace || data
-  const outputFolder = ws.outputToken || path.join(album.path, 'exports')
-  await fs.promises.mkdir(outputFolder, { recursive: true })
-  const wanted = Array.isArray(p.spreads) && p.spreads.length ? new Set(p.spreads.map(Number)) : null
-  const spreads = album.spreads.filter((s) => (!wanted || wanted.has(s.n)))
-  const job = { id: jobSeq++, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now(), outputFolder }
-  current = job
-  emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
-  void runJob(job, { album, ws, spreads, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit).finally(() => { current = null })
-  return { jobId: job.id, total: job.total, outputFolder }
+  const lease = reserveJob('render', p.album)
+  try {
+    const album = await migrateAlbum({ album: p.album })
+    identifyJob(lease, album)
+    const data = await readProject(album.file)
+    const ws = data.workspace || data
+    const outputFolder = ws.outputToken || path.join(album.path, 'exports')
+    await fs.promises.mkdir(outputFolder, { recursive: true })
+    const wanted = spreadSelection(p.spreads, album.spreads)
+    const spreads = album.spreads.filter((s) => (!wanted || wanted.has(s.n)))
+    const job = { id: lease.id, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now(), outputFolder }
+    current = job
+    emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
+    void (async () => {
+      let results = [], error = null
+      try { results = await runJob(job, { album, ws, spreads, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
+      catch (e) { error = e.message; job.failed = Math.max(1, job.failed) }
+      finally {
+        if (current === job) current = null
+        releaseJob(lease)
+        emit('render.finished', { jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed, cancelled: job.cancelled, error, results, ms: Date.now() - job.startedAt, outputFolder })
+      }
+    })()
+    return { jobId: job.id, total: job.total, outputFolder }
+  } catch (e) { releaseJob(lease); throw e }
 }
 
 async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit) {
   const paths = cachePaths(job.outputFolder)
-  const cache = await readCache(paths.file)
+  const previous = await readRenderCache(job.outputFolder)
+  const cache = previous.version === 2 ? previous : { version: 2, spreads: {} }
   const proofDir = path.join(album.path, 'proofs', 'pages')
   await fs.promises.mkdir(proofDir, { recursive: true })
   await fs.promises.mkdir(paths.previews, { recursive: true })
@@ -113,35 +122,42 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
       if (job.cancelled) break
       const s = spreads[i]
       const name = outputName(s.n)
-      const outPsd = path.join(job.outputFolder, `${name}.psd`)
+      const record = await ownedSheetRecord(ws, album.path, s.id, cache)
+      const existingPath = record && record.path
+      const outPsd = canonicalSheetPath(job.outputFolder, s.id)
       const report = (state, extra = {}) => emit('render.progress', { jobId: job.id, index: i + 1, total: job.total, n: s.n, state, ...extra })
       const t0 = Date.now()
+      const stagedPsd = `${outPsd}.${crypto.randomUUID()}.part.psd`
       try {
         if (!s.template || !s.template.file) throw new Error(s.template ? `the template ${s.template.name} isn't on disk` : 'the spread has no template')
         if (!s.photoIds.length) throw new Error('the spread has no photos')
         const hash = await spreadHash(s, album, ws)
-        const exists = await fs.promises.access(outPsd).then(() => true, () => false)
-        if (exists && !overwriteEdited && (await editedSince(cache[s.n], outPsd))) {
+        const exists = existingPath && await fs.promises.access(existingPath).then(() => true, () => false)
+        if (exists && !overwriteEdited && (record.unverified || await editedSince(record, existingPath))) {
           // Edited by hand in the editor: never replaced without being asked.
           job.skipped++
           report('skipped', { reason: 'edited' })
           results.push({ n: s.n, state: 'skipped', reason: 'edited' })
           continue
         }
-        if (!force && exists && entryHash(cache[s.n]) === hash) {
+        if (!force && exists && entryHash(record) === hash) {
           job.skipped++
           report('skipped')
           results.push({ n: s.n, state: 'skipped' })
           continue
         }
         report('preparing')
+        const preflight = await preflightAlbum(album, ws, { size: 'original', heightInches: 12, ppi: 300, phase: 'render' }, [s.n])
+        if (preflight.errors.length) throw new Error(preflight.errors.map((e) => e.message).join(' '))
+        const previousStamp = await fileStamp(outPsd)
+        if (previousStamp !== 'missing' && existingPath !== outPsd) throw new Error(`An unowned sheet exists at ${outPsd}. Preserve it before rendering.`)
+        await fs.promises.mkdir(path.dirname(outPsd), { recursive: true })
         const photos = []
         const warnings = unsupportedEdits(s, ws)
         for (const id of s.photoIds) {
           const ph = album.photos[id]
-          if (!ph) { warnings.push(`a photo of this spread is missing from disk (${id})`); continue }
-          if (!ph.original) warnings.push(`${ph.base}: the original isn't in the photo folder; the thumbnail was used`)
-          const src = ph.original || ph.thumb
+          if (!ph || !ph.original) throw new Error(`The original photo ${id} is missing; thumbnails cannot be rendered for print.`)
+          const src = ph.original
           photos.push({
             file: await bakeAdjustments(await placeable(src, paths.raw), (ws.imageAdjustments || {})[id], paths.adjusted),
             orient: ph.orient === 'v' ? 'v' : 'h',
@@ -157,16 +173,23 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
           photos,
           layerEdits: (ws.pageLayerEdits || {})[s.n] || null,
           overlays: (ws.pageOverlays || {})[s.n] || null,
-          outPsd,
+          outPsd: stagedPsd,
           outJpg: preview,
         })
+        if (built.warnings.length) throw new Error(`Sheet construction left edits or photos unapplied: ${built.warnings.join('; ')}`)
+        if (await spreadHash(s, album, ws) !== hash || await fileStamp(outPsd) !== previousStamp) throw new Error('The source files or existing sheet changed during rendering. Retry from the current revision.')
+        if (previousStamp === 'missing') {
+          // Exclusive publication also protects against an unrelated document appearing mid-job.
+          await fs.promises.copyFile(stagedPsd, outPsd, fs.constants.COPYFILE_EXCL)
+          await fs.promises.unlink(stagedPsd)
+        } else await fs.promises.rename(stagedPsd, outPsd)
+        cache.spreads[s.id] = { path: outPsd, outputFolder: job.outputFolder, hash, sheet: await fileStamp(outPsd) }
+        await writeCache(paths.file, cache)
         // The sheet's own render becomes the spread's preview in Plan and Review.
         await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
         await fs.promises.unlink(preview).catch(() => {})
         await recordSheetProof(album, ws, s, outPsd)
         emit('proofs.updated', { album: album.path, n: s.n, proof: path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), source: 'sheet' })
-        cache[s.n] = { hash, sheet: await fileStamp(outPsd) }
-        await writeCache(paths.file, cache)
         job.done++
         const r = { n: s.n, state: 'done', ms: Date.now() - t0, path: outPsd, warnings: [...warnings, ...built.warnings] }
         results.push(r)
@@ -179,15 +202,12 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
         // A dead engine is replaced for the next sheet; a live one is cleaned up.
         if (pc && pc.proc.exitCode !== null) pc = null
         else if (pc) await closeAll(pc)
-      }
+      } finally { await fs.promises.unlink(stagedPsd).catch(() => {}) }
     }
   } finally {
     if (pc) await pc.close()
-    emit('render.finished', {
-      jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed,
-      cancelled: job.cancelled, ms: Date.now() - job.startedAt, outputFolder: job.outputFolder, results,
-    })
   }
+  return results
 }
 
 /**
@@ -198,19 +218,21 @@ async function runJob(job, { album, ws, spreads, force, overwriteEdited }, emit)
  */
 async function renderPlan({ album: albumPath }) {
   if (!albumPath) throw new Error('missing `album`')
-  const album = await openAlbum({ path: albumPath })
+  const album = await migrateAlbum({ album: albumPath })
   const data = await readProject(album.file)
   const ws = data.workspace || data
-  const outputFolder = ws.outputToken || path.join(album.path, 'exports')
-  const cache = await readCache(cachePaths(outputFolder).file)
+  const outputFolder = outputOf(ws, album.path)
+  const cache = await readRenderCache(outputFolder)
   const spreads = await Promise.all(album.spreads.map(async (s) => {
     if (!s.template || !s.template.file) return { n: s.n, state: 'blocked', reason: s.template ? 'Template not on disk' : 'No template' }
     if (!s.photoIds.length) return { n: s.n, state: 'blocked', reason: 'No photos' }
-    const out = path.join(outputFolder, `${outputName(s.n)}.psd`)
+    const record = await ownedSheetRecord(ws, album.path, s.id, cache)
+    const out = record && record.path
+    if (!out) return { n: s.n, id: s.id, state: 'missing' }
     const exists = await fs.promises.access(out).then(() => true, () => false)
     if (!exists) return { n: s.n, state: 'missing' }
     const hash = await spreadHash(s, album, ws)
-    return { n: s.n, state: entryHash(cache[s.n]) === hash ? 'current' : 'stale', edited: await editedSince(cache[s.n], out), unsupported: unsupportedEdits(s, ws) }
+    return { n: s.n, id: s.id, state: !record.unverified && entryHash(record) === hash ? 'current' : 'stale', edited: !!record.unverified || await editedSince(record, out), unverified: !!record.unverified, unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
 }

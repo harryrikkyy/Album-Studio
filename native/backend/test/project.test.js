@@ -82,7 +82,8 @@ test('spreads insert, move and delete, and their page edits move with them', asy
   await edit(proj, { op: 'removeSpread', n: 1 }, { op: 'removeSpread', n: 1 })
   d = read(proj)
   assert.equal(d.totalActivePages, 1, 'an album always keeps one spread')
-  assert.deepEqual(d.albumPages[1], { photos: [], template: null })
+  assert.match(d.albumPages[1].id, /^spread_/)
+  assert.deepEqual({ photos: d.albumPages[1].photos, template: d.albumPages[1].template }, { photos: [], template: null })
 
   await assert.rejects(edit(proj, { op: 'clearSpread', n: 5 }), /There is no spread 5/)
 })

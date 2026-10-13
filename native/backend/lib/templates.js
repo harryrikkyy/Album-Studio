@@ -10,7 +10,7 @@
 
 const fs = require('fs')
 const path = require('path')
-const { sanitize } = require('./album')
+const { sanitize, assignAssetIds } = require('./identity')
 
 const TTL_MS = 5 * 60 * 1000
 const cache = new Map()
@@ -88,7 +88,7 @@ async function scanCollection(dir) {
     // contains it.
     let preview = images.get(base) || null
     if (!preview) for (const [k, v] of images) if (k.includes(base)) { preview = v; break }
-    return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, ...slotsFromName(name), width: null, height: null }
+    return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, sourceRoot: dir, ...slotsFromName(name), width: null, height: null }
   })
   // Page sizes, many headers at a time (thousands take well under a second).
   for (let i = 0; i < list.length; i += 64) {
@@ -102,7 +102,7 @@ async function scanCollection(dir) {
 }
 
 /** All templates of these collection folders. */
-async function listTemplates(collections) {
+async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }) {
   const out = []
   for (const dir of collections || []) {
     const st = await fs.promises.stat(dir).catch(() => null)
@@ -116,7 +116,7 @@ async function listTemplates(collections) {
     cache.set(dir, { mtime: st.mtimeMs, at: Date.now(), list })
     out.push(...list)
   }
-  return out
+  return assignAssetIds(out, 'template', registry)
 }
 
 module.exports = { listTemplates, slotsFromName, canvasOf, shapeOf, commonShape }

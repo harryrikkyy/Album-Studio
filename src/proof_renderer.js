@@ -250,8 +250,8 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
         const sH = meta.height
         const coverScale = Math.max(fW / sW, fH / sH)
         const s = coverScale * Math.max(1, pl.scale || 1)
-        let cropW = Math.min(sW, Math.max(1, Math.round(fW / s)))
-        let cropH = Math.min(sH, Math.max(1, Math.round(fH / s)))
+        const cropW = Math.min(sW, Math.max(1, Math.round(fW / s)))
+        const cropH = Math.min(sH, Math.max(1, Math.round(fH / s)))
         const maxLeft = sW - cropW
         const maxTop = sH - cropH
         const ox = Math.max(-1, Math.min(1, pl.ox || 0))

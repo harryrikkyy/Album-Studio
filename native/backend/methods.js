@@ -4,6 +4,7 @@
 
 'use strict'
 
+const fs = require('fs')
 const account = require('./lib/account')
 const { openAlbum } = require('./lib/album')
 const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('./lib/newalbum')
@@ -63,7 +64,8 @@ const methods = {
   'templates.list': async (p) => {
     if (!p.album) throw new Error('missing `album`')
     const album = await openAlbum({ path: p.album })
-    return listTemplates(album.templateCollections.map((c) => c.path))
+    const data = JSON.parse(await fs.promises.readFile(album.file, 'utf8'))
+    return listTemplates(album.templateCollections.map((c) => c.path), (data.workspace || data).identity)
   },
 
   'spread.layout': async (p) => spreadLayout(p),

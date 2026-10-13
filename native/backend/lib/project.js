@@ -9,7 +9,8 @@
 
 const fs = require('fs')
 const path = require('path')
-const { openAlbum } = require('./album')
+const { openAlbum, locateProject } = require('./album')
+const { newSpreadId, relinkRoot } = require('./identity')
 const { planAlbum } = require('./autofill')
 const { firstUsable, offPageFrames } = require('./template_check')
 const { commonShape, listTemplates, shapeOf } = require('./templates')
@@ -31,9 +32,14 @@ async function readProject(file) {
 async function writeProject(file, data) {
   data.savedAt = new Date().toISOString()
   const tmp = `${file}.tmp-${process.pid}`
-  await fs.promises.writeFile(tmp, JSON.stringify(data, null, 2))
-  await fs.promises.copyFile(file, `${file}.bak`).catch(() => {})
-  await fs.promises.rename(tmp, file)
+  try {
+    await fs.promises.writeFile(tmp, JSON.stringify(data, null, 2))
+    await fs.promises.copyFile(file, `${file}.bak`)
+    await fs.promises.rename(tmp, file)
+  } catch (error) {
+    await fs.promises.unlink(tmp).catch(() => {})
+    throw error
+  }
 }
 
 /** The workspace object; very old projects saved it bare, at the top level (as restoreWorkspace reads it). */
@@ -43,7 +49,7 @@ function workspaceOf(d) {
 
 // ── pages as an array ───────────────────────────────────────────────────────
 
-const emptyPage = () => ({ photos: [], template: null })
+const emptyPage = (id = newSpreadId()) => ({ id, photos: [], template: null })
 
 function pagesOf(d) {
   const total = Math.max(1, Number(d.totalActivePages) || Object.keys(d.albumPages || {}).length || 1)
@@ -89,6 +95,7 @@ function snapshot(d) {
     rotations: ws.imageRotations || {},
     placements: ws.imagePlacements || {},
     adjustments: ws.imageAdjustments || {},
+    identityRoots: ws.identity && ws.identity.roots,
   })
 }
 
@@ -105,6 +112,7 @@ function restore(d, snap) {
   if (s.rotations) ws.imageRotations = s.rotations
   if (s.placements) ws.imagePlacements = s.placements
   if (s.adjustments) ws.imageAdjustments = s.adjustments
+  if (s.identityRoots && ws.identity) ws.identity.roots = { ...ws.identity.roots, ...s.identityRoots }
 }
 
 // ── operations ──────────────────────────────────────────────────────────────
@@ -133,7 +141,7 @@ function checkSpread(pages, n) {
 async function pickFitting(catalogue, { h, v, like, except, rng, shape }) {
   const choices = catalogue.filter((t) => t.h === h && t.v === v && t.id !== except && (!shape || !shapeOf(t) || shapeOf(t) === shape))
   if (!choices.length) return null
-  const same = like ? choices.filter((t) => t.collection === like.collection) : []
+  const same = like ? choices.filter((t) => t.sourceRoot && like.sourceRoot ? t.sourceRoot === like.sourceRoot : t.collection === like.collection) : []
   const pool = same.length ? same : choices
   const i = Math.floor(rng() * pool.length)
   const order = [...pool.slice(i), ...pool.slice(0, i)]
@@ -343,9 +351,21 @@ const OPS = {
     workspaceOf(ctx.d).templateTokens = [...new Set(collections)]
   },
 
+  /** Relinking is explicit: a new folder list alone cannot claim an old folder's assets. */
+  relinkFolder(ctx, { kind, from, to }) {
+    if (!['photo', 'template'].includes(kind) || !path.isAbsolute(from || '') || !path.isAbsolute(to || '')) throw new Error('Choose the old and new source folders to relink.')
+    const ws = workspaceOf(ctx.d)
+    const key = kind === 'photo' ? 'imageTokens' : 'templateTokens'
+    if (!(ws[key] || []).includes(from)) throw new Error('That source folder is not in this album.')
+    relinkRoot(ctx.d, kind, from, to)
+    ws[key] = [...new Set(ws[key].map((folder) => folder === from ? to : folder))]
+  },
+
   clearSpread(ctx, { n }) {
     checkSpread(ctx.pages, n)
-    ctx.pages[n - 1] = emptyPage()
+    ctx.pages[n - 1] = emptyPage(ctx.pages[n - 1].id)
+    const ws = workspaceOf(ctx.d)
+    for (const key of PAGE_KEYED) if (ws[key]) delete ws[key][n]
   },
 
   /** A new empty spread at position `at` (1 … N+1). */
@@ -402,8 +422,9 @@ const OPS = {
     }
     ctx.pages.length = 0
     for (const p of planned.pages) {
-      ctx.pages.push({ photos: p.photoIds.map((id) => photoEntry(ctx.model, id)), template: p.template ? templateEntry(p.template) : null })
+      ctx.pages.push({ id: newSpreadId(), photos: p.photoIds.map((id) => photoEntry(ctx.model, id)), template: p.template ? templateEntry(p.template) : null })
     }
+    for (const key of PAGE_KEYED) workspaceOf(ctx.d)[key] = {}
     ctx.report.autoFill = { spreads: planned.pages.length, withoutTemplate: planned.unmatched, cappedTo: planned.cappedTo }
   },
 }
@@ -431,9 +452,12 @@ function historyOf(file) {
 async function updateAlbum({ album: albumPath, ops }, opts = {}) {
   if (!albumPath) throw new Error('missing `album`')
   if (!Array.isArray(ops) || !ops.length) throw new Error('missing `ops`')
-  const model = await openAlbum({ path: albumPath })
-  return serialize(model.file, async () => {
-    const d = await readProject(model.file)
+  const { file, folder } = await locateProject(albumPath)
+  return serialize(file, async () => {
+    require('./jobs').assertProjectIdle(file, folder)
+    const d = await readProject(file)
+    const original = JSON.stringify(d)
+    const model = await prepare(d, file, folder)
     const before = snapshot(d)
     let templates = null
     const ctx = {
@@ -442,22 +466,31 @@ async function updateAlbum({ album: albumPath, ops }, opts = {}) {
       pages: pagesOf(d),
       rng: opts.rng || Math.random,
       report: {},
-      templates: async () => (templates ??= await listTemplates(workspaceOf(d).templateTokens)),
+      templates: async () => (templates ??= await listTemplates(workspaceOf(d).templateTokens, workspaceOf(d).identity)),
     }
     for (const o of ops) {
       const fn = Object.prototype.hasOwnProperty.call(OPS, o.op) ? OPS[o.op] : null
       if (!fn) throw new Error(`unknown album operation \`${o.op}\``)
       await fn(ctx, o)
+      if (['setPhotoFolders', 'setCollections', 'relinkFolder'].includes(o.op)) {
+        setPages(d, ctx.pages)
+        ctx.model = await openAlbum({ path: albumPath }, { data: d })
+        ctx.pages = pagesOf(d)
+        templates = null
+      }
     }
     setPages(d, ctx.pages)
-    if (snapshot(d) !== before) {
-      const h = historyOf(model.file)
+    const changed = snapshot(d) !== before
+    if (changed || JSON.stringify(d) !== original) {
+      await writeProject(file, d)
+    }
+    if (changed) {
+      const h = historyOf(file)
       h.undo.push(before)
       if (h.undo.length > HISTORY_LIMIT) h.undo.shift()
       h.redo.length = 0
-      await writeProject(model.file, d)
     }
-    return { album: await openAlbum({ path: albumPath }), report: ctx.report, ...historyState(model.file) }
+    return { album: await openAlbum({ path: albumPath }), report: ctx.report, ...historyState(file) }
   })
 }
 
@@ -467,21 +500,43 @@ function historyState(file) {
 }
 
 async function step(albumPath, from, to) {
-  const model = await openAlbum({ path: albumPath })
-  return serialize(model.file, async () => {
-    const h = historyOf(model.file)
-    const snap = h[from].pop()
+  const { file, folder } = await locateProject(albumPath)
+  return serialize(file, async () => {
+    require('./jobs').assertProjectIdle(file, folder)
+    const h = historyOf(file)
+    const snap = h[from].at(-1)
     if (snap) {
-      const d = await readProject(model.file)
-      h[to].push(snapshot(d))
+      const d = await readProject(file)
+      const before = snapshot(d)
       restore(d, snap)
-      await writeProject(model.file, d)
+      await writeProject(file, d)
+      h[from].pop()
+      h[to].push(before)
     }
-    return { album: await openAlbum({ path: albumPath }), changed: !!snap, ...historyState(model.file) }
+    return { album: await openAlbum({ path: albumPath }), changed: !!snap, ...historyState(file) }
+  })
+}
+
+/** Used by render/export before numbering can change: migration is one atomic project save. */
+async function prepare(data, file, folder) {
+  const model = await openAlbum({ path: file }, { data })
+  await require('./sheets').adoptLegacySheets(data, folder)
+  return model
+}
+
+async function migrateAlbum({ album: albumPath }) {
+  if (!albumPath) throw new Error('missing `album`')
+  const { file, folder } = await locateProject(albumPath)
+  return serialize(file, async () => {
+    const data = await readProject(file)
+    const before = JSON.stringify(data)
+    await prepare(data, file, folder)
+    if (JSON.stringify(data) !== before) await writeProject(file, data)
+    return openAlbum({ path: albumPath })
   })
 }
 
 const undo = ({ album }) => step(album, 'undo', 'redo')
 const redo = ({ album }) => step(album, 'redo', 'undo')
 
-module.exports = { updateAlbum, undo, redo }
+module.exports = { updateAlbum, undo, redo, migrateAlbum }

@@ -1,0 +1,816 @@
+{
+  "rubricVersion": 1,
+  "target": "Each category >95/100; all simultaneously",
+  "scoring": "10 criteria x 10 points. Verified complete =10, verified partial=5, failed/unverified/blocked=0. Critical unresolved defects prohibit certification. No criterion may be removed to increase scores. Scores are acceptance evidence, not the prior subjective audit ratings.",
+  "baselineCommit": "81bd5b4",
+  "engineCommit": "bdb1f8f",
+  "categories": [
+    {
+      "name": "Architecture",
+      "historicalScore": 8,
+      "baselineVerifiedScore": 6.5,
+      "currentScore": 6.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Layer boundaries",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Module cohesion",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Typed runtime interfaces",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "4",
+          "criterion": "State ownership",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Central business invariants",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "Error contracts",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Testable domains",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Explicit invalidation",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Dependency and layering gates",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Compatibility migration design",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "UI and workflow",
+      "historicalScore": 7.5,
+      "baselineVerifiedScore": 4.0,
+      "currentScore": 4.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Verified essential end to end workflows",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Undo and redo",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Spread and edit association",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Persistent spread/sheet ownership and distinct manual-proof reorder regressions pass; actual native workflows and relink UI remain unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "4",
+          "criterion": "Job progress and recovery",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Actionable errors",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "Keyboard operation",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Focus and modal behavior",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Accessible names and contrast",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Realistic large grid usability",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Empty loading offline failure states",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Testing",
+      "historicalScore": 7,
+      "baselineVerifiedScore": 3.5,
+      "currentScore": 5.0,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Business unit coverage",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Application integration",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Native UI end to end",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "4",
+          "criterion": "Original critical regressions",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Critical identity, auth, engine, colour and stale/incomplete delivery regressions added; original audit still has unresolved release/licensing/cache/UI issues. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "5",
+          "criterion": "Invalid and missing inputs",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "File and colour boundaries",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Concurrency and failure injection",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Concurrent starts, late OAuth/refresh, killed rename subprocesses, cancellation, revision changes and ENOSPC publication rollback tested. Cross-process/export power loss unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "8",
+          "criterion": "Coverage evidence",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Durable coverage.log has per-source coverage; proof_renderer 48.46% lines and raw.js 65.00%. UI/Rust coverage and enforced thresholds absent. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "9",
+          "criterion": "Engine integration and corpus",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Enforced complete CI checks",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Performance and scalability",
+      "historicalScore": 6.5,
+      "baselineVerifiedScore": 1.5,
+      "currentScore": 1.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Measured current small album",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Measured current typical album",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Realistic large albums and unique photos",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "4",
+          "criterion": "High resolution render and export",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Peak memory and CPU",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "UI latency and responsiveness",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Cache correctness and hit rates",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Bounded workers allocations caches",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Repeated operation resource growth",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Enforced hardware-specific budgets",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Data integrity and recovery",
+      "historicalScore": 5,
+      "baselineVerifiedScore": 2.5,
+      "currentScore": 6.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Stable collision-free asset identity",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "Persistent root/relative-path identity, sanitisation collisions, missing historical aliases and duplicate registry validation covered in identity.test.js. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "2",
+          "criterion": "Move rename relink duplicate policy",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Backend root relinking retains IDs/edits/history; per-file rename recovery and customer relink workflow incomplete. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "3",
+          "criterion": "Stable spread and sheet identity",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "Spread IDs and immutable sheet paths survive insert/move/delete/undo/redo; real canonical render and JPEG/proof owner tests pass, including identical Plan/manual differences. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "4",
+          "criterion": "Revision and derived-file freshness",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Durable atomic writes and backups",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "Rename recovery without overwrites",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Restart/cyclic rename journal, exclusive fallback content checks and conflict preservation tested; real removable-drive/power-loss evidence absent. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "7",
+          "criterion": "Crash and engine recovery",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Cancellation and shutdown bounds",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Engine request/shutdown bounds, late auth cancellation and staged export cancellation tested; large render/export interruption limits still need verification. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "9",
+          "criterion": "Concurrency isolation",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Migration undo and failure coverage",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "Legacy migration, undo/redo, initial failed operation, missing/colliding assets, monotonic root registry and spread overlay-history cases covered. See docs/quality/2026-10-13/verification.json."
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Documentation",
+      "historicalScore": 5,
+      "baselineVerifiedScore": 3.0,
+      "currentScore": 4.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Architecture and ownership",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Fresh setup and engine commands",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Build and test commands",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "4",
+          "criterion": "Performance and accessibility verification",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Colour and production specifications",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "RECOVERY_AND_VERIFICATION.md declares source colour/resolution policy and the unverified lab/PDF/mode requirements; real lab spec pending. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "6",
+          "criterion": "Identity and recovery procedures",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Identity, protected legacy sheets, relinking, rename journals and incomplete export recovery documented; UI recovery and hardware verification pending. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "7",
+          "criterion": "Security licensing migration policy",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Legacy HMAC/device-omitting signatures, conditional binding and issuer-compatible migration restrictions documented; real issuer rollout unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "8",
+          "criterion": "Customer setup troubleshooting",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Release and distribution procedures",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Verified current capability claims",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Security and licensing",
+      "historicalScore": 4.5,
+      "baselineVerifiedScore": 2.0,
+      "currentScore": 4.0,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Signed entitlement verification",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Rejected authorization fails closed",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Denied/unconfirmed binding and token-shaped HTTP failures, timed-out/cancelled callbacks and malformed expiry reject in disposable regressions; deployed auth/rules remain unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "3",
+          "criterion": "Device binding and races",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Conditional updateTime binding with authoritative reread plus competing-machine/cancel regressions; fake REST is not a deployed Firestore proof. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "4",
+          "criterion": "Expiry renewal offline migration",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Production dependency advisory status",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Sharp 0.35.5, brace-expansion 1.1.21 and js-yaml 4.3.2; root and interface final npm audits report zero. Rust advisory status unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "6",
+          "criterion": "Credential and log handling",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Filesystem process input safety",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Real rules issuer and adversarial verification",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Update and distribution integrity",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Security documentation and limitations",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Licensing/rules/runtime/distribution limitations and non-breaking issuer migration steps explicitly documented in recovery guide. See docs/quality/2026-10-13/verification.json."
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Print and delivery correctness",
+      "historicalScore": 4,
+      "baselineVerifiedScore": 1.5,
+      "currentScore": 4.0,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Source profiles and conversion",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "P3/sRGB, flat/transparent tagged RGB, template/backdrop and invalid structural ICC tests pass against independent PNG oracle. Other modes/semantic ICC/fallbacks not certified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "2",
+          "criterion": "Tagged JPEG and PDF colour consistency",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Exact revision freshness",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Current Plan hash, exact project snapshot and source/sheet stamps rechecked before publication; preserved-stamp content mutation still needs stronger detection. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "4",
+          "criterion": "Original availability and completeness",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Full-original decode/missing/corrupt input and complete album/PDF gates tested; real RAW/camera/lab corpus remains unverified. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "5",
+          "criterion": "Effective resolution checks",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Crop/zoom/rotation/source PPI and actual PSD raster policy checked; render-to-physical-size and per-embedded-layer evidence incomplete. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "6",
+          "criterion": "Geometry frame and crop validation",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Configured bleed safe area gutter",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Explicit preflight delivery gate",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "Backend preflight and interface delivery-state gate block missing/stale/incomplete/unsupported/low-resolution production; real GUI and lab compliance pending. See docs/quality/2026-10-13/verification.json."
+        },
+        {
+          "id": "9",
+          "criterion": "Atomic complete failure-safe delivery",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Golden corpus and actual lab verification",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    },
+    {
+      "name": "Build and distribution",
+      "historicalScore": 4,
+      "baselineVerifiedScore": 2.5,
+      "currentScore": 2.5,
+      "criteria": [
+        {
+          "id": "1",
+          "criterion": "Exact engine dependency pin",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "2",
+          "criterion": "Locked app dependencies and runtimes",
+          "weight": 10,
+          "points": 10,
+          "status": "verified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "3",
+          "criterion": "Verified clean checkout build",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "4",
+          "criterion": "Complete automated build and tests",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "5",
+          "criterion": "Verified bundle contents",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "6",
+          "criterion": "Customer setup without developer files",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "7",
+          "criterion": "Version update migration policy",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "8",
+          "criterion": "Developer ID hardened signing",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "9",
+          "criterion": "Actual notarization clean Mac install",
+          "weight": 10,
+          "points": 0,
+          "status": "unverified",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        },
+        {
+          "id": "10",
+          "criterion": "Release diagnostics reproducibility notes",
+          "weight": 10,
+          "points": 5,
+          "status": "partial",
+          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+        }
+      ],
+      "certified": false
+    }
+  ],
+  "latestAssessment": {
+    "date": "2026-10-13",
+    "evidence": "docs/quality/2026-10-13/verification.json",
+    "missionComplete": false,
+    "independentReview": "Interrupted by provider execution limit; not counted as complete."
+  }
+}

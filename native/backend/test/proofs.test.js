@@ -257,6 +257,34 @@ test('proofs made elsewhere are trusted once, not redrawn', async () => {
   assert.deepEqual(events, [{ event: 'proofs.idle', album: proj, rendered: 0, failed: 0 }])
 })
 
+test('identical Plan spreads retain their distinct hand-edited sheet proofs after swapping', async () => {
+  const { proj, root } = await makeAlbum()
+  const file = path.join(proj, 'project.json'), data = JSON.parse(fs.readFileSync(file, 'utf8'))
+  data.albumPages[2] = structuredClone(data.albumPages[1])
+  fs.writeFileSync(file, JSON.stringify(data))
+  const colors = [[210, 30, 30], [30, 30, 210]], out = path.join(root, 'out'), cache = {}
+  const { openAlbum } = require('../lib/album'), { spreadHash } = require('../lib/render')
+  const { fileStamp } = require('../lib/cache'), { recordSheetProof } = require('../lib/proofs')
+  fs.mkdirSync(path.join(proj, 'proofs', 'pages'), { recursive: true })
+  for (let n = 1; n <= 2; n++) writeFlatPsd(path.join(out, `Page_00${n}.psd`), colors[n - 1])
+  const album = await openAlbum({ path: proj })
+  for (const sp of album.spreads.slice(0, 2)) {
+    cache[sp.n] = { hash: await spreadHash(sp, album, data.workspace), sheet: await fileStamp(sp.sheet) }
+    await sharp({ create: { width: W, height: H, channels: 3, background: { r: colors[sp.n - 1][0], g: colors[sp.n - 1][1], b: colors[sp.n - 1][2] } } }).jpeg().toFile(path.join(proj, 'proofs', 'pages', `live_page_00${sp.n}.jpg`))
+    await recordSheetProof(album, data.workspace, sp, sp.sheet)
+  }
+  fs.mkdirSync(path.join(out, '.album-studio'), { recursive: true })
+  fs.writeFileSync(path.join(out, '.album-studio', 'render-cache.json'), JSON.stringify(cache))
+  await updateAlbum({ album: proj, ops: [{ op: 'moveSpread', from: 1, to: 2 }] })
+  await refresh(proj)
+  const first = path.join(proj, 'proofs', 'pages', 'live_page_001.jpg'), second = path.join(proj, 'proofs', 'pages', 'live_page_002.jpg')
+  assert.ok(near(await pixel(first, 300, 100), colors[1]))
+  assert.ok(near(await pixel(second, 300, 100), colors[0]))
+  fs.unlinkSync(first)
+  await refresh(proj)
+  assert.ok(near(await pixel(first, 300, 100), colors[1]), 'a deleted sheet proof is regenerated from its exact owner')
+})
+
 test('the JPEG a TIFF-based RAW embeds is found, with its orientation', async () => {
   const dir = tmpdir()
   const jpeg = await sharp({ create: { width: 320, height: 160, channels: 3, noise: { type: 'gaussian', mean: 128, sigma: 40 } } }).jpeg().toBuffer()

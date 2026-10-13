@@ -22,11 +22,17 @@ delete process.env.ALBUM_STUDIO_ACCOUNT
 
 const account = require('../lib/account')
 const { dispatch } = require('../server')
+const fbAuth = require('../../../src/firebase_auth')
+const licence = require('../../../src/license')
 
 // Google and Firestore, as far as the sign-in uses them. `docs` holds user records by key.
 const docs = new Map()
+const versions = new Map()
 const calls = []
 let offline = false
+let readHook = null
+let patchHook = null
+let tokenHook = null
 const day = 24 * 3600 * 1000
 const field = (v) => (typeof v === 'boolean' ? { booleanValue: v } : { stringValue: v })
 
@@ -37,6 +43,7 @@ async function fakeFetch(url, init = {}) {
   calls.push(`${method} ${u.hostname}${u.pathname}`)
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
   if (u.hostname === 'oauth2.googleapis.com') {
+    if (tokenHook) await tokenHook()
     const p = new URLSearchParams(init.body)
     assert.equal(p.get('client_secret'), 'test-secret')
     return p.get('code') === 'good' ? reply({ access_token: 'access', id_token: 'google-id' }) : reply({ error: 'invalid_grant' }, 400)
@@ -46,13 +53,29 @@ async function fakeFetch(url, init = {}) {
   if (u.hostname === 'firestore.googleapis.com') {
     assert.equal(init.headers?.Authorization, 'Bearer fb-id', 'every record read and write is authenticated')
     const key = decodeURIComponent(u.pathname.split('/users/')[1])
-    if (method === 'GET') return docs.has(key) ? reply({ fields: docs.get(key) }) : reply({ error: { code: 404 } }, 404)
+    const document = () => ({ fields: structuredClone(docs.get(key)), updateTime: new Date(Date.UTC(2026, 0, 1) + (versions.get(key) || 0) * 1000).toISOString() })
+    if (method === 'GET') {
+      if (readHook) {
+        const response = await readHook({ key, reply, document })
+        if (response) return response
+      }
+      return docs.has(key) ? reply(document()) : reply({ error: { code: 404 } }, 404)
+    }
+    if (patchHook) {
+      const response = await patchHook({ key, reply, document, url: u, init })
+      if (response) return response
+    }
+    // Simulate Firestore's document precondition only. These fake REST tests do not
+    // evaluate security rules, establish that deployed rules match, or call a live project.
+    const precondition = u.searchParams.get('currentDocument.updateTime')
+    if (precondition && precondition !== document().updateTime) return reply({ error: { code: 409, status: 'FAILED_PRECONDITION' } }, 409)
     const mask = u.searchParams.getAll('updateMask.fieldPaths')
     const sent = JSON.parse(init.body).fields
     const doc = docs.get(key) || {}
     for (const f of mask) doc[f] = sent[f]
     docs.set(key, doc)
-    return reply({ fields: doc })
+    versions.set(key, (versions.get(key) || 0) + 1)
+    return reply(document())
   }
   throw new Error(`unexpected request ${method} ${url}`)
 }
@@ -71,7 +94,7 @@ async function startSignIn() {
   const seen = new Promise((resolve) => { onOpen = resolve })
   const done = account.signIn({}, {})
   done.catch(() => {}) // the tests look at failures after driving the browser side
-  const url = new URL(await seen)
+  const url = new URL(await Promise.race([seen, done.then(() => { throw new Error('Sign-in finished before opening the browser.') })]))
   return { done, back: url.searchParams.get('redirect_uri'), state: url.searchParams.get('state') }
 }
 
@@ -195,5 +218,341 @@ test('settings: a key left empty in one file comes from the next', () => {
   } finally {
     process.env.FIREBASE_PROJECT_ID = saved.p
     process.env.GOOGLE_CLIENT_ID = saved.c
+  }
+})
+
+async function activatedAccount({ machineId = '', expiresOn = new Date(Date.now() + 30 * day).toISOString() } = {}) {
+  await account.signOut()
+  account._reset()
+  offline = false
+  readHook = patchHook = tokenHook = null
+  account._setDeps({ now: () => Date.now() })
+  docs.clear()
+  versions.clear()
+  fbAuth.setSession(fbAuth.mapSignInResponse({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in' }))
+  const doc = { activated: field(true), expiresOn: { timestampValue: expiresOn }, name: field('Ana Rao'), machineId: field(machineId) }
+  docs.set('ana@studio_in', doc)
+  return doc
+}
+
+function saveExistingLicense(expiresOn = new Date(Date.now() + 30 * day).toISOString()) {
+  licence.saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: new Date().toISOString() })
+}
+
+test('rejected or unconfirmed device binding cannot grant access or save a licence', async (t) => {
+  for (const [label, respond] of [
+    ['permission denied', ({ reply }) => reply({ error: { code: 403, status: 'PERMISSION_DENIED' } }, 403)],
+    ['a non-success response carrying fields', ({ reply, document }) => reply({ ...document(), fields: { ...document().fields, machineId: field('machine-A') } }, 403)],
+    ['unconfirmed successful response', ({ reply, document }) => reply(document())],
+    ['connection lost', () => { throw new TypeError('fetch failed') }],
+  ]) {
+    await t.test(label, async () => {
+      await activatedAccount()
+      patchHook = respond
+      const result = await account.verify('ana@studio.in')
+      assert.deepEqual([result.state, result.reason], ['blocked', 'machine_binding_failed'])
+      assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+      assert.equal(account.permits('album.open'), false)
+      patchHook = null
+    })
+  }
+})
+
+test('binding uses the document version and cannot overwrite a concurrent machine claim', async () => {
+  const doc = await activatedAccount()
+  let attemptedPrecondition
+  patchHook = ({ url, init }) => {
+    attemptedPrecondition = url.searchParams.get('currentDocument.updateTime')
+    assert.deepEqual(Object.keys(JSON.parse(init.body).fields).sort(), ['machineId', 'machineName'])
+    Object.assign(doc, { machineId: field('machine-B'), machineName: field('Studio iMac') })
+    versions.set('ana@studio_in', 1)
+  }
+  const result = await account.verify('ana@studio.in')
+  patchHook = null
+  assert.ok(attemptedPrecondition, 'the bind must compare the version read before writing')
+  assert.deepEqual([result.state, result.reason, result.machineName], ['blocked', 'wrong_machine', 'Studio iMac'])
+  assert.deepEqual(doc.machineId, field('machine-B'))
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('binding confirmation rereads the authoritative identity before saving', async () => {
+  const doc = await activatedAccount()
+  patchHook = ({ reply, document }) => {
+    const response = { ...document(), fields: { ...document().fields, machineId: field('machine-A') } }
+    doc.machineId = field('machine-B')
+    return reply(response)
+  }
+  const result = await account.verify('ana@studio.in')
+  patchHook = null
+  assert.deepEqual([result.state, result.reason], ['blocked', 'wrong_machine'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('rejected binding does not fall back to a previously saved offline licence', async () => {
+  await activatedAccount()
+  saveExistingLicense()
+  patchHook = ({ reply }) => reply({ error: { code: 403 } }, 403)
+  const result = await account.verify('ana@studio.in')
+  patchHook = null
+  assert.equal(result.state, 'blocked')
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('an unbound record without a document version is not safe to claim', async () => {
+  const doc = await activatedAccount()
+  readHook = ({ reply }) => reply({ fields: doc })
+  const result = await account.verify('ana@studio.in')
+  readHook = null
+  assert.deepEqual([result.state, result.reason], ['blocked', 'machine_binding_failed'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('invalid online expiry cannot create an allowed account or licence', async () => {
+  await activatedAccount({ machineId: 'machine-A', expiresOn: 'not a timestamp' })
+  const result = await account.verify('ana@studio.in')
+  assert.deepEqual([result.state, result.reason], ['blocked', 'expired'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('cached permission and status expire at the verified licence deadline', async () => {
+  let now = Date.now()
+  const expiresOn = new Date(now + 5_000).toISOString()
+  await activatedAccount({ machineId: 'machine-A', expiresOn })
+  saveExistingLicense(expiresOn)
+  account._setDeps({ now: () => now })
+  assert.equal((await account.status()).state, 'allowed')
+  now += 5_001
+  assert.equal(account.permits('album.open'), false, 'a long-running app must enforce expiry without manual refresh')
+  assert.deepEqual([(await account.status()).state, (await account.status()).reason], ['blocked', 'expired'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+  account._setDeps({ now: () => Date.now() })
+})
+
+test('signing out while status is checking cannot restore access or the licence', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense()
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  readHook = async () => { entered(); await waiting }
+  const pending = account.status()
+  await seen
+  await account.signOut()
+  release()
+  const result = await pending
+  readHook = null
+  assert.equal(result.state, 'signedOut')
+  assert.equal((await account.status()).state, 'signedOut')
+  assert.equal(account.permits('album.open'), false)
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+  assert.equal(fs.existsSync(process.env.CH_SESSION_FILE), false)
+})
+
+test('signing out during a Google callback cannot save a late Firebase session', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  tokenHook = async () => { entered(); await waiting }
+  const signIn = await startSignIn()
+  const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
+  await seen
+  await account.signOut()
+  release()
+  await assert.rejects(signIn.done, /cancelled/)
+  await callback
+  tokenHook = null
+  assert.equal((await account.status()).state, 'signedOut')
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+  assert.equal(fs.existsSync(process.env.CH_SESSION_FILE), false)
+})
+
+test('HTTP errors carrying record fields cannot authorize an online account', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  readHook = ({ reply, document }) => reply(document(), 403)
+  const result = await account.verify('ana@studio.in')
+  readHook = null
+  assert.deepEqual([result.state, result.reason], ['blocked', 'not_activated'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('binding confirmation requires a successful authoritative read', async () => {
+  await activatedAccount()
+  let reads = 0
+  readHook = ({ reply, document }) => ++reads > 1 ? reply(document(), 403) : null
+  const result = await account.verify('ana@studio.in')
+  readHook = null
+  assert.deepEqual([result.state, result.reason], ['blocked', 'machine_binding_failed'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('offline licence with a malformed expiry does not grant unbounded access', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense('invalid expiry')
+  offline = true
+  const result = await account.status()
+  offline = false
+  assert.deepEqual([result.state, result.reason], ['blocked', 'expired'])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('cached offline permission preserves the existing whole-day expiry policy', async () => {
+  let now = Date.now()
+  const expiresOn = new Date(now + 2 * day + 1_000).toISOString()
+  await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense(expiresOn)
+  account._setDeps({ now: () => now })
+  offline = true
+  assert.equal((await account.status()).state, 'allowed')
+  now += day + 1_001
+  assert.equal(account.permits('album.open'), false)
+  assert.equal((await account.status()).reason, 'expired')
+  offline = false
+  account._setDeps({ now: () => Date.now() })
+})
+
+test('signing out during sign-in server startup cancels before opening a browser', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  opened = []
+  const pending = account.signIn({}, {})
+  pending.catch(() => {})
+  await account.signOut()
+  let timeout
+  try {
+    await assert.rejects(Promise.race([pending, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Startup cancellation did not finish.')), 500) })]), /Sign-in cancelled/)
+  } finally {
+    clearTimeout(timeout)
+    account.cancelSignIn()
+  }
+  assert.equal(opened.length, 0)
+  assert.equal((await account.status()).state, 'signedOut')
+})
+
+test('retry and a status refresh share one in-flight account check', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense()
+  assert.equal((await account.status()).state, 'allowed')
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  let reads = 0
+  readHook = async ({ reply, document }) => {
+    reads += 1
+    if (reads > 1) return reply({ ...document(), fields: { ...document().fields, activated: field(false) } })
+    entered()
+    await waiting
+  }
+  const refresh = account.status({ refresh: true })
+  await seen
+  const retried = account.retry()
+  await new Promise((resolve) => setImmediate(resolve))
+  release()
+  const results = await Promise.all([refresh, retried])
+  readHook = null
+  assert.equal(reads, 1, 'overlapping checks must not race conflicting state or saved licences')
+  assert.deepEqual(results[0], results[1])
+})
+
+test('signing out while retry is checking cannot restore access or the licence', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense()
+  assert.equal((await account.status()).state, 'allowed')
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  readHook = async () => { entered(); await waiting }
+  const pending = account.retry()
+  await seen
+  await account.signOut()
+  release()
+  const result = await pending
+  readHook = null
+  assert.equal(result.state, 'signedOut')
+  assert.equal(account.permits('album.open'), false)
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('automatic sign-in timeout prevents an in-flight callback from saving late access', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  fbAuth.clearSession()
+  account._setDeps({ signInTimeoutMs: 60 })
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  tokenHook = async () => { entered(); await waiting }
+  const signIn = await startSignIn()
+  const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
+  try {
+    await seen
+    await assert.rejects(signIn.done, /Sign-in timed out/)
+    release()
+    await callback
+    assert.equal(account.permits('album.open'), false, 'the timed-out flow cannot grant permission later')
+    assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+    assert.equal(fs.existsSync(process.env.CH_SESSION_FILE), false)
+  } finally {
+    release()
+    tokenHook = null
+    account._setDeps({ signInTimeoutMs: 3 * 60 * 1000 })
+    await account.signOut()
+  }
+})
+
+test('duplicate OAuth callbacks cannot exchange a second code or overwrite the winning flow', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  let exchanges = 0
+  tokenHook = async () => { exchanges++; if (exchanges === 1) { entered(); await waiting } }
+  const signIn = await startSignIn()
+  const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
+  try {
+    await seen
+    const duplicate = await fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
+    assert.equal(duplicate.status, 409)
+    assert.equal(exchanges, 1)
+    release()
+    await callback
+    assert.equal((await signIn.done).state, 'allowed')
+    assert.equal(account.permits('album.open'), true)
+  } finally {
+    release()
+    tokenHook = null
+    await callback.catch(() => {})
+    await account.signOut()
+  }
+})
+
+test('a duplicate OAuth error cannot cancel a valid callback already being processed', async () => {
+  await activatedAccount({ machineId: 'machine-A' })
+  let release
+  const waiting = new Promise((resolve) => { release = resolve })
+  let entered
+  const seen = new Promise((resolve) => { entered = resolve })
+  tokenHook = async () => { entered(); await waiting }
+  const signIn = await startSignIn()
+  const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
+  try {
+    await seen
+    const duplicate = await fetch(`${signIn.back}/?error=access_denied&state=${signIn.state}`)
+    assert.equal(duplicate.status, 409)
+    release()
+    await callback
+    const result = await signIn.done
+    assert.equal(result.state, 'allowed')
+    assert.equal(account.permits('album.open'), true)
+    assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), true)
+  } finally {
+    release()
+    tokenHook = null
+    await callback.catch(() => {})
+    await account.signOut()
   }
 })

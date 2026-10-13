@@ -19,7 +19,7 @@ const { templateArt, framesByName } = require('./psd_template')
 const { isRaw, previewable } = require('./raw')
 
 /** Bump when proofs are drawn differently, so every proof is redrawn once. */
-const PROOF_VERSION = 'proof-1'
+const PROOF_VERSION = 'proof-2-colour'
 const MAX_EDGE = 2400
 const MANIFEST = '.album-studio-proofs.json'
 const SHARP_READS = /\.(jpe?g|png|tiff?|webp|avif)$/i
@@ -65,7 +65,7 @@ function saveManifest(m) {
  */
 async function recordSheetProof(album, ws, spread, sheetPath) {
   const m = await manifestOf(album.path)
-  m.data.spreads[spread.n] = { hash: await proofHash(spread, album, ws), source: 'sheet', sheet: sheetPath ? await fileStamp(sheetPath) : null }
+  m.data.spreads[spread.n] = { id: spread.id, hash: await proofHash(spread, album, ws), source: 'sheet', sheetPath, sheet: sheetPath ? await fileStamp(sheetPath) : null }
   await saveManifest(m)
 }
 
@@ -75,7 +75,8 @@ async function proofFromSheet(sheetPath, out) {
   const px = await require('./deliver').sheetPixels(sheetPath)
   try {
     let p = sharp(px.input, px.raw ? { raw: px.raw } : { failOn: 'none' })
-    if (px.raw) p = p.flatten({ background: '#ffffff' })
+    p = p.withIccProfile('srgb')
+    p = p.flatten({ background: '#ffffff' })
     const tmp = `${out}.tmp-${process.pid}.jpg`
     await p.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' }).jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
     await fs.promises.rename(tmp, out)
@@ -331,8 +332,12 @@ async function refreshOnce(albumPath, r) {
 
   // Pictures already drawn, by what they show; read before anything is overwritten, so a spread
   // that moved takes its picture along instead of being drawn again.
-  const byHash = new Map()
-  for (const [n, e] of Object.entries(known)) if (e && e.hash && !byHash.has(e.hash)) byHash.set(e.hash, Number(n))
+  const byHash = new Map(), byId = new Map()
+  for (const [n, e] of Object.entries(known)) {
+    if (!e || !e.hash) continue
+    if (e.id) byId.set(e.id, Number(n))
+    if (e.source !== 'sheet' && !byHash.has(e.hash)) byHash.set(e.hash, Number(n))
+  }
 
   const todo = []
   let changed = false
@@ -342,16 +347,21 @@ async function refreshOnce(albumPath, r) {
     if (!s.template) {
       // An empty spread has no picture: an old one would show photos it no longer has.
       if (e || s.proof === proofPath(album.path, s.n)) todo.push({ s, remove: true })
-    } else if (e && e.hash === hashes[i]) {
+    } else if (e && e.hash === hashes[i] && (e.id === s.id || !e.id && e.source !== 'sheet')) {
+      if (!(await fs.promises.access(proofPath(album.path, s.n)).then(() => true, () => false))) {
+        todo.push({ s, hash: hashes[i], ...(e.source === 'sheet' && s.sheet ? { fromSheet: s.sheet, sheetStamp: await fileStamp(s.sheet) } : {}) })
+        continue
+      }
       // A sheet saved from the editor since its proof was made: show what the sheet looks like now.
       if (e.source === 'sheet' && e.sheet && s.sheet) {
         const stamp = await fileStamp(s.sheet)
-        if (stamp !== e.sheet) todo.push({ s, hash: hashes[i], fromSheet: s.sheet, sheetStamp: stamp })
+        if (stamp !== e.sheet || e.sheetPath !== s.sheet) todo.push({ s, hash: hashes[i], fromSheet: s.sheet, sheetStamp: stamp })
       }
+      if (!e.id) { e.id = s.id; changed = true }
       continue
     } else if (!e && s.proof && s.proof === proofPath(album.path, s.n)) {
       // Made before this manifest existed (the Electron app, or an older version): trust it once.
-      known[s.n] = { hash: hashes[i], source: 'adopted' }
+      known[s.n] = { id: s.id, hash: hashes[i], source: 'adopted' }
       changed = true
     } else if (s.template.file) {
       todo.push({ s, hash: hashes[i] })
@@ -360,10 +370,25 @@ async function refreshOnce(albumPath, r) {
   }
   const reuse = new Map()
   for (const t of todo) {
-    const from = t.hash && byHash.get(t.hash)
+    const identityFrom = byId.get(t.s.id)
+    const source = identityFrom && known[identityFrom]
+    const from = source && source.hash === t.hash ? identityFrom : t.hash && byHash.get(t.hash)
     if (from && from !== t.s.n) {
+      // A hand-edited sheet is specific to this persistent spread, even when Plan inputs match.
+      if (known[from].source === 'sheet') {
+        const stamp = t.s.sheet ? await fileStamp(t.s.sheet) : null
+        if (known[from].sheetPath !== t.s.sheet || known[from].sheet !== stamp) {
+          if (t.s.sheet) { t.fromSheet = t.s.sheet; t.sheetStamp = stamp }
+          continue
+        }
+      }
       const buf = await fs.promises.readFile(proofPath(album.path, from)).catch(() => null)
-      if (buf) reuse.set(t.s.n, { buf, source: known[from].source })
+      if (buf) reuse.set(t.s.n, { buf, source: known[from].source, sheet: known[from].sheet, sheetPath: known[from].sheetPath })
+    } else if (!source && t.s.sheet) {
+      const record = await require('./sheets').ownedSheetRecord(ws, album.path, t.s.id)
+      if (record && !record.unverified && record.hash === await require('./render').spreadHash(t.s, album, ws)) {
+        t.fromSheet = t.s.sheet; t.sheetStamp = await fileStamp(t.s.sheet)
+      }
     }
   }
   // Spreads past the end (the album got shorter): their pictures and records go.
@@ -396,7 +421,7 @@ async function refreshOnce(albumPath, r) {
       if (t.fromSheet) await proofFromSheet(t.fromSheet, out)
       else if (re) await writeAtomic(out, re.buf)
       else ({ skipped } = await drawProof(t.s, album, ws, out))
-      known[n] = t.fromSheet ? { hash: t.hash, source: 'sheet', sheet: t.sheetStamp } : { hash: t.hash, source: re ? re.source : 'live' }
+      known[n] = t.fromSheet ? { id: t.s.id, hash: t.hash, source: 'sheet', sheetPath: t.fromSheet, sheet: t.sheetStamp } : { id: t.s.id, hash: t.hash, source: re ? re.source : 'live', ...(re && re.source === 'sheet' ? { sheet: re.sheet, sheetPath: re.sheetPath } : {}) }
       await saveManifest(m)
       rendered++
       r.emit('proofs.updated', { album: album.path, n, proof: out, source: known[n].source, ms: Date.now() - t0, skipped })

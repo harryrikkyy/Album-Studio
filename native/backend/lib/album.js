@@ -2,7 +2,7 @@
 //
 // A project is a folder holding project.json (or, for old projects, a single .json file). Its
 // photos and templates are referenced by folder ("tokens"); the ids inside it are derived from
-// display names exactly as the Electron app derived them, so ids keep matching across apps:
+// display names as the Electron app derived them when uniquely attributable:
 //   photo     "img_" + sanitize(<folder display name> + "_" + <thumbnail file name>)
 //   template  "tpl_" + sanitize(<template folder name> + "_" + <psd file name>)
 // where sanitize() turns every non-alphanumeric character into "_", and a photo folder's display
@@ -13,8 +13,9 @@
 const fs = require('fs')
 const path = require('path')
 const { jpegSize } = require('./jpeg_size')
+const { listTemplates } = require('./templates')
+const { sanitize, registryOf, assignAssetIds, referenceIndex, resolveReference, fileFromUrl, ensureSpreadIds } = require('./identity')
 
-const sanitize = (s) => s.replace(/[^a-zA-Z0-9]/g, '_')
 const IMAGE_EXT = /\.(jpe?g|png|tiff?|webp|heic|heif)$/i
 const RAW_PREF = /\.(tiff?|cr2|cr3|raw|nef|arw|dng|rw2|orf|raf|psd|psb)$/i
 
@@ -94,29 +95,12 @@ async function scanPhotoFolderUncached(master, thumbDir) {
   return { path: master, name: display, exists: await exists(master), hasThumbs, photos }
 }
 
-/** Template PSDs of one collection folder (recursive), keyed by template id. */
-async function scanTemplateFolder(dir, index) {
-  const display = path.basename(dir)
-  const walk = async (d) => {
-    for (const e of await readdirSafe(d)) {
-      const full = path.join(d, e.name)
-      if (e.isDirectory()) await walk(full)
-      else if (/\.psd$/i.test(e.name)) index.set('tpl_' + sanitize(display + '_' + e.name), { file: full, collection: dir })
-    }
-  }
-  await walk(dir)
-}
-
-function fileFromUrl(url) {
-  if (typeof url !== 'string' || !url.startsWith('file://')) return null
-  try { return decodeURIComponent(new URL(url).pathname) } catch (_) { return null }
-}
-
 async function templatePreview(tpl, resolved) {
   const fromSaved = fileFromUrl(tpl.url)
   if (fromSaved && (await exists(fromSaved))) return fromSaved
   if (!resolved) return null
-  const guess = path.join(resolved.collection, 'Thumbnails', tpl.name.replace(/\.psd$/i, '.jpg'))
+  if (resolved.preview && (await exists(resolved.preview))) return resolved.preview
+  const guess = path.join(resolved.sourceRoot, 'Thumbnails', String(tpl.name || '').replace(/\.psd$/i, '.jpg'))
   return (await exists(guess)) ? guess : null
 }
 
@@ -129,38 +113,51 @@ async function proofFor(folder, n) {
   return null
 }
 
-/** The rendered print sheet in the output folder (`Page_NNN.psd`), when it exists. */
-async function sheetFor(outputFolder, n) {
-  if (!outputFolder) return null
-  const p = path.join(outputFolder, `Page_${String(n).padStart(3, '0')}.psd`)
-  return (await exists(p)) ? p : null
-}
-
 /**
  * @param {{path: string}} params  a project folder (or a legacy .json file)
  */
-async function openAlbum({ path: projectPath }) {
+async function openAlbum({ path: projectPath }, options = {}) {
   if (!projectPath) throw new Error('missing `path`')
   const { file, folder } = await locateProject(projectPath)
   let data
   try {
-    data = JSON.parse(await fs.promises.readFile(file, 'utf8'))
+    data = options.data || JSON.parse(await fs.promises.readFile(file, 'utf8'))
   } catch (e) {
     throw new Error(`${path.basename(file)} couldn't be read: ${e.message}`)
   }
   const ws = data.workspace || data
+  const registry = registryOf(data)
+  const legacyPositions = new Set(Object.entries(data.albumPages || {}).filter(([, page]) => !page.id).map(([n]) => Number(n)))
+  // Read-only opens derive repeatable legacy IDs; a subsequent atomic edit persists them.
+  ensureSpreadIds(data, { seed: file })
   const pages = data.albumPages || {}
   const spreadCount = Number(data.totalActivePages) || Object.keys(pages).length || 0
 
   // Photos: every folder in the project, in parallel.
-  const folders = await Promise.all((ws.imageTokens || []).map(scanPhotoFolder))
+  const folders = await Promise.all([...new Set(ws.imageTokens || [])].map(scanPhotoFolder))
+  const assets = assignAssetIds(folders.flatMap((f) => f.photos), 'photo', registry)
   /** @type {Record<string, any>} */
   const photos = {}
-  for (const f of folders) for (const p of f.photos) photos[p.id] = { ...p, orient: null, usedOn: [] }
+  for (const p of assets) photos[p.id] = { ...p, orient: null, usedOn: [] }
 
   // Templates referenced by spreads → their PSD and preview.
-  const tplIndex = new Map()
-  await Promise.all((ws.templateTokens || []).map((d) => scanTemplateFolder(d, tplIndex)))
+  const catalogue = await listTemplates(ws.templateTokens || [], registry)
+  const photoIndex = referenceIndex(assets, 'photo', registry)
+  const templateIndex = referenceIndex(catalogue, 'template', registry)
+  const identityConflicts = []
+  // Old per-photo adjustments cannot be assigned by an ambiguous display-name alias. Include
+  // absent registry records in the check so removing a folder cannot transfer its edits.
+  for (const key of ['imageRotations', 'imagePlacements', 'imageAdjustments']) {
+    const edits = ws[key] || {}
+    for (const id of Object.keys(edits)) {
+      if (registry.assets[id]) continue
+      const matches = Object.entries(registry.assets).filter(([, a]) => a.kind === 'photo' && a.legacyId === id)
+      if (matches.length === 1) {
+        edits[matches[0][0]] ??= edits[id]
+        delete edits[id]
+      } else if (matches.length > 1) identityConflicts.push({ kind: 'photo', id, reason: 'ambiguous-adjustment', field: key, candidates: matches.map(([assetId]) => assetId) })
+    }
+  }
 
   const rotations = ws.imageRotations || {}
   const placements = ws.imagePlacements || {}
@@ -168,14 +165,23 @@ async function openAlbum({ path: projectPath }) {
   const spreads = []
   for (let n = 1; n <= spreadCount; n++) {
     const page = pages[n] || pages[String(n)] || { photos: [], template: null }
-    const ids = (page.photos || []).map((p) => p.id)
     for (const p of page.photos || []) {
-      const ph = photos[p.id]
+      const { asset, conflict, id } = resolveReference(p, assets, 'photo', registry, photoIndex)
+      if (conflict) identityConflicts.push({ ...conflict, n })
+      if (asset) p.id = asset.id
+      else if (id) p.id = id
+      const ph = asset && photos[asset.id]
       if (ph) { ph.usedOn.push(n); if (p.orient) ph.orient = p.orient }
     }
+    const ids = (page.photos || []).map((p) => p.id)
     const tpl = page.template
-    const resolved = tpl ? tplIndex.get(tpl.id) || null : null
+    const resolution = tpl ? resolveReference(tpl, catalogue, 'template', registry, templateIndex) : {}
+    if (resolution.conflict) identityConflicts.push({ ...resolution.conflict, n })
+    const resolved = resolution.asset || null
+    if (resolved) tpl.id = resolved.id
+    else if (resolution.id) tpl.id = resolution.id
     spreads.push({
+      id: page.id,
       n,
       photoIds: ids,
       missingPhotos: ids.filter((id) => !photos[id]).length,
@@ -188,7 +194,7 @@ async function openAlbum({ path: projectPath }) {
         preview: await templatePreview(tpl, resolved),
       } : null,
       proof: await proofFor(folder, n),
-      sheet: await sheetFor(ws.outputToken, n),
+      sheet: await require('./sheets').resolveSpreadSheet(ws, folder, legacyPositions.has(n) ? null : page.id, n),
       edited: Boolean((ws.pageOverlays || {})[n] || (ws.pageLayerEdits || {})[n] || (ws.pageBackgrounds || {})[n]),
     })
   }
@@ -216,9 +222,10 @@ async function openAlbum({ path: projectPath }) {
     templateCollections: (ws.templateTokens || []).map((d) => ({ path: d, name: path.basename(d) })),
     spreads,
     photos,
-    pool: folders.flatMap((f) => f.photos.map((p) => p.id)),
+    pool: assets.map((p) => p.id),
+    identityConflicts,
     stats: { spreads: spreadCount, photos: Object.keys(photos).length, used, planned: spreads.filter((s) => s.photoIds.length).length },
   }
 }
 
-module.exports = { openAlbum, sanitize }
+module.exports = { openAlbum, locateProject, sanitize }

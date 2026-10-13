@@ -4,6 +4,7 @@
 import { CircleAlert, CircleCheck, FileText, FolderOpen, FolderOutput, Images, Play, Square } from 'lucide-preact'
 import { useEffect, useState } from 'preact/hooks'
 import { call } from '../bridge'
+import { canDeliver } from '../delivery_logic'
 import { edit, proofUrl } from '../edit'
 import {
   cancelExport, exportJob, exportKinds, exportPlanSig, exportSettings, exporting, loadExportPlan, megabytes, reveal,
@@ -93,11 +94,11 @@ function ExportPanel() {
   const j = exportJob.value
   const busy = exporting.value
   const now = useClock(busy)
-  const counts = { ready: 0, todo: 0, stale: 0, nosheet: 0 }
+  const counts = { ready: 0, todo: 0, stale: 0, nosheet: 0, blocked: 0 }
   for (const x of p?.spreads ?? []) counts[x.state]++
   const pxH = Math.round(s.heightInches * s.ppi)
   const toMake = counts.todo + counts.stale
-  const canExport = !busy && !running.value && (k.jpegs || k.pdf) && (k.jpegs ? counts.ready + toMake > 0 : counts.ready > 0)
+  const canExport = canDeliver(p ? p.spreads.map((sp) => sp.state) : null, k, busy, running.value)
 
   return (
     <section class="job" aria-labelledby="export-title">
@@ -156,11 +157,14 @@ function ExportPanel() {
             {counts.ready ? <span class="is-ok">{plural(counts.ready, 'spread')} exported</span> : null}
             {toMake ? <span>{counts.ready ? ' · ' : ''}{plural(toMake, 'spread')} to export{counts.stale ? ` (${counts.stale} changed)` : ''}</span> : null}
             {counts.nosheet ? <span class="is-warn">{counts.ready || toMake ? ' · ' : ''}{plural(counts.nosheet, 'spread')} not rendered yet</span> : null}
+            {counts.blocked ? <span class="is-warn"> · {plural(counts.blocked, 'spread')} needs attention before delivery</span> : null}
           </>
         )}
       </p>
 
       <div class="export-actions">
+        {p?.spreads.filter((sp) => sp.state === 'blocked' || sp.state === 'nosheet').map((sp) => <p class="is-warn" key={sp.n}>{sp.reason || `Spread ${sp.n} needs rendering.`}</p>)}
+        {p?.preflight?.warnings.map((warning, i) => <p class="is-warn" key={`${warning.code}-${i}`}>{warning.message}</p>)}
         <Button variant="primary" icon={<Images size={14} />} disabled={!canExport} onClick={() => void startExport()} title={running.value ? 'Wait for the render to finish' : ''}>
           {busy ? 'Exporting…' : k.jpegs && toMake ? `Export ${plural(toMake, 'spread')}` : 'Export'}
         </Button>
@@ -195,7 +199,7 @@ async function changeOutputFolder(current: string | undefined) {
 export function Deliver() {
   const a = album.value!
   const [selected, setSelected] = useState<Set<number>>(new Set())
-  useEffect(() => { void loadPlan(); void loadExportPlan() }, [a.path])
+  useEffect(() => { void loadPlan(); void loadExportPlan() }, [a])
   // A render that finishes changes what can be exported.
   useEffect(() => { if (job.value?.finished) void loadExportPlan() }, [job.value?.finished])
   const p = plan.value

@@ -77,6 +77,13 @@ async function thumbFor(file, st) {
 /** The sheets of a folder (JPEG, PNG, PSD, PSB), in natural name order. */
 async function listSheets({ folder }) {
   if (!folder) throw new Error('missing `folder`')
+  return withFolderLock(folder, false, async (canonical, journals) => {
+    for (const journal of journals) await recoverJournal(canonical, journal)
+    return listSheetsUnlocked(folder)
+  })
+}
+
+async function listSheetsUnlocked(folder) {
   const entries = await fs.promises.readdir(folder, { withFileTypes: true }).catch(() => {
     throw new Error(`The folder ${folder} isn’t there. The drive may be disconnected.`)
   })
@@ -95,6 +102,207 @@ async function listSheets({ folder }) {
 // eslint-disable-next-line no-control-regex -- control characters are exactly what a file name can't hold
 const BAD = /[/:\\\u0000-\u001f]/
 
+const JOURNAL = /^\.as-rename-([a-f0-9]{16})\.json$/
+const LOCK = '.as-lab-rename.lock'
+// Share locks even if a diagnostic reloads this module in the same helper process.
+const processLockKey = Symbol.for('album-studio.lab-rename-locks')
+const processLocks = globalThis[processLockKey] || (globalThis[processLockKey] = { folders: new Set(), tokens: new Set() })
+const folderLocks = processLocks.folders
+
+function identity(st) {
+  return { dev: String(st.dev), ino: String(st.ino), size: String(st.size), mtimeNs: String(st.mtimeNs) }
+}
+
+async function hashFile(file) {
+  const hash = crypto.createHash('sha256')
+  for await (const chunk of fs.createReadStream(file)) hash.update(chunk)
+  return hash.digest('hex')
+}
+
+async function fileState(file, entry) {
+  let st
+  try { st = await fs.promises.lstat(file, { bigint: true }) } catch (e) {
+    if (e.code === 'ENOENT') return 'missing'
+    throw e
+  }
+  if (!st.isFile()) return 'foreign'
+  const current = identity(st)
+  if (entry.identity.ino !== '0' && Object.keys(entry.identity).every((key) => current[key] === entry.identity[key])) return 'owned'
+  // Copies on exFAT/SMB acquire a new inode. Their content must match the journaled source.
+  if (entry.digest && current.size === entry.identity.size && await hashFile(file) === entry.digest) return 'owned'
+  return 'foreign'
+}
+
+async function syncFolder(folder) {
+  let handle
+  try {
+    handle = await fs.promises.open(folder, 'r')
+    await handle.sync()
+  } catch (e) {
+    // Some removable/network filesystems do not implement directory fsync.
+    if (!['EINVAL', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS', 'EPERM', 'EISDIR'].includes(e.code)) throw e
+  } finally { if (handle) await handle.close() }
+}
+
+async function saveJournal(file, journal, initial = false) {
+  const out = initial ? file : `${file}.new`
+  const handle = await fs.promises.open(out, initial ? 'wx' : 'w', 0o600)
+  try {
+    await handle.writeFile(JSON.stringify(journal) + '\n')
+    await handle.sync()
+  } finally { await handle.close() }
+  if (!initial) await fs.promises.rename(out, file)
+  await syncFolder(path.dirname(file))
+}
+
+async function removeOwned(file, entry) {
+  const state = await fileState(file, entry)
+  if (state === 'foreign') throw new Error(`Recovery will not replace or delete the unrelated file ${file}.`)
+  if (state === 'owned') { await fs.promises.unlink(file); await syncFolder(path.dirname(file)) }
+}
+
+/** Exclusive moves avoid rename() silently replacing a file created after preflight. */
+async function moveExclusive(from, to, entry, journal, journalFile) {
+  if (await fileState(from, entry) !== 'owned') throw new Error(`The sheet ${from} changed or disappeared during renaming.`)
+  try {
+    await fs.promises.link(from, to)
+  } catch (e) {
+    if (!['ENOSYS', 'ENOTSUP', 'EOPNOTSUPP', 'EPERM', 'EXDEV', 'EMLINK'].includes(e.code)) throw e
+    // Preserve support for exFAT and SMB, which may not allow hard links. The digest is
+    // flushed before copying so restart recovery can identify the complete copy.
+    if (!entry.digest) { entry.digest = await hashFile(from); await saveJournal(journalFile, journal) }
+    const st = await fs.promises.stat(from)
+    await fs.promises.copyFile(from, to, fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE)
+    await fs.promises.chmod(to, st.mode)
+    await fs.promises.utimes(to, st.atime, st.mtime)
+    const handle = await fs.promises.open(to, 'r')
+    try { await handle.sync() } finally { await handle.close() }
+    if (await hashFile(to) !== entry.digest || await hashFile(from) !== entry.digest) {
+      throw new Error(`The sheet ${from} changed during copying. Both files were preserved for recovery.`)
+    }
+  }
+  await syncFolder(path.dirname(to))
+  await fs.promises.unlink(from)
+  await syncFolder(path.dirname(from))
+}
+
+function recoveryError(file, error) {
+  const out = new Error(`Lab renaming needs recovery. Keep ${file} and reconnect the drive or resolve the reported file conflict, then reopen the folder. ${error.message}`, { cause: error })
+  out.recoveryJournal = file
+  return out
+}
+
+function validateJournal(folder, file, journal) {
+  const match = path.basename(file).match(JOURNAL)
+  const name = (value) => typeof value === 'string' && value !== '.' && value !== '..' && path.basename(value) === value && !BAD.test(value)
+  if (!match || !journal || typeof journal !== 'object' || journal.version !== 1 || journal.folder !== folder || !['staging', 'committing'].includes(journal.phase) || !Array.isArray(journal.entries)) throw new Error('Invalid rename recovery journal; inspect it before continuing.')
+  const sources = new Set()
+  const targets = new Set()
+  for (const [i, entry] of journal.entries.entries()) {
+    const validIdentity = entry && entry.identity && ['dev', 'ino', 'size', 'mtimeNs'].every((k) => typeof entry.identity[k] === 'string' && /^-?\d+$/.test(entry.identity[k]))
+    if (!entry || !name(entry.from) || !name(entry.to) || entry.from.startsWith('.as-') || entry.to.startsWith('.') || entry.tmp !== `.as-rename-${match[1]}-${i}${path.extname(entry.from)}` || !validIdentity || (entry.digest && !/^[a-f0-9]{64}$/.test(entry.digest)) || (entry.identity.ino === '0' && !entry.digest)) throw new Error('Invalid sheet entry in rename recovery journal; no files were moved.')
+    if (sources.has(entry.from.toLowerCase()) || targets.has(entry.to.toLowerCase())) throw new Error('Duplicate sheet entries in rename recovery journal; no files were moved.')
+    sources.add(entry.from.toLowerCase())
+    targets.add(entry.to.toLowerCase())
+  }
+}
+
+/** Restore incomplete transactions before another rename or folder listing, including after restart. */
+async function recoverJournal(folder, file) {
+  try {
+    const journal = JSON.parse(await fs.promises.readFile(file, 'utf8'))
+    validateJournal(folder, file, journal)
+    if (journal.phase === 'committing') {
+      const failures = []
+      // Put committed outputs back into their private slots first, so cycles cannot collide.
+      for (const entry of journal.entries) {
+        const tmp = path.join(folder, entry.tmp)
+        const to = path.join(folder, entry.to)
+        try {
+          const staged = await fileState(tmp, entry)
+          const committed = await fileState(to, entry)
+          if (staged === 'foreign') throw new Error(`Recovery found an unrelated file at ${tmp}.`)
+          if (staged === 'owned') {
+            if (committed === 'owned') await removeOwned(to, entry) // interrupted link/copy before unlink
+          } else if (committed === 'owned') await moveExclusive(to, tmp, entry, journal, file)
+          else throw new Error(`Recovery cannot locate the sheet originally named ${entry.from}.`)
+        } catch (e) { failures.push(e.message) }
+      }
+      if (failures.length) throw new Error(failures.join(' '))
+      journal.phase = 'staging'
+      await saveJournal(file, journal)
+    }
+    const failures = []
+    for (const entry of journal.entries) {
+      const from = path.join(folder, entry.from)
+      const tmp = path.join(folder, entry.tmp)
+      try {
+        const original = await fileState(from, entry)
+        const staged = await fileState(tmp, entry)
+        if (original === 'foreign' || staged === 'foreign') throw new Error(`Recovery will not overwrite an unrelated file at ${original === 'foreign' ? from : tmp}.`)
+        if (original === 'owned') { if (staged === 'owned') await removeOwned(tmp, entry) }
+        else if (staged === 'owned') await moveExclusive(tmp, from, entry, journal, file)
+        else throw new Error(`Recovery cannot locate the sheet originally named ${entry.from}.`)
+      } catch (e) { failures.push(e.message) }
+    }
+    if (failures.length) throw new Error(failures.join(' '))
+    await fs.promises.unlink(file)
+    await fs.promises.unlink(`${file}.new`).catch((e) => { if (e.code !== 'ENOENT') throw e })
+    await syncFolder(folder)
+  } catch (e) { throw recoveryError(file, e) }
+}
+
+async function lockOwner(file) {
+  try {
+    const owner = JSON.parse(await fs.promises.readFile(file, 'utf8'))
+    if (!Number.isSafeInteger(owner.pid) || owner.pid < 1 || !/^[a-f0-9]{16}$/.test(owner.token)) throw new Error(`Inspect the invalid folder lock ${file} before renaming.`)
+    if (owner.pid === process.pid && !processLocks.tokens.has(owner.token)) return false
+    try { process.kill(owner.pid, 0); return true } catch (e) { if (e.code !== 'ESRCH') return true }
+    return false
+  } catch (e) { if (e.code === 'ENOENT') return null; throw e }
+}
+
+async function withFolderLock(folder, rename, work) {
+  let canonical
+  try { canonical = await fs.promises.realpath(folder) } catch (_) { throw new Error(`The folder ${folder} isn’t there. The drive may be disconnected.`) }
+  if (folderLocks.has(canonical)) throw new Error('A lab rename or recovery is already in progress for this folder.')
+  folderLocks.add(canonical)
+  const lockFile = path.join(canonical, LOCK)
+  const token = crypto.randomBytes(8).toString('hex')
+  let held = false
+  let failure
+  let result
+  try {
+    const journals = (await fs.promises.readdir(canonical)).filter((f) => JOURNAL.test(f)).sort().map((f) => path.join(canonical, f))
+    const owner = await lockOwner(lockFile)
+    if (owner === true) throw new Error('A lab rename or recovery is already in progress for this folder.')
+    if (rename || journals.length) {
+      if (owner === false) await fs.promises.unlink(lockFile)
+      const handle = await fs.promises.open(lockFile, 'wx', 0o600)
+      held = true
+      processLocks.tokens.add(token)
+      try { await handle.writeFile(JSON.stringify({ pid: process.pid, token })); await handle.sync() } finally { await handle.close() }
+    }
+    result = await work(canonical, journals)
+  } catch (e) { failure = e
+  } finally {
+    try {
+      if (held) await fs.promises.unlink(lockFile)
+    } catch (e) {
+      if (e.code !== 'ENOENT') {
+        if (failure) { failure.recoveryLock = lockFile; failure.message += ` Folder lock cleanup also failed: ${e.message}` }
+        else {
+          const error = new Error(`The rename finished, but folder lock cleanup failed at ${lockFile}. Reconnect the drive before retrying. ${e.message}`, { cause: e })
+          error.recoveryLock = lockFile
+          failure = error
+        }
+      }
+    } finally { processLocks.tokens.delete(token); folderLocks.delete(canonical) }
+  }
+  if (failure) throw failure
+  return result
+}
+
 /**
  * Rename sheets inside `folder`: `ops` [{fromPath, toBaseName}] keep each file's extension. Two
  * phases (every file to a temporary name, then to its new one), so swapping 00 and 01 works.
@@ -102,17 +310,36 @@ const BAD = /[/:\\\u0000-\u001f]/
  */
 async function renameSheets({ folder, ops }) {
   if (!folder || !Array.isArray(ops)) throw new Error('missing `folder` or `ops`')
+  return withFolderLock(folder, true, async (canonical, journals) => {
+    for (const journal of journals) await recoverJournal(canonical, journal)
+    return renameSheetsUnlocked(folder, canonical, ops)
+  })
+}
+
+async function renameSheetsUnlocked(folder, canonical, ops) {
   const plan = []
   const targets = new Set()
+  const sources = new Set()
+  const physicalSources = new Set()
   for (const op of ops) {
     if (path.dirname(op.fromPath) !== folder) throw new Error(`${op.fromPath} isn’t in ${folder}.`)
+    if (sources.has(op.fromPath.toLowerCase())) throw new Error('A sheet cannot be renamed more than once in the same operation.')
+    sources.add(op.fromPath.toLowerCase())
     const base = String(op.toBaseName || '').trim()
     if (!base || BAD.test(base) || base.startsWith('.')) throw new Error(`“${op.toBaseName}” can’t be a file name.`)
     const ext = path.extname(op.fromPath)
     const to = path.join(folder, base + ext)
     if (targets.has(to.toLowerCase())) throw new Error(`Two sheets would both be called “${base + ext}”.`)
     targets.add(to.toLowerCase())
-    if (to !== op.fromPath) plan.push({ from: op.fromPath, to })
+    if (to !== op.fromPath) {
+      const from = path.join(canonical, path.basename(op.fromPath))
+      const st = await fs.promises.lstat(from, { bigint: true })
+      if (!st.isFile() || path.basename(from).startsWith('.as-')) throw new Error(`${op.fromPath} is not a sheet file.`)
+      const physical = `${st.dev}:${st.ino}`
+      if (st.ino !== 0n && physicalSources.has(physical)) throw new Error('Two sheets refer to the same physical file. Make independent copies before renaming them together.')
+      physicalSources.add(physical)
+      plan.push({ from: op.fromPath, to, identity: identity(st), ...(st.ino === 0n ? { digest: await hashFile(from) } : {}) })
+    }
   }
   // A target that is an existing file not being renamed would be overwritten: refuse.
   const moving = new Set(plan.map((p) => p.from.toLowerCase()))
@@ -121,20 +348,26 @@ async function renameSheets({ folder, ops }) {
       throw new Error(`${path.basename(p.to)} already exists in the folder and isn’t one of the sheets being renamed.`)
     }
   }
-  const stamp = crypto.randomBytes(4).toString('hex')
-  const temps = []
+  if (!plan.length) return { renamed: 0, undo: [] }
+  const stamp = crypto.randomBytes(8).toString('hex')
+  const journalFile = path.join(canonical, `.as-rename-${stamp}.json`)
+  const journal = { version: 1, folder: canonical, phase: 'staging', entries: plan.map((p, i) => ({
+    from: path.basename(p.from), to: path.basename(p.to), tmp: `.as-rename-${stamp}-${i}${path.extname(p.from)}`, identity: p.identity, ...(p.digest ? { digest: p.digest } : {}),
+  })) }
+  try { await saveJournal(journalFile, journal, true) } catch (e) { throw recoveryError(journalFile, new Error(`No sheets were moved because the recovery journal could not be saved. ${e.message}`, { cause: e })) }
   try {
-    for (let i = 0; i < plan.length; i++) {
-      const tmp = path.join(folder, `.as-rename-${stamp}-${i}${path.extname(plan[i].from)}`)
-      await fs.promises.rename(plan[i].from, tmp)
-      temps.push({ tmp, ...plan[i] })
-    }
+    for (const entry of journal.entries) await moveExclusive(path.join(canonical, entry.from), path.join(canonical, entry.tmp), entry, journal, journalFile)
+    journal.phase = 'committing'
+    await saveJournal(journalFile, journal)
+    for (const entry of journal.entries) await moveExclusive(path.join(canonical, entry.tmp), path.join(canonical, entry.to), entry, journal, journalFile)
+    await fs.promises.unlink(journalFile)
+    await syncFolder(canonical)
   } catch (e) {
-    // Put back what already moved, then report.
-    for (const t of temps.reverse()) await fs.promises.rename(t.tmp, t.from).catch(() => {})
-    throw e
+    try { await recoverJournal(canonical, journalFile) } catch (recovery) {
+      throw recoveryError(journalFile, new Error(`${e.message} ${recovery.message}`, { cause: e }))
+    }
+    throw new Error(`Lab rename failed; the original names were restored. ${e.message}`, { cause: e })
   }
-  for (const t of temps) await fs.promises.rename(t.tmp, t.to)
   return {
     renamed: plan.length,
     undo: plan.map((p) => ({ fromPath: p.to, toBaseName: path.basename(p.from).replace(/\.[^.]+$/, '') })),

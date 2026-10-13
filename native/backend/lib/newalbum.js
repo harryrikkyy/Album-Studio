@@ -8,7 +8,8 @@ const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
 const { writeAtomic } = require('./cache')
-const { updateAlbum } = require('./project')
+const { updateAlbum, migrateAlbum } = require('./project')
+const { newSpreadId } = require('./identity')
 const { listRecent, rememberAlbum } = require('./recent')
 const { listTemplates } = require('./templates')
 const { ensureThumbnails, surveyFolder } = require('./thumbs')
@@ -131,7 +132,7 @@ async function createAlbum(p, { emit }) {
         pageLayerEdits: {},
         outputToken: outputFolder,
       },
-      albumPages: { 1: { photos: [], template: null } },
+      albumPages: { 1: { id: newSpreadId(), photos: [], template: null } },
       totalActivePages: 1,
       renderHashes: {},
     }
@@ -144,7 +145,7 @@ async function createAlbum(p, { emit }) {
       const r = await updateAlbum({ album: folder, ops: [{ op: 'autoFill', mode: 'desired', desiredSheets: p.autoFill.desiredSheets, chronological: p.autoFill.chronological !== false }] })
       report = r.report
     }
-    const album = await openAlbum({ path: folder })
+    const album = await migrateAlbum({ album: folder })
     await rememberAlbum(album)
     return { album, report, thumbFailures: thumbFailures.slice(0, 20), thumbFailed: thumbFailures.length }
   } finally {
