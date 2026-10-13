@@ -1,0 +1,2807 @@
+TAP version 13
+# Subtest: signed out with nothing saved: only account and system calls are answered
+ok 1 - signed out with nothing saved: only account and system calls are answered
+  ---
+  duration_ms: 6.946375
+  type: 'test'
+  ...
+# Subtest: sign-in in the browser: a new user gets a record, not yet activated
+ok 2 - sign-in in the browser: a new user gets a record, not yet activated
+  ---
+  duration_ms: 175.497958
+  type: 'test'
+  ...
+# Subtest: activated by Creative Hubb: retry opens the app, binds this Mac, saves the licence
+ok 3 - activated by Creative Hubb: retry opens the app, binds this Mac, saves the licence
+  ---
+  duration_ms: 24.320458
+  type: 'test'
+  ...
+# Subtest: offline: the licence saved on this Mac opens the app
+ok 4 - offline: the licence saved on this Mac opens the app
+  ---
+  duration_ms: 0.473333
+  type: 'test'
+  ...
+# Subtest: bound to another Mac, or expired: blocked, and the saved licence goes
+ok 5 - bound to another Mac, or expired: blocked, and the saved licence goes
+  ---
+  duration_ms: 1.113333
+  type: 'test'
+  ...
+# Subtest: a failed or cancelled sign-in says so and frees the address
+ok 6 - a failed or cancelled sign-in says so and frees the address
+  ---
+  duration_ms: 2.967625
+  type: 'test'
+  ...
+# Subtest: sign out forgets the licence and the session
+ok 7 - sign out forgets the licence and the session
+  ---
+  duration_ms: 2.505208
+  type: 'test'
+  ...
+# Subtest: settings: a key left empty in one file comes from the next
+ok 8 - settings: a key left empty in one file comes from the next
+  ---
+  duration_ms: 0.440875
+  type: 'test'
+  ...
+# Subtest: rejected or unconfirmed device binding cannot grant access or save a licence
+    # Subtest: permission denied
+    ok 1 - permission denied
+      ---
+      duration_ms: 0.767333
+      type: 'test'
+      ...
+    # Subtest: a non-success response carrying fields
+    ok 2 - a non-success response carrying fields
+      ---
+      duration_ms: 0.49275
+      type: 'test'
+      ...
+    # Subtest: unconfirmed successful response
+    ok 3 - unconfirmed successful response
+      ---
+      duration_ms: 0.42325
+      type: 'test'
+      ...
+    # Subtest: connection lost
+    ok 4 - connection lost
+      ---
+      duration_ms: 69.529
+      type: 'test'
+      ...
+    1..4
+ok 9 - rejected or unconfirmed device binding cannot grant access or save a licence
+  ---
+  duration_ms: 71.463458
+  type: 'test'
+  ...
+# Subtest: binding uses the document version and cannot overwrite a concurrent machine claim
+ok 10 - binding uses the document version and cannot overwrite a concurrent machine claim
+  ---
+  duration_ms: 4.327833
+  type: 'test'
+  ...
+# Subtest: binding confirmation rereads the authoritative identity before saving
+ok 11 - binding confirmation rereads the authoritative identity before saving
+  ---
+  duration_ms: 3.64675
+  type: 'test'
+  ...
+# Subtest: rejected binding does not fall back to a previously saved offline licence
+ok 12 - rejected binding does not fall back to a previously saved offline licence
+  ---
+  duration_ms: 0.686667
+  type: 'test'
+  ...
+# Subtest: an unbound record without a document version is not safe to claim
+ok 13 - an unbound record without a document version is not safe to claim
+  ---
+  duration_ms: 0.313083
+  type: 'test'
+  ...
+# Subtest: invalid online expiry cannot create an allowed account or licence
+ok 14 - invalid online expiry cannot create an allowed account or licence
+  ---
+  duration_ms: 0.239958
+  type: 'test'
+  ...
+# Subtest: cached permission and status expire at the verified licence deadline
+ok 15 - cached permission and status expire at the verified licence deadline
+  ---
+  duration_ms: 0.621
+  type: 'test'
+  ...
+# Subtest: signing out while status is checking cannot restore access or the licence
+ok 16 - signing out while status is checking cannot restore access or the licence
+  ---
+  duration_ms: 0.440291
+  type: 'test'
+  ...
+# Subtest: signing out during a Google callback cannot save a late Firebase session
+ok 17 - signing out during a Google callback cannot save a late Firebase session
+  ---
+  duration_ms: 67.543
+  type: 'test'
+  ...
+# Subtest: HTTP errors carrying record fields cannot authorize an online account
+ok 18 - HTTP errors carrying record fields cannot authorize an online account
+  ---
+  duration_ms: 0.444208
+  type: 'test'
+  ...
+# Subtest: binding confirmation requires a successful authoritative read
+ok 19 - binding confirmation requires a successful authoritative read
+  ---
+  duration_ms: 0.547375
+  type: 'test'
+  ...
+# Subtest: offline licence with a malformed expiry does not grant unbounded access
+ok 20 - offline licence with a malformed expiry does not grant unbounded access
+  ---
+  duration_ms: 15.188583
+  type: 'test'
+  ...
+# Subtest: cached offline permission preserves the existing whole-day expiry policy
+ok 21 - cached offline permission preserves the existing whole-day expiry policy
+  ---
+  duration_ms: 2.021667
+  type: 'test'
+  ...
+# Subtest: signing out during sign-in server startup cancels before opening a browser
+ok 22 - signing out during sign-in server startup cancels before opening a browser
+  ---
+  duration_ms: 4.934833
+  type: 'test'
+  ...
+# Subtest: retry and a status refresh share one in-flight account check
+ok 23 - retry and a status refresh share one in-flight account check
+  ---
+  duration_ms: 1.811375
+  type: 'test'
+  ...
+# Subtest: signing out while retry is checking cannot restore access or the licence
+ok 24 - signing out while retry is checking cannot restore access or the licence
+  ---
+  duration_ms: 1.565917
+  type: 'test'
+  ...
+# Subtest: automatic sign-in timeout prevents an in-flight callback from saving late access
+ok 25 - automatic sign-in timeout prevents an in-flight callback from saving late access
+  ---
+  duration_ms: 68.899917
+  type: 'test'
+  ...
+# Subtest: duplicate OAuth callbacks cannot exchange a second code or overwrite the winning flow
+ok 26 - duplicate OAuth callbacks cannot exchange a second code or overwrite the winning flow
+  ---
+  duration_ms: 18.529458
+  type: 'test'
+  ...
+# Subtest: a duplicate OAuth error cannot cancel a valid callback already being processed
+ok 27 - a duplicate OAuth error cannot cancel a valid callback already being processed
+  ---
+  duration_ms: 9.741125
+  type: 'test'
+  ...
+# Subtest: reads a JPEG size from its header
+ok 28 - reads a JPEG size from its header
+  ---
+  duration_ms: 88.154083
+  type: 'test'
+  ...
+# Subtest: opens a project: spreads, templates, proofs, photos
+ok 29 - opens a project: spreads, templates, proofs, photos
+  ---
+  duration_ms: 91.331125
+  type: 'test'
+  ...
+# Subtest: a missing project explains itself
+ok 30 - a missing project explains itself
+  ---
+  duration_ms: 3.094375
+  type: 'test'
+  ...
+# backend: ignored a line that is not JSON: {not json
+# Subtest: recent albums: newest first, de-duplicated, availability checked
+ok 31 - recent albums: newest first, de-duplicated, availability checked
+  ---
+  duration_ms: 50.1865
+  type: 'test'
+  ...
+# Subtest: the protocol answers unknown methods with an error, not a crash
+ok 32 - the protocol answers unknown methods with an error, not a crash
+  ---
+  duration_ms: 0.637375
+  type: 'test'
+  ...
+# Subtest: a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+ok 33 - a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+  ---
+  duration_ms: 163.8995
+  type: 'test'
+  ...
+# Subtest: export converts p3 PSD pixels into tagged sRGB, matching a separate PNG oracle
+ok 34 - export converts p3 PSD pixels into tagged sRGB, matching a separate PNG oracle
+  ---
+  duration_ms: 63.450208
+  type: 'test'
+  ...
+# Subtest: export converts srgb PSD pixels into tagged sRGB, matching a separate PNG oracle
+ok 35 - export converts srgb PSD pixels into tagged sRGB, matching a separate PNG oracle
+  ---
+  duration_ms: 166.880291
+  type: 'test'
+  ...
+# Subtest: sheet pixels retain a usable source profile for saved-sheet previews
+ok 36 - sheet pixels retain a usable source profile for saved-sheet previews
+  ---
+  duration_ms: 57.902667
+  type: 'test'
+  ...
+# Subtest: an invalid embedded ICC profile blocks export rather than silently assigning sRGB
+ok 37 - an invalid embedded ICC profile blocks export rather than silently assigning sRGB
+  ---
+  duration_ms: 16.895125
+  type: 'test'
+  ...
+# Subtest: an untagged RGB composite follows the documented sRGB policy
+ok 38 - an untagged RGB composite follows the documented sRGB policy
+  ---
+  duration_ms: 17.488417
+  type: 'test'
+  ...
+# Subtest: template backdrop pixels use the template source profile
+ok 39 - template backdrop pixels use the template source profile
+  ---
+  duration_ms: 187.347417
+  type: 'test'
+  ...
+# Subtest: a flat tagged RGB composite preserves its source colour without requiring the engine
+ok 40 - a flat tagged RGB composite preserves its source colour without requiring the engine
+  ---
+  duration_ms: 53.297291
+  type: 'test'
+  ...
+# Subtest: tagged transparent sheet pixels flatten onto white paper before JPEG encoding
+ok 41 - tagged transparent sheet pixels flatten onto white paper before JPEG encoding
+  ---
+  duration_ms: 56.03575
+  type: 'test'
+  ...
+# Subtest: a sheet exports at the print size and resolution, from the PSD’s own flattened image
+ok 42 - a sheet exports at the print size and resolution, from the PSD’s own flattened image
+  ---
+  duration_ms: 309.124417
+  type: 'test'
+  ...
+# Subtest: export: JPEG folders and the PDF beside the sheets, unchanged sheets skipped, changed ones redone
+ok 43 - export: JPEG folders and the PDF beside the sheets, unchanged sheets skipped, changed ones redone
+  ---
+  duration_ms: 3497.788916
+  type: 'test'
+  ...
+# Subtest: export refuses without rendered sheets
+ok 44 - export refuses without rendered sheets
+  ---
+  duration_ms: 3.792834
+  type: 'test'
+  ...
+# Subtest: the PDF: one page per JPEG, sized by resolution, offsets that point where they should
+ok 45 - the PDF: one page per JPEG, sized by resolution, offsets that point where they should
+  ---
+  duration_ms: 14.123459
+  type: 'test'
+  ...
+# Subtest: a Plan edit invalidates export readiness and production export refuses the old sheet
+ok 46 - a Plan edit invalidates export readiness and production export refuses the old sheet
+  ---
+  duration_ms: 1653.893667
+  type: 'test'
+  ...
+# Subtest: delivery follows stable spread ownership after reorder, including edited PSDs
+ok 47 - delivery follows stable spread ownership after reorder, including edited PSDs
+  ---
+  duration_ms: 537.120375
+  type: 'test'
+  ...
+# Subtest: PDF-only export refuses stale review JPEGs and preserves the previous PDF
+ok 48 - PDF-only export refuses stale review JPEGs and preserves the previous PDF
+  ---
+  duration_ms: 576.430417
+  type: 'test'
+  ...
+# Subtest: production delivery refuses incomplete albums instead of silently omitting missing sheets
+ok 49 - production delivery refuses incomplete albums instead of silently omitting missing sheets
+  ---
+  duration_ms: 162.761667
+  type: 'test'
+  ...
+# Subtest: simultaneous exports reserve one job before asynchronous preparation
+ok 50 - simultaneous exports reserve one job before asynchronous preparation
+  ---
+  duration_ms: 330.817709
+  type: 'test'
+  ...
+# Subtest: production refuses upsampling a low-resolution sheet to the configured PPI
+ok 51 - production refuses upsampling a low-resolution sheet to the configured PPI
+  ---
+  duration_ms: 262.657417
+  type: 'test'
+  ...
+# Subtest: failed publication restores all prior JPEGs, PDF and cache, and the next export can retry
+ok 52 - failed publication restores all prior JPEGs, PDF and cache, and the next export can retry
+  ---
+  duration_ms: 548.975042
+  type: 'test'
+  ...
+# Subtest: cancellation and source revision changes leave an existing complete delivery untouched
+ok 53 - cancellation and source revision changes leave an existing complete delivery untouched
+  ---
+  duration_ms: 289.6525
+  type: 'test'
+  ...
+# Subtest: unrelated or externally edited delivery files are preserved
+ok 54 - unrelated or externally edited delivery files are preserved
+  ---
+  duration_ms: 146.479041
+  type: 'test'
+  ...
+# Subtest: empty, duplicate, invalid and unknown selections cannot accidentally export every spread
+ok 55 - empty, duplicate, invalid and unknown selections cannot accidentally export every spread
+  ---
+  duration_ms: 206.570083
+  type: 'test'
+  ...
+# Subtest: a missing spread renders through the real engine into its persistent canonical sheet
+ok 56 - a missing spread renders through the real engine into its persistent canonical sheet
+  ---
+  duration_ms: 272.336291
+  type: 'test'
+  ...
+# Subtest: duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+ok 57 - duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+  ---
+  duration_ms: 26.500833
+  type: 'test'
+  ...
+# Subtest: exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+ok 58 - exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+  ---
+  duration_ms: 91.096875
+  type: 'test'
+  ...
+# Subtest: sanitization and recursive template basename collisions receive unique IDs
+ok 59 - sanitization and recursive template basename collisions receive unique IDs
+  ---
+  duration_ms: 32.230583
+  type: 'test'
+  ...
+# Subtest: persistent spread IDs follow move, insert, clear, delete, undo and redo
+ok 60 - persistent spread IDs follow move, insert, clear, delete, undo and redo
+  ---
+  duration_ms: 37.288125
+  type: 'test'
+  ...
+# Subtest: a failed initial edit leaves project migration and undo history untouched
+ok 61 - a failed initial edit leaves project migration and undo history untouched
+  ---
+  duration_ms: 119.38975
+  type: 'test'
+  ...
+# Subtest: explicit source relink preserves IDs and colour edits, and undo restores the original root
+ok 62 - explicit source relink preserves IDs and colour edits, and undo restores the original root
+  ---
+  duration_ms: 103.869709
+  type: 'test'
+  ...
+# Subtest: auto-fill replaces page edits and undo restores their original spread identities
+ok 63 - auto-fill replaces page edits and undo restores their original spread identities
+  ---
+  duration_ms: 255.930708
+  type: 'test'
+  ...
+# Subtest: failed atomic writes do not add, remove or move undo history
+ok 64 - failed atomic writes do not add, remove or move undo history
+  ---
+  duration_ms: 17.549584
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence still identifies the second photo when the first already owns the old ID
+ok 65 - legacy URL evidence still identifies the second photo when the first already owns the old ID
+  ---
+  duration_ms: 12.9395
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+ok 66 - legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+  ---
+  duration_ms: 7.0895
+  type: 'test'
+  ...
+# Subtest: duplicate persisted spread IDs and conflicting asset registry records fail before saving
+ok 67 - duplicate persisted spread IDs and conflicting asset registry records fail before saving
+  ---
+  duration_ms: 8.506916
+  type: 'test'
+  ...
+# Subtest: project edits and undo cannot change a plan while its files are being produced
+ok 68 - project edits and undo cannot change a plan while its files are being produced
+  ---
+  duration_ms: 47.369292
+  type: 'test'
+  ...
+# Subtest: clearing a spread removes its page edits and undo restores them with the same identity
+ok 69 - clearing a spread removes its page edits and undo restores them with the same identity
+  ---
+  duration_ms: 22.782084
+  type: 'test'
+  ...
+# Subtest: an order folder lists its sheets in natural order, with thumbnails and sizes
+ok 70 - an order folder lists its sheets in natural order, with thumbnails and sizes
+  ---
+  duration_ms: 171.961792
+  type: 'test'
+  ...
+# Subtest: renames swap safely, keep extensions, refuse clashes, and undo
+ok 71 - renames swap safely, keep extensions, refuse clashes, and undo
+  ---
+  duration_ms: 300.485917
+  type: 'test'
+  ...
+# Subtest: a PSD’s stored JPEG preview is found
+ok 72 - a PSD’s stored JPEG preview is found
+  ---
+  duration_ms: 3.07375
+  type: 'test'
+  ...
+# Subtest: a failure after one committed rename restores every original in a cyclic rename
+ok 73 - a failure after one committed rename restores every original in a cyclic rename
+  ---
+  duration_ms: 231.259959
+  type: 'test'
+  ...
+# Subtest: blocked rollback retains a journal that a restarted module recovers before listing
+ok 74 - blocked rollback retains a journal that a restarted module recovers before listing
+  ---
+  duration_ms: 462.997917
+  type: 'test'
+  ...
+# Subtest: a destination appearing during commit is preserved without replacing a source
+ok 75 - a destination appearing during commit is preserved without replacing a source
+  ---
+  duration_ms: 58.346291
+  type: 'test'
+  ...
+# Subtest: duplicate source operations fail before any file is moved
+ok 76 - duplicate source operations fail before any file is moved
+  ---
+  duration_ms: 6.25725
+  type: 'test'
+  ...
+# Subtest: concurrent renames of a folder are rejected before racing file operations
+ok 77 - concurrent renames of a folder are rejected before racing file operations
+  ---
+  duration_ms: 60.147083
+  type: 'test'
+  ...
+# Subtest: filesystems without hard links use exclusive copies and preserve contents and metadata
+ok 78 - filesystems without hard links use exclusive copies and preserve contents and metadata
+  ---
+  duration_ms: 529.714417
+  type: 'test'
+  ...
+# Subtest: copy fallback still refuses a destination appearing during commit
+ok 79 - copy fallback still refuses a destination appearing during commit
+  ---
+  duration_ms: 158.954666
+  type: 'test'
+  ...
+# Subtest: corrupt copy results preserve the source and a recovery journal instead of deleting data
+ok 80 - corrupt copy results preserve the source and a recovery journal instead of deleting data
+  ---
+  duration_ms: 40.250625
+  type: 'test'
+  ...
+# Subtest: restart recovers process crashes at staging, commit and incomplete exclusive-move boundaries
+    # Subtest: staged-unlink
+    ok 1 - staged-unlink
+      ---
+      duration_ms: 151.831375
+      type: 'test'
+      ...
+    # Subtest: committed-unlink
+    ok 2 - committed-unlink
+      ---
+      duration_ms: 344.129042
+      type: 'test'
+      ...
+    # Subtest: committed-link
+    ok 3 - committed-link
+      ---
+      duration_ms: 190.325458
+      type: 'test'
+      ...
+    # Subtest: staged-copy
+    ok 4 - staged-copy
+      ---
+      duration_ms: 180.156541
+      type: 'test'
+      ...
+    1..4
+ok 81 - restart recovers process crashes at staging, commit and incomplete exclusive-move boundaries
+  ---
+  duration_ms: 867.048333
+  type: 'test'
+  ...
+# Subtest: recovery rejects traversal in a journal before touching files outside the folder
+ok 82 - recovery rejects traversal in a journal before touching files outside the folder
+  ---
+  duration_ms: 7.93725
+  type: 'test'
+  ...
+# Subtest: distinct hard-link source names are rejected before creating an ambiguous recovery plan
+ok 83 - distinct hard-link source names are rejected before creating an ambiguous recovery plan
+  ---
+  duration_ms: 5.943917
+  type: 'test'
+  ...
+# Subtest: a journal write failure reports the recovery record and leaves every source untouched
+ok 84 - a journal write failure reports the recovery record and leaves every source untouched
+  ---
+  duration_ms: 6.748125
+  type: 'test'
+  ...
+# Subtest: folder-lock cleanup cannot hide a rename failure and a later operation can clear its own stale lock
+ok 85 - folder-lock cleanup cannot hide a rename failure and a later operation can clear its own stale lock
+  ---
+  duration_ms: 239.431833
+  type: 'test'
+  ...
+# Subtest: filesystems without usable inode identities still preserve an unrelated same-size destination
+ok 86 - filesystems without usable inode identities still preserve an unrelated same-size destination
+  ---
+  duration_ms: 57.6165
+  type: 'test'
+  ...
+# Subtest: the library: collections albums use and ones added, defaults for new albums, removal leaves files
+ok 87 - the library: collections albums use and ones added, defaults for new albums, removal leaves files
+  ---
+  duration_ms: 38.618375
+  type: 'test'
+  ...
+# Subtest: storage: cache sizes, and clearing only what was asked
+ok 88 - storage: cache sizes, and clearing only what was asked
+  ---
+  duration_ms: 14.923166
+  type: 'test'
+  ...
+# Subtest: a folder survey counts each photo once and lists the thumbnails still to make
+ok 89 - a folder survey counts each photo once and lists the thumbnails still to make
+  ---
+  duration_ms: 731.059166
+  type: 'test'
+  ...
+# Subtest: thumbnails are made upright at 400 px, RAWs from their embedded preview, and only once
+ok 90 - thumbnails are made upright at 400 px, RAWs from their embedded preview, and only once
+  ---
+  duration_ms: 481.757208
+  type: 'test'
+  ...
+# Subtest: creating an album: thumbnails, the project in the Electron format, a first plan
+ok 91 - creating an album: thumbnails, the project in the Electron format, a first plan
+  ---
+  duration_ms: 444.519084
+  type: 'test'
+  ...
+# Subtest: an album’s folders change later: new photo folders get thumbnails, and it undoes
+ok 92 - an album’s folders change later: new photo folders get thumbnails, and it undoes
+  ---
+  duration_ms: 692.161959
+  type: 'test'
+  ...
+# Subtest: editor layer ids (PSD order) line up with the engine’s layers (top first), by name
+ok 93 - editor layer ids (PSD order) line up with the engine’s layers (top first), by name
+  ---
+  duration_ms: 46.8985
+  type: 'test'
+  ...
+# warning: lossy compression
+# Subtest: colour adjustments are baked into a copy of the photo, cached
+ok 94 - colour adjustments are baked into a copy of the photo, cached
+  ---
+  duration_ms: 28.07375
+  type: 'test'
+  ...
+# Subtest: a sheet carries the spread editor’s layer overrides, text and shapes
+ok 95 - a sheet carries the spread editor’s layer overrides, text and shapes
+  ---
+  duration_ms: 1019.624459
+  type: 'test'
+  ...
+# Subtest: PDF images declare their exact embedded RGB ICC profiles, with correct xrefs and unchanged JPEG bytes
+ok 96 - PDF images declare their exact embedded RGB ICC profiles, with correct xrefs and unchanged JPEG bytes
+  ---
+  duration_ms: 192.26025
+  type: 'test'
+  ...
+# Subtest: ICC APP2 chunks are reconstructed by their declared sequence, including reversed physical order
+ok 97 - ICC APP2 chunks are reconstructed by their declared sequence, including reversed physical order
+  ---
+  duration_ms: 122.326708
+  type: 'test'
+  ...
+# Subtest: grey and CMYK profiles use matching ICCBased channel counts
+ok 98 - grey and CMYK profiles use matching ICCBased channel counts
+  ---
+  duration_ms: 69.139459
+  type: 'test'
+  ...
+# Subtest: invalid ICC chunk sequences, bounds, profiles and channel mismatches reject without replacing an existing PDF
+    # Subtest: zero sequence
+    ok 1 - zero sequence
+      ---
+      duration_ms: 7.248
+      type: 'test'
+      ...
+    # Subtest: zero count
+    ok 2 - zero count
+      ---
+      duration_ms: 33.656875
+      type: 'test'
+      ...
+    # Subtest: sequence past count
+    ok 3 - sequence past count
+      ---
+      duration_ms: 32.888625
+      type: 'test'
+      ...
+    # Subtest: duplicate sequence
+    ok 4 - duplicate sequence
+      ---
+      duration_ms: 20.052833
+      type: 'test'
+      ...
+    # Subtest: missing chunk
+    ok 5 - missing chunk
+      ---
+      duration_ms: 24.906792
+      type: 'test'
+      ...
+    # Subtest: inconsistent count
+    ok 6 - inconsistent count
+      ---
+      duration_ms: 31.791
+      type: 'test'
+      ...
+    # Subtest: invalid profile
+    ok 7 - invalid profile
+      ---
+      duration_ms: 24.140083
+      type: 'test'
+      ...
+    # Subtest: channel mismatch
+    ok 8 - channel mismatch
+      ---
+      duration_ms: 22.218542
+      type: 'test'
+      ...
+    # Subtest: truncated APP2 header
+    ok 9 - truncated APP2 header
+      ---
+      duration_ms: 3.102334
+      type: 'test'
+      ...
+    1..9
+ok 99 - invalid ICC chunk sequences, bounds, profiles and channel mismatches reject without replacing an existing PDF
+  ---
+  duration_ms: 207.164834
+  type: 'test'
+  ...
+# Subtest: malformed or truncated JPEG data and invalid page resolution reject cleanly
+    # Subtest: not JPEG
+    ok 1 - not JPEG
+      ---
+      duration_ms: 4.933625
+      type: 'test'
+      ...
+    # Subtest: missing end marker
+    ok 2 - missing end marker
+      ---
+      duration_ms: 1.578292
+      type: 'test'
+      ...
+    # Subtest: truncated marker length
+    ok 3 - truncated marker length
+      ---
+      duration_ms: 1.318208
+      type: 'test'
+      ...
+    # Subtest: segment exceeds file
+    ok 4 - segment exceeds file
+      ---
+      duration_ms: 4.875375
+      type: 'test'
+      ...
+    1..4
+ok 100 - malformed or truncated JPEG data and invalid page resolution reject cleanly
+  ---
+  duration_ms: 58.805667
+  type: 'test'
+  ...
+# Subtest: an unwritable destination rejects through the promise without an uncaught stream error or hang
+ok 101 - an unwritable destination rejects through the promise without an uncaught stream error or hang
+  ---
+  duration_ms: 247.913334
+  type: 'test'
+  ...
+# Subtest: concurrent standalone PDF writes use separate staging files and leave a valid complete result
+ok 102 - concurrent standalone PDF writes use separate staging files and leave a valid complete result
+  ---
+  duration_ms: 18.286459
+  type: 'test'
+  ...
+# Subtest: missing engine rejects commands and shutdown settles without an exit event
+ok 103 - missing engine rejects commands and shutdown settles without an exit event
+  ---
+  duration_ms: 54.289791
+  type: 'test'
+  ...
+# Subtest: engine responses retain IDs, errors and legitimate requests before the deadline
+ok 104 - engine responses retain IDs, errors and legitimate requests before the deadline
+  ---
+  duration_ms: 146.813417
+  type: 'test'
+  ...
+# Subtest: hung commands reject all pending calls and make the session unavailable
+ok 105 - hung commands reject all pending calls and make the session unavailable
+  ---
+  duration_ms: 270.10225
+  type: 'test'
+  ...
+# Subtest: shutdown escalates to SIGKILL when the engine ignores EOF and SIGTERM
+ok 106 - shutdown escalates to SIGKILL when the engine ignores EOF and SIGTERM
+  ---
+  duration_ms: 357.378333
+  type: 'test'
+  ...
+# Subtest: an unexpected exit rejects pending and future requests
+ok 107 - an unexpected exit rejects pending and future requests
+  ---
+  duration_ms: 208.084291
+  type: 'test'
+  ...
+# Subtest: a cyclic request fails immediately without leaking a pending response
+ok 108 - a cyclic request fails immediately without leaking a pending response
+  ---
+  duration_ms: 133.95225
+  type: 'test'
+  ...
+# Subtest: malformed engine output is ignored without breaking a valid response
+ok 109 - malformed engine output is ignored without breaking a valid response
+  ---
+  duration_ms: 105.441
+  type: 'test'
+  ...
+# Subtest: shutdown reports its process when even SIGKILL cannot complete within the final deadline
+ok 110 - shutdown reports its process when even SIGKILL cannot complete within the final deadline
+  ---
+  duration_ms: 406.376458
+  type: 'test'
+  ...
+# Subtest: write sandbox allows dot-prefixed names within the root and rejects traversal
+ok 111 - write sandbox allows dot-prefixed names within the root and rejects traversal
+  ---
+  duration_ms: 3.861167
+  type: 'test'
+  ...
+# Subtest: a shoot is scored from its thumbnails: sharp beats blurred, a black frame scores badly
+ok 112 - a shoot is scored from its thumbnails: sharp beats blurred, a black frame scores badly
+  ---
+  duration_ms: 229.672417
+  type: 'test'
+  ...
+# Subtest: picks are copied with every file of the same name (RAW and JPEG together), once
+ok 113 - picks are copied with every file of the same name (RAW and JPEG together), once
+  ---
+  duration_ms: 180.600542
+  type: 'test'
+  ...
+# Subtest: real original pixels and PSD geometry pass with an explicit fallback policy and unverified lab warning
+ok 114 - real original pixels and PSD geometry pass with an explicit fallback policy and unverified lab warning
+  ---
+  duration_ms: 279.354917
+  type: 'test'
+  ...
+# Subtest: a missing original cannot use an intact thumbnail
+ok 115 - a missing original cannot use an intact thumbnail
+  ---
+  duration_ms: 230.420041
+  type: 'test'
+  ...
+# Subtest: corrupt photo entropy is rejected even when its JPEG header remains readable
+ok 116 - corrupt photo entropy is rejected even when its JPEG header remains readable
+  ---
+  duration_ms: 122.626666
+  type: 'test'
+  ...
+# Subtest: missing references, missing templates and corrupt PSDs block production
+ok 117 - missing references, missing templates and corrupt PSDs block production
+  ---
+  duration_ms: 86.885291
+  type: 'test'
+  ...
+# Subtest: only requested spreads and their ambiguous adjustments are gated
+ok 118 - only requested spreads and their ambiguous adjustments are gated
+  ---
+  duration_ms: 166.243167
+  type: 'test'
+  ...
+# Subtest: unknown, duplicate and nonfinite spread selections cannot bypass preflight
+ok 119 - unknown, duplicate and nonfinite spread selections cannot bypass preflight
+  ---
+  duration_ms: 46.929709
+  type: 'test'
+  ...
+# Subtest: mismatched orientation counts cannot silently omit photos or leave placeholder frames
+ok 120 - mismatched orientation counts cannot silently omit photos or leave placeholder frames
+  ---
+  duration_ms: 157.844833
+  type: 'test'
+  ...
+# Subtest: hidden frame layers, hidden parent groups and zero alpha frames are rejected
+ok 121 - hidden frame layers, hidden parent groups and zero alpha frames are rejected
+  ---
+  duration_ms: 272.228792
+  type: 'test'
+  ...
+# Subtest: group visibility overrides apply to descendant frames and cannot be bypassed by showing a child
+ok 122 - group visibility overrides apply to descendant frames and cannot be bypassed by showing a child
+  ---
+  duration_ms: 226.085541
+  type: 'test'
+  ...
+# Subtest: effective PPI decreases with actual physical size and user zoom
+ok 123 - effective PPI decreases with actual physical size and user zoom
+  ---
+  duration_ms: 175.896333
+  type: 'test'
+  ...
+# Subtest: an explicit minimum PPI threshold passes exactly at its boundary and blocks below it
+ok 124 - an explicit minimum PPI threshold passes exactly at its boundary and blocks below it
+  ---
+  duration_ms: 175.10325
+  type: 'test'
+  ...
+# Subtest: quarter-turn rotation uses the rotated source dimensions
+ok 125 - quarter-turn rotation uses the rotated source dimensions
+  ---
+  duration_ms: 59.683917
+  type: 'test'
+  ...
+# Subtest: bounding-box fit after arbitrary rotation must cover all four frame corners
+ok 126 - bounding-box fit after arbitrary rotation must cover all four frame corners
+  ---
+  duration_ms: 59.873708
+  type: 'test'
+  ...
+# Subtest: nonfinite settings, rotations, placements, adjustments and overrides fail closed
+ok 127 - nonfinite settings, rotations, placements, adjustments and overrides fail closed
+  ---
+  duration_ms: 164.058791
+  type: 'test'
+  ...
+# Subtest: a preview-only vignette blocks print delivery until removed or implemented
+ok 128 - a preview-only vignette blocks print delivery until removed or implemented
+  ---
+  duration_ms: 37.0595
+  type: 'test'
+  ...
+# Subtest: plain frame overrides affect coverage and PPI, while unverified group transforms block
+ok 129 - plain frame overrides affect coverage and PPI, while unverified group transforms block
+  ---
+  duration_ms: 83.093833
+  type: 'test'
+  ...
+# Subtest: masked frames measure their real active mask bounds and detect fully masked placeholders
+ok 130 - masked frames measure their real active mask bounds and detect fully masked placeholders
+  ---
+  duration_ms: 119.54
+  type: 'test'
+  ...
+# Subtest: a declared lab size is checked, while bleed, safe-area and gutter compliance remain unverified
+ok 131 - a declared lab size is checked, while bleed, safe-area and gutter compliance remain unverified
+  ---
+  duration_ms: 61.835625
+  type: 'test'
+  ...
+# Subtest: export phase does not claim a seeded or edited sheet followed the current embedding recipe
+ok 132 - export phase does not claim a seeded or edited sheet followed the current embedding recipe
+  ---
+  duration_ms: 46.111916
+  type: 'test'
+  ...
+# Subtest: a renderer embedding scale raises its sample budget without inventing source detail
+ok 133 - a renderer embedding scale raises its sample budget without inventing source detail
+  ---
+  duration_ms: 45.424209
+  type: 'test'
+  ...
+# Subtest: an edit saves in the Electron format and keeps the previous version
+ok 134 - an edit saves in the Electron format and keeps the previous version
+  ---
+  duration_ms: 125.601083
+  type: 'test'
+  ...
+# Subtest: adding moves a photo off its old spread; replacing swaps across spreads
+ok 135 - adding moves a photo off its old spread; replacing swaps across spreads
+  ---
+  duration_ms: 190.098625
+  type: 'test'
+  ...
+# Subtest: spreads insert, move and delete, and their page edits move with them
+ok 136 - spreads insert, move and delete, and their page edits move with them
+  ---
+  duration_ms: 33.506041
+  type: 'test'
+  ...
+# Subtest: templates are set by id; a failed edit saves nothing
+ok 137 - templates are set by id; a failed edit saves nothing
+  ---
+  duration_ms: 14.997416
+  type: 'test'
+  ...
+# Subtest: undo and redo walk the history; a new edit clears redo; no-op edits are not steps
+ok 138 - undo and redo walk the history; a new edit clears redo; no-op edits are not steps
+  ---
+  duration_ms: 161.825708
+  type: 'test'
+  ...
+# Subtest: auto-fill re-plans the album from every photo, as one undoable step
+ok 139 - auto-fill re-plans the album from every photo, as one undoable step
+  ---
+  duration_ms: 64.83125
+  type: 'test'
+  ...
+# Subtest: several photos are added at once, copied on request, and reordered
+ok 140 - several photos are added at once, copied on request, and reordered
+  ---
+  duration_ms: 86.1625
+  type: 'test'
+  ...
+# Subtest: fitTemplate picks a template whose frames fit the photos, from the same collection first
+ok 141 - fitTemplate picks a template whose frames fit the photos, from the same collection first
+  ---
+  duration_ms: 108.9615
+  type: 'test'
+  ...
+# Subtest: the print-sheet folder changes like any edit, and undoes
+ok 142 - the print-sheet folder changes like any edit, and undoes
+  ---
+  duration_ms: 16.68175
+  type: 'test'
+  ...
+# Subtest: edits sent together apply in order, none lost
+ok 143 - edits sent together apply in order, none lost
+  ---
+  duration_ms: 42.963125
+  type: 'test'
+  ...
+# Subtest: a very old project with a bare workspace stays bare
+ok 144 - a very old project with a bare workspace stays bare
+  ---
+  duration_ms: 30.040541
+  type: 'test'
+  ...
+# Subtest: photos turn in quarter turns, everywhere they appear, and the turn undoes
+ok 145 - photos turn in quarter turns, everywhere they appear, and the turn undoes
+  ---
+  duration_ms: 36.514417
+  type: 'test'
+  ...
+# Subtest: templates picked for the photos skip ones with a frame parked off the page
+ok 146 - templates picked for the photos skip ones with a frame parked off the page
+  ---
+  duration_ms: 27.902125
+  type: 'test'
+  ...
+# Subtest: templates picked for the photos keep to the album’s page shape
+ok 147 - templates picked for the photos keep to the album’s page shape
+  ---
+  duration_ms: 94.700208
+  type: 'test'
+  ...
+# Subtest: a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it
+ok 148 - a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it
+  ---
+  duration_ms: 17.009708
+  type: 'test'
+  ...
+# Subtest: a photo’s colour is set, clamped and cleared; undo covers it
+ok 149 - a photo’s colour is set, clamped and cleared; undo covers it
+  ---
+  duration_ms: 19.845
+  type: 'test'
+  ...
+# Subtest: a template is read with its frames in drawing order, their shapes and strokes
+ok 150 - a template is read with its frames in drawing order, their shapes and strokes
+  ---
+  duration_ms: 344.499959
+  type: 'test'
+  ...
+# Subtest: erode shrinks a mask from its edges by r pixels
+ok 151 - erode shrinks a mask from its edges by r pixels
+  ---
+  duration_ms: 0.182
+  type: 'test'
+  ...
+# Subtest: proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+ok 152 - proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+  ---
+  duration_ms: 402.505084
+  type: 'test'
+  ...
+# Subtest: a spread layout says where each frame is and which photo fills it
+ok 153 - a spread layout says where each frame is and which photo fills it
+  ---
+  duration_ms: 146.527834
+  type: 'test'
+  ...
+# Subtest: a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+ok 154 - a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+  ---
+  duration_ms: 477.989417
+  type: 'test'
+  ...
+# Subtest: proofs made elsewhere are trusted once, not redrawn
+ok 155 - proofs made elsewhere are trusted once, not redrawn
+  ---
+  duration_ms: 234.457167
+  type: 'test'
+  ...
+# Subtest: identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+ok 156 - identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+  ---
+  duration_ms: 186.722084
+  type: 'test'
+  ...
+# Subtest: the JPEG a TIFF-based RAW embeds is found, with its orientation
+ok 157 - the JPEG a TIFF-based RAW embeds is found, with its orientation
+  ---
+  duration_ms: 8.040917
+  type: 'test'
+  ...
+# warning: lossy compression
+# warning: lossy compression
+# Subtest: frames pair with photos by orientation, in name order
+ok 158 - frames pair with photos by orientation, in name order
+  ---
+  duration_ms: 7.925125
+  type: 'test'
+  ...
+# Subtest: cover: no edit fills the frame exactly, centred
+ok 159 - cover: no edit fills the frame exactly, centred
+  ---
+  duration_ms: 0.172
+  type: 'test'
+  ...
+# Subtest: cover: pan moves within the overflow only; zoom below 1 is ignored
+ok 160 - cover: pan moves within the overflow only; zoom below 1 is ignored
+  ---
+  duration_ms: 0.079166
+  type: 'test'
+  ...
+# Subtest: cover: a 90° rotation swaps the photo’s width and height
+ok 161 - cover: a 90° rotation swaps the photo’s width and height
+  ---
+  duration_ms: 0.051959
+  type: 'test'
+  ...
+# Subtest: embed scale keeps 25% more pixels than the frame needs, never enlarges
+ok 162 - embed scale keeps 25% more pixels than the frame needs, never enlarges
+  ---
+  duration_ms: 0.132291
+  type: 'test'
+  ...
+# Subtest: builds a real sheet: photos clipped to frames, covering them
+ok 163 - builds a real sheet: photos clipped to frames, covering them
+  ---
+  duration_ms: 890.907042
+  type: 'test'
+  ...
+# Subtest: reorder, delete, undo and redo retain exact owned PSD paths and hand-edited bytes
+ok 164 - reorder, delete, undo and redo retain exact owned PSD paths and hand-edited bytes
+  ---
+  duration_ms: 161.330125
+  type: 'test'
+  ...
+# Subtest: inserting a spread never adopts another spread numbered PSD
+ok 165 - inserting a spread never adopts another spread numbered PSD
+  ---
+  duration_ms: 20.906833
+  type: 'test'
+  ...
+# Subtest: overlapping render starts cannot acquire two running jobs
+ok 166 - overlapping render starts cannot acquire two running jobs
+  ---
+  duration_ms: 32.946125
+  type: 'test'
+  ...
+# Subtest: hamming counts differing bits across 64-bit hex hashes
+ok 167 - hamming counts differing bits across 64-bit hex hashes
+  ---
+  duration_ms: 0.713666
+  type: 'test'
+  ...
+# Subtest: clusterDuplicates groups within threshold, keeps sharpest as rep
+ok 168 - clusterDuplicates groups within threshold, keeps sharpest as rep
+  ---
+  duration_ms: 0.197125
+  type: 'test'
+  ...
+# Subtest: curate drops blurry and badly-exposed photos
+ok 169 - curate drops blurry and badly-exposed photos
+  ---
+  duration_ms: 0.145667
+  type: 'test'
+  ...
+# Subtest: curate dedupes near-identical frames, keeping one per cluster
+ok 170 - curate dedupes near-identical frames, keeping one per cluster
+  ---
+  duration_ms: 0.064125
+  type: 'test'
+  ...
+# Subtest: curate honors orientation caps (targetH / targetV)
+ok 171 - curate honors orientation caps (targetH / targetV)
+  ---
+  duration_ms: 7.8365
+  type: 'test'
+  ...
+# Subtest: curate counts decode errors separately and never keeps them
+ok 172 - curate counts decode errors separately and never keeps them
+  ---
+  duration_ms: 0.108709
+  type: 'test'
+  ...
+# Subtest: layerBox with no edit is the layer itself
+ok 173 - layerBox with no edit is the layer itself
+  ---
+  duration_ms: 1.39425
+  type: 'test'
+  ...
+# Subtest: layerBox applies offset and scale
+ok 174 - layerBox applies offset and scale
+  ---
+  duration_ms: 0.126375
+  type: 'test'
+  ...
+# Subtest: layerBox treats a missing scale as 1, not 0
+ok 175 - layerBox treats a missing scale as 1, not 0
+  ---
+  duration_ms: 0.094958
+  type: 'test'
+  ...
+# Subtest: layerBox ignores non-finite edits rather than producing NaN
+ok 176 - layerBox ignores non-finite edits rather than producing NaN
+  ---
+  duration_ms: 0.065667
+  type: 'test'
+  ...
+# Subtest: resizeBox from the south-east moves only the size
+ok 177 - resizeBox from the south-east moves only the size
+  ---
+  duration_ms: 0.106583
+  type: 'test'
+  ...
+# Subtest: resizeBox from the north-west pins the far corner
+ok 178 - resizeBox from the north-west pins the far corner
+  ---
+  duration_ms: 0.086958
+  type: 'test'
+  ...
+# Subtest: resizeBox from the north-east pins left and bottom
+ok 179 - resizeBox from the north-east pins left and bottom
+  ---
+  duration_ms: 0.044792
+  type: 'test'
+  ...
+# Subtest: resizeBox never goes below the minimum, and does not invert
+ok 180 - resizeBox never goes below the minimum, and does not invert
+  ---
+  duration_ms: 0.059125
+  type: 'test'
+  ...
+# Subtest: resizeBox keeps the aspect ratio when asked
+ok 181 - resizeBox keeps the aspect ratio when asked
+  ---
+  duration_ms: 0.041833
+  type: 'test'
+  ...
+# Subtest: aspect-locked resize from the north still pins the bottom edge
+ok 182 - aspect-locked resize from the north still pins the bottom edge
+  ---
+  duration_ms: 0.039125
+  type: 'test'
+  ...
+# Subtest: boundingBox spans every input
+ok 183 - boundingBox spans every input
+  ---
+  duration_ms: 0.069916
+  type: 'test'
+  ...
+# Subtest: a single box aligns to the PAGE
+ok 184 - a single box aligns to the PAGE
+  ---
+  duration_ms: 0.149459
+  type: 'test'
+  ...
+# Subtest: several boxes align to their own bounding box, not the page
+ok 185 - several boxes align to their own bounding box, not the page
+  ---
+  duration_ms: 0.092375
+  type: 'test'
+  ...
+# Subtest: alignBoxes preserves input order and leaves the other axis alone
+ok 186 - alignBoxes preserves input order and leaves the other axis alone
+  ---
+  duration_ms: 0.055708
+  type: 'test'
+  ...
+# Subtest: distributeBoxes equalises the gaps between differently sized boxes
+ok 187 - distributeBoxes equalises the gaps between differently sized boxes
+  ---
+  duration_ms: 0.11575
+  type: 'test'
+  ...
+# Subtest: distributeBoxes never moves the outermost two
+ok 188 - distributeBoxes never moves the outermost two
+  ---
+  duration_ms: 0.099292
+  type: 'test'
+  ...
+# Subtest: distributeBoxes works on the vertical axis too
+ok 189 - distributeBoxes works on the vertical axis too
+  ---
+  duration_ms: 0.050917
+  type: 'test'
+  ...
+# Subtest: distributeBoxes preserves INPUT order even when given unsorted boxes
+ok 190 - distributeBoxes preserves INPUT order even when given unsorted boxes
+  ---
+  duration_ms: 0.046708
+  type: 'test'
+  ...
+# Subtest: distributeBoxes leaves fewer than three boxes untouched
+ok 191 - distributeBoxes leaves fewer than three boxes untouched
+  ---
+  duration_ms: 0.055792
+  type: 'test'
+  ...
+# Subtest: snapPosition snaps the leading edge to a nearby line
+ok 192 - snapPosition snaps the leading edge to a nearby line
+  ---
+  duration_ms: 0.122667
+  type: 'test'
+  ...
+# Subtest: snapPosition can snap by the CENTRE or the trailing edge
+ok 193 - snapPosition can snap by the CENTRE or the trailing edge
+  ---
+  duration_ms: 0.058541
+  type: 'test'
+  ...
+# Subtest: snapPosition ignores lines beyond the tolerance
+ok 194 - snapPosition ignores lines beyond the tolerance
+  ---
+  duration_ms: 0.041792
+  type: 'test'
+  ...
+# Subtest: snapPosition prefers the closest of several candidates
+ok 195 - snapPosition prefers the closest of several candidates
+  ---
+  duration_ms: 0.050834
+  type: 'test'
+  ...
+# Subtest: snapPosition handles no targets at all
+ok 196 - snapPosition handles no targets at all
+  ---
+  duration_ms: 0.050667
+  type: 'test'
+  ...
+# Subtest: pickAtPoint returns nothing when the point is outside everything
+ok 197 - pickAtPoint returns nothing when the point is outside everything
+  ---
+  duration_ms: 0.077208
+  type: 'test'
+  ...
+# Subtest: pickAtPoint prefers the SMALLEST box containing the point
+ok 198 - pickAtPoint prefers the SMALLEST box containing the point
+  ---
+  duration_ms: 0.046542
+  type: 'test'
+  ...
+# Subtest: pickAtPoint cycles down the stack on a repeat click at the same spot
+ok 199 - pickAtPoint cycles down the stack on a repeat click at the same spot
+  ---
+  duration_ms: 0.056542
+  type: 'test'
+  ...
+# Subtest: pickAtPoint restarts at the top when the click moves elsewhere
+ok 200 - pickAtPoint restarts at the top when the click moves elsewhere
+  ---
+  duration_ms: 0.039542
+  type: 'test'
+  ...
+# Subtest: pickAtPoint treats a near-identical point as the same spot
+ok 201 - pickAtPoint treats a near-identical point as the same spot
+  ---
+  duration_ms: 0.036375
+  type: 'test'
+  ...
+# Subtest: mapSignInResponse extracts tokens and computes expiry (with skew)
+ok 202 - mapSignInResponse extracts tokens and computes expiry (with skew)
+  ---
+  duration_ms: 0.728291
+  type: 'test'
+  ...
+# Subtest: mapSignInResponse throws on an error/empty response (no silent bad session)
+ok 203 - mapSignInResponse throws on an error/empty response (no silent bad session)
+  ---
+  duration_ms: 0.183458
+  type: 'test'
+  ...
+# Subtest: mapRefreshResponse maps snake_case and keeps prior refresh token when omitted
+ok 204 - mapRefreshResponse maps snake_case and keeps prior refresh token when omitted
+  ---
+  duration_ms: 0.073917
+  type: 'test'
+  ...
+# Subtest: mapRefreshResponse throws when no id_token comes back
+ok 205 - mapRefreshResponse throws when no id_token comes back
+  ---
+  duration_ms: 0.048333
+  type: 'test'
+  ...
+# Subtest: save/load/clear persists only the refresh token + email
+ok 206 - save/load/clear persists only the refresh token + email
+  ---
+  duration_ms: 1.142542
+  type: 'test'
+  ...
+# Subtest: getValidIdToken returns null when there is no session at all
+ok 207 - getValidIdToken returns null when there is no session at all
+  ---
+  duration_ms: 0.1025
+  type: 'test'
+  ...
+# Subtest: getValidIdToken returns the cached idToken while it is still fresh
+ok 208 - getValidIdToken returns the cached idToken while it is still fresh
+  ---
+  duration_ms: 0.190083
+  type: 'test'
+  ...
+# Subtest: clearing a session aborts a refresh and cannot rewrite tokens from a late response
+ok 209 - clearing a session aborts a refresh and cannot rewrite tokens from a late response
+  ---
+  duration_ms: 1.365041
+  type: 'test'
+  ...
+# Subtest: parallel accessors share one refresh and persist its rotated refresh token
+ok 210 - parallel accessors share one refresh and persist its rotated refresh token
+  ---
+  duration_ms: 0.512709
+  type: 'test'
+  ...
+# Subtest: a fresh sign-in supersedes a pending refresh without replacing the new session
+ok 211 - a fresh sign-in supersedes a pending refresh without replacing the new session
+  ---
+  duration_ms: 0.502417
+  type: 'test'
+  ...
+# Subtest: refresh has a total network deadline and closes a stalled request
+ok 212 - refresh has a total network deadline and closes a stalled request
+  ---
+  duration_ms: 13.040916
+  type: 'test'
+  ...
+# Subtest: a rejected refresh cannot accept a token-shaped error body
+ok 213 - a rejected refresh cannot accept a token-shaped error body
+  ---
+  duration_ms: 2.033333
+  type: 'test'
+  ...
+# Subtest: an interrupted refresh settles promptly and a subsequent attempt can succeed
+ok 214 - an interrupted refresh settles promptly and a subsequent attempt can succeed
+  ---
+  duration_ms: 1.417458
+  type: 'test'
+  ...
+# Subtest: the total deadline also closes a response that never finishes
+ok 215 - the total deadline also closes a response that never finishes
+  ---
+  duration_ms: 12.594334
+  type: 'test'
+  ...
+# Subtest: Google token exchange preserves its JSON request and session response format
+ok 216 - Google token exchange preserves its JSON request and session response format
+  ---
+  duration_ms: 1.270042
+  type: 'test'
+  ...
+# Subtest: getDaysRemaining floors whole days until expiry
+ok 217 - getDaysRemaining floors whole days until expiry
+  ---
+  duration_ms: 1.54475
+  type: 'test'
+  ...
+# Subtest: getDaysRemaining returns 0 for an already-expired date (no phantom day)
+ok 218 - getDaysRemaining returns 0 for an already-expired date (no phantom day)
+  ---
+  duration_ms: 0.066958
+  type: 'test'
+  ...
+# Subtest: getDaysRemaining returns 0 exactly at expiry
+ok 219 - getDaysRemaining returns 0 exactly at expiry
+  ---
+  duration_ms: 0.047667
+  type: 'test'
+  ...
+# Subtest: malformed or nonfinite expiry dates report zero remaining days
+ok 220 - malformed or nonfinite expiry dates report zero remaining days
+  ---
+  duration_ms: 0.057958
+  type: 'test'
+  ...
+# Subtest: legacy offline licences with malformed expiry cannot grant access
+ok 221 - legacy offline licences with malformed expiry cannot grant access
+  ---
+  duration_ms: 1.779709
+  type: 'test'
+  ...
+# Subtest: valid legacy licences retain machine, account and whole-day offline policy
+ok 222 - valid legacy licences retain machine, account and whole-day offline policy
+  ---
+  duration_ms: 0.406875
+  type: 'test'
+  ...
+# Subtest: panel-signed license verifies in the app after the device binds
+ok 223 - panel-signed license verifies in the app after the device binds
+  ---
+  duration_ms: 2.352583
+  type: 'test'
+  ...
+# Subtest: sign → verify round-trips with the matching public key
+ok 224 - sign → verify round-trips with the matching public key
+  ---
+  duration_ms: 2.058417
+  type: 'test'
+  ...
+# Subtest: any tampered signed field invalidates the signature
+ok 225 - any tampered signed field invalidates the signature
+  ---
+  duration_ms: 0.455833
+  type: 'test'
+  ...
+# Subtest: machineId is intentionally NOT signed (device binds after activation)
+ok 226 - machineId is intentionally NOT signed (device binds after activation)
+  ---
+  duration_ms: 0.323291
+  type: 'test'
+  ...
+# Subtest: unsigned bookkeeping fields (savedAt) do not affect verification
+ok 227 - unsigned bookkeeping fields (savedAt) do not affect verification
+  ---
+  duration_ms: 0.1505
+  type: 'test'
+  ...
+# Subtest: a signature from a different key is rejected
+ok 228 - a signature from a different key is rejected
+  ---
+  duration_ms: 0.160917
+  type: 'test'
+  ...
+# Subtest: malformed signatures are invalid, never throw
+ok 229 - malformed signatures are invalid, never throw
+  ---
+  duration_ms: 0.079667
+  type: 'test'
+  ...
+# Subtest: canonical bytes are stable regardless of input key order
+ok 230 - canonical bytes are stable regardless of input key order
+  ---
+  duration_ms: 1.183208
+  type: 'test'
+  ...
+# Subtest: resolvePsFont returns the PostScript name, not the CSS family
+ok 231 - resolvePsFont returns the PostScript name, not the CSS family
+  ---
+  duration_ms: 0.863917
+  type: 'test'
+  ...
+# Subtest: resolvePsFont picks the nearest available weight
+ok 232 - resolvePsFont picks the nearest available weight
+  ---
+  duration_ms: 0.140042
+  type: 'test'
+  ...
+# Subtest: resolvePsFont uses the italic cut when the family has one
+ok 233 - resolvePsFont uses the italic cut when the family has one
+  ---
+  duration_ms: 0.056209
+  type: 'test'
+  ...
+# Subtest: resolvePsFont falls back to faux italic when the family has no italic
+ok 234 - resolvePsFont falls back to faux italic when the family has no italic
+  ---
+  duration_ms: 0.044375
+  type: 'test'
+  ...
+# Subtest: resolvePsFont returns null for an unmapped family so the JSX keeps its default
+ok 235 - resolvePsFont returns null for an unmapped family so the JSX keeps its default
+  ---
+  duration_ms: 0.038083
+  type: 'test'
+  ...
+# Subtest: hexToRgb handles both short and long form
+ok 236 - hexToRgb handles both short and long form
+  ---
+  duration_ms: 0.731458
+  type: 'test'
+  ...
+# Subtest: hexToRgb rejects anything that is not a hex colour
+ok 237 - hexToRgb rejects anything that is not a hex colour
+  ---
+  duration_ms: 0.044959
+  type: 'test'
+  ...
+# Subtest: a non-hex colour falls back to near-black rather than crashing
+ok 238 - a non-hex colour falls back to near-black rather than crashing
+  ---
+  duration_ms: 0.328459
+  type: 'test'
+  ...
+# Subtest: buildPsTextLayers takes text layers only — shapes stay rasterized
+ok 239 - buildPsTextLayers takes text layers only — shapes stay rasterized
+  ---
+  duration_ms: 0.10925
+  type: 'test'
+  ...
+# Subtest: hidden and empty text layers are skipped
+ok 240 - hidden and empty text layers are skipped
+  ---
+  duration_ms: 0.095084
+  type: 'test'
+  ...
+# Subtest: hasShapeOverlays distinguishes pages that still need a raster
+ok 241 - hasShapeOverlays distinguishes pages that still need a raster
+  ---
+  duration_ms: 0.057791
+  type: 'test'
+  ...
+# Subtest: contents carries the SAME pre-wrapped lines the SVG renders
+ok 242 - contents carries the SAME pre-wrapped lines the SVG renders
+  ---
+  duration_ms: 0.391292
+  type: 'test'
+  ...
+# Subtest: contents uses \\r between lines (ExtendScript hard break)
+ok 243 - contents uses \\r between lines (ExtendScript hard break)
+  ---
+  duration_ms: 0.064583
+  type: 'test'
+  ...
+# Subtest: explicit newlines survive into the Photoshop payload
+ok 244 - explicit newlines survive into the Photoshop payload
+  ---
+  duration_ms: 0.051625
+  type: 'test'
+  ...
+# Subtest: the anchor matches the SVG text anchor for every alignment
+ok 245 - the anchor matches the SVG text anchor for every alignment
+  ---
+  duration_ms: 0.806209
+  type: 'test'
+  ...
+# Subtest: y is the first baseline, matching the SVG
+ok 246 - y is the first baseline, matching the SVG
+  ---
+  duration_ms: 0.487917
+  type: 'test'
+  ...
+# Subtest: geometry scales with canvas size (same layer, bigger page)
+ok 247 - geometry scales with canvas size (same layer, bigger page)
+  ---
+  duration_ms: 0.23
+  type: 'test'
+  ...
+# Subtest: tracking converts from em-fraction to Photoshop 1/1000 em
+ok 248 - tracking converts from em-fraction to Photoshop 1/1000 em
+  ---
+  duration_ms: 0.179084
+  type: 'test'
+  ...
+# Subtest: leading follows line height
+ok 249 - leading follows line height
+  ---
+  duration_ms: 0.291875
+  type: 'test'
+  ...
+# Subtest: opacity is expressed as a Photoshop percentage
+ok 250 - opacity is expressed as a Photoshop percentage
+  ---
+  duration_ms: 0.255625
+  type: 'test'
+  ...
+# Subtest: the rotation pivot is the layer BOX centre, not the text centre
+ok 251 - the rotation pivot is the layer BOX centre, not the text centre
+  ---
+  duration_ms: 0.157541
+  type: 'test'
+  ...
+# Subtest: layer order is preserved so the PSD stack matches the editor
+ok 252 - layer order is preserved so the PSD stack matches the editor
+  ---
+  duration_ms: 0.273834
+  type: 'test'
+  ...
+# Subtest: the layer name is derived from the copy and stays bounded
+ok 253 - the layer name is derived from the copy and stays bounded
+  ---
+  duration_ms: 0.194667
+  type: 'test'
+  ...
+# Subtest: the payload wraps with the same helper the SVG uses
+ok 254 - the payload wraps with the same helper the SVG uses
+  ---
+  duration_ms: 1.770334
+  type: 'test'
+  ...
+# Subtest: esc neutralizes the XML metacharacters
+ok 255 - esc neutralizes the XML metacharacters
+  ---
+  duration_ms: 0.889833
+  type: 'test'
+  ...
+# Subtest: user text cannot inject markup into the SVG
+ok 256 - user text cannot inject markup into the SVG
+  ---
+  duration_ms: 0.560875
+  type: 'test'
+  ...
+# Subtest: safeColor rejects values that would break out of the attribute
+ok 257 - safeColor rejects values that would break out of the attribute
+  ---
+  duration_ms: 0.095208
+  type: 'test'
+  ...
+# Subtest: safeFont rejects families containing quotes or markup
+ok 258 - safeFont rejects families containing quotes or markup
+  ---
+  duration_ms: 0.060917
+  type: 'test'
+  ...
+# Subtest: buildOverlaySvg returns empty string when there is nothing to draw
+ok 259 - buildOverlaySvg returns empty string when there is nothing to draw
+  ---
+  duration_ms: 0.053916
+  type: 'test'
+  ...
+# Subtest: geometry scales proportionally with output size
+ok 260 - geometry scales proportionally with output size
+  ---
+  duration_ms: 0.165542
+  type: 'test'
+  ...
+# Subtest: font size is a fraction of canvas HEIGHT, independent of width
+ok 261 - font size is a fraction of canvas HEIGHT, independent of width
+  ---
+  duration_ms: 0.0705
+  type: 'test'
+  ...
+# Subtest: wrapText breaks on explicit newlines
+ok 262 - wrapText breaks on explicit newlines
+  ---
+  duration_ms: 0.64375
+  type: 'test'
+  ...
+# Subtest: wrapText greedily fills lines to the box width
+ok 263 - wrapText greedily fills lines to the box width
+  ---
+  duration_ms: 0.120291
+  type: 'test'
+  ...
+# Subtest: wrapText hard-splits a single word wider than the box
+ok 264 - wrapText hard-splits a single word wider than the box
+  ---
+  duration_ms: 0.16475
+  type: 'test'
+  ...
+# Subtest: wrapText with maxWidth 0 disables wrapping
+ok 265 - wrapText with maxWidth 0 disables wrapping
+  ---
+  duration_ms: 0.041917
+  type: 'test'
+  ...
+# Subtest: tracking widens the estimate and so tightens wrapping
+ok 266 - tracking widens the estimate and so tightens wrapping
+  ---
+  duration_ms: 0.041333
+  type: 'test'
+  ...
+# Subtest: wrapped lines each become a tspan
+ok 267 - wrapped lines each become a tspan
+  ---
+  duration_ms: 0.057584
+  type: 'test'
+  ...
+# Subtest: horizontal alignment sets both anchor and x origin
+ok 268 - horizontal alignment sets both anchor and x origin
+  ---
+  duration_ms: 0.132083
+  type: 'test'
+  ...
+# Subtest: vertical alignment shifts the first baseline
+ok 269 - vertical alignment shifts the first baseline
+  ---
+  duration_ms: 0.119
+  type: 'test'
+  ...
+# Subtest: baselines are explicit, never dominant-baseline
+ok 270 - baselines are explicit, never dominant-baseline
+  ---
+  duration_ms: 0.051334
+  type: 'test'
+  ...
+# Subtest: rect honours fill, stroke and corner radius
+ok 271 - rect honours fill, stroke and corner radius
+  ---
+  duration_ms: 0.096875
+  type: 'test'
+  ...
+# Subtest: rect with fill none stays unfilled
+ok 272 - rect with fill none stays unfilled
+  ---
+  duration_ms: 1.643333
+  type: 'test'
+  ...
+# Subtest: ellipse is centered in its box
+ok 273 - ellipse is centered in its box
+  ---
+  duration_ms: 0.0885
+  type: 'test'
+  ...
+# Subtest: line spans the box midline
+ok 274 - line spans the box midline
+  ---
+  duration_ms: 0.060958
+  type: 'test'
+  ...
+# Subtest: rotation is applied about the layer center
+ok 275 - rotation is applied about the layer center
+  ---
+  duration_ms: 0.080083
+  type: 'test'
+  ...
+# Subtest: opacity wraps the layer, and 1 adds no wrapper
+ok 276 - opacity wraps the layer, and 1 adds no wrapper
+  ---
+  duration_ms: 0.084667
+  type: 'test'
+  ...
+# Subtest: the shadow filter is defined once and only when used
+ok 277 - the shadow filter is defined once and only when used
+  ---
+  duration_ms: 0.091
+  type: 'test'
+  ...
+# Subtest: out-of-range numbers are clamped rather than emitted raw
+ok 278 - out-of-range numbers are clamped rather than emitted raw
+  ---
+  duration_ms: 0.075083
+  type: 'test'
+  ...
+# Subtest: non-finite geometry falls back to defaults instead of emitting NaN
+ok 279 - non-finite geometry falls back to defaults instead of emitting NaN
+  ---
+  duration_ms: 0.053292
+  type: 'test'
+  ...
+# Subtest: overlayCacheKey is 0 when nothing renders
+ok 280 - overlayCacheKey is 0 when nothing renders
+  ---
+  duration_ms: 0.057708
+  type: 'test'
+  ...
+# Subtest: overlayCacheKey changes when a pixel-affecting field changes
+ok 281 - overlayCacheKey changes when a pixel-affecting field changes
+  ---
+  duration_ms: 0.081791
+  type: 'test'
+  ...
+# Subtest: overlayCacheKey ignores fields that do not affect pixels
+ok 282 - overlayCacheKey ignores fields that do not affect pixels
+  ---
+  duration_ms: 0.057375
+  type: 'test'
+  ...
+# Subtest: identical input yields byte-identical SVG (stable hashing)
+ok 283 - identical input yields byte-identical SVG (stable hashing)
+  ---
+  duration_ms: 0.052917
+  type: 'test'
+  ...
+# Subtest: psdTextOverlay returns null unless the copy actually changed
+ok 284 - psdTextOverlay returns null unless the copy actually changed
+  ---
+  duration_ms: 0.1385
+  type: 'test'
+  ...
+# Subtest: psdTextOverlay only applies to text layers
+ok 285 - psdTextOverlay only applies to text layers
+  ---
+  duration_ms: 0.038833
+  type: 'test'
+  ...
+# Subtest: the stand-in anchor matches the PSD anchor for each alignment
+ok 286 - the stand-in anchor matches the PSD anchor for each alignment
+  ---
+  duration_ms: 0.080084
+  type: 'test'
+  ...
+# Subtest: the baseline offset is backed out of the box top
+ok 287 - the baseline offset is backed out of the box top
+  ---
+  duration_ms: 0.040292
+  type: 'test'
+  ...
+# Subtest: a moved layer carries its stand-in with it
+ok 288 - a moved layer carries its stand-in with it
+  ---
+  duration_ms: 0.0495
+  type: 'test'
+  ...
+# Subtest: style carries over, and a missing size falls back to the layer height
+ok 289 - style carries over, and a missing size falls back to the layer height
+  ---
+  duration_ms: 0.050042
+  type: 'test'
+  ...
+# Subtest: psdTextStyle lays overrides over the PSD run style
+ok 290 - psdTextStyle lays overrides over the PSD run style
+  ---
+  duration_ms: 0.054833
+  type: 'test'
+  ...
+# Subtest: psdTextStyle tolerates a layer with no style at all
+ok 291 - psdTextStyle tolerates a layer with no style at all
+  ---
+  duration_ms: 0.039666
+  type: 'test'
+  ...
+# Subtest: a style-only change still produces a stand-in
+ok 292 - a style-only change still produces a stand-in
+  ---
+  duration_ms: 0.043166
+  type: 'test'
+  ...
+# Subtest: an empty textStyle is not treated as an edit
+ok 293 - an empty textStyle is not treated as an edit
+  ---
+  duration_ms: 0.032833
+  type: 'test'
+  ...
+# Subtest: the stand-in honours an overridden size, face and alignment
+ok 294 - the stand-in honours an overridden size, face and alignment
+  ---
+  duration_ms: 0.053459
+  type: 'test'
+  ...
+# Subtest: an overridden alignment moves the anchor to match
+ok 295 - an overridden alignment moves the anchor to match
+  ---
+  duration_ms: 0.045417
+  type: 'test'
+  ...
+# Subtest: proofDims: no upscaling when canvas already within maxEdge
+ok 296 - proofDims: no upscaling when canvas already within maxEdge
+  ---
+  duration_ms: 1.343792
+  type: 'test'
+  ...
+# Subtest: proofDims: scales the longest edge down to maxEdge, preserving aspect
+ok 297 - proofDims: scales the longest edge down to maxEdge, preserving aspect
+  ---
+  duration_ms: 0.31275
+  type: 'test'
+  ...
+# Subtest: proofDims: portrait uses height as the longest edge
+ok 298 - proofDims: portrait uses height as the longest edge
+  ---
+  duration_ms: 0.177958
+  type: 'test'
+  ...
+# Subtest: proofDims: rounds fractional dimensions to whole pixels
+ok 299 - proofDims: rounds fractional dimensions to whole pixels
+  ---
+  duration_ms: 3.308708
+  type: 'test'
+  ...
+# Subtest: partitionFrames: splits h/v by the layer-name convention
+ok 300 - partitionFrames: splits h/v by the layer-name convention
+  ---
+  duration_ms: 8.802208
+  type: 'test'
+  ...
+# Subtest: partitionFrames: sorts by name so placement order is deterministic
+ok 301 - partitionFrames: sorts by name so placement order is deterministic
+  ---
+  duration_ms: 0.15075
+  type: 'test'
+  ...
+# Subtest: partitionFrames: is case-insensitive and ignores non-toolkit layers
+ok 302 - partitionFrames: is case-insensitive and ignores non-toolkit layers
+  ---
+  duration_ms: 0.062625
+  type: 'test'
+  ...
+# Subtest: partitionFrames: does not mutate its input array
+ok 303 - partitionFrames: does not mutate its input array
+  ---
+  duration_ms: 0.060417
+  type: 'test'
+  ...
+# Subtest: applyAdjust is a no-op when adj is null/undefined
+ok 304 - applyAdjust is a no-op when adj is null/undefined
+  ---
+  duration_ms: 0.753833
+  type: 'test'
+  ...
+# Subtest: applyAdjust is a no-op when all sliders are zero
+ok 305 - applyAdjust is a no-op when all sliders are zero
+  ---
+  duration_ms: 0.058083
+  type: 'test'
+  ...
+# Subtest: exposure maps ±100 to ±1 stop (2x / 0.5x brightness)
+ok 306 - exposure maps ±100 to ±1 stop (2x / 0.5x brightness)
+  ---
+  duration_ms: 0.071583
+  type: 'test'
+  ...
+# Subtest: saturation of -100 fully desaturates (clamped at 0)
+ok 307 - saturation of -100 fully desaturates (clamped at 0)
+  ---
+  duration_ms: 0.053292
+  type: 'test'
+  ...
+# Subtest: saturation never goes negative even past -100
+ok 308 - saturation never goes negative even past -100
+  ---
+  duration_ms: 0.064
+  type: 'test'
+  ...
+# Subtest: warmth pushes R up and B down symmetrically around green
+ok 309 - warmth pushes R up and B down symmetrically around green
+  ---
+  duration_ms: 0.067917
+  type: 'test'
+  ...
+# Subtest: contrast + warmth fold into a single linear pass
+ok 310 - contrast + warmth fold into a single linear pass
+  ---
+  duration_ms: 0.051541
+  type: 'test'
+  ...
+# Subtest: isFrameName matches the toolkit frame convention, case-insensitively
+ok 311 - isFrameName matches the toolkit frame convention, case-insensitively
+  ---
+  duration_ms: 0.825459
+  type: 'test'
+  ...
+# Subtest: reads the document size and the whole tree
+ok 312 - reads the document size and the whole tree
+  ---
+  duration_ms: 356.175042
+  type: 'test'
+  ...
+# Subtest: a missing file is reported, not thrown
+ok 313 - a missing file is reported, not thrown
+  ---
+  duration_ms: 0.162208
+  type: 'test'
+  ...
+# Subtest: groups keep their children and carry no pixels
+ok 314 - groups keep their children and carry no pixels
+  ---
+  duration_ms: 0.061042
+  type: 'test'
+  ...
+# Subtest: layers are returned bottom-to-top (draw order)
+ok 315 - layers are returned bottom-to-top (draw order)
+  ---
+  duration_ms: 0.690125
+  type: 'test'
+  ...
+# Subtest: per-layer metadata survives the round trip
+ok 316 - per-layer metadata survives the round trip
+  ---
+  duration_ms: 0.138083
+  type: 'test'
+  ...
+# Subtest: hidden layers are listed, marked not visible
+ok 317 - hidden layers are listed, marked not visible
+  ---
+  duration_ms: 0.047917
+  type: 'test'
+  ...
+# Subtest: frame layers are flagged
+ok 318 - frame layers are flagged
+  ---
+  duration_ms: 0.052584
+  type: 'test'
+  ...
+# Subtest: every raster layer gets a PNG on disk; groups do not
+ok 319 - every raster layer gets a PNG on disk; groups do not
+  ---
+  duration_ms: 0.07125
+  type: 'test'
+  ...
+# Subtest: the flattened composite is exported too
+ok 320 - the flattened composite is exported too
+  ---
+  duration_ms: 0.045167
+  type: 'test'
+  ...
+# Subtest: ids are unique and stable across reads
+ok 321 - ids are unique and stable across reads
+  ---
+  duration_ms: 145.018584
+  type: 'test'
+  ...
+# Subtest: duplicate layer names do not collide (ids are index paths)
+ok 322 - duplicate layer names do not collide (ids are index paths)
+  ---
+  duration_ms: 0.819
+  type: 'test'
+  ...
+# Subtest: the second read is served from cache
+ok 323 - the second read is served from cache
+  ---
+  duration_ms: 57.843125
+  type: 'test'
+  ...
+# Subtest: flattenDrawOrder emits groups before their children, with depth
+ok 324 - flattenDrawOrder emits groups before their children, with depth
+  ---
+  duration_ms: 0.213417
+  type: 'test'
+  ...
+# Subtest: hiding a group hides its whole subtree
+ok 325 - hiding a group hides its whole subtree
+  ---
+  duration_ms: 0.091209
+  type: 'test'
+  ...
+# Subtest: group opacity multiplies into its children
+ok 326 - group opacity multiplies into its children
+  ---
+  duration_ms: 0.068375
+  type: 'test'
+  ...
+# Subtest: an edit can re-show a layer the PSD ships hidden
+ok 327 - an edit can re-show a layer the PSD ships hidden
+  ---
+  duration_ms: 0.052458
+  type: 'test'
+  ...
+# Subtest: a clipped layer resolves to the non-clipped layer below it
+ok 328 - a clipped layer resolves to the non-clipped layer below it
+  ---
+  duration_ms: 0.08225
+  type: 'test'
+  ...
+# Subtest: non-clipped layers have no clip base
+ok 329 - non-clipped layers have no clip base
+  ---
+  duration_ms: 0.052875
+  type: 'test'
+  ...
+# Subtest: a run of clipped layers all share one base
+ok 330 - a run of clipped layers all share one base
+  ---
+  duration_ms: 0.052333
+  type: 'test'
+  ...
+# Subtest: layer indices are inverted for ExtendScript
+ok 331 - layer indices are inverted for ExtendScript
+  ---
+  duration_ms: 0.213459
+  type: 'test'
+  ...
+# Subtest: nested layers get a full inverted path
+ok 332 - nested layers get a full inverted path
+  ---
+  duration_ms: 0.0585
+  type: 'test'
+  ...
+# Subtest: only real deviations are emitted
+ok 333 - only real deviations are emitted
+  ---
+  duration_ms: 0.063209
+  type: 'test'
+  ...
+# Subtest: re-showing a layer the PSD ships hidden IS emitted
+ok 334 - re-showing a layer the PSD ships hidden IS emitted
+  ---
+  duration_ms: 0.045167
+  type: 'test'
+  ...
+# Subtest: opacity overrides carry through
+ok 335 - opacity overrides carry through
+  ---
+  duration_ms: 0.042959
+  type: 'test'
+  ...
+# Subtest: over the decode budget, the TREE still comes back — only pixels are skipped
+ok 336 - over the decode budget, the TREE still comes back — only pixels are skipped
+  ---
+  duration_ms: 0.354083
+  type: 'test'
+  ...
+# Subtest: under budget, pixels are extracted as normal
+ok 337 - under budget, pixels are extracted as normal
+  ---
+  duration_ms: 38.715208
+  type: 'test'
+  ...
+# Subtest: move and scale reach the Photoshop ops, with the source size for drift
+ok 338 - move and scale reach the Photoshop ops, with the source size for drift
+  ---
+  duration_ms: 0.158834
+  type: 'test'
+  ...
+# Subtest: a scale of exactly 1 is not emitted as a transform
+ok 339 - a scale of exactly 1 is not emitted as a transform
+  ---
+  duration_ms: 0.072084
+  type: 'test'
+  ...
+# Subtest: a style-only edit is emitted even when the copy is unchanged
+ok 340 - a style-only edit is emitted even when the copy is unchanged
+  ---
+  duration_ms: 0.075083
+  type: 'test'
+  ...
+# Subtest: every text style field reaches the op
+ok 341 - every text style field reaches the op
+  ---
+  duration_ms: 0.062208
+  type: 'test'
+  ...
+# Subtest: retyping with no style override still re-asserts the template face
+ok 342 - retyping with no style override still re-asserts the template face
+  ---
+  duration_ms: 0.038792
+  type: 'test'
+  ...
+# Subtest: style fields are ignored on a layer that is not type
+ok 343 - style fields are ignored on a layer that is not type
+  ---
+  duration_ms: 0.047125
+  type: 'test'
+  ...
+# Subtest: italic:false is still emitted, so it can be turned back OFF
+ok 344 - italic:false is still emitted, so it can be turned back OFF
+  ---
+  duration_ms: 0.040291
+  type: 'test'
+  ...
+# Subtest: empty cache → every job is fresh, none skipped
+ok 345 - empty cache → every job is fresh, none skipped
+  ---
+  duration_ms: 0.829959
+  type: 'test'
+  ...
+# Subtest: a job whose stored hash matches the current hash is skipped
+ok 346 - a job whose stored hash matches the current hash is skipped
+  ---
+  duration_ms: 0.446875
+  type: 'test'
+  ...
+# Subtest: a page whose data changed since last render is re-rendered
+ok 347 - a page whose data changed since last render is re-rendered
+  ---
+  duration_ms: 0.179917
+  type: 'test'
+  ...
+# Subtest: fresh jobs carry the computed hash + cacheKey (ready to store)
+ok 348 - fresh jobs carry the computed hash + cacheKey (ready to store)
+  ---
+  duration_ms: 0.103125
+  type: 'test'
+  ...
+# Subtest: cacheKey scopes by BOTH outputPath and pageNum
+ok 349 - cacheKey scopes by BOTH outputPath and pageNum
+  ---
+  duration_ms: 0.107958
+  type: 'test'
+  ...
+# Subtest: mixed batch partitions correctly and preserves order within each list
+ok 350 - mixed batch partitions correctly and preserves order within each list
+  ---
+  duration_ms: 1.054667
+  type: 'test'
+  ...
+# Subtest: a cached page whose output file is gone is re-rendered
+ok 351 - a cached page whose output file is gone is re-rendered
+  ---
+  duration_ms: 0.116167
+  type: 'test'
+  ...
+# Subtest: a cached page whose output file still exists is skipped
+ok 352 - a cached page whose output file still exists is skipped
+  ---
+  duration_ms: 0.077792
+  type: 'test'
+  ...
+# Subtest: the file checked is the one the build script writes: <output>/Page_NNN.psd
+ok 353 - the file checked is the one the build script writes: <output>/Page_NNN.psd
+  ---
+  duration_ms: 0.069083
+  type: 'test'
+  ...
+# Subtest: a trailing slash on the output folder does not double up
+ok 354 - a trailing slash on the output folder does not double up
+  ---
+  duration_ms: 0.053792
+  type: 'test'
+  ...
+# Subtest: generative pages are written as .jpg, so that is what must exist
+ok 355 - generative pages are written as .jpg, so that is what must exist
+  ---
+  duration_ms: 1.936833
+  type: 'test'
+  ...
+# Subtest: only matching hashes are checked on disk — changed pages never touch the file system
+ok 356 - only matching hashes are checked on disk — changed pages never touch the file system
+  ---
+  duration_ms: 0.096417
+  type: 'test'
+  ...
+# Subtest: without an existence check the cache is trusted, as before
+ok 357 - without an existence check the cache is trusted, as before
+  ---
+  duration_ms: 0.116542
+  type: 'test'
+  ...
+# Subtest: escapeHtml neutralizes the HTML metacharacters
+ok 358 - escapeHtml neutralizes the HTML metacharacters
+  ---
+  duration_ms: 0.958625
+  type: 'test'
+  ...
+# Subtest: escapeHtml renders null/undefined as empty string
+ok 359 - escapeHtml renders null/undefined as empty string
+  ---
+  duration_ms: 0.057958
+  type: 'test'
+  ...
+# Subtest: _generativePreviewSvg emits an SVG rect per frame, colored by orient
+ok 360 - _generativePreviewSvg emits an SVG rect per frame, colored by orient
+  ---
+  duration_ms: 0.129916
+  type: 'test'
+  ...
+# Subtest: _generativePreviewSvg falls back to default canvas dims
+ok 361 - _generativePreviewSvg falls back to default canvas dims
+  ---
+  duration_ms: 0.047125
+  type: 'test'
+  ...
+# Subtest: getPanelHeaderHTML embeds the panel type in both action buttons
+ok 362 - getPanelHeaderHTML embeds the panel type in both action buttons
+  ---
+  duration_ms: 0.411333
+  type: 'test'
+  ...
+# Subtest: getDisplayName returns the folder name for a normal folder
+ok 363 - getDisplayName returns the folder name for a normal folder
+  ---
+  duration_ms: 0.066625
+  type: 'test'
+  ...
+# Subtest: getDisplayName surfaces the parent name for a _Thumbnails folder
+ok 364 - getDisplayName surfaces the parent name for a _Thumbnails folder
+  ---
+  duration_ms: 0.084958
+  type: 'test'
+  ...
+# Subtest: getDisplayName handles Windows-style separators
+ok 365 - getDisplayName handles Windows-style separators
+  ---
+  duration_ms: 0.041375
+  type: 'test'
+  ...
+# Subtest: _hashPage changes when a photo adjustment changes
+ok 366 - _hashPage changes when a photo adjustment changes
+  ---
+  duration_ms: 0.150875
+  type: 'test'
+  ...
+# Subtest: _hashPage is stable for identical input (drives the render cache)
+ok 367 - _hashPage is stable for identical input (drives the render cache)
+  ---
+  duration_ms: 0.058208
+  type: 'test'
+  ...
+# Subtest: _hashPage changes when a page overlay changes
+ok 368 - _hashPage changes when a page overlay changes
+  ---
+  duration_ms: 0.053875
+  type: 'test'
+  ...
+# Subtest: _hashPage changes when the page background changes
+ok 369 - _hashPage changes when the page background changes
+  ---
+  duration_ms: 0.042458
+  type: 'test'
+  ...
+# Subtest: _hashPage distinguishes placement (zoom/pan) edits
+ok 370 - _hashPage distinguishes placement (zoom/pan) edits
+  ---
+  duration_ms: 0.058292
+  type: 'test'
+  ...
+# Subtest: _parseExifDateFromBuffer reads DateTimeOriginal from a real APP1 block
+ok 371 - _parseExifDateFromBuffer reads DateTimeOriginal from a real APP1 block
+  ---
+  duration_ms: 1.341291
+  type: 'test'
+  ...
+# Subtest: _parseExifDateFromBuffer returns null for a non-JPEG buffer
+ok 372 - _parseExifDateFromBuffer returns null for a non-JPEG buffer
+  ---
+  duration_ms: 0.142667
+  type: 'test'
+  ...
+# Subtest: _parseExifDateFromBuffer returns null for a JPEG with no EXIF date
+ok 373 - _parseExifDateFromBuffer returns null for a JPEG with no EXIF date
+  ---
+  duration_ms: 0.100875
+  type: 'test'
+  ...
+# Subtest: _proofTemplatePreviewPath decodes a file: url to a filesystem path
+ok 374 - _proofTemplatePreviewPath decodes a file: url to a filesystem path
+  ---
+  duration_ms: 0.409167
+  type: 'test'
+  ...
+# Subtest: _proofTemplatePreviewPath returns null without a url or for non-file urls
+ok 375 - _proofTemplatePreviewPath returns null without a url or for non-file urls
+  ---
+  duration_ms: 0.138667
+  type: 'test'
+  ...
+# Subtest: _isEditingTarget is true for text-entry controls
+ok 376 - _isEditingTarget is true for text-entry controls
+  ---
+  duration_ms: 0.659291
+  type: 'test'
+  ...
+# Subtest: _isEditingTarget is false for controls you operate rather than type into
+ok 377 - _isEditingTarget is false for controls you operate rather than type into
+  ---
+  duration_ms: 0.125583
+  type: 'test'
+  ...
+# Subtest: _isEditingTarget is falsy for non-editing targets and null
+ok 378 - _isEditingTarget is falsy for non-editing targets and null
+  ---
+  duration_ms: 0.142125
+  type: 'test'
+  ...
+# Subtest: _compactPage keeps only the structural skeleton (id + orient, template ref)
+ok 379 - _compactPage keeps only the structural skeleton (id + orient, template ref)
+  ---
+  duration_ms: 2.351208
+  type: 'test'
+  ...
+# Subtest: _compactPage handles null / empty pages
+ok 380 - _compactPage handles null / empty pages
+  ---
+  duration_ms: 0.260834
+  type: 'test'
+  ...
+# Subtest: compact → hydrate round-trips template id and photo id/orient
+ok 381 - compact → hydrate round-trips template id and photo id/orient
+  ---
+  duration_ms: 0.247833
+  type: 'test'
+  ...
+# Subtest: _hydratePage rebuilds a generative template ref when not in the library
+ok 382 - _hydratePage rebuilds a generative template ref when not in the library
+  ---
+  duration_ms: 0.103875
+  type: 'test'
+  ...
+# Subtest: _hydratePage yields empty url when a photo is missing from the cache
+ok 383 - _hydratePage yields empty url when a photo is missing from the cache
+  ---
+  duration_ms: 0.078417
+  type: 'test'
+  ...
+# Subtest: parsePageSpec reads a plain list
+ok 384 - parsePageSpec reads a plain list
+  ---
+  duration_ms: 0.392917
+  type: 'test'
+  ...
+# Subtest: parsePageSpec expands ranges, in either direction
+ok 385 - parsePageSpec expands ranges, in either direction
+  ---
+  duration_ms: 0.095
+  type: 'test'
+  ...
+# Subtest: parsePageSpec mixes lists and ranges, sorted and deduped
+ok 386 - parsePageSpec mixes lists and ranges, sorted and deduped
+  ---
+  duration_ms: 0.077625
+  type: 'test'
+  ...
+# Subtest: parsePageSpec tolerates spacing, newlines and dash styles
+ok 387 - parsePageSpec tolerates spacing, newlines and dash styles
+  ---
+  duration_ms: 0.144541
+  type: 'test'
+  ...
+# Subtest: parsePageSpec DROPS out-of-range pages instead of clamping
+ok 388 - parsePageSpec DROPS out-of-range pages instead of clamping
+  ---
+  duration_ms: 0.326458
+  type: 'test'
+  ...
+# Subtest: parsePageSpec reports what it could not read
+ok 389 - parsePageSpec reports what it could not read
+  ---
+  duration_ms: 0.095875
+  type: 'test'
+  ...
+# Subtest: parsePageSpec on empty input selects nothing
+ok 390 - parsePageSpec on empty input selects nothing
+  ---
+  duration_ms: 0.110166
+  type: 'test'
+  ...
+# Subtest: parsePageSpec refuses an absurd range rather than looping
+ok 391 - parsePageSpec refuses an absurd range rather than looping
+  ---
+  duration_ms: 0.085334
+  type: 'test'
+  ...
+# Subtest: effectiveOrientation reads the decoded pixels when unrotated
+ok 392 - effectiveOrientation reads the decoded pixels when unrotated
+  ---
+  duration_ms: 0.101458
+  type: 'test'
+  ...
+# Subtest: effectiveOrientation flips on a quarter turn, not a half turn
+ok 393 - effectiveOrientation flips on a quarter turn, not a half turn
+  ---
+  duration_ms: 0.071667
+  type: 'test'
+  ...
+# Subtest: effectiveOrientation normalises odd rotation values
+ok 394 - effectiveOrientation normalises odd rotation values
+  ---
+  duration_ms: 0.07175
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts places every photo exactly once — range mode
+ok 395 - planAutoFillCounts places every photo exactly once — range mode
+  ---
+  duration_ms: 0.378166
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts keeps range counts within bounds, bar the remainder
+ok 396 - planAutoFillCounts keeps range counts within bounds, bar the remainder
+  ---
+  duration_ms: 0.132708
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts spreads evenly across exactly N sheets — desired mode
+ok 397 - planAutoFillCounts spreads evenly across exactly N sheets — desired mode
+  ---
+  duration_ms: 0.135084
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts caps sheets at the photo count
+ok 398 - planAutoFillCounts caps sheets at the photo count
+  ---
+  duration_ms: 0.098917
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts divides exactly when it can
+ok 399 - planAutoFillCounts divides exactly when it can
+  ---
+  duration_ms: 0.081958
+  type: 'test'
+  ...
+# Subtest: the desired-mode remainder is spread, not front-loaded
+ok 400 - the desired-mode remainder is spread, not front-loaded
+  ---
+  duration_ms: 0.11775
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts refuses min=max=0 instead of looping forever
+ok 401 - planAutoFillCounts refuses min=max=0 instead of looping forever
+  ---
+  duration_ms: 0.198167
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts survives a zero minimum with a usable maximum
+ok 402 - planAutoFillCounts survives a zero minimum with a usable maximum
+  ---
+  duration_ms: 0.114167
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts rejects negative bounds rather than growing `remaining`
+ok 403 - planAutoFillCounts rejects negative bounds rather than growing `remaining`
+  ---
+  duration_ms: 0.080708
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts terminates even with a hostile rng
+ok 404 - planAutoFillCounts terminates even with a hostile rng
+  ---
+  duration_ms: 0.150708
+  type: 'test'
+  ...
+# Subtest: planAutoFillCounts reports bad input instead of guessing
+ok 405 - planAutoFillCounts reports bad input instead of guessing
+  ---
+  duration_ms: 0.11375
+  type: 'test'
+  ...
+# Subtest: parseBatchResult accepts a clean batch
+ok 406 - parseBatchResult accepts a clean batch
+  ---
+  duration_ms: 0.320833
+  type: 'test'
+  ...
+# Subtest: parseBatchResult names the pages that failed in a partial batch
+ok 407 - parseBatchResult names the pages that failed in a partial batch
+  ---
+  duration_ms: 0.120125
+  type: 'test'
+  ...
+# Subtest: parseBatchResult surfaces a fatal error message
+ok 408 - parseBatchResult surfaces a fatal error message
+  ---
+  duration_ms: 0.145792
+  type: 'test'
+  ...
+# Subtest: parseBatchResult treats anything unrecognised as a total failure
+ok 409 - parseBatchResult treats anything unrecognised as a total failure
+  ---
+  duration_ms: 0.158125
+  type: 'test'
+  ...
+# Subtest: parseBatchResult tolerates surrounding whitespace
+ok 410 - parseBatchResult tolerates surrounding whitespace
+  ---
+  duration_ms: 0.089292
+  type: 'test'
+  ...
+# Subtest: a focused slider does NOT swallow tool shortcuts
+ok 411 - a focused slider does NOT swallow tool shortcuts
+  ---
+  duration_ms: 2.173959
+  type: 'test'
+  ...
+# Subtest: a focused checkbox does NOT swallow tab switching or navigation
+ok 412 - a focused checkbox does NOT swallow tab switching or navigation
+  ---
+  duration_ms: 0.145375
+  type: 'test'
+  ...
+# Subtest: a focused colour picker does NOT swallow shortcuts
+ok 413 - a focused colour picker does NOT swallow shortcuts
+  ---
+  duration_ms: 0.050625
+  type: 'test'
+  ...
+# Subtest: after a MOUSE click, Space goes back to the app (the hand tool)
+ok 414 - after a MOUSE click, Space goes back to the app (the hand tool)
+  ---
+  duration_ms: 0.059125
+  type: 'test'
+  ...
+# Subtest: a KEYBOARD-focused checkbox or button keeps Space, so it can be activated
+ok 415 - a KEYBOARD-focused checkbox or button keeps Space, so it can be activated
+  ---
+  duration_ms: 0.047209
+  type: 'test'
+  ...
+# Subtest: a focused slider keeps the arrow keys — that is how it is operated
+ok 416 - a focused slider keeps the arrow keys — that is how it is operated
+  ---
+  duration_ms: 0.049583
+  type: 'test'
+  ...
+# Subtest: a focused select keeps arrows and letters (type-ahead)
+ok 417 - a focused select keeps arrows and letters (type-ahead)
+  ---
+  duration_ms: 0.046458
+  type: 'test'
+  ...
+# Subtest: a checkbox does not keep the arrow keys
+ok 418 - a checkbox does not keep the arrow keys
+  ---
+  duration_ms: 0.036084
+  type: 'test'
+  ...
+# Subtest: a text field keeps every plain key, including Space and Backspace
+ok 419 - a text field keeps every plain key, including Space and Backspace
+  ---
+  duration_ms: 0.061625
+  type: 'test'
+  ...
+# Subtest: a text field keeps the text-editing chords
+ok 420 - a text field keeps the text-editing chords
+  ---
+  duration_ms: 0.048292
+  type: 'test'
+  ...
+# Subtest: a text field does NOT keep app commands like save, export and tab switching
+ok 421 - a text field does NOT keep app commands like save, export and tab switching
+  ---
+  duration_ms: 0.046625
+  type: 'test'
+  ...
+# Subtest: a number field counts as text entry
+ok 422 - a number field counts as text entry
+  ---
+  duration_ms: 0.089959
+  type: 'test'
+  ...
+# Subtest: contentEditable counts as text entry
+ok 423 - contentEditable counts as text entry
+  ---
+  duration_ms: 0.038834
+  type: 'test'
+  ...
+# Subtest: an input with no type attribute is a text field
+ok 424 - an input with no type attribute is a text field
+  ---
+  duration_ms: 0.035334
+  type: 'test'
+  ...
+# Subtest: isTextEntry is false for operated controls
+ok 425 - isTextEntry is false for operated controls
+  ---
+  duration_ms: 0.046792
+  type: 'test'
+  ...
+# Subtest: Escape is never owned by a control
+ok 426 - Escape is never owned by a control
+  ---
+  duration_ms: 0.042875
+  type: 'test'
+  ...
+# Subtest: no target, or a plain element, owns nothing
+ok 427 - no target, or a plain element, owns nothing
+  ---
+  duration_ms: 0.036209
+  type: 'test'
+  ...
+# Subtest: a throwing matches() is treated as mouse focus, not an exception
+ok 428 - a throwing matches() is treated as mouse focus, not an exception
+  ---
+  duration_ms: 0.063708
+  type: 'test'
+  ...
+1..428
+# tests 449
+# suites 0
+# pass 449
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5341.621375
+# start of coverage report
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# file                                    | line % | branch % | funcs % | uncovered lines
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# native                                  |        |          |         | 
+#  backend                                |        |          |         | 
+#   lib                                   |        |          |         | 
+#    account.js                           |  95.96 |    86.43 |   89.36 | 65-68 224-225 302-303 339-340 354 401-403 409-412
+#    album.js                             |  99.13 |    87.92 |  100.00 | 126-127
+#    autofill.js                          |  98.94 |    73.68 |   88.89 | 26
+#    cache.js                             | 100.00 |   100.00 |  100.00 | 
+#    color.js                             |  94.34 |    60.61 |   85.71 | 58-59 100-103
+#    deliver.js                           |  95.20 |    84.58 |   90.91 | 92-106 108-109 288
+#    identity.js                          |  97.37 |    84.21 |  100.00 | 19-20 74-75
+#    inputs.js                            | 100.00 |    92.31 |  100.00 | 
+#    jobs.js                              |  96.88 |    96.43 |   90.00 | 19
+#    jpeg_size.js                         |  95.89 |    61.76 |   83.33 | 28 55 67
+#    labnaming.js                         |  94.96 |    86.57 |   94.87 | 37-46 62-65 88 142-143 228 245
+#    library.js                           | 100.00 |    69.44 |   94.12 | 
+#    newalbum.js                          | 100.00 |    69.12 |   85.19 | 
+#    parity.js                            |  84.23 |    64.37 |   60.00 | 22-24 54-58 87-88 90-92 94-100 109-113 115 165 197-205 209-210
+#    pdf.js                               | 100.00 |    91.21 |   83.33 | 
+#    photocraft.js                        | 100.00 |    85.07 |   91.67 | 
+#    picks.js                             | 100.00 |    86.67 |  100.00 | 
+#    preflight.js                         | 100.00 |    91.71 |   97.30 | 
+#    project.js                           |  99.08 |    82.05 |   96.59 | 349-350 399 419-420
+#    proofs.js                            |  85.32 |    77.08 |   78.05 | 99-100 107-127 132-133 137 228-246 265-266 270-272 303-305 381-383 388-392 429-431
+#    psd_template.js                      |  92.61 |    73.23 |   96.15 | 69-70 109-125
+#    raw.js                               |  65.00 |    67.65 |   66.67 | 20-27 36-47 87-90 114-138
+#    recent.js                            | 100.00 |    93.33 |  100.00 | 
+#    render.js                            |  95.20 |    59.09 |   81.48 | 198-204 240-244
+#    sheet.js                             |  94.12 |    80.00 |   88.89 | 97-101 103-105 142-144
+#    sheets.js                            | 100.00 |    89.83 |  100.00 | 
+#    storage.js                           | 100.00 |    85.71 |   90.91 | 
+#    template_check.js                    |  95.06 |    86.96 |   77.78 | 19-21 78
+#    templates.js                         |  99.18 |    87.50 |   85.71 | 38
+#    thumbs.js                            |  98.52 |    94.44 |   90.00 | 124-125
+#   methods.js                            |  88.50 |    75.00 |    4.88 | 25-28 43-45 65-68 95-96
+#   server.js                             |  72.15 |    75.00 |   25.00 | 30-32 56-57 61-77
+#   test                                  |        |          |         | 
+#    account.test.js                      |  99.82 |    98.31 |   94.05 | 80
+#    album.test.js                        | 100.00 |   100.00 |  100.00 | 
+#    color.test.js                        | 100.00 |    88.24 |  100.00 | 
+#    deliver.test.js                      | 100.00 |   100.00 |   90.48 | 
+#    delivery_integrity.test.js           | 100.00 |   100.00 |  100.00 | 
+#    fixtures.js                          | 100.00 |   100.00 |  100.00 | 
+#    identity.test.js                     |  99.56 |    97.87 |  100.00 | 141
+#    labnaming_recovery.test.js           | 100.00 |   100.00 |   92.16 | 
+#    labnaming.test.js                    | 100.00 |   100.00 |  100.00 | 
+#    library.test.js                      | 100.00 |   100.00 |  100.00 | 
+#    newalbum.test.js                     | 100.00 |   100.00 |   80.00 | 
+#    parity.test.js                       | 100.00 |    86.67 |  100.00 | 
+#    pdf_color.test.js                    | 100.00 |   100.00 |  100.00 | 
+#    photocraft.test.js                   |  99.22 |    96.00 |   94.74 | 42
+#    picks.test.js                        | 100.00 |   100.00 |   83.33 | 
+#    preflight.test.js                    | 100.00 |   100.00 |   97.30 | 
+#    project.test.js                      | 100.00 |   100.00 |   96.67 | 
+#    proofs.test.js                       | 100.00 |   100.00 |  100.00 | 
+#    sheet_ownership.test.js              | 100.00 |   100.00 |  100.00 | 
+#    sheet.test.js                        | 100.00 |    95.00 |  100.00 | 
+# src                                     |        |          |         | 
+#  curation.js                            |  91.16 |    87.76 |   90.91 | 197-210 260-261 307-319
+#  editor_geometry.js                     | 100.00 |    87.01 |  100.00 | 
+#  firebase_auth.js                       | 100.00 |    82.05 |   95.65 | 
+#  license_signing.js                     |  96.15 |    87.50 |  100.00 | 48-49
+#  license.js                             |  84.35 |    70.00 |  100.00 | 22-23 56-66 71-73 99-100
+#  main                                   |        |          |         | 
+#   firestore_rest.js                     |  94.64 |    64.29 |   85.71 | 46-48
+#  overlay_ps.js                          | 100.00 |    88.57 |  100.00 | 
+#  overlay_render.js                      |  99.40 |    92.18 |  100.00 | 289-291
+#  proof_renderer.js                      |  48.46 |    67.09 |   52.63 | 44-50 63-70 166-172 177-180 182-183 191-205 220-221 247-263 265-290 326-328 330-333 345-518 533-540 560-599 616-656 689-699
+#  psd_layers.js                          |  91.58 |    85.16 |   91.30 | 151-172 182-186 298-299 459-470
+#  renderer_pure.js                       |  99.80 |    94.38 |  100.00 | 87
+#  sharp_config.js                        | 100.00 |    77.78 |  100.00 | 
+#  shortcut_target.js                     | 100.00 |    92.00 |  100.00 | 
+#  ui_icons.js                            |  95.58 |    50.00 |   66.67 | 104-108
+# test                                    |        |          |         | 
+#  curation.test.js                       | 100.00 |   100.00 |  100.00 | 
+#  editor_geometry.test.js                | 100.00 |   100.00 |  100.00 | 
+#  firebase_auth.test.js                  | 100.00 |    97.44 |  100.00 | 
+#  license_activation_roundtrip.test.js   | 100.00 |   100.00 |  100.00 | 
+#  license_signing.test.js                | 100.00 |   100.00 |  100.00 | 
+#  license.test.js                        | 100.00 |   100.00 |  100.00 | 
+#  overlay_ps.test.js                     | 100.00 |   100.00 |  100.00 | 
+#  overlay_render.test.js                 | 100.00 |    94.44 |  100.00 | 
+#  proof_geometry.test.js                 | 100.00 |   100.00 |  100.00 | 
+#  proof_renderer.test.js                 | 100.00 |   100.00 |  100.00 | 
+#  psd_layers.test.js                     |  98.98 |   100.00 |   98.68 | 34-37
+#  render_cache.test.js                   | 100.00 |   100.00 |   95.65 | 
+#  renderer_pure.test.js                  | 100.00 |    97.37 |  100.00 | 
+#  shortcut_target.test.js                | 100.00 |   100.00 |  100.00 | 
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# all files                               |  94.81 |    86.92 |   91.63 | 
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# end of coverage report

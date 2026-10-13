@@ -106,3 +106,7 @@ External verification requirements remain: approved native GUI/assistive-technol
 5. Verify the real lab and issuer/signing/install dependencies with authorised resources. Keep dependent criteria at zero until tested. Repeat inspect → diagnose → implement → test → review → reassess under the same criteria.
 
 Recovery checkpoint is committed only on `codex/album-quality-improvement`; no merge, push, release publication or customer-data change is part of this checkpoint. The final Git check records the actual commit and preserved untracked folders.
+
+Implementation source checkpoint: `d235d1ca1dd8a4faab97e388bdcfb0c9e8430ede`. The evidence follow-up explicitly includes diagnostic `.log` files, which the repository normally ignores. Source and artifact SHA-256 records still match. Root user folders remain untracked and unchanged.
+
+Diagnostic stdout logs retain their original trailing whitespace; only those raw evidence logs are excluded from the source whitespace check. Their recorded checksums are verified without normalisation.
