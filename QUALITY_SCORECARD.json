@@ -41,7 +41,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Canonical cooperative project leases serialize backend jobs/edits/open/proofs/cache across real macOS processes; shared output roots, the native editor and global caches remain outside whole-app ownership. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Physical output-sheet and actual delivery-parent namespaces now serialize cooperating backend jobs/plans/proofs/cache clearing across different projects and aliases. Known foreign render-cache associations fail closed. Permanent/legacy/native/global ownership remains partial. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "5",
@@ -73,7 +73,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Two-pass content hashing and read-only decoder snapshots cover tested HFS changes/restores; converter/scoring recipe versions invalidate older results. Catalogue/capture-order metadata and preflight consumption remain open. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Full-content/read-only source safeguards remain; output paths are checked at consumed preparation boundaries. Complete preflight/catalogue/capture-order invalidation remains open. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "9",
@@ -93,7 +93,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Canonical backend project ownership and recoverable saves strengthen the design. Shared outputs/native writers/global caches, complete metadata invalidation, runtime contracts and durable render/cache publication remain partial."
+      "assessment": "Physical backend output/parent exclusion and guarded cache associations strengthen state ownership. Permanent/legacy/native/global ownership, contracts, complete invalidation and durable render/cache publication remain partial."
     },
     {
       "name": "UI and workflow",
@@ -131,7 +131,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Project and delivery errors retain exact recovery paths and distinguish a committed save. Native progress/recovery interaction remains unverified. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Shared-output busy/foreign/history errors are actionable and preserve retained evidence. Actual native progress/recovery and ambiguous ownership workflows remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "5",
@@ -139,7 +139,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Unexpected namespace files, malformed render evidence and known foreign project associations now fail visibly. Actual customer/native recovery flow remains unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "6",
@@ -205,7 +205,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Strict final gate: 273 shared + 515 backend + 33 interface = 821 passed; zero failures/cancellations/skips, pinned real CLI/current atomic helper/Poppler. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Final strict gate: 273 shared + 525 backend + 33 interface = 831 passed, no failures/cancellations/skips, real pinned CLI/current helper/Poppler. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "3",
@@ -229,7 +229,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Malformed JPEG scans, sparse oversized JPEG/project data, symlink backup/temp entries and exact read conflicts have regressions; arbitrary real corpus remains incomplete. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Bounded independent render-history parsing and malformed/foreign/namespace symlink/mutation cases pass. General runtime/domain schemas and broad invalid-input corpus remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "6",
@@ -245,7 +245,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Real child-held project leases, stale-owner/reclamation/release SIGKILL, project capture/install/commit SIGKILL, detached delivery history and public metadata replacement races pass. Final independent review and whole-app isolation remain incomplete. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Ten new output-boundary cases cover real independent processes, sibling parents, physical aliases, partial release, SIGKILL stale owners, cache/proof participation and external output change before recovery scans. Whole-app/external/native ownership and final independent review remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "8",
@@ -253,7 +253,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Final separate shared/backend coverage uses the same bounded file concurrency. Per-file source evidence is retained; UI/Rust coverage and full acceptance budgets remain open. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Final separate shared/backend coverage: 798 passed, no failures/cancellations/skips, file concurrency 2. Output namespace source coverage lines/branches 97.20/80.95; rendered-history source 100/88.89. UI/Rust and complete acceptance coverage remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "9",
@@ -273,7 +273,7 @@
         }
       ],
       "certified": false,
-      "assessment": "821 strict application tests pass without skips. Separate source coverage, real killed-process recovery and expanded independent PDF rendering strengthen tested boundaries. Final independent integration review, native workspace/corpus, GUI and hosted checks remain unverified."
+      "assessment": "831 strict application tests pass without skips. Ten output-boundary cases and guarded cache parsing extend the prior killed-project/delivery and source/PDF evidence. Final independent review, full native/GUI/corpus/hosted checks remain unverified."
     },
     {
       "name": "Performance and scalability",
@@ -287,7 +287,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current pilot measures 24 distinct 12 MP synthetic textures and eight spreads. Real customer small albums and photographic/layered workloads remain incomplete. See docs/quality/2026-10-14-iteration-4/pipeline-pilot-final.json and pipeline-metrics.json."
+          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
         },
         {
           "id": "2",
@@ -311,7 +311,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Pilot rendered/exported eight 5400x1800 sheets/JPEGs at 6 inches/300 PPI from distinct 4000x3000 inputs, then verified warm/reorder byte stability and PDF page geometry/order/pixels. This is partial synthetic/simple-RGB evidence; realistic layered/RAW/high-depth/CMYK scale remains unverified. See docs/quality/2026-10-14-iteration-4/pipeline-pilot-final.json and pipeline-metrics.json."
+          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
         },
         {
           "id": "5",
@@ -319,7 +319,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Pilot sampled child-process-tree RSS/CPU every 250 ms, recorded per-phase worker CPU/event-loop time and 1515 MiB sampled aggregate maximum on the 16 GiB M4. Samples can miss peaks; ps CPU is a lifetime average. Typical/large workloads and accepted hardware budgets remain unverified. See docs/quality/2026-10-14-iteration-4/pipeline-pilot-final.json and pipeline-metrics.json."
+          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
         },
         {
           "id": "6",
@@ -335,7 +335,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "All eight sheets/JPEGs reused in three warm cycles; exact source/sheet/JPEG hashes, preserved-stamp invalidation and reorder association pass. Real customer hit rates and broad-cache workload costs remain incomplete. See docs/quality/2026-10-14-iteration-4/pipeline-pilot-final.json and pipeline-metrics.json."
+          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
         },
         {
           "id": "8",
@@ -343,7 +343,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Test-file concurrency is bounded at two; per-image/project limits and four streamed digest readers are tested. Aggregate production worker/cache/history budgets remain incomplete. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "New bounded namespace markers and 64-MiB no-follow independent render-history reads strengthen filesystem limits. Production aggregate workers/memory/history/retention budgets remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "9",
@@ -351,7 +351,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Three consecutive warm proof/render/export cycles record disk/RSS/event-loop changes. Retained journal/history growth is observed, not bounded; long-term sessions, realistic workloads and cleanup remain unverified. See docs/quality/2026-10-14-iteration-4/pipeline-pilot-final.json and pipeline-metrics.json."
+          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
         },
         {
           "id": "10",
@@ -363,7 +363,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Synthetic distinct-12-MP pilot passes all output/reorder/cache/PDF checks and provides partial high-resolution, sampled-resource and repeated-operation measurements. Customer small/typical/large workloads, true peak/production budgets, UI responsiveness and history cleanup remain unverified."
+      "assessment": "Current-source guarded synthetic pilot passes output/reorder/cache/PDF checks and records sampled resources and growing retained histories. Production customer workloads, true peak/CPU/UI, permanent ownership and accepted retention/hardware budgets remain unverified; performance remains 3.0/10."
     },
     {
       "name": "Data integrity and recovery",
@@ -401,7 +401,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Frozen decoder inputs, two-pass HFS hashing and cache recipe/scoring versions pass mutation regressions. Live preflight metadata/capture-order caches remain open. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Known foreign canonical project associations block rendered-cache use; malformed history is preserved, not treated as empty. Ownerless legacy/moved/copied/absent-evidence migration remains incomplete. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "5",
@@ -441,7 +441,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Same-project cooperative process exclusion and canonical aliases pass; shared output locations, native/external writers and globally cleared app caches remain outside complete isolation. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Cooperating backend processes now reserve physical sheet and actual delivery-parent scopes, including alias roots, plans, proofs and album cache clearing. Lost output paths are checked before recovery scans/mutation. Permanent legacy/native/global/external ownership remains partial. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "10",
@@ -453,7 +453,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Cooperative same-project process exclusion and journaled exact-revision project saves pass kill/alias/conflict tests. Detached delivery history and frozen decoders preserve tested bytes. Shared outputs, full render/cache journals and physical-drive guarantees remain incomplete."
+      "assessment": "Same-project and shared physical output/parent cooperative exclusion now pass. Known foreign/malformed render records remain protected and output changes cannot enter unleased recovery scans. Permanent legacy/native/global ownership and durable render/cache/physical storage guarantees remain open."
     },
     {
       "name": "Documentation",
@@ -467,7 +467,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current development/recovery notes describe cooperative lease scope, project transaction/history, source-copy policy and explicitly unresolved output/render/cache ownership. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Updated notes distinguish project leases, physical service namespaces, known cache associations and incomplete permanent/legacy/native ownership. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "2",
@@ -483,7 +483,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "821-test strict gate and bounded separate coverage commands are recorded with real CLI/helper/Poppler requirements; hosted/native/installed checks remain distinct. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Current 831-test strict gate and bounded separate coverage commands require the real pinned CLI/helper/Poppler. Full native/hosted/installed gates remain separate. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "4",
@@ -507,7 +507,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Project journal history, missing-name recovery, uncertain owner/guard fail-closed behavior and committed-save errors are documented; customer/manual drive recovery is not validated. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Namespace marker/owner/guard/history policy, fail-closed malformed/foreign records, and preserved legacy/manual data are documented; customer/manual drive procedures remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "7",
@@ -539,11 +539,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Claims distinguish current application regression evidence, historical native/dependency checks, synthetic benchmark limits and remaining external requirements. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Iteration 5 separates final-source checks from prior 830/797 intermediate evidence, historical native/build results, scope limits and remaining external requirements. See docs/quality/2026-10-14-iteration-5/verification.json."
         }
       ],
       "certified": false,
-      "assessment": "Development/recovery notes match tested project leases, journals, HFS snapshots, bounded checks and explicit limitations. Real customer installation/release/manual recovery, accessibility and external procedures remain unverified."
+      "assessment": "Source-checkpoint recovery notes reflect project and output namespaces, cache associations, exact boundary checks, preserved failed runs and current limits. Real customer/release/manual/external workflows remain unverified."
     },
     {
       "name": "Security and licensing",
@@ -605,7 +605,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "No-follow bounded project/JPEG reads, exclusive flushed project publication, backup symlink refusal and verified process start identity pass. Issuer/rules/hardened distribution remain outside these filesystem checks. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Small read-only exclusive namespace markers and bounded no-follow independent render-history parsing reject symlink/hardlink/malformed/mutated evidence. Descendant symlink races, native/external writers and deployed security verification remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "8",
@@ -633,7 +633,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Filesystem/process verification strengthened without changing customer credentials or licenses. Device-bound issuer migration, real deployed rules/adversarial environment, native Rust advisory status and hardened distribution remain unverified."
+      "assessment": "Output markers and bounded render-history reads strengthen tested filesystem/process safety. Descendant symlink/external-writer policy, device-bound issuer/rules migration, real security environment and hardened distribution remain unverified."
     },
     {
       "name": "Print and delivery correctness",
@@ -663,7 +663,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "PSD layer fallback uses the verified buffer through a private file, and source derivatives use read-only snapshots. Live print-dimension/preflight metadata still needs consumption-boundary verification. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Verified content inputs and tested actual output-path consumption prevent recovery scanning in a changed unleased root. Live print-dimension/preflight metadata still needs binding to exported bytes. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "4",
@@ -711,7 +711,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Delivery rollback/publication installs detached copies, preserving history against later public edits; no-follow metadata operations preserve replacement entries. Whole-output-root ownership and physical-drive behavior remain unverified. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Shared physical output/parent serialization strengthens existing complete-delivery journals. Permanent legacy ownership, complete render/cache recovery and real storage/powerloss remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "10",
@@ -723,7 +723,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Frozen PSD/PSB fallback and validated JPEG scan streams pass synthetic independent rendering. Consumption-bound preflight metadata, framed high-depth/CMYK, real layer/RAW corpus, bleed/safe area/gutter and lab prints remain incomplete."
+      "assessment": "Shared-output/parent exclusion and exact output-path consumption protect tested preparation/publication. Permanent ownership, render/cache restart journals, consumed print/preflight metadata, broad corpus and actual lab requirements remain incomplete."
     },
     {
       "name": "Build and distribution",
@@ -761,7 +761,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "821-test strict Node gate, lint/types/UI build and full-workspace cargo fmt check pass. Complete native tests/Clippy/layering/corpus, hosted CI and full staged package remain unverified. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Final 831-test application gate, lint/types/UI build pass. Engine/helper/source pin unchanged; full native workspace/Clippy/layering/corpus and hosted CI remain unrun. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "5",
@@ -769,7 +769,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Static collector includes 52 source files and 10 installed packages, including project lock/transaction. A new installed bundle and packaged pinned-Node runtime remain unverified. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Static closure is 53 files/10 packages, including output_lock.js. A fresh staged/installed bundle and packaged pinned-Node execution remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
         },
         {
           "id": "6",
@@ -813,28 +813,28 @@
         }
       ],
       "certified": false,
-      "assessment": "Current helper/engine pins, static closure and application gates pass; native workspace formatting is fresh. Full native tests/Clippy/layering/corpus, hosted CI, packaged pinned-Node, staged root package and signed/notarized clean-Mac installation remain unverified."
+      "assessment": "Pinned application gate and 53-file static closure pass; no new native source or installed package is claimed. Full native/hosted/package/packaged-Node/signing/notarization/clean-Mac requirements remain incomplete."
     }
   ],
   "latestAssessment": {
     "date": "2026-10-14",
-    "iteration": 4,
-    "evidence": "docs/quality/2026-10-14-iteration-4/verification.json",
-    "missionComplete": false,
-    "independentReview": "Scoped worker reviews found and fixed defects. All three workers then terminated at provider usage limit; final independent review of parent project transaction/lease/HFS integrations remains incomplete.",
-    "highestPriority": "Protect different projects sharing output roots or delivery parents; durable render/cache journal; consume verified metadata in print/preflight. Confirm with regressions before broadening any guarantees.",
-    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported 4:51 PM without date/timezone. Recorded verbatim, not a verified future reset estimate.",
-    "scoringDecision": "All 90 fixed criteria reassessed; names/weights unchanged. Only performance criteria 4, 5 and 9 move from 0 to 5 verified partial points, using the completed synthetic high-resolution/resource/repetition pilot. Performance rises from 1.5 to 3.0; no criterion receives new full points and no category is certified.",
+    "iteration": 5,
+    "evidence": "docs/quality/2026-10-14-iteration-5/verification.json",
     "previousScores": {
       "Architecture": 6.5,
       "UI and workflow": 4.5,
       "Testing": 5,
-      "Performance and scalability": 1.5,
+      "Performance and scalability": 3,
       "Data integrity and recovery": 6.5,
       "Documentation": 4.5,
       "Security and licensing": 4,
       "Print and delivery correctness": 4,
       "Build and distribution": 4
-    }
+    },
+    "missionComplete": false,
+    "independentReview": "All three read-only review/diagnosis workers attempted execution and again terminated at provider usage limit. Final independent review of iteration-5 output lease integration and prior parent transaction/HFS changes remains incomplete.",
+    "highestPriority": "Durable render/cache capture/install/restart journal and explicit permanent/legacy/native/global output ownership; consume verified print/preflight metadata.",
+    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported 10:00 PM without date/timezone. Recorded verbatim, not a verified reset estimate.",
+    "scoringDecision": "All 90 fixed criteria reassessed; names, weights and points unchanged. Backend namespace and cache evidence strengthen partial criteria without completing whole-app/real-world requirements."
   }
 }

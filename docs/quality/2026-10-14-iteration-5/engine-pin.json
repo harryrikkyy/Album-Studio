@@ -1,0 +1,9 @@
+{
+  "engine": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft",
+  "commit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "rustToolchain": "1.99.0",
+  "cargoLockSha256": "b05366471fba27616e6a59a2a1aece062d296a08e09930a197c1c743c2b49bbb",
+  "features": [
+    "heif"
+  ]
+}

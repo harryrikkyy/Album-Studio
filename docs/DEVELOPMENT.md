@@ -32,7 +32,7 @@ the helper reads it from `~/Library/Application Support/Album Studio/.env`, then
 repository root (when run from source), then from the Album Toolkit's folder.
 Configure a private development environment; test fixtures do not require real account secrets.
 See [engine setup and CI](quality/ENGINE_PIN_AND_CI.md) for pin checks, alternate targets and
-fresh reconstruction. Local iteration-4 checks used Node 22.22.3; packaged 22.23.3 runtime
+fresh reconstruction. Local iteration-5 checks used Node 22.22.3; packaged 22.23.3 runtime
 verification remains separate.
 
 ## Build and run

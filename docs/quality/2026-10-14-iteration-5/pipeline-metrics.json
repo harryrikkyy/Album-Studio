@@ -1,0 +1,452 @@
+{
+  "status": "completed",
+  "sourceUnchanged": true,
+  "machine": {
+    "cpu": "Apple M4",
+    "ramGiB": 16,
+    "node": "v22.22.3"
+  },
+  "fixture": {
+    "photos": 24,
+    "inputPixels": [
+      4000,
+      3000
+    ],
+    "spreads": 8,
+    "outputPixels": [
+      5400,
+      1800
+    ],
+    "heightInches": 6,
+    "ppi": 300
+  },
+  "phases": [
+    {
+      "name": "fixture.generate",
+      "seconds": 6.072,
+      "sampledPeakRssMiB": 316.8,
+      "logicalBytes": 241496143,
+      "workerEventLoopP95Ms": 53.247999
+    },
+    {
+      "name": "album.open-and-migrate.cold",
+      "seconds": 0.403,
+      "sampledPeakRssMiB": 327.8,
+      "logicalBytes": 241536294,
+      "workerEventLoopP95Ms": 21.217279
+    },
+    {
+      "name": "proof.cold",
+      "seconds": 3.247,
+      "sampledPeakRssMiB": 367.2,
+      "logicalBytes": 242303760,
+      "workerEventLoopP95Ms": 21.200895
+    },
+    {
+      "name": "proof.warm",
+      "seconds": 0.29,
+      "sampledPeakRssMiB": 219.3,
+      "logicalBytes": 242307103,
+      "workerEventLoopP95Ms": 20.594687
+    },
+    {
+      "name": "render.cold",
+      "seconds": 30.459,
+      "sampledPeakRssMiB": 1603.2,
+      "logicalBytes": 992322316,
+      "workerEventLoopP95Ms": 21.315583
+    },
+    {
+      "name": "export-jpeg-and-pdf.cold",
+      "seconds": 14.813,
+      "sampledPeakRssMiB": 618.5,
+      "logicalBytes": 1094420639,
+      "workerEventLoopP95Ms": 21.233663
+    },
+    {
+      "name": "correctness.snapshot",
+      "seconds": 0.34,
+      "sampledPeakRssMiB": 217.8,
+      "logicalBytes": 1094423686,
+      "workerEventLoopP95Ms": 20.021247
+    },
+    {
+      "name": "proof.warm-1",
+      "seconds": 1.165,
+      "sampledPeakRssMiB": 217.8,
+      "logicalBytes": 1094433537,
+      "workerEventLoopP95Ms": 21.053439
+    },
+    {
+      "name": "render.warm-1",
+      "seconds": 0.981,
+      "sampledPeakRssMiB": 217.9,
+      "logicalBytes": 1094436869,
+      "workerEventLoopP95Ms": 21.069823
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-1",
+      "seconds": 7.339,
+      "sampledPeakRssMiB": 315.1,
+      "logicalBytes": 1096039562,
+      "workerEventLoopP95Ms": 21.086207
+    },
+    {
+      "name": "proof.warm-2",
+      "seconds": 0.837,
+      "sampledPeakRssMiB": 276.9,
+      "logicalBytes": 1096044460,
+      "workerEventLoopP95Ms": 20.381695
+    },
+    {
+      "name": "render.warm-2",
+      "seconds": 0.85,
+      "sampledPeakRssMiB": 238.1,
+      "logicalBytes": 1096047792,
+      "workerEventLoopP95Ms": 20.512767
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-2",
+      "seconds": 7.029,
+      "sampledPeakRssMiB": 308.8,
+      "logicalBytes": 1097650487,
+      "workerEventLoopP95Ms": 21.053439
+    },
+    {
+      "name": "proof.warm-3",
+      "seconds": 0.829,
+      "sampledPeakRssMiB": 237.6,
+      "logicalBytes": 1097655385,
+      "workerEventLoopP95Ms": 20.660223
+    },
+    {
+      "name": "render.warm-3",
+      "seconds": 0.841,
+      "sampledPeakRssMiB": 243.6,
+      "logicalBytes": 1097658717,
+      "workerEventLoopP95Ms": 20.365311
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-3",
+      "seconds": 7.105,
+      "sampledPeakRssMiB": 321.1,
+      "logicalBytes": 1099261412,
+      "workerEventLoopP95Ms": 21.086207
+    },
+    {
+      "name": "source.preserved-stamp-invalidation",
+      "seconds": 5.024,
+      "sampledPeakRssMiB": 313.7,
+      "logicalBytes": 1099269995,
+      "workerEventLoopP95Ms": 21.069823
+    },
+    {
+      "name": "reorder.update",
+      "seconds": 0.232,
+      "sampledPeakRssMiB": 271.5,
+      "logicalBytes": 1099322259,
+      "workerEventLoopP95Ms": 21.168127
+    },
+    {
+      "name": "reorder.proof",
+      "seconds": 1.056,
+      "sampledPeakRssMiB": 275.5,
+      "logicalBytes": 1101830598,
+      "workerEventLoopP95Ms": 20.381695
+    },
+    {
+      "name": "reorder.render",
+      "seconds": 0.847,
+      "sampledPeakRssMiB": 263.6,
+      "logicalBytes": 1101833932,
+      "workerEventLoopP95Ms": 20.332543
+    },
+    {
+      "name": "reorder.export-jpeg-and-pdf",
+      "seconds": 14.613,
+      "sampledPeakRssMiB": 631.3,
+      "logicalBytes": 1203933342,
+      "workerEventLoopP95Ms": 21.299199
+    },
+    {
+      "name": "reorder.verify-owner-and-bytes",
+      "seconds": 0.349,
+      "sampledPeakRssMiB": 242.4,
+      "logicalBytes": 1203936392,
+      "workerEventLoopP95Ms": 20.021247
+    },
+    {
+      "name": "pdf.independent-page-order-and-pixels",
+      "seconds": 3.092,
+      "sampledPeakRssMiB": 308.7,
+      "logicalBytes": 1205986377,
+      "workerEventLoopP95Ms": 21.037055
+    }
+  ],
+  "peakSampledAggregateRssMiB": 1603.2,
+  "logicalGiB": 1.123,
+  "warmThreeCycleGrowthLogicalBytes": 4827875,
+  "correctness": {
+    "sourcesStillMatch": true,
+    "stableSpreadIdsAfterReorder": true,
+    "warmSheetsAndJpegsUnchanged": true,
+    "preservedStampInvalidation": true,
+    "pdfPageCount": 8,
+    "original": [
+      {
+        "id": "spread_06efd77f4d3e568913ae4497e59b44cb8eaf5e6401fdb151da074b8bb5eebef7",
+        "n": 1,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0001_jpg",
+          "img_Shoot_photo_0002_jpg",
+          "img_Shoot_photo_0003_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_06efd77f4d3e568913ae4497e59b44cb8eaf5e6401fdb151da074b8bb5eebef7.psd",
+        "sheetSha256": "9021112a83a91f4844f07fd42ff7f3d6232ca5e4de4a736f843bb9ebcb342198",
+        "highSha256": "c21a9457b95b6c6f15591d653a5564f83ae26410916034b86fce747fd43e1e46",
+        "lowSha256": "a585a2486c56de6c5abcc9ad4cb0d168fa370d25a4044685695a148ba4627315",
+        "highBytes": 5489926,
+        "lowBytes": 91099
+      },
+      {
+        "id": "spread_33ac250580ee56a3829bc4b15db3a178a0161c81f226c060b20e428d0a2173c5",
+        "n": 2,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0004_jpg",
+          "img_Shoot_photo_0005_jpg",
+          "img_Shoot_photo_0006_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_33ac250580ee56a3829bc4b15db3a178a0161c81f226c060b20e428d0a2173c5.psd",
+        "sheetSha256": "e5162ee15c0e53c6ba28a93f58253bc5da63f01d37e4bd74f93b4b132f1630bc",
+        "highSha256": "fff33be1de34d24cdf27bbc6644591e6a4e32cb08e500fb5f80fe7ef0dba5378",
+        "lowSha256": "fa69493c9b52bbbe7c21c463a02ebcbf53bf882c7c0ac47a8f6f84e17c967893",
+        "highBytes": 6560574,
+        "lowBytes": 102084
+      },
+      {
+        "id": "spread_5ecf1581f74b2b3ce0846e4b2f2ce70f27c926817f27660e4a62ff34655c6988",
+        "n": 3,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0007_jpg",
+          "img_Shoot_photo_0008_jpg",
+          "img_Shoot_photo_0009_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_5ecf1581f74b2b3ce0846e4b2f2ce70f27c926817f27660e4a62ff34655c6988.psd",
+        "sheetSha256": "d78dff3e263c64602717bf50b6bf5f6f5586bfc21f31f97eb3b7252ffea60dba",
+        "highSha256": "c1dc9eb8dac6146e2288c14cbf95741b16b6a22b49bc3351bc12104e81927761",
+        "lowSha256": "7cc222edd77f5e72577038e2443f326500600179a7029a1ffff3b65dab37ff97",
+        "highBytes": 6094268,
+        "lowBytes": 98148
+      },
+      {
+        "id": "spread_1a05aa62247a8148a81af4b51bdfde1ccd2f2df194f6b0eea0cee02bdc9cf0f5",
+        "n": 4,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0010_jpg",
+          "img_Shoot_photo_0011_jpg",
+          "img_Shoot_photo_0012_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_1a05aa62247a8148a81af4b51bdfde1ccd2f2df194f6b0eea0cee02bdc9cf0f5.psd",
+        "sheetSha256": "1979342c162c173f78f31710f7cc365de9cdbdae3bf9b98ec7b55f42cde4fccf",
+        "highSha256": "e0d9ad0e3400329b1f4c179d8d2ef3f2f0e7e0250f221d696ff7d92bfaa84fc7",
+        "lowSha256": "377f686b526ef12696dac8ac8dbbee05c49bd37c3894751c92b2baf076642645",
+        "highBytes": 6383967,
+        "lowBytes": 99668
+      },
+      {
+        "id": "spread_a71dca22922272d95534b5de1366b8c1083ad8988d3bd3775c19d8271a0fc59c",
+        "n": 5,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0013_jpg",
+          "img_Shoot_photo_0014_jpg",
+          "img_Shoot_photo_0015_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_a71dca22922272d95534b5de1366b8c1083ad8988d3bd3775c19d8271a0fc59c.psd",
+        "sheetSha256": "7422310c94f8adcd63f2c54843bb08492ab7987b5c5a2911257f3a8b3921a4a0",
+        "highSha256": "18352466ec9d4d1c0fac504152665ac892591db3912f5e71385d424e52cee93d",
+        "lowSha256": "e4b907d7f9d55eb6f172e3ab04a28825a4d3501f562cf83dcf0243425993d44a",
+        "highBytes": 6368920,
+        "lowBytes": 101867
+      },
+      {
+        "id": "spread_167f1fe50306823ba1a0262544346e36c7efbaeb37c9079b8d07c6fb991dd937",
+        "n": 6,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0016_jpg",
+          "img_Shoot_photo_0017_jpg",
+          "img_Shoot_photo_0018_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_167f1fe50306823ba1a0262544346e36c7efbaeb37c9079b8d07c6fb991dd937.psd",
+        "sheetSha256": "7376d24385eed2f60b2a1fbffbf3826683c4ad615276695a88357606e9e65ca1",
+        "highSha256": "02e9cf5fb293e3748791c00768777d775841bb28e7a94af6b0d9e2046c896ca6",
+        "lowSha256": "f39028c38488a0097c6a0ba9f54db847654780de6dcbbb95e6d8088bfc3cebd6",
+        "highBytes": 6343925,
+        "lowBytes": 95577
+      },
+      {
+        "id": "spread_ff9b7df24588c977c6ebd5ba76d8482e13e10f3bb52e397a7c5577bc80e72384",
+        "n": 7,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0019_jpg",
+          "img_Shoot_photo_0020_jpg",
+          "img_Shoot_photo_0021_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_ff9b7df24588c977c6ebd5ba76d8482e13e10f3bb52e397a7c5577bc80e72384.psd",
+        "sheetSha256": "72bbe2e007990af19dcb7d47ecc27cbee4546dc32e66c2c07082d1d30c1ea34c",
+        "highSha256": "4e601cb8abbd0afb80b245584e83e9b221d92d0ff7944b6e9fa41b92180e904b",
+        "lowSha256": "50be2d4ce43f3948c2d95f2b2cd067c3d75240c596b787bc9e0b58612b296d35",
+        "highBytes": 5954091,
+        "lowBytes": 100012
+      },
+      {
+        "id": "spread_608c6166be665b4cf07225eed70ad92d4f7cede8130274e5e5c81ba5489ddcbe",
+        "n": 8,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0022_jpg",
+          "img_Shoot_photo_0023_jpg",
+          "img_Shoot_photo_0024_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_608c6166be665b4cf07225eed70ad92d4f7cede8130274e5e5c81ba5489ddcbe.psd",
+        "sheetSha256": "d389b1fdcf7926ea12b915a917ad6b7752124388d86f2314fd0c8c32a1e7d5d1",
+        "highSha256": "9fdbd4121cc469bb8777729387d91c806794a21dce9725e1f1879ebedfe7fd0f",
+        "lowSha256": "363467736e6e2c6fe2e77ee6a2c563ef25e42e86e69238b0dbe7272b37df3293",
+        "highBytes": 6269233,
+        "lowBytes": 90328
+      }
+    ],
+    "reordered": [
+      {
+        "id": "spread_33ac250580ee56a3829bc4b15db3a178a0161c81f226c060b20e428d0a2173c5",
+        "n": 1,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0004_jpg",
+          "img_Shoot_photo_0005_jpg",
+          "img_Shoot_photo_0006_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_33ac250580ee56a3829bc4b15db3a178a0161c81f226c060b20e428d0a2173c5.psd",
+        "sheetSha256": "e5162ee15c0e53c6ba28a93f58253bc5da63f01d37e4bd74f93b4b132f1630bc",
+        "highSha256": "fff33be1de34d24cdf27bbc6644591e6a4e32cb08e500fb5f80fe7ef0dba5378",
+        "lowSha256": "fa69493c9b52bbbe7c21c463a02ebcbf53bf882c7c0ac47a8f6f84e17c967893",
+        "highBytes": 6560574,
+        "lowBytes": 102084
+      },
+      {
+        "id": "spread_5ecf1581f74b2b3ce0846e4b2f2ce70f27c926817f27660e4a62ff34655c6988",
+        "n": 2,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0007_jpg",
+          "img_Shoot_photo_0008_jpg",
+          "img_Shoot_photo_0009_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_5ecf1581f74b2b3ce0846e4b2f2ce70f27c926817f27660e4a62ff34655c6988.psd",
+        "sheetSha256": "d78dff3e263c64602717bf50b6bf5f6f5586bfc21f31f97eb3b7252ffea60dba",
+        "highSha256": "c1dc9eb8dac6146e2288c14cbf95741b16b6a22b49bc3351bc12104e81927761",
+        "lowSha256": "7cc222edd77f5e72577038e2443f326500600179a7029a1ffff3b65dab37ff97",
+        "highBytes": 6094268,
+        "lowBytes": 98148
+      },
+      {
+        "id": "spread_1a05aa62247a8148a81af4b51bdfde1ccd2f2df194f6b0eea0cee02bdc9cf0f5",
+        "n": 3,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0010_jpg",
+          "img_Shoot_photo_0011_jpg",
+          "img_Shoot_photo_0012_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_1a05aa62247a8148a81af4b51bdfde1ccd2f2df194f6b0eea0cee02bdc9cf0f5.psd",
+        "sheetSha256": "1979342c162c173f78f31710f7cc365de9cdbdae3bf9b98ec7b55f42cde4fccf",
+        "highSha256": "e0d9ad0e3400329b1f4c179d8d2ef3f2f0e7e0250f221d696ff7d92bfaa84fc7",
+        "lowSha256": "377f686b526ef12696dac8ac8dbbee05c49bd37c3894751c92b2baf076642645",
+        "highBytes": 6383967,
+        "lowBytes": 99668
+      },
+      {
+        "id": "spread_a71dca22922272d95534b5de1366b8c1083ad8988d3bd3775c19d8271a0fc59c",
+        "n": 4,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0013_jpg",
+          "img_Shoot_photo_0014_jpg",
+          "img_Shoot_photo_0015_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_a71dca22922272d95534b5de1366b8c1083ad8988d3bd3775c19d8271a0fc59c.psd",
+        "sheetSha256": "7422310c94f8adcd63f2c54843bb08492ab7987b5c5a2911257f3a8b3921a4a0",
+        "highSha256": "18352466ec9d4d1c0fac504152665ac892591db3912f5e71385d424e52cee93d",
+        "lowSha256": "e4b907d7f9d55eb6f172e3ab04a28825a4d3501f562cf83dcf0243425993d44a",
+        "highBytes": 6368920,
+        "lowBytes": 101867
+      },
+      {
+        "id": "spread_167f1fe50306823ba1a0262544346e36c7efbaeb37c9079b8d07c6fb991dd937",
+        "n": 5,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0016_jpg",
+          "img_Shoot_photo_0017_jpg",
+          "img_Shoot_photo_0018_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_167f1fe50306823ba1a0262544346e36c7efbaeb37c9079b8d07c6fb991dd937.psd",
+        "sheetSha256": "7376d24385eed2f60b2a1fbffbf3826683c4ad615276695a88357606e9e65ca1",
+        "highSha256": "02e9cf5fb293e3748791c00768777d775841bb28e7a94af6b0d9e2046c896ca6",
+        "lowSha256": "f39028c38488a0097c6a0ba9f54db847654780de6dcbbb95e6d8088bfc3cebd6",
+        "highBytes": 6343925,
+        "lowBytes": 95577
+      },
+      {
+        "id": "spread_ff9b7df24588c977c6ebd5ba76d8482e13e10f3bb52e397a7c5577bc80e72384",
+        "n": 6,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0019_jpg",
+          "img_Shoot_photo_0020_jpg",
+          "img_Shoot_photo_0021_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_ff9b7df24588c977c6ebd5ba76d8482e13e10f3bb52e397a7c5577bc80e72384.psd",
+        "sheetSha256": "72bbe2e007990af19dcb7d47ecc27cbee4546dc32e66c2c07082d1d30c1ea34c",
+        "highSha256": "4e601cb8abbd0afb80b245584e83e9b221d92d0ff7944b6e9fa41b92180e904b",
+        "lowSha256": "50be2d4ce43f3948c2d95f2b2cd067c3d75240c596b787bc9e0b58612b296d35",
+        "highBytes": 5954091,
+        "lowBytes": 100012
+      },
+      {
+        "id": "spread_608c6166be665b4cf07225eed70ad92d4f7cede8130274e5e5c81ba5489ddcbe",
+        "n": 7,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0022_jpg",
+          "img_Shoot_photo_0023_jpg",
+          "img_Shoot_photo_0024_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_608c6166be665b4cf07225eed70ad92d4f7cede8130274e5e5c81ba5489ddcbe.psd",
+        "sheetSha256": "d389b1fdcf7926ea12b915a917ad6b7752124388d86f2314fd0c8c32a1e7d5d1",
+        "highSha256": "9fdbd4121cc469bb8777729387d91c806794a21dce9725e1f1879ebedfe7fd0f",
+        "lowSha256": "363467736e6e2c6fe2e77ee6a2c563ef25e42e86e69238b0dbe7272b37df3293",
+        "highBytes": 6269233,
+        "lowBytes": 90328
+      },
+      {
+        "id": "spread_06efd77f4d3e568913ae4497e59b44cb8eaf5e6401fdb151da074b8bb5eebef7",
+        "n": 8,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0001_jpg",
+          "img_Shoot_photo_0002_jpg",
+          "img_Shoot_photo_0003_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-zguTv3/Album/exports/.album-studio/sheets/spread_06efd77f4d3e568913ae4497e59b44cb8eaf5e6401fdb151da074b8bb5eebef7.psd",
+        "sheetSha256": "9021112a83a91f4844f07fd42ff7f3d6232ca5e4de4a736f843bb9ebcb342198",
+        "highSha256": "c21a9457b95b6c6f15591d653a5564f83ae26410916034b86fce747fd43e1e46",
+        "lowSha256": "a585a2486c56de6c5abcc9ad4cb0d168fa370d25a4044685695a148ba4627315",
+        "highBytes": 5489926,
+        "lowBytes": 91099
+      }
+    ]
+  },
+  "pdfPatchMaxChannelDelta": 1.5399999999998215,
+  "limitations": [
+    "Synthetic independent textured JPEGs; no camera/RAW/HEIC corpus or photographic content certification.",
+    "Simple three-rectangle RGB PSD; no decorative, large layered, text, CMYK or spot-colour template corpus.",
+    "Headless backend only; WKWebView/native UI latency, accessibility and customer workflows remain unverified.",
+    "Cold means fresh application-owned caches in a new process; OS page caches are not flushed and source generation warms filesystem caches.",
+    "Sampled process-tree RSS can miss short peaks and does not include kernel/GPU/shared-memory accounting.",
+    "ps CPU percentages are sampled process-lifetime averages, not instantaneous CPU utilization or total energy.",
+    "Defined small/typical/large are harness workload labels, not established customer distributions.",
+    "Safety ceilings abort a benchmark; they are not production acceptance budgets.",
+    "Retained recovery histories are measured here; long-term growth and approved cleanup remain unresolved."
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "node": "v22.22.3",
+  "packagedNodePin": "22.23.3",
+  "rust": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cli": "photocraft-cli 0.6.0 (bdb1f8f35, 2026-10-12)",
+  "atomicHelper": "album-studio-rename-exclusive 9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101",
+  "newPackageCreated": false,
+  "oldBundlesModified": false
+}

@@ -57,14 +57,15 @@ async function storageUsage({ album } = {}) {
 async function clearStorage({ ids, album }) {
   if (!Array.isArray(ids) || !ids.length) throw new Error('Choose what to clear.')
   for (const id of ids) if (!APP.some((c) => c.id === id) && !(album && ALBUM.some((c) => c.id === id))) throw new Error(`Unknown cache \`${id}\`.`)
-  if (album) return require('./project').withProjectLease(album, async ({ lease }) => {
+  if (album) return require('./project').withProjectLease(album, async ({ lease }) => require('./output_lock').withProjectOutputs(lease, async () => {
     const dir = await albumCacheDir(album)
+    await lease.outputNamespace.assertFor(path.dirname(dir))
     for (const id of ids) {
       await lease.assertOwned()
       await fs.promises.rm(path.join(APP.some((c) => c.id === id) ? cacheRoot() : dir, id), { recursive: true, force: true })
     }
     return storageUsage({ album })
-  }, { kind: 'cache-clear' })
+  }, { kind: 'cache-clear' }), { kind: 'cache-clear' })
   for (const id of ids) {
     if (APP.some((c) => c.id === id)) await fs.promises.rm(path.join(cacheRoot(), id), { recursive: true, force: true })
   }

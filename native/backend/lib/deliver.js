@@ -23,6 +23,7 @@ const { psdPixels } = require('./color')
 const { spreadHash } = require('./render')
 const { outputFolder, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
+const { withProjectOutputs } = require('./output_lock')
 const { preflightAlbum } = require('./preflight')
 const { printSettings, psdDimensions } = require('./print_settings')
 const { publishDelivery, recoverDeliveries, verifyOwnedArtifact } = require('./delivery_transaction')
@@ -104,7 +105,7 @@ async function exportSheet(psdPath, targets, s) {
  */
 async function exportPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
-  return withProjectLease(albumPath, async ({ lease }) => (await prepareExport({ album: albumPath, ...p }, lease)).plan, { kind: 'export-plan' })
+  return withProjectLease(albumPath, async ({ lease }) => withProjectOutputs(lease, async () => (await prepareExport({ album: albumPath, ...p }, lease)).plan, { kind: 'export-plan', delivery: true }), { kind: 'export-plan' })
 }
 
 async function prepareExport(p, lease) {
@@ -112,12 +113,13 @@ async function prepareExport(p, lease) {
   const projectText = await fs.promises.readFile(album.file, 'utf8')
   const data = JSON.parse(projectText), ws = data.workspace || data
   const paths = deliverPaths(album, outputFolder(ws, album.path))
+  await lease.outputNamespace.assertFor(paths.sheets, true)
   const s = settingsOf(p)
   const sheetsExist = await fs.promises.lstat(paths.sheets).then(() => true, (e) => { if (e.code === 'ENOENT') return false; throw e })
   if (sheetsExist) await recoverDeliveries(paths, { albumFile: album.file })
   const old = await readJson(paths.cache)
   const cache = old.version === 2 && old.albumFile === album.file ? old : { version: 2, albumFile: album.file, spreads: {} }
-  const rendered = await readRenderCache(paths.sheets)
+  const rendered = await readRenderCache(paths.sheets, { albumFile: album.file })
   const spreads = await Promise.all(album.spreads.map(async (sp) => {
     const name = outputName(sp.n)
     const record = await ownedSheetRecord(ws, album.path, sp.id, rendered)

@@ -1,0 +1,509 @@
+TAP version 13
+# Subtest: a project appearing during creation is preserved instead of overwritten
+ok 1 - a project appearing during creation is preserved instead of overwritten
+  ---
+  duration_ms: 344.392458
+  type: 'test'
+  ...
+# Subtest: background proof refresh cannot publish while another helper owns the album
+ok 2 - background proof refresh cannot publish while another helper owns the album
+  ---
+  duration_ms: 349.976791
+  type: 'test'
+  ...
+# Subtest: album cache clearing cannot remove active render inputs owned by another helper
+ok 3 - album cache clearing cannot remove active render inputs owned by another helper
+  ---
+  duration_ms: 322.983125
+  type: 'test'
+  ...
+# Subtest: a project-file symlink outside the album keeps models and output paths in the actual album
+ok 4 - a project-file symlink outside the album keeps models and output paths in the actual album
+  ---
+  duration_ms: 1327.39325
+  type: 'test'
+  ...
+# Subtest: duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+ok 5 - duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+  ---
+  duration_ms: 9.197833
+  type: 'test'
+  ...
+# Subtest: exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+ok 6 - exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+  ---
+  duration_ms: 672.928666
+  type: 'test'
+  ...
+# Subtest: sanitization and recursive template basename collisions receive unique IDs
+ok 7 - sanitization and recursive template basename collisions receive unique IDs
+  ---
+  duration_ms: 25.153667
+  type: 'test'
+  ...
+# Subtest: persistent spread IDs follow move, insert, clear, delete, undo and redo
+ok 8 - persistent spread IDs follow move, insert, clear, delete, undo and redo
+  ---
+  duration_ms: 2037.747792
+  type: 'test'
+  ...
+# Subtest: a failed initial edit leaves project migration and undo history untouched
+ok 9 - a failed initial edit leaves project migration and undo history untouched
+  ---
+  duration_ms: 194.832625
+  type: 'test'
+  ...
+# Subtest: explicit source relink preserves IDs and colour edits, and undo restores the original root
+ok 10 - explicit source relink preserves IDs and colour edits, and undo restores the original root
+  ---
+  duration_ms: 1267.5585
+  type: 'test'
+  ...
+# Subtest: auto-fill replaces page edits and undo restores their original spread identities
+ok 11 - auto-fill replaces page edits and undo restores their original spread identities
+  ---
+  duration_ms: 1040.519542
+  type: 'test'
+  ...
+# Subtest: failed atomic writes do not add, remove or move undo history
+ok 12 - failed atomic writes do not add, remove or move undo history
+  ---
+  duration_ms: 1044.720709
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence still identifies the second photo when the first already owns the old ID
+ok 13 - legacy URL evidence still identifies the second photo when the first already owns the old ID
+  ---
+  duration_ms: 183.007916
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+ok 14 - legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+  ---
+  duration_ms: 177.594625
+  type: 'test'
+  ...
+# Subtest: duplicate persisted spread IDs and conflicting asset registry records fail before saving
+ok 15 - duplicate persisted spread IDs and conflicting asset registry records fail before saving
+  ---
+  duration_ms: 236.830417
+  type: 'test'
+  ...
+# Subtest: project edits and undo cannot change a plan while its files are being produced
+ok 16 - project edits and undo cannot change a plan while its files are being produced
+  ---
+  duration_ms: 933.4065
+  type: 'test'
+  ...
+# Subtest: clearing a spread removes its page edits and undo restores them with the same identity
+ok 17 - clearing a spread removes its page edits and undo restores them with the same identity
+  ---
+  duration_ms: 395.835
+  type: 'test'
+  ...
+# Subtest: a real child-held lease blocks every album mutation and plan through canonical and symlink aliases
+    # Subtest: alias 1: reserve
+    ok 1 - alias 1: reserve
+      ---
+      duration_ms: 78.483708
+      type: 'test'
+      ...
+    # Subtest: alias 1: update
+    ok 2 - alias 1: update
+      ---
+      duration_ms: 53.838333
+      type: 'test'
+      ...
+    # Subtest: alias 1: undo
+    ok 3 - alias 1: undo
+      ---
+      duration_ms: 46.666334
+      type: 'test'
+      ...
+    # Subtest: alias 1: redo
+    ok 4 - alias 1: redo
+      ---
+      duration_ms: 51.109959
+      type: 'test'
+      ...
+    # Subtest: alias 1: migrate
+    ok 5 - alias 1: migrate
+      ---
+      duration_ms: 41.978875
+      type: 'test'
+      ...
+    # Subtest: alias 1: renderPlan
+    ok 6 - alias 1: renderPlan
+      ---
+      duration_ms: 48.889334
+      type: 'test'
+      ...
+    # Subtest: alias 1: exportPlan
+    ok 7 - alias 1: exportPlan
+      ---
+      duration_ms: 46.781291
+      type: 'test'
+      ...
+    # Subtest: alias 2: reserve
+    ok 8 - alias 2: reserve
+      ---
+      duration_ms: 51.205792
+      type: 'test'
+      ...
+    # Subtest: alias 2: update
+    ok 9 - alias 2: update
+      ---
+      duration_ms: 57.002542
+      type: 'test'
+      ...
+    # Subtest: alias 2: undo
+    ok 10 - alias 2: undo
+      ---
+      duration_ms: 50.634625
+      type: 'test'
+      ...
+    # Subtest: alias 2: redo
+    ok 11 - alias 2: redo
+      ---
+      duration_ms: 39.734791
+      type: 'test'
+      ...
+    # Subtest: alias 2: migrate
+    ok 12 - alias 2: migrate
+      ---
+      duration_ms: 45.742042
+      type: 'test'
+      ...
+    # Subtest: alias 2: renderPlan
+    ok 13 - alias 2: renderPlan
+      ---
+      duration_ms: 55.371708
+      type: 'test'
+      ...
+    # Subtest: alias 2: exportPlan
+    ok 14 - alias 2: exportPlan
+      ---
+      duration_ms: 54.042792
+      type: 'test'
+      ...
+    # Subtest: alias 3: reserve
+    ok 15 - alias 3: reserve
+      ---
+      duration_ms: 49.407709
+      type: 'test'
+      ...
+    # Subtest: alias 3: update
+    ok 16 - alias 3: update
+      ---
+      duration_ms: 57.71175
+      type: 'test'
+      ...
+    # Subtest: alias 3: undo
+    ok 17 - alias 3: undo
+      ---
+      duration_ms: 42.971333
+      type: 'test'
+      ...
+    # Subtest: alias 3: redo
+    ok 18 - alias 3: redo
+      ---
+      duration_ms: 42.967125
+      type: 'test'
+      ...
+    # Subtest: alias 3: migrate
+    ok 19 - alias 3: migrate
+      ---
+      duration_ms: 47.106958
+      type: 'test'
+      ...
+    # Subtest: alias 3: renderPlan
+    ok 20 - alias 3: renderPlan
+      ---
+      duration_ms: 42.620708
+      type: 'test'
+      ...
+    # Subtest: alias 3: exportPlan
+    ok 21 - alias 3: exportPlan
+      ---
+      duration_ms: 53.9415
+      type: 'test'
+      ...
+    # Subtest: alias 4: reserve
+    ok 22 - alias 4: reserve
+      ---
+      duration_ms: 42.174084
+      type: 'test'
+      ...
+    # Subtest: alias 4: update
+    ok 23 - alias 4: update
+      ---
+      duration_ms: 49.845416
+      type: 'test'
+      ...
+    # Subtest: alias 4: undo
+    ok 24 - alias 4: undo
+      ---
+      duration_ms: 41.67475
+      type: 'test'
+      ...
+    # Subtest: alias 4: redo
+    ok 25 - alias 4: redo
+      ---
+      duration_ms: 50.12925
+      type: 'test'
+      ...
+    # Subtest: alias 4: migrate
+    ok 26 - alias 4: migrate
+      ---
+      duration_ms: 55.022625
+      type: 'test'
+      ...
+    # Subtest: alias 4: renderPlan
+    ok 27 - alias 4: renderPlan
+      ---
+      duration_ms: 54.729541
+      type: 'test'
+      ...
+    # Subtest: alias 4: exportPlan
+    ok 28 - alias 4: exportPlan
+      ---
+      duration_ms: 56.693292
+      type: 'test'
+      ...
+    # Subtest: alias 5: reserve
+    ok 29 - alias 5: reserve
+      ---
+      duration_ms: 80.369167
+      type: 'test'
+      ...
+    # Subtest: alias 5: update
+    ok 30 - alias 5: update
+      ---
+      duration_ms: 53.015417
+      type: 'test'
+      ...
+    # Subtest: alias 5: undo
+    ok 31 - alias 5: undo
+      ---
+      duration_ms: 45.561625
+      type: 'test'
+      ...
+    # Subtest: alias 5: redo
+    ok 32 - alias 5: redo
+      ---
+      duration_ms: 49.042791
+      type: 'test'
+      ...
+    # Subtest: alias 5: migrate
+    ok 33 - alias 5: migrate
+      ---
+      duration_ms: 54.759625
+      type: 'test'
+      ...
+    # Subtest: alias 5: renderPlan
+    ok 34 - alias 5: renderPlan
+      ---
+      duration_ms: 51.914041
+      type: 'test'
+      ...
+    # Subtest: alias 5: exportPlan
+    ok 35 - alias 5: exportPlan
+      ---
+      duration_ms: 53.031709
+      type: 'test'
+      ...
+    1..35
+ok 18 - a real child-held lease blocks every album mutation and plan through canonical and symlink aliases
+  ---
+  duration_ms: 2320.996958
+  type: 'test'
+  ...
+# Subtest: direct migration cannot persist identity while this helper holds a heavy lease
+ok 19 - direct migration cannot persist identity while this helper holds a heavy lease
+  ---
+  duration_ms: 256.392625
+  type: 'test'
+  ...
+# Subtest: same-helper concurrent render and export plans serialize their project access across aliases
+ok 20 - same-helper concurrent render and export plans serialize their project access across aliases
+  ---
+  duration_ms: 962.759459
+  type: 'test'
+  ...
+# Subtest: folder, project-file and symlink aliases share one undo and redo history
+ok 21 - folder, project-file and symlink aliases share one undo and redo history
+  ---
+  duration_ms: 1161.561
+  type: 'test'
+  ...
+# Subtest: an external project edit invalidates in-memory undo and redo without replacing the child revision
+ok 22 - an external project edit invalidates in-memory undo and redo without replacing the child revision
+  ---
+  duration_ms: 1040.146875
+  type: 'test'
+  ...
+# Subtest: failed render/export starts release the whole-album lease for another process
+ok 23 - failed render/export starts release the whole-album lease for another process
+  ---
+  duration_ms: 1105.497834
+  type: 'test'
+  ...
+# Subtest: render completion releases its lease before a new helper can reserve the album
+ok 24 - render completion releases its lease before a new helper can reserve the album
+  ---
+  duration_ms: 544.45025
+  type: 'test'
+  ...
+# Subtest: different live projects sharing a sheet root cannot reserve overlapping jobs
+ok 25 - different live projects sharing a sheet root cannot reserve overlapping jobs
+  ---
+  duration_ms: 1189.41025
+  type: 'test'
+  ...
+# Subtest: sibling sheet roots serialize their shared delivery parent
+ok 26 - sibling sheet roots serialize their shared delivery parent
+  ---
+  duration_ms: 1082.4985
+  type: 'test'
+  ...
+# Subtest: physical sheet-folder aliases share ownership even when their logical parents differ
+ok 27 - physical sheet-folder aliases share ownership even when their logical parents differ
+  ---
+  duration_ms: 550.903625
+  type: 'test'
+  ...
+# Subtest: album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+ok 28 - album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+  ---
+  duration_ms: 1039.10675
+  type: 'test'
+  ...
+# Subtest: a killed project releases stale output reservations through verified owner recovery
+ok 29 - a killed project releases stale output reservations through verified owner recovery
+  ---
+  duration_ms: 884.43925
+  type: 'test'
+  ...
+# Subtest: unexpected namespace records fail closed without replacing their bytes
+ok 30 - unexpected namespace records fail closed without replacing their bytes
+  ---
+  duration_ms: 139.618458
+  type: 'test'
+  ...
+# Subtest: a namespace symlink cannot edit its referent or acquire an output reservation
+ok 31 - a namespace symlink cannot edit its referent or acquire an output reservation
+  ---
+  duration_ms: 162.695917
+  type: 'test'
+  ...
+# Subtest: a changed private namespace record invalidates a held job and preserves the edit
+ok 32 - a changed private namespace record invalidates a held job and preserves the edit
+  ---
+  duration_ms: 263.217417
+  type: 'test'
+  ...
+# Subtest: render records reject another project and malformed history without changing either project or cache
+ok 33 - render records reject another project and malformed history without changing either project or cache
+  ---
+  duration_ms: 695.406875
+  type: 'test'
+  ...
+# Subtest: a durable project save keeps exact previous bytes in .bak and detached permanent history
+ok 34 - a durable project save keeps exact previous bytes in .bak and detached permanent history
+  ---
+  duration_ms: 163.746291
+  type: 'test'
+  ...
+# Subtest: unknown regular and symlink backups are retained without changing their referents
+ok 35 - unknown regular and symlink backups are retained without changing their referents
+  ---
+  duration_ms: 224.172542
+  type: 'test'
+  ...
+# Subtest: a stale expected revision cannot replace the current project or its backup
+ok 36 - a stale expected revision cannot replace the current project or its backup
+  ---
+  duration_ms: 26.911125
+  type: 'test'
+  ...
+# Subtest: a manual project change at capture is restored exclusively and all baseline bytes remain
+ok 37 - a manual project change at capture is restored exclusively and all baseline bytes remain
+  ---
+  duration_ms: 220.082542
+  type: 'test'
+  ...
+# Subtest: a new project appearing during exclusive installation is preserved
+ok 38 - a new project appearing during exclusive installation is preserved
+  ---
+  duration_ms: 184.840583
+  type: 'test'
+  ...
+# Subtest: SIGKILL after journal recovers a complete revision and retains all old backup bytes
+ok 39 - SIGKILL after journal recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 208.952709
+  type: 'test'
+  ...
+# Subtest: SIGKILL after backup-captured recovers a complete revision and retains all old backup bytes
+ok 40 - SIGKILL after backup-captured recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 232.337625
+  type: 'test'
+  ...
+# Subtest: SIGKILL after backup-installed recovers a complete revision and retains all old backup bytes
+ok 41 - SIGKILL after backup-installed recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 321.019292
+  type: 'test'
+  ...
+# Subtest: SIGKILL after project-captured recovers a complete revision and retains all old backup bytes
+ok 42 - SIGKILL after project-captured recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 382.834333
+  type: 'test'
+  ...
+# Subtest: SIGKILL after project-installed recovers a complete revision and retains all old backup bytes
+ok 43 - SIGKILL after project-installed recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 369.116583
+  type: 'test'
+  ...
+# Subtest: SIGKILL after commit recovers a complete revision and retains all old backup bytes
+ok 44 - SIGKILL after commit recovers a complete revision and retains all old backup bytes
+  ---
+  duration_ms: 276.002666
+  type: 'test'
+  ...
+# Subtest: normal album open recovers a killed real lease through its folder name
+ok 45 - normal album open recovers a killed real lease through its folder name
+  ---
+  duration_ms: 941.17125
+  type: 'test'
+  ...
+# Subtest: normal album open recovers a killed real lease through its file name
+ok 46 - normal album open recovers a killed real lease through its file name
+  ---
+  duration_ms: 1112.627584
+  type: 'test'
+  ...
+# Subtest: normal album open recovers a killed real lease through its symlink name
+ok 47 - normal album open recovers a killed real lease through its symlink name
+  ---
+  duration_ms: 953.626333
+  type: 'test'
+  ...
+# Subtest: a completed save whose history retirement fails is reported as committed with the exact retained path
+ok 48 - a completed save whose history retirement fails is reported as committed with the exact retained path
+  ---
+  duration_ms: 186.311167
+  type: 'test'
+  ...
+1..48
+# tests 83
+# suites 0
+# pass 83
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8314.810208

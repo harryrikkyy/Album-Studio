@@ -95,6 +95,8 @@ async function freshManifest(albumDir) {
  */
 async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease } = {}) {
   if (!lease) return require('./project').withProjectLease(album.file, ({ lease: held }) => recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease: held }), { kind: 'sheet-proof' })
+  if (!lease.outputNamespace) return require('./output_lock').withProjectOutputs(lease, () => recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease }), { kind: 'sheet-proof' })
+  await lease.outputNamespace.assertFor(ws.outputToken || path.join(album.path, 'exports'))
   await lease.assertOwned()
   const m = await freshManifest(album.path)
   const hash = await proofHash(spread, album, ws)
@@ -383,7 +385,7 @@ async function proofsSettled(albumPath) {
 }
 
 async function refreshOnce(albumPath, r) {
-  return require('./project').withProjectLease(albumPath, ({ file, lease }) => refreshUnderLease(file, r, lease), { kind: 'proof-refresh' })
+  return require('./project').withProjectLease(albumPath, ({ file, lease }) => require('./output_lock').withProjectOutputs(lease, () => refreshUnderLease(file, r, lease), { kind: 'proof-refresh' }), { kind: 'proof-refresh' })
 }
 
 async function refreshUnderLease(albumPath, r, lease) {
@@ -391,6 +393,7 @@ async function refreshUnderLease(albumPath, r, lease) {
   const projectText = await fs.promises.readFile(album.file, 'utf8'), data = JSON.parse(projectText)
   album = await openAlbum({ path: albumPath }, { data })
   const ws = data.workspace || data
+  await lease.outputNamespace.assertFor(ws.outputToken || path.join(album.path, 'exports'))
   const m = await freshManifest(album.path)
   const known = m.data.spreads
   const hashes = await Promise.all(album.spreads.map((s) => proofHash(s, album, ws)))

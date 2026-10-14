@@ -1,0 +1,41 @@
+{
+  "iteration": 5,
+  "dispatches": [
+    {
+      "agent": "account_binding",
+      "task": "Independent read-only review of output_lock integration and prior parent transaction/HFS changes",
+      "completed": false
+    },
+    {
+      "agent": "delivery_recovery",
+      "task": "Read-only print metadata substitution fail-first diagnosis; no production edits",
+      "completed": false
+    },
+    {
+      "agent": "identity_design",
+      "task": "Read-only durable render/cache journal design and test matrix",
+      "completed": false
+    }
+  ],
+  "terminalMessage": "You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at 10:00 PM.",
+  "reportedReset": "10:00 PM; date/timezone unspecified, not verified as a future reset estimate",
+  "independentReviewComplete": false,
+  "parentChecks": "Implementation boundary/alias/release/foreign-evidence review, pinned fail-first, 83 scoped integrations, ten focused cases, 831 strict gate and 798 coverage pass. These are not independent final review.",
+  "externalRequirements": [
+    "Approved native GUI/accessibility session",
+    "Real printer/lab specification and physical samples",
+    "Authorized issuer/Firestore device-binding migration/rules environment",
+    "Physical storage/full-disk/powerloss/removable/exFAT/SMB setup",
+    "Developer ID/notarization credentials and clean customer Mac"
+  ],
+  "localRequirementsStillOpen": [
+    "Durable render/cache capture/install/restart journal",
+    "Permanent/legacy/copied/moved output ownership and native/global writer participation",
+    "Consumption-bound print/preflight metadata and catalogue/capture-order invalidation",
+    "Descendant symlink race policies and reviewed history retention/cleanup",
+    "Realistic customer small/typical/large and true peak/CPU/UI budgets",
+    "Real RAW/layer/mask/high-depth/CMYK corpus",
+    "Full native workspace/Clippy/layering/corpus, hosted CI, staged root package, packaged Node and block 0.1.6 compatibility"
+  ],
+  "missionComplete": false
+}

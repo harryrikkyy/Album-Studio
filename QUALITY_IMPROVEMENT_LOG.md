@@ -4,11 +4,12 @@
 
 Target: all nine categories must independently score strictly above 9.5/10 with verification. Mission remains active; no category is certified.
 
-Latest checkpoint: iteration 4 on 14 October 2026; evidence is in
-`docs/quality/2026-10-14-iteration-4/verification.json`. Earlier sections remain historical.
-Same-project backend isolation and restart-recoverable project saves now have regression
-coverage. Shared output ownership, durable render/cache publication and print/preflight
-metadata consumption remain open. Final independent integration review hit the provider limit.
+Latest checkpoint: iteration 5 on 14 October 2026; evidence is in
+`docs/quality/2026-10-14-iteration-5/verification.json`. Earlier sections remain historical.
+Same-project and physical output/parent backend exclusion, journaled project saves and exact
+output-path consumption checks now have regressions. Permanent/legacy output ownership,
+durable render/cache publication and print/preflight metadata remain open. Final independent
+review remains unavailable at the provider usage limit.
 
 Continuation verified on 13 October 2026 (Asia/Kolkata). No earlier `QUALITY_IMPROVEMENT_LOG.md` or objective scorecard exists in this checkout. The last persisted state is the audit in `docs/reviews/2026-10-13-project-review.md`, root commit `81bd5b4`, engine commit `bdb1f8f`. This continuation preserves that audit and does not restart it.
 
@@ -618,3 +619,152 @@ Next executable steps, preserving existing recovery histories and user files:
 Exact logs, review limits, benchmark measurements, diagnostic and SHA-256 source/evidence
 manifest: `docs/quality/2026-10-14-iteration-4/verification.json`. User `docs/reviews/`,
 `invoice-template/` and engine `.DS_Store` files remain untouched and excluded from checkpoints.
+
+
+## Iteration 5 — physical output namespace exclusion and guarded render history
+
+The preceding goal turn made progress: checkpoint `d6c1501` contains the implementation and
+verified evidence from iteration 4. This continuation verifies its **187 source and 48 tracked
+artifact hashes** against the current checkout before implementing anything. Tracked Git state
+was clean; only the user's audit/invoice folders were untracked. Engine remains `bdb1f8f` with
+no tracked changes and only the three pre-existing `.DS_Store` entries. No baseline audit was
+repeated and no real album, account, external service or existing app bundle was changed.
+
+The highest recorded issue was shared output/cache and delivery-parent overlap. Nine dedicated
+regressions against `d6c1501` in both parent and child processes produce **1 pass/8 failures**,
+zero skips: shared-root jobs, sibling delivery parents, physical symlink aliases, another
+project's cache/proof work, unexpected/symlink/changed namespace records and foreign/malformed
+render history. Verified stale-owner recovery already passes at baseline. The first draft
+teardown removed disposable folders before releasing live owners; that hook failure is retained
+separately. Teardown now releases children before removing the fixture. The corrected exact
+baseline loader/log is authoritative; the earlier parent-only loader is not a full pinned child
+run. No production assertion was weakened to repair test teardown.
+
+### Implemented scope
+
+- New physical sheet-folder namespace leases accompany backend project leases. Export/export
+  planning additionally lease the actual delivery parent, since sibling sheet folders share
+  `JPEG-High-Res/Page_NNN.jpg` and `JPEG-Low-Res/Page_NNN.jpg`. Root aliases map to the same
+  physical directory. For symlinked outputs, delivery retains its existing logical-parent
+  location while locking that parent's actual directory; no delivery location is silently moved.
+- Small read-only namespace markers are exclusively published and flushed without replacing
+  an existing entry. They reserve a service namespace, **not ownership of existing customer
+  files**. Project lease machinery supplies the machine/boot/PID/start/token owner, safe
+  reclamation guards and retained history. Partial acquisition releases every already held
+  namespace. A failed shared-sheet acquisition does not leave the delivery parent locked.
+  Dead same-host owners recover after real SIGKILL; uncertain/foreign/interrupted evidence
+  retains the existing fail-closed policy.
+- Job reservation obtains physical namespaces before migration/preparation and holds them
+  through publication/finish. Plans, proof refresh, direct sheet-proof recording and album
+  cache clearing participate. Internal work reuses its held capability without self-deadlock.
+  Completion releases output leases and then the project lease before the finished event;
+  primary/release errors and exact lock evidence are preserved.
+- New rendered-cache writes carry the canonical project file. A known foreign association
+  blocks preparation before migration or rendered-sheet/delivery publication. A foreign cache cannot make another
+  project's album view adopt its sheets. Current unique/legacy records remain compatible with
+  their previous per-file/manual policy; no blanket regeneration/deletion or silent permanent
+  ownership claim is made. Render evidence is independently bounded to 64 MiB, no-follow and
+  non-hardlinked. Malformed/oversized/invalid-shape history fails visibly instead of being
+  treated as an empty cache and replaced.
+
+A tenth fail-first regression found that an external writer could change the project's output
+between namespace acquisition and `prepareExport`'s JSON read. Preparation then inspected the
+new folder's recovery history without its lease. That regression initially fails **0/1**.
+The final code checks the actual output and delivery parent immediately before recovery scans;
+render planning, proof operations and cache clearing also validate their consumed output path.
+The final ten-test focused suite passes. The unrelated recovery bytes remain unchanged and its
+history is not even scanned. This is cooperative directory exclusion plus tested boundary
+validation, not an atomic defence against arbitrary external path replacement between syscalls.
+
+### Verification, scope and continuing limitations
+
+Final strict gate: **273 shared + 525 backend + 33 interface = 831 passed**, zero failures,
+cancellations or skips. The earlier 830-test gate and 797-test coverage predate the tenth
+consumption-boundary regression and are preserved separately; they are not final-source checks.
+Scoped project/job/alias/mutation/SIGKILL integration passed **83 tests**. Lint has zero errors
+or warnings; shared/interface types and production interface build pass. Static runtime closure
+is **53 files and 10 packages**, including the new namespace module. Native engine/source/helper
+pins remain unchanged; this iteration does not relabel old native tests, formatting, dependency
+audits, installed bundles or hosted checks as freshly verified.
+
+Whole-app permanent ownership remains incomplete: ownerless legacy records, moved/copied
+projects, missing/deleted evidence and manual reconciliation need an explicit migration/recovery
+workflow. Native/editor/external writers and global app-cache clearing do not yet participate
+in all these namespaces. Descendant symlink races and physical/removable/full-disk/power-loss
+behaviour remain unverified. Render capture/install/cache still lacks a full restart journal;
+retained histories still have no approved pruning/budget. Live print-dimension/preflight
+metadata, catalogue/capture-order caches, real RAW/layer/high-depth/CMYK corpus and native GUI/
+accessibility remain open. These limitations prohibit whole-app isolation/recovery certification.
+
+
+Final separate coverage: **798 shared/backend tests passed**, no failures/cancellations/skips.
+Namespace source line/branch coverage **97.20/80.95**, sheet/history module **100/88.89**,
+delivery **99.04/88.82**, render **97.31/77.60**, proofs **88.63/78.61**, storage **94.67/85.19**.
+Uncovered paths and aggregate-with-tests remain in the raw report; UI/Rust coverage is not claimed.
+
+All three workers were given one read-only review/diagnosis attempt in this continuation. They
+briefly reported running, then all returned terminal provider usage limits reporting **“10:00
+PM”**, without a date/timezone. No review or metadata/journal design result completed. The one
+worker's stale draft-benchmark status was corrected against the committed current state; no
+benchmark was restarted from that old task report. The returned reset text is recorded verbatim,
+not assumed to be a future local reset. Final independent review of output namespace integration
+and prior parent transaction/HFS changes remains incomplete. Parent checks are not substituted
+for independent review; prior scoped reviews remain scoped/historical. Source/testing work is
+preserved at this actual review execution limit, and the goal remains active.
+
+
+The current-source pilot completed with unchanged source/executable hashes during measurement:
+24 distinct 12 MP synthetic textures, eight simple RGB spreads, 5400×1800 output/6 inches/300 PPI.
+Cold proof **3.247 s**, cold render **30.459 s**, cold export/PDF **14.813 s**. Three warm renders
+**0.981/0.850/0.841 s**, warm exports including rebuilt PDF **7.339/7.029/7.105 s**; eight files
+reuse every cycle. Sampled aggregate process-tree RSS maximum **1603.2 MiB**. Three warm cycles
+grow retained logical data by **4,827,875 bytes**; final footprint **1.123 GiB**. Exact source/
+sheet/JPEG bytes, preserved-stamp invalidation, reorder association and all eight independently
+rendered PDF pages/geometry/patches pass (maximum average-channel delta 1.54, same predeclared
+texture tolerance 8; strict colour oracle remains tolerance 3). This refreshes current partial
+performance evidence; it is not a statistically repeated performance comparison or customer/
+RAW/layered scale/true-peak/UI/accepted-budget certification. Full generated data is locally
+retained under `bench/fixture/native-pipeline-zguTv3/`, with tracked reports and checksums.
+
+### Nine-category reassessment and next executable work
+
+| Category | Iteration 4 /10 | Iteration 5 /10 | Remaining acceptance gap |
+|---|---:|---:|---|
+| Architecture | 6.5 | 6.5 | Whole-app/permanent ownership, contracts and complete invalidation |
+| UI and workflow | 4.5 | 4.5 | Native ambiguity/recovery/accessibility/focus and real large grids |
+| Testing | 5.0 | 5.0 | Final independent review, full native/GUI/corpus/hosted gates |
+| Performance and scalability | 3.0 | 3.0 | Customer scale, true peak/CPU/UI and accepted retention budgets |
+| Data integrity and recovery | 6.5 | 6.5 | Render/cache restart journal, legacy/native/global ownership/storage |
+| Documentation | 4.5 | 4.5 | Verified real customer/release/manual/external procedures |
+| Security and licensing | 4.0 | 4.0 | Descendant/external filesystem policy, issuer/rules and hardened release |
+| Print and delivery correctness | 4.0 | 4.0 | Consumed metadata, broad real corpus, bleed/gutter and lab samples |
+| Build and distribution | 4.0 | 4.0 | Full native/package/hosted/pinned runtime/notarised clean Mac |
+
+All 90 criterion names, weights and points are unchanged. Every criterion was reassessed;
+new cooperative namespace and current-source measurement evidence strengthen partial points
+without completing their outstanding requirements. No category is certified. Mission remains
+active and incomplete.
+
+1. Verify this checkpoint's current source/evidence hashes, Git state and unchanged engine pin.
+   Complete independent review of new output namespaces/association/consumption, then prior
+   parent project transaction/HFS changes when execution capacity is actually available. All
+   three fresh attempts ended at the provider limit; none produced completed independent review.
+2. Add a durable render capture/install/cache journal with streaming PSD snapshots and bounded
+   cache revisions. Recover pending versus committed sets before planning/running. Test real
+   kills at each publication/cache/proof boundary, ENOSPC, private/manual/source edits, committed
+   cleanup and cancellation/finish errors. Preserve every captured/unknown file and history.
+3. Complete permanent/legacy/moved/copied output ownership and explicit reconciliation. Existing
+   ownerless records are not silently assigned; known foreign histories remain blocked. Integrate
+   native/editor/external and global app-cache ownership; test descendant symlink replacement.
+   Add reviewed history retention/cleanup and real drive/power-loss verification before pruning.
+4. Reproduce and fix print-dimension/preflight metadata substitution: consume the same verified
+   bytes as actual export/render or refuse source changes. Complete catalogue/capture-order,
+   RAW/JPEG proxy equivalence, real layers/masks/high-depth/CMYK/profile corpus and user workflows.
+5. Run realistic customer small/typical/large, true peak/CPU/UI and retention budgets after pilot
+   review. Obtain approved native GUI/accessibility, actual lab spec/samples and authorized issuer/
+   Firestore/device-migration inputs. Run full native workspace/Clippy/layering/corpus, hosted CI,
+   staged root package/packaged pinned-Node and `block 0.1.6` compatibility checks; obtain signing/
+   notarisation credentials, clean customer Mac and physical storage/full-disk/power-loss setup.
+
+Source/evidence manifest: `docs/quality/2026-10-14-iteration-5/verification.json`. Earlier artifacts,
+user `docs/reviews/`, `invoice-template/`, engine `.DS_Store` and existing bundles remain preserved.

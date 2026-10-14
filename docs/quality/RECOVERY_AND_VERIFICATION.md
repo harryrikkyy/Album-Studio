@@ -2,7 +2,7 @@
 
 This document describes the source on `codex/album-quality-improvement`. It does not certify an installed application or print-lab approval. The fixed acceptance rubric is in `QUALITY_SCORECARD.json`; the continuing work record is in `QUALITY_IMPROVEMENT_LOG.md`.
 
-Latest source/test checkpoint: `docs/quality/2026-10-14-iteration-4/verification.json`.
+Latest source/test checkpoint: `docs/quality/2026-10-14-iteration-5/verification.json`.
 Earlier evidence remains historical; its coverage numbers do not describe the latest changed modules.
 
 ## Identity and existing albums
@@ -71,8 +71,29 @@ proof refresh and album-cache clearing acquire that same lease. File, folder, ca
 aliases resolve to the actual project file. Hardlinked project JSON is refused. Independent
 macOS processes are tested; the Linux identity adapter is not runtime verified. The native
 editor, older application and arbitrary external programs do not yet cooperate with this lease.
-Different projects sharing an output directory are also not isolated by this project lock.
+Separate backend operations now also hold physical print-sheet namespace leases; export and
+export planning additionally reserve the actual delivery parent. Symlink aliases share those
+leases, including logical parent paths that differ from the physical sheet-folder parent.
+Proof refresh, sheet-proof recording and album cache clearing participate. Render records now
+save the canonical project association, and a known foreign association blocks work before
+migration/preparation. Malformed records fail closed rather than being replaced as empty history.
 Completion releases its lease before announcing the finished event.
+
+Output leases use read-only `.album-studio-namespace-sheets.json` and
+`.album-studio-namespace-delivery.json` markers with the same machine/boot/PID ownership,
+reclamation guards and retained lock history as project leases. A marker identifies a service
+namespace, not the owner of existing customer files. Never edit/remove these markers or live
+locks to force a second operation through. Unknown/symlink/hardlinked/changed evidence is
+preserved and refused. A stopped owner can be reclaimed only when the same-host process
+identity is verified dead; interrupted guards require manual review. Lost/changed output paths
+are checked before preparation opens delivery history and before guarded operations mutate.
+
+This is cooperative serialization, not complete permanent ownership/migration. Legacy render
+records without a project association retain their prior per-file/manual protection policy;
+the app does not silently assign their existing files to a project. Missing/deleted old evidence,
+copied/moved projects, native/editor/external writers, descendant symlink races and globally
+cleared app caches still require a complete ownership and recovery policy. No automatic history
+cleanup is implemented.
 
 Project lock owners carry a private token, machine/boot/process-start identity and operation.
 Dead owners on the verified same host can be reclaimed through an exclusive guard; foreign,
@@ -115,14 +136,11 @@ and cache durability are not implemented. Killed partial copies and reclamation-
 interruption can also need manual conflict resolution. Physical power loss, real full disks
 and exFAT/SMB/removable-drive cases remain unverified.
 
-**Highest unresolved data risks:** different project files can still share an output root,
-whose render cache and numbered delivery files are not isolated by the project lease. Even
-sibling output roots share a parent JPEG directory. A disposable two-process diagnostic
-confirms concurrent job reservations and colliding destinations; it did not attempt publication
-or establish actual overwriting. Render
-capture/cache publication also lacks a complete restart journal. Reproduce the shared-root
-collision with two disposable projects, then require explicit output ownership or serialize
-that root. Add durable render/cache recovery with real kill/conflict/ENOSPC tests. Print
+**Highest unresolved data risks:** render capture/cache publication still lacks a complete
+restart journal. Cooperative shared-root/parent overlap now has real subprocess exclusion and
+stale-owner tests, but permanent output ownership and ambiguous/moved/copied legacy migration
+remain incomplete. Add durable render/cache recovery with real kill/conflict/ENOSPC tests and
+an explicit ownership/recovery workflow before certifying the whole app. Print
 resolution/preflight metadata still needs consumption-boundary review: checking live metadata
 between content hashes does not prove it describes the frozen bytes later exported.
 
@@ -148,12 +166,13 @@ visible to the command; current access to Developer ID/notarisation credentials 
 1. Read the latest log and scorecard, check the current branch/diff and verify the saved evidence checksums. Preserve `invoice-template/`, the previous audit and engine `.DS_Store` files.
 2. Complete independent review of the final project transaction/lease and HFS snapshot changes,
    plus unresolved review from earlier iterations. All three workers terminated at the provider
-   usage limit, reporting `4:51 PM` without a date/timezone. This is the verbatim provider report,
+   usage limit, reporting `10:00 PM` without a date/timezone. This is the verbatim provider report,
    not a verified reset estimate. Scoped worker reviews and parent checks do not complete the
    final independent review of integration.
-3. Fix shared-output ownership and durable render/cache publication described above. Same-project
-   process exclusion and project recovery now have executable regressions; do not restart those
-   diagnoses or mistake them for whole-app isolation or physical-drive guarantees.
+3. Complete permanent/legacy output ownership and durable render/cache publication described
+   above. Same-project and shared physical output/parent process exclusion now have executable
+   regressions; do not restart those diagnoses or mistake them for whole-app isolation or
+   physical-drive guarantees. Keep known foreign render histories and malformed records protected.
    Preserve manual files and legacy evidence, complete framed high-depth/CMYK support and
    measured high-resolution budgets.
 4. Album association is now captured when edits/undo/redo are queued; the request's operations are copied then, and inactive-album results cannot change the displayed album. Verify the actual native interaction and stale-plan UI race, implement relink/ambiguity workflows, source capture-order invalidation, keyboard/focus/contrast and realistic large grids. The native GUI was not approved for computer-use verification; obtain an approved session and use disposable albums before claiming workflow/accessibility completion.

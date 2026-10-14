@@ -4,6 +4,7 @@
 const fs = require('fs')
 const path = require('path')
 const { contentVerified } = require('./inputs')
+const { readProjectSnapshot } = require('./project_transaction')
 const verifiedSheetRecord = (record) => !!(contentVerified(record) && !record.unverified && /^[a-f0-9]{64}$/.test(record.sheetDigest || ''))
 
 const workspace = (data) => data.workspace || data
@@ -20,11 +21,27 @@ const inside = (folder, file) => {
   return !!rel && rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)
 }
 
-async function readRenderCache(output) {
+async function readRenderCache(output, { albumFile } = {}) {
+  let data
   try {
-    const data = JSON.parse(await fs.promises.readFile(renderCachePath(output), 'utf8'))
-    return data && typeof data === 'object' && !Array.isArray(data) ? data : {}
-  } catch (_) { return {} }
+    data = (await readProjectSnapshot(renderCachePath(output))).data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('The render record is not an object.')
+    if (data.albumFile !== undefined && (typeof data.albumFile !== 'string' || !path.isAbsolute(data.albumFile))) throw new Error('The render record has an invalid project association.')
+    if (data.version === 2 && (!data.spreads || typeof data.spreads !== 'object' || Array.isArray(data.spreads))) throw new Error('The render record has invalid spread entries.')
+  } catch (error) {
+    if (error.code === 'ENOENT') return {}
+    throw new Error(`The rendered-sheet record ${renderCachePath(output)} could not be verified: ${error.message} Its existing bytes were preserved.`)
+  }
+  if (albumFile && data.albumFile !== undefined) {
+    const owner = await fs.promises.realpath(data.albumFile).catch(() => path.resolve(data.albumFile))
+    const requested = await fs.promises.realpath(albumFile)
+    if (owner !== requested) {
+      const error = new Error(`The rendered-sheet folder is associated with another project at ${data.albumFile}. Preserve its files and choose a separate print-sheet folder for this project.`)
+      error.code = 'OUTPUT_OWNED_BY_OTHER'
+      throw error
+    }
+  }
+  return data
 }
 
 /** Freeze old numbered-file ownership before the first structural edit; never move open files. */
@@ -65,7 +82,8 @@ async function ownedSheetRecord(ws, albumFolder, id, cache) {
   return record
 }
 
-async function resolveSpreadSheet(ws, albumFolder, id, n) {
+async function resolveSpreadSheet(ws, albumFolder, id, n, albumFile) {
+  try { await readRenderCache(outputFolder(ws, albumFolder), { albumFile }) } catch (error) { if (error.code === 'OUTPUT_OWNED_BY_OTHER') return null; throw error }
   const record = await ownedSheetRecord(ws, albumFolder, id)
   if (record) return await isFile(record.path) ? record.path : null
   if (!id && ws.sheetOwnership === undefined) {

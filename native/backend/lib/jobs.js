@@ -3,6 +3,8 @@
 const crypto = require('crypto')
 const path = require('path')
 const { canonicalProject, acquireProjectLease, serializeProject } = require('./project_lock')
+const { recoverProject } = require('./project_transaction')
+const { acquireProjectOutputs, attachOutputLease } = require('./output_lock')
 let active = null
 
 async function reserveJob(kind, album) {
@@ -13,18 +15,30 @@ async function reserveJob(kind, album) {
     const location = await canonicalProject(album)
     lease.project = await serializeProject(location.file, () => acquireProjectLease(location, { kind }))
     lease.album = location.folder; lease.file = location.file
+    await recoverProject(lease.file, { assertOwned: () => lease.project.assertOwned() })
+    lease.outputs = await acquireProjectOutputs(lease.project, { kind, delivery: kind === 'export' })
+    lease.restoreOutput = attachOutputLease(lease.project, lease.outputs)
     return lease
-  } catch (error) { if (active === lease) active = null; throw error }
+  } catch (error) {
+    try { await releaseJob(lease) } catch (release) { error.message += ` ${release.message}` }
+    throw error
+  }
 }
 async function identifyJob(lease, album) {
   if (active !== lease) throw new Error('The operation no longer owns its job lease.')
   const location = await canonicalProject(album.file)
   if (location.folder !== lease.album || location.file !== lease.file) throw new Error('The running job resolved to a different project. Preserve its files before retrying.')
+  await lease.outputs.assertFor(album.outputFolder || path.join(album.path, 'exports'), lease.kind === 'export')
   await lease.project.assertOwned()
 }
 async function releaseJob(lease) {
-  try { if (lease.project) await lease.project.release() }
-  finally { if (active === lease) active = null }
+  let failure
+  try {
+    if (lease.restoreOutput) lease.restoreOutput()
+    if (lease.outputs) { try { await lease.outputs.release() } catch (error) { failure = error } }
+    if (lease.project) { try { await lease.project.release() } catch (error) { if (failure) failure.message += ` ${error.message}`; else failure = error } }
+  } finally { if (active === lease) active = null }
+  if (failure) throw failure
 }
 function activeJob() { return active }
 function spreadSelection(requested, spreads) {

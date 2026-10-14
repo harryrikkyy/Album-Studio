@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: different live projects sharing a sheet root cannot reserve overlapping jobs
+not ok 1 - different live projects sharing a sheet root cannot reserve overlapping jobs
+  ---
+  duration_ms: 247
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:57:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:60:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: sibling sheet roots serialize their shared delivery parent
+not ok 2 - sibling sheet roots serialize their shared delivery parent
+  ---
+  duration_ms: 276.866625
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:63:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:66:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: physical sheet-folder aliases share ownership even when their logical parents differ
+not ok 3 - physical sheet-folder aliases share ownership even when their logical parents differ
+  ---
+  duration_ms: 226.539958
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:69:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:75:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+not ok 4 - album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+  ---
+  duration_ms: 239.900625
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:77:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/output_isolation.test.js:81:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a killed project releases stale output reservations through verified owner recovery
+ok 5 - a killed project releases stale output reservations through verified owner recovery
+  ---
+  duration_ms: 174.592458
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 1
+# fail 4
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1357.938333

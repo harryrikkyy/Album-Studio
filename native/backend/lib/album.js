@@ -202,7 +202,7 @@ async function openAlbum({ path: projectPath }, options = {}) {
         preview: await templatePreview(tpl, resolved),
       } : null,
       proof: await proofFor(folder, n),
-      sheet: await require('./sheets').resolveSpreadSheet(ws, folder, legacyPositions.has(n) ? null : page.id, n),
+      sheet: await require('./sheets').resolveSpreadSheet(ws, folder, legacyPositions.has(n) ? null : page.id, n, file),
       edited: Boolean((ws.pageOverlays || {})[n] || (ws.pageLayerEdits || {})[n] || (ws.pageBackgrounds || {})[n]),
     })
   }

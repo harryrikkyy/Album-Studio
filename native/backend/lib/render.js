@@ -22,6 +22,7 @@ const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
 const { migrateAlbum, withProjectLease } = require('./project')
 const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
+const { withProjectOutputs } = require('./output_lock')
 const { preflightAlbum } = require('./preflight')
 const { printSettings, meetsPrintResolution } = require('./print_settings')
 
@@ -119,8 +120,9 @@ async function startRender(p, { emit }) {
 async function runJob(job, { album, ws, projectText, spreads, settings, lease, force, overwriteEdited }, emit) {
   await lease.project.assertOwned()
   const paths = cachePaths(job.outputFolder)
-  const previous = await readRenderCache(job.outputFolder)
+  const previous = await readRenderCache(job.outputFolder, { albumFile: album.file })
   const cache = previous.version === 2 ? previous : { version: 2, spreads: {} }
+  cache.albumFile = album.file
   const proofDir = path.join(album.path, 'proofs', 'pages')
   await fs.promises.mkdir(proofDir, { recursive: true })
   await fs.promises.mkdir(paths.previews, { recursive: true })
@@ -257,13 +259,14 @@ async function runJob(job, { album, ws, projectText, spreads, settings, lease, f
  */
 async function renderPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
-  return withProjectLease(albumPath, async ({ lease }) => {
+  return withProjectLease(albumPath, async ({ lease }) => withProjectOutputs(lease, async () => {
   const album = await migrateAlbum({ album: albumPath }, { lease })
   const settings = printSettings(p)
   const data = await readProject(album.file)
   const ws = data.workspace || data
   const outputFolder = outputOf(ws, album.path)
-  const cache = await readRenderCache(outputFolder)
+  await lease.outputNamespace.assertFor(outputFolder)
+  const cache = await readRenderCache(outputFolder, { albumFile: album.file })
   const spreads = await Promise.all(album.spreads.map(async (s) => {
     if (!s.template || !s.template.file) return { n: s.n, state: 'blocked', reason: s.template ? 'Template not on disk' : 'No template' }
     if (!s.photoIds.length) return { n: s.n, state: 'blocked', reason: 'No photos' }
@@ -278,7 +281,7 @@ async function renderPlan({ album: albumPath, ...p }) {
     return { n: s.n, id: s.id, state: verified && entryHash(record) === hash && resolutionReady ? 'current' : 'stale', reason: !verified ? 'This older sheet has no verified content history. Preserve manual work before explicitly rendering a replacement.' : resolutionReady ? undefined : 'Render at the configured print resolution', edited: !verified || await editedSince(record, out), unverified: !verified, unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
-  }, { kind: 'render-plan' })
+  }, { kind: 'render-plan' }), { kind: 'render-plan' })
 }
 
 function cancelRender({ jobId } = {}) {
