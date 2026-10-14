@@ -19,12 +19,12 @@ function addGrayProfile(jpeg) {
 test('independent Poppler rendering matches perceptual ICC proof colours and page pixels', async (t) => {
   const dir = tmpdir(), width = 192, height = 96, raw = Buffer.alloc(width * height * 3)
   for (let i = 0; i < width * height; i++) raw.set(i % width < width / 2 ? [180, 50, 20] : [20, 150, 210], i * 3)
-  const sources = [], pages = [], names = ['srgb', 'p3', 'gray', 'cmyk']
+  const sources = [], pages = [], names = ['srgb', 'p3', 'gray', 'cmyk', 'srgb-progressive']
   for (const name of names) {
     const pipeline = sharp(raw, { raw: { width, height, channels: 3 } })
     const bytes = name === 'gray'
       ? addGrayProfile(await pipeline.toColourspace('b-w').jpeg({ quality: 100 }).toBuffer())
-      : await pipeline.withIccProfile(name).jpeg({ quality: 100 }).toBuffer()
+      : await pipeline.withIccProfile(name === 'srgb-progressive' ? 'srgb' : name).jpeg({ quality: 100, progressive: name === 'srgb-progressive' }).toBuffer()
     const file = path.join(dir, `${name}.jpg`)
     fs.writeFileSync(file, bytes); sources.push(bytes); pages.push({ path: file, ppi: 72 })
   }

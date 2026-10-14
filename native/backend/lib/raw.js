@@ -9,7 +9,7 @@ const childProcess = require('child_process')
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { contentFileKey, fileDigest } = require('./cache')
+const { contentFileKey, fileDigest, contentKey, snapshotFile } = require('./cache')
 const exclusiveRename = require('./exclusive_rename')
 
 const RAW_EXT = /\.(arw|cr2|cr3|nef|dng|raf|orf|rw2|srw|pef)$/i
@@ -39,6 +39,28 @@ async function sourceIdentity(file) {
 async function unchangedSource(file, key, identity = null) {
   if (await contentFileKey(file) !== key) throw changed(file)
   if (identity && !sameFile(identity, await sourceIdentity(file))) throw changed(file)
+}
+
+/** Decoders consume a private read-only copy, not a mutable original with coarse timestamps. */
+async function consumeSnapshot(file, key, parent, consume) {
+  await fs.promises.mkdir(parent, { recursive: true })
+  const stage = await fs.promises.mkdtemp(path.join(parent, '.source-'))
+  let frozen = null, digest = null, preserve = false
+  try {
+    const identity = await sourceIdentity(file)
+    digest = await fileDigest(file)
+    if (contentKey(file, digest) !== key) throw changed(file)
+    frozen = await snapshotFile(file, stage, digest)
+    const result = await consume(frozen, stage)
+    if (await fileDigest(frozen) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) { preserve = true; throw changed(frozen) }
+    await unchangedSource(file, key, identity)
+    return result
+  } finally {
+    if (frozen && !preserve) {
+      try { preserve = await fileDigest(frozen) !== digest || !!((await fs.promises.lstat(frozen)).mode & 0o222) } catch (_) { preserve = true }
+    }
+    if (!preserve) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {})
+  }
 }
 
 /** Small evidence files are read without following links or accepting an in-flight rewrite. */
@@ -94,7 +116,7 @@ async function deriveCached(file, out, sourceKey, recipe, generate, extra = {}) 
     const stage = await fs.promises.mkdtemp(path.join(path.dirname(out), '.album-studio-derived-'))
     const tmp = path.join(stage, 'image.jpg'), evidence = path.join(stage, 'evidence.json')
     try {
-      await generate(tmp)
+      await consumeSnapshot(file, sourceKey, stage, (frozen) => generate(tmp, frozen))
       const digest = await fileDigest(tmp)
       await unchangedSource(file, sourceKey, identity)
       await fs.promises.writeFile(evidence, JSON.stringify({ ...extra, version: 1, sourceKey, recipe, digest }), { flag: 'wx' })
@@ -141,11 +163,11 @@ async function placeable(file, cacheDir) {
 }
 async function placeableEvidence(file, cacheDir) {
   if (!isRaw(file)) { const digest = await fileDigest(file); return { file, digest, sourceKey: require('./cache').contentKey(file, digest), rotation: 0 } }
-  const sourceKey = await contentFileKey(file), recipe = 'sips-srgb-jpeg95-v1'
+  const sourceKey = await contentFileKey(file), recipe = 'sips-srgb-jpeg95-v2-frozen'
   const key = derivedKey(sourceKey, recipe)
   const out = path.join(cacheDir, `${sourceBase(file)}-${key}.jpg`)
-  return deriveCached(file, out, sourceKey, recipe, (tmp) =>
-    run('/usr/bin/sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '95', '-m', SRGB, file, '--out', tmp]))
+  return deriveCached(file, out, sourceKey, recipe, (tmp, frozen) =>
+    run('/usr/bin/sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '95', '-m', SRGB, frozen, '--out', tmp]))
 }
 
 /** Degrees to turn an image upright, from a TIFF/EXIF orientation value. */
@@ -239,15 +261,15 @@ async function previewable(file, { developedDir, previewDir, minEdge = 1000 }) {
   const sourceKey = await contentFileKey(file)
   const identity = await sourceIdentity(file)
   const base = sourceBase(file)
-  const developedRecipe = 'sips-srgb-jpeg95-v1'
+  const developedRecipe = 'sips-srgb-jpeg95-v2-frozen'
   const developed = path.join(developedDir, `${base}-${derivedKey(sourceKey, developedRecipe)}.jpg`)
   const reused = await verifiedDerived(file, developed, sourceKey, developedRecipe)
   if (reused) return reused
-  const recipe = `embedded-jpeg-v1:minEdge=${minEdge}`, key = derivedKey(sourceKey, recipe)
+  const recipe = `embedded-jpeg-v2-frozen:minEdge=${minEdge}`, key = derivedKey(sourceKey, recipe)
   const out = path.join(previewDir, `${base}-${key}.preview.jpg`)
   const prior = await verifiedDerived(file, out, sourceKey, recipe)
   if (prior) return prior
-  const emb = await embeddedJpeg(file)
+  const emb = await consumeSnapshot(file, sourceKey, previewDir, (frozen) => embeddedJpeg(frozen))
   await unchangedSource(file, sourceKey, identity)
   const size = emb ? require('./jpeg_size').jpegSizeFromBuffer(emb.jpeg) : null
   if (emb && size && Math.max(size.width, size.height) >= minEdge) {
@@ -256,4 +278,4 @@ async function previewable(file, { developedDir, previewDir, minEdge = 1000 }) {
   return placeableEvidence(file, developedDir)
 }
 
-module.exports = { isRaw, placeable, placeableEvidence, previewable, embeddedJpeg, deriveCached, derivedKey, sourceBase, readEvidence, sourceIdentity, unchangedSource, publishExclusive }
+module.exports = { isRaw, placeable, placeableEvidence, previewable, embeddedJpeg, deriveCached, derivedKey, sourceBase, readEvidence, sourceIdentity, unchangedSource, publishExclusive, consumeSnapshot }

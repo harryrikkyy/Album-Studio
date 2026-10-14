@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: later public-file edits cannot change any retained delivery source, backup or discard
+    # Subtest: committed delivery
+    not ok 1 - committed delivery
+      ---
+      duration_ms: 142.61925
+      type: 'test'
+      location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:158:49'
+      failureType: 'testCodeFailure'
+      error: |-
+        retained recovery bytes changed through a public-file alias: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-PMHFSI/exports/.album-studio/delivery-history/delivery-bOmyko/prepared-0
+        + actual - expected
+        
+        + Buffer(35) [Uint8Array] [
+        +   111,
+        +   114,
+        +   100,
+        +   105,
+        - Buffer(15) [Uint8Array] [
+            110,
+        +   97,
+        +   114,
+        +   121,
+        +   32,
+        +   108,
+        +   97,
+        +   116,
+            101,
+        +   114,
+        -   120,
+        -   116,
+            32,
+        +   101,
+            100,
+        -   101,
+        -   108,
+            105,
+        +   116,
+        +   32,
+        +   116,
+        +   111,
+        +   32,
+        +   80,
+        +   97,
+        +   103,
+        -   118,
+            101,
+        +   95,
+        -   114,
+        -   121,
+        -   32,
+            48,
+        +   48,
+        +   49,
+        +   46,
+        +   106,
+        +   112,
+        +   103
+          ]
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        0: 110
+        1: 101
+        2: 120
+        3: 116
+        4: 32
+        5: 100
+        6: 101
+        7: 108
+        8: 105
+        9: 118
+        10: 101
+        11: 114
+        12: 121
+        13: 32
+        14: 48
+      actual:
+        0: 111
+        1: 114
+        2: 100
+        3: 105
+        4: 110
+        5: 97
+        6: 114
+        7: 121
+        8: 32
+        9: 108
+        10: 97
+        11: 116
+        12: 101
+        13: 114
+        14: 32
+        15: 101
+        16: 100
+        17: 105
+        18: 116
+        19: 32
+        20: 116
+        21: 111
+        22: 32
+        23: 80
+        24: 97
+        25: 103
+        26: 101
+        27: 95
+        28: 48
+        29: 48
+        30: 49
+        31: 46
+        32: 106
+        33: 112
+        34: 103
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:172:53)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:158:41)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    # Subtest: restored delivery
+    not ok 2 - restored delivery
+      ---
+      duration_ms: 219.4495
+      type: 'test'
+      location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:158:49'
+      failureType: 'testCodeFailure'
+      error: |-
+        retained recovery bytes changed through a public-file alias: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-6cdm8w/exports/.album-studio/delivery-history/delivery-J2m2JL/backup-0
+        + actual - expected
+        
+        + Buffer(35) [Uint8Array] [
+        +   111,
+        - Buffer(19) [Uint8Array] [
+        -   112,
+            114,
+        +   100,
+        -   101,
+        -   118,
+            105,
+        +   110,
+        +   97,
+        +   114,
+        +   121,
+        -   111,
+        -   117,
+        -   115,
+            32,
+        -   100,
+        -   101,
+            108,
+        +   97,
+        +   116,
+        -   105,
+        -   118,
+            101,
+            114,
+        -   121,
+            32,
+        +   101,
+        +   100,
+        +   105,
+        +   116,
+        +   32,
+        +   116,
+        +   111,
+        +   32,
+        +   80,
+        +   97,
+        +   103,
+        +   101,
+        +   95,
+            48,
+        +   48,
+        +   49,
+        +   46,
+        +   106,
+        +   112,
+        +   103
+          ]
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+        0: 112
+        1: 114
+        2: 101
+        3: 118
+        4: 105
+        5: 111
+        6: 117
+        7: 115
+        8: 32
+        9: 100
+        10: 101
+        11: 108
+        12: 105
+        13: 118
+        14: 101
+        15: 114
+        16: 121
+        17: 32
+        18: 48
+      actual:
+        0: 111
+        1: 114
+        2: 100
+        3: 105
+        4: 110
+        5: 97
+        6: 114
+        7: 121
+        8: 32
+        9: 108
+        10: 97
+        11: 116
+        12: 101
+        13: 114
+        14: 32
+        15: 101
+        16: 100
+        17: 105
+        18: 116
+        19: 32
+        20: 116
+        21: 111
+        22: 32
+        23: 80
+        24: 97
+        25: 103
+        26: 101
+        27: 95
+        28: 48
+        29: 48
+        30: 49
+        31: 46
+        32: 106
+        33: 112
+        34: 103
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:172:53)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:158:41)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    1..2
+not ok 1 - later public-file edits cannot change any retained delivery source, backup or discard
+  ---
+  duration_ms: 362.690166
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_transaction.test.js:157:1'
+  failureType: 'subtestsFailed'
+  error: '2 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 431.724125

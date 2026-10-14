@@ -31,7 +31,7 @@ function sameIdentity(a, b) {
 }
 
 /** Hash through a no-follow handle and reject files changing while they are read. */
-async function fingerprint(file, flush = false) {
+async function fingerprint(file, flush = false, copyMetadata) {
   let handle
   try {
     const before = await fs.promises.lstat(file, { bigint: true })
@@ -47,10 +47,19 @@ async function fingerprint(file, flush = false) {
       hash.update(buffer.subarray(0, bytesRead)); position += bytesRead
     }
     if (flush) await handle.sync()
-    const after = await handle.stat({ bigint: true })
-    const named = await fs.promises.lstat(file, { bigint: true })
+    let after = await handle.stat({ bigint: true })
+    const named = await fs.promises.lstat(file, { bigint: true }), digest = hash.digest('hex')
     if (!sameIdentity(opened, after) || !sameIdentity(after, named)) throw new Error(`Delivery file ${file} changed while its content was checked.`)
-    return { digest: hash.digest('hex'), size: String(after.size), stamp: `${after.size}:${Math.round(Number(after.mtimeNs) / 1e6)}`, mode: Number(after.mode) & 0o777, mtimeMs: Number(after.mtimeNs) / 1e6, atimeMs: Number(after.atimeNs) / 1e6 }
+    if (copyMetadata) {
+      if (digest !== copyMetadata.digest || String(after.size) !== copyMetadata.size) throw new Error(`Delivery file ${file} changed during copying; both copies were preserved.`)
+      // Mutate the verified open file, never follow a newly substituted public path.
+      await handle.chmod(copyMetadata.mode)
+      await handle.utimes(copyMetadata.atimeMs / 1000, copyMetadata.mtimeMs / 1000)
+      await handle.sync()
+      after = await handle.stat({ bigint: true })
+      if (!sameIdentity(after, await fs.promises.lstat(file, { bigint: true }))) throw new Error(`Delivery file ${file} changed while its metadata was restored; both copies were preserved.`)
+    }
+    return { digest, size: String(after.size), stamp: `${after.size}:${Math.round(Number(after.mtimeNs) / 1e6)}`, mode: Number(after.mode) & 0o777, mtimeMs: Number(after.mtimeNs) / 1e6, atimeMs: Number(after.atimeNs) / 1e6 }
   } catch (error) {
     if (error.code === 'ENOENT') return null
     throw error
@@ -261,13 +270,11 @@ function validateJournal(context, stage, journal, albumFile) {
 /** Install without replacing a file which appeared after the ownership check. */
 async function installExclusive(source, target, expected) {
   if (!matches(await fingerprint(source, true), expected)) throw new Error(`Delivery recovery copy ${source} changed.`)
-  try { await fs.promises.link(source, target) } catch (error) {
-    if (!unsupportedLinks.has(error.code)) throw error
-    await fs.promises.copyFile(source, target, fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE)
-    await fs.promises.chmod(target, expected.mode)
-    await fs.promises.utimes(target, expected.atimeMs / 1000, expected.mtimeMs / 1000)
-  }
-  if (!matches(await fingerprint(target, true), expected) || !matches(await fingerprint(source), expected)) throw new Error(`Delivery file ${target} changed during copying; both copies were preserved.`)
+  // Public files are independently editable. A hard link would let an ordinary later
+  // edit change the retained source or sole old backup through its shared inode.
+  // FICLONE permits efficient copy-on-write storage without sharing mutable file identity.
+  await fs.promises.copyFile(source, target, fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE)
+  if (!matches(await fingerprint(target, true, expected), expected) || !matches(await fingerprint(source), expected)) throw new Error(`Delivery file ${target} changed during copying; both copies were preserved.`)
   await syncDirectory(path.dirname(target))
 }
 
@@ -283,7 +290,7 @@ async function inspectEntries(context, stage, journal) {
   for (const entry of journal.entries) {
     await checkTargetDirectory(context, entry.target, true)
     const current = await fingerprint(entry.target), backup = await fingerprint(path.join(stage, entry.backup)), discard = await fingerprint(path.join(stage, entry.discard))
-    // A complete exclusive fallback copy can be killed before its timestamps are restored.
+    // A complete exclusive copy can be killed before its timestamps are restored.
     // Its full content checksum proves ownership during rollback; committed files must also
     // retain the stamp which the cache records.
     const old = matches(current, entry.before), next = journal.phase === 'committed' ? matches(current, entry.after) : matchesContent(current, entry.after)

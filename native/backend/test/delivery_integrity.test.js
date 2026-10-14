@@ -151,12 +151,19 @@ test('production delivery refuses incomplete albums instead of silently omitting
 test('simultaneous exports reserve one job before asynchronous preparation', async () => {
   const { proj } = await fixture()
   const done = []
-  const context = { emit: (event, value) => { if (event === 'export.finished') done.push(value) } }
-  const starts = await Promise.allSettled([startExport({ album: proj, heightInches: 0.5 }, context), startExport({ album: proj, heightInches: 0.5 }, context)])
-  assert.equal(starts.filter((r) => r.status === 'fulfilled').length, 1)
-  for (let i = 0; i < 200 && !done.length; i++) await new Promise((resolve) => setTimeout(resolve, 10))
-  assert.equal(done.length, 1)
-  assert.equal(done[0].failed, 0)
+  let finish, timer
+  const finished = new Promise((resolve, reject) => {
+    finish = resolve
+    timer = setTimeout(() => reject(new Error('The accepted export did not finish within the functional-test deadline.')), 60000)
+  })
+  const context = { emit: (event, value) => { if (event === 'export.finished') { done.push(value); finish() } } }
+  try {
+    const starts = await Promise.allSettled([startExport({ album: proj, heightInches: 0.5 }, context), startExport({ album: proj, heightInches: 0.5 }, context)])
+    assert.equal(starts.filter((r) => r.status === 'fulfilled').length, 1)
+    await finished
+    assert.equal(done.length, 1)
+    assert.equal(done[0].failed, 0)
+  } finally { clearTimeout(timer) }
 })
 
 test('production refuses upsampling a low-resolution sheet to the configured PPI', async () => {
@@ -169,14 +176,14 @@ test('failed publication restores all prior JPEGs, PDF and cache, and the next e
   const targets = [path.join(proj, 'JPEG-High-Res', 'Page_001.jpg'), path.join(proj, 'JPEG-Low-Res', 'Page_001.jpg'), path.join(proj, 'JPEG-High-Res', 'Page_002.jpg'), previous.pdf.path, path.join(out, '.album-studio', 'export-cache.json')]
   const bytes = targets.map((file) => fs.readFileSync(file))
   const failureTarget = await fs.promises.realpath(targets[2])
-  const link = fs.promises.link
+  const copy = fs.promises.copyFile
   let injected = false
-  fs.promises.link = async (source, target) => {
+  fs.promises.copyFile = async (source, target, flags) => {
     if (!injected && target === failureTarget) { injected = true; throw Object.assign(new Error('Simulated full destination during publication'), { code: 'ENOSPC' }) }
-    return link.call(fs.promises, source, target)
+    return copy.call(fs.promises, source, target, flags)
   }
   let result
-  try { result = await run({ album: proj, force: true }) } finally { fs.promises.link = link }
+  try { result = await run({ album: proj, force: true }) } finally { fs.promises.copyFile = copy }
   assert.equal(injected, true); assert.equal(result.failed, 1); assert.equal(result.done, 0)
   targets.forEach((file, i) => assert.deepEqual(fs.readFileSync(file), bytes[i]))
   assert.equal((await run({ album: proj, force: true })).failed, 0)

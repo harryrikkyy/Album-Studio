@@ -13,9 +13,9 @@ const { cacheRoot, fileDigest } = require('./cache')
 const { ensureThumbnails, surveyFolder } = require('./thumbs')
 const { readEvidence, publishExclusive, sourceIdentity } = require('./raw')
 
-const VERSION = 2
+const VERSION = 3
 const curation = () => require('../../../src/curation')
-const sameIdentity = (a, b) => a && b && ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
+const sameIdentity = (a, b) => a && b && ['dev', 'ino', 'size', 'mode', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
 async function unchangedCopy(photo) {
   return sameIdentity(photo.identity, await sourceIdentity(photo.file)) && await fileDigest(photo.file) === photo.digest && sameIdentity(photo.identity, await sourceIdentity(photo.file))
 }
@@ -44,12 +44,15 @@ async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
   const stage = await fs.promises.mkdtemp(path.join(path.dirname(cacheFile), '.score-'))
   const photoDir = path.join(stage, 'photos'), scoresFile = path.join(stage, 'scores.json'), metaFile = path.join(stage, 'evidence.json')
   const copied = []
+  let preserveCopies = false
   await fs.promises.mkdir(photoDir)
   try {
     const originals = new Map()
     for (const photo of snapshot.photos) {
       const file = path.join(photoDir, path.basename(photo.thumb))
       await fs.promises.copyFile(photo.thumb, file, fs.constants.COPYFILE_EXCL)
+      await fs.promises.chmod(file, 0o400)
+      if ((await fs.promises.lstat(file)).mode & 0o222) throw new Error('The scoring snapshot cannot be protected on this filesystem. Use a volume with file-permission support.')
       const copy = { file, digest: photo.digest, identity: await sourceIdentity(file) }
       copied.push(copy)
       if (await fileDigest(file) !== photo.digest || await fileDigest(photo.thumb) !== photo.digest) throw new Error(`The preview ${photo.thumb} changed while its scoring snapshot was made.`)
@@ -57,7 +60,9 @@ async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
       originals.set(file, photo.thumb)
     }
     await unchangedThumbnails(folder, snapshot.key)
-    const features = await curation().analyzeFolder(photoDir, (p) => progress({ ...p, file: originals.get(p.file) || p.file }))
+    let features
+    try { features = await curation().analyzeFolder(photoDir, (p) => progress({ ...p, file: originals.get(p.file) || p.file })) }
+    catch (error) { preserveCopies = true; throw new Error(`The scoring snapshot could not be analysed safely; its private files have been preserved. ${error.message}`, { cause: error }) }
     for (const photo of copied) if (!await unchangedCopy(photo)) throw new Error(`The scoring snapshot ${photo.file} changed during analysis. Its unexpected bytes have been preserved.`)
     const scores = features.map((f) => ({
       thumb: originals.get(f.filePath), base: f.baseName, folder, orient: f.orient === 'v' ? 'v' : 'h',
@@ -81,7 +86,7 @@ async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
   } finally {
     // Only delete this invocation's known, still-identical snapshot files. Unexpected edits
     // or additions in a private staging folder remain available for recovery.
-    for (const photo of copied) if (await unchangedCopy(photo).catch(() => false)) await fs.promises.unlink(photo.file).catch(() => {})
+    for (const photo of copied) if (!preserveCopies && await unchangedCopy(photo).catch(() => false)) await fs.promises.unlink(photo.file).catch(() => {})
     await fs.promises.unlink(scoresFile).catch(() => {})
     await fs.promises.unlink(metaFile).catch(() => {})
     await fs.promises.rmdir(photoDir).catch(() => {})

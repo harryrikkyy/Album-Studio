@@ -308,15 +308,21 @@ test('cache publication uses atomic exclusive moves when the filesystem refuses 
   await red(await placeable(raw, path.join(dir, 'developed')))
 })
 
-test('a source changed and restored during RAW decoding cannot hide behind its previous content key', async (t) => {
+test('a source changed and restored during RAW decoding cannot change the verified pixels consumed', async (t) => {
   const dir = directory(t), source = path.join(dir, 'Photo.ARW'), [a, b] = await images('tiff'), cache = path.join(dir, 'developed')
   rewrite(source, a)
-  // Simulate an actual decoder reading a transient blue edit while the original is restored
-  // to red before the converter returns. Matching before/after content alone misses this.
+  // Alter the original during decoding. The decoder must receive the frozen red source,
+  // not those transient blue bytes. Precise filesystems may additionally reject the edit.
+  let decoded
   t.mock.method(require('child_process'), 'execFile', (_command, args, _options, callback) => {
     rewrite(source, b)
-    sharp(source).jpeg().toFile(args.at(-1)).then(() => { rewrite(source, a); callback(null, '', '') }, (error) => callback(error, '', 'fake decoder failed'))
+    decoded = args.at(-3)
+    sharp(decoded).jpeg().toFile(args.at(-1)).then(() => { rewrite(source, a); callback(null, '', '') }, (error) => callback(error, '', 'fake decoder failed'))
   })
-  await assert.rejects(placeable(source, cache), /changed|raced/i)
-  assert.deepEqual(fs.readdirSync(cache).filter((name) => name.endsWith('.jpg')), [])
+  let result
+  try { result = await placeable(source, cache) } catch (error) { assert.match(error.message, /changed|raced/i) }
+  assert.notEqual(decoded, source, 'the converter must consume a private verified source')
+  assert.deepEqual(fs.readFileSync(source), a)
+  if (result) await red(result)
+  else assert.deepEqual(fs.readdirSync(cache).filter((name) => name.endsWith('.jpg')), [])
 })

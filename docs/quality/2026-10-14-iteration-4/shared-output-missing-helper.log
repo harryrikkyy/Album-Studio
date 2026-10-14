@@ -1,0 +1,14 @@
+Error: Error: The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /Volumes/Harry/works/albumStudio-photocraft/bench/fixture/shared-output-diagnostic-ZeYMVT/A/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-27aafO; /Volumes/Harry/works/albumStudio-photocraft/bench/fixture/shared-output-diagnostic-ZeYMVT/A/.album-studio-project-7680eb66f8e7b2155dfc25c4.lock. Unused owner evidence remains at /Volumes/Harry/works/albumStudio-photocraft/bench/fixture/shared-output-diagnostic-ZeYMVT/A/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-27aafO: The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /Volumes/Harry/works/albumStudio-photocraft/bench/fixture/shared-output-diagnostic-ZeYMVT/A/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-27aafO; /Volumes/Harry/works/albumStudio-photocraft/bench/fixture/shared-output-diagnostic-ZeYMVT/A/.album-studio-project-lock-history/.album-studio-project-7680eb66f8e7b2155dfc25c4-unused-cc24f808-d4bd-4020-8f50-6e7cb0875257.
+    at /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/exclusive_rename.js:14:23
+    at exithandler (node:child_process:424:5)
+    at ChildProcess.errorhandler (node:child_process:436:5)
+    at ChildProcess.emit (node:events:519:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:291:12)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+
+    at ChildProcess.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/docs/quality/2026-10-14-iteration-4/shared-output-diagnostic.cjs:22:60)
+    at Object.onceWrapper (node:events:634:26)
+    at ChildProcess.emit (node:events:531:35)
+    at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+Diagnostic release failed { code: 93, signal: null }

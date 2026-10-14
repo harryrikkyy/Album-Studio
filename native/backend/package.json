@@ -5,7 +5,7 @@
   "description": "Album Studio's background helper: project, photo and library logic, run by the native shell over stdio.",
   "main": "server.js",
   "scripts": {
-    "test": "node --test test/*.test.js"
+    "test": "node --test --test-concurrency=2 test/*.test.js"
   },
   "engines": {
     "node": ">=22"

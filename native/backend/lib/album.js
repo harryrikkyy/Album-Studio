@@ -13,6 +13,8 @@
 const fs = require('fs')
 const path = require('path')
 const { jpegSize } = require('./jpeg_size')
+const { canonicalProject } = require('./project_lock')
+const { readProjectSnapshot } = require('./project_transaction')
 const { listTemplates } = require('./templates')
 const { sanitize, registryOf, assignAssetIds, referenceIndex, resolveReference, fileFromUrl, ensureSpreadIds } = require('./identity')
 
@@ -30,13 +32,19 @@ async function readdirSafe(dir) {
 /** Resolve a project path (folder or legacy .json) to its JSON file and folder. */
 async function locateProject(p) {
   const st = await fs.promises.stat(p).catch(() => null)
-  if (!st) throw new Error(`No project at ${p}. The drive may be disconnected, or the project moved.`)
+  if (!st) {
+    try { return await canonicalProject(p) } catch (error) { if (error.code !== 'ENOENT') throw error }
+    throw new Error(`No project at ${p}. The drive may be disconnected, or the project moved.`)
+  }
   if (st.isDirectory()) {
     const file = path.join(p, 'project.json')
-    if (!(await exists(file))) throw new Error(`${path.basename(p)} isn't an Album Studio project (no project.json).`)
-    return { file, folder: p }
+    if (!(await exists(file))) {
+      try { return await canonicalProject(file) } catch (error) { if (error.code !== 'ENOENT') throw error }
+      throw new Error(`${path.basename(p)} isn't an Album Studio project (no project.json).`)
+    }
+    return canonicalProject(file)
   }
-  return { file: p, folder: path.dirname(p) }
+  return canonicalProject(p)
 }
 
 async function mtimeOf(p) {
@@ -121,7 +129,7 @@ async function openAlbum({ path: projectPath }, options = {}) {
   const { file, folder } = await locateProject(projectPath)
   let data
   try {
-    data = options.data || JSON.parse(await fs.promises.readFile(file, 'utf8'))
+    data = options.data || (await readProjectSnapshot(file)).data
   } catch (e) {
     throw new Error(`${path.basename(file)} couldn't be read: ${e.message}`)
   }

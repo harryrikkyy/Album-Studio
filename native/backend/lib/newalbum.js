@@ -6,8 +6,9 @@
 
 const fs = require('fs')
 const path = require('path')
+const crypto = require('crypto')
 const { openAlbum } = require('./album')
-const { writeAtomic } = require('./cache')
+const exclusiveRename = require('./exclusive_rename')
 const { updateAlbum, migrateAlbum } = require('./project')
 const { newSpreadId } = require('./identity')
 const { listRecent, rememberAlbum } = require('./recent')
@@ -136,7 +137,19 @@ async function createAlbum(p, { emit }) {
       totalActivePages: 1,
       renderHashes: {},
     }
-    await writeAtomic(path.join(folder, 'project.json'), JSON.stringify(project, null, 2))
+    const temporary = path.join(folder, `.project-${crypto.randomUUID()}.json`)
+    let handle
+    try {
+      handle = await fs.promises.open(temporary, 'wx', 0o600)
+      await handle.writeFile(JSON.stringify(project, null, 2)); await handle.sync()
+      await handle.close(); handle = null
+      // Another creator can publish after the initial existence check while thumbnails are
+      // being made. Publication must atomically refuse its project rather than replace it.
+      await exclusiveRename.renameExclusive(temporary, path.join(folder, 'project.json'))
+    } finally {
+      if (handle) await handle.close()
+      await fs.promises.unlink(temporary).catch(() => {})
+    }
 
     // 3. A first plan.
     let report = null

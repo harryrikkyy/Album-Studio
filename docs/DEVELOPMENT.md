@@ -32,7 +32,7 @@ the helper reads it from `~/Library/Application Support/Album Studio/.env`, then
 repository root (when run from source), then from the Album Toolkit's folder.
 Configure a private development environment; test fixtures do not require real account secrets.
 See [engine setup and CI](quality/ENGINE_PIN_AND_CI.md) for pin checks, alternate targets and
-fresh reconstruction. Local iteration-3 checks used Node 22.22.3; packaged 22.23.3 runtime
+fresh reconstruction. Local iteration-4 checks used Node 22.22.3; packaged 22.23.3 runtime
 verification remains separate.
 
 ## Build and run
@@ -98,6 +98,35 @@ strict gate requires a provenance-tagged CLI and the current atomic helper. Popp
 and absence fails its PDF test. A successful Node gate does not imply full native workspace,
 corpus, hosted CI or installed-app checks passed. Exact evidence and open requirements are in
 [the quality log](../QUALITY_IMPROVEMENT_LOG.md) and [recovery guidance](quality/RECOVERY_AND_VERIFICATION.md).
+
+Backend test files run with concurrency 2. In-file job/process races still run concurrently;
+this bounds simultaneous engines and decoder allocations on the 16 GiB verification Mac.
+Run coverage and the strict gate sequentially. Coverage uses the same file limit:
+
+```sh
+ALBUM_STUDIO_PHOTOCRAFT_CLI=/absolute/target/release/photocraft-cli \
+ALBUM_STUDIO_RENAME_CLI=/absolute/target/release/album-studio-rename-exclusive \
+node --experimental-test-coverage --test --test-concurrency=2 test/*.test.js native/backend/test/*.test.js
+```
+
+For heavy tests, set `TMPDIR` to a fresh disposable directory on a volume with enough free
+space. Filesystem semantics matter: iteration 4 found HFS one-second timestamps could hide
+changed/restored source contents. Do not replace that coverage with timestamp-only assertions.
+
+The headless benchmark creates distinct synthetic 12 MP JPEGs, renders at 300 PPI, repeats
+warm operations, verifies reorder ownership and rasterises the output PDF independently:
+
+```sh
+ALBUM_STUDIO_PHOTOCRAFT_CLI=/absolute/target/release/photocraft-cli \
+ALBUM_STUDIO_RENAME_CLI=/absolute/target/release/album-studio-rename-exclusive \
+node bench/native_pipeline_bench.js --profile pilot --rss-gib 2
+```
+
+Start with the pilot and review its retained `bench/fixture/native-pipeline-*/report.json`.
+Larger profiles require an explicit disk ceiling; the harness checks available space, records
+source hashes and aborts at its time/RSS ceilings. Those ceilings are test safety limits, not
+accepted production budgets. Synthetic textures and simple rectangular templates do not
+certify camera RAW, layered customer templates, actual UI responsiveness or real lab output.
 
 ## Accounts
 

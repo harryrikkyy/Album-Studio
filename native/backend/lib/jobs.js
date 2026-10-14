@@ -2,20 +2,30 @@
 'use strict'
 const crypto = require('crypto')
 const path = require('path')
+const { canonicalProject, acquireProjectLease, serializeProject } = require('./project_lock')
 let active = null
 
-function reserveJob(kind, album) {
+async function reserveJob(kind, album) {
   if (active) throw new Error(`An ${active.kind === 'export' ? 'export' : 'album render'} is already starting or running. Wait for it, or stop it.`)
   const lease = { id: crypto.randomUUID(), kind, requested: path.resolve(album), album: null, file: null }
   active = lease
-  return lease
+  try {
+    const location = await canonicalProject(album)
+    lease.project = await serializeProject(location.file, () => acquireProjectLease(location, { kind }))
+    lease.album = location.folder; lease.file = location.file
+    return lease
+  } catch (error) { if (active === lease) active = null; throw error }
 }
-function identifyJob(lease, album) {
+async function identifyJob(lease, album) {
   if (active !== lease) throw new Error('The operation no longer owns its job lease.')
-  lease.album = path.resolve(album.path)
-  lease.file = path.resolve(album.file)
+  const location = await canonicalProject(album.file)
+  if (location.folder !== lease.album || location.file !== lease.file) throw new Error('The running job resolved to a different project. Preserve its files before retrying.')
+  await lease.project.assertOwned()
 }
-function releaseJob(lease) { if (active === lease) active = null }
+async function releaseJob(lease) {
+  try { if (lease.project) await lease.project.release() }
+  finally { if (active === lease) active = null }
+}
 function activeJob() { return active }
 function spreadSelection(requested, spreads) {
   if (requested === undefined || requested === null) return null

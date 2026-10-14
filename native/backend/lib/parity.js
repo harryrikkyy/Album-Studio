@@ -227,14 +227,14 @@ async function bakeAdjustmentsEvidence(file, adjust, cacheDir) {
   const { contentFileKey } = require('./cache')
   const { deriveCached, derivedKey, sourceBase } = require('./raw')
   const sourceKey = await contentFileKey(file)
-  const recipe = `adjustments-jpeg95-v1:${JSON.stringify(adjust)}`
+  const recipe = `adjustments-jpeg95-v2-frozen:${JSON.stringify(adjust)}`
   const key = derivedKey(sourceKey, recipe)
   const out = path.join(cacheDir, `${sourceBase(file)}-adj-${key}.jpg`)
   const sharp = require('../../../src/sharp_config').getSharp()
   const { applyAdjust } = require('../../../src/proof_renderer')
-  return deriveCached(file, out, sourceKey, recipe, async (tmp) => {
-    const meta = await sharp(file, { failOn: 'error' }).metadata()
-    await applyAdjust(sharp, sharp(file, { failOn: 'error' }), adjust, { width: meta.width, height: meta.height })
+  return deriveCached(file, out, sourceKey, recipe, async (tmp, frozen) => {
+    const meta = await sharp(frozen, { failOn: 'error' }).metadata()
+    await applyAdjust(sharp, sharp(frozen, { failOn: 'error' }), adjust, { width: meta.width, height: meta.height })
       .withMetadata()
       .jpeg({ quality: 95, chromaSubsampling: '4:4:4' })
       .toFile(tmp)

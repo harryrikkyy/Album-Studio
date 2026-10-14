@@ -27,6 +27,21 @@ async function buffers(colors) {
 const rewrite = (file, bytes) => { fs.writeFileSync(file, bytes); fs.utimesSync(file, 1700000000, 1700000000) }
 const context = { emit: () => {} }
 
+test('scores from the older mutable-input pipeline are retained but never reused', async (t) => {
+  const { dir, folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white] = await buffers(['#f0f0f0', '#020202'])
+  rewrite(source, white); await ensureThumbnails(folder)
+  const evidence = await require('../lib/thumbs').surveyFolder(folder, { includeEvidence: true })
+  const photos = evidence.evidence.sort((a, b) => a.thumb.localeCompare(b.thumb)), crypto = require('crypto')
+  const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex')
+  const key = hash(JSON.stringify([path.resolve(folder), 2, photos])), cache = path.join(dir, 'cache', 'picks'), legacy = path.join(cache, `contents-${key}-v2.json`)
+  const bytes = Buffer.from(JSON.stringify([{ base: 'Photo', blackPct: 1, sharpness: 0 }]))
+  fs.mkdirSync(cache, { recursive: true }); fs.writeFileSync(legacy, bytes)
+  fs.writeFileSync(`${legacy}.evidence`, JSON.stringify({ version: 2, key, digest: hash(bytes) }))
+  const result = await analyzePhotos({ folders: [folder] }, context)
+  assert.equal(result.photos[0].blackPct, 0, 'legacy scores must not describe the current white source')
+  assert.deepEqual(fs.readFileSync(legacy), bytes)
+})
+
 test('picks changes its content evidence even when original and thumbnail-directory timestamps stay equal', async (t) => {
   const { folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
@@ -79,7 +94,9 @@ test('picks rejects an edited private scoring snapshot and preserves its unexpec
   const manual = await sharp(black).jpeg().toBuffer()
   let snapshot
   t.mock.method(curation, 'analyzeFolder', async (stage, ...args) => {
-    snapshot = path.join(stage, 'Photo.jpg'); fs.writeFileSync(snapshot, manual)
+    snapshot = path.join(stage, 'Photo.jpg')
+    // Override the private file's protection to exercise preservation of an actual edit.
+    fs.chmodSync(snapshot, 0o600); fs.writeFileSync(snapshot, manual)
     return original(stage, ...args)
   })
   await assert.rejects(analyzePhotos({ folders: [folder] }, context), /snapshot|changed/i)

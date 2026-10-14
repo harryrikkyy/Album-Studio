@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: scores from the older mutable-input pipeline are retained but never reused
+ok 1 - scores from the older mutable-input pipeline are retained but never reused
+  ---
+  duration_ms: 308.101167
+  type: 'test'
+  ...
+# Subtest: picks changes its content evidence even when original and thumbnail-directory timestamps stay equal
+ok 2 - picks changes its content evidence even when original and thumbnail-directory timestamps stay equal
+  ---
+  duration_ms: 93.956417
+  type: 'test'
+  ...
+# Subtest: picks refuses a failed thumbnail refresh and preserves the edited proxy
+ok 3 - picks refuses a failed thumbnail refresh and preserves the edited proxy
+  ---
+  duration_ms: 50.786959
+  type: 'test'
+  ...
+# Subtest: picks scores only verified source-backed proxies and preserves orphan previews
+ok 4 - picks scores only verified source-backed proxies and preserves orphan previews
+  ---
+  duration_ms: 51.6585
+  type: 'test'
+  ...
+# Subtest: picks source changes during scoring reject cache publication
+ok 5 - picks source changes during scoring reject cache publication
+  ---
+  duration_ms: 36.958333
+  type: 'test'
+  ...
+# Subtest: picks rejects an edited private scoring snapshot and preserves its unexpected bytes
+ok 6 - picks rejects an edited private scoring snapshot and preserves its unexpected bytes
+  ---
+  duration_ms: 39.7585
+  type: 'test'
+  ...
+# Subtest: picks rejects a private snapshot changed and restored around decoding
+ok 7 - picks rejects a private snapshot changed and restored around decoding
+  ---
+  duration_ms: 31.380042
+  type: 'test'
+  ...
+# Subtest: lab thumbnails refresh a preserved-size/stamp sheet and retain previous preview bytes
+ok 8 - lab thumbnails refresh a preserved-size/stamp sheet and retain previous preview bytes
+  ---
+  duration_ms: 59.990042
+  type: 'test'
+  ...
+# Subtest: an edited lab thumbnail is preserved and returns an actionable sheet error
+ok 9 - an edited lab thumbnail is preserved and returns an actionable sheet error
+  ---
+  duration_ms: 41.532083
+  type: 'test'
+  ...
+# Subtest: lab source changes during decoding cannot publish a stale thumbnail
+ok 10 - lab source changes during decoding cannot publish a stale thumbnail
+  ---
+  duration_ms: 26.04275
+  type: 'test'
+  ...
+# Subtest: corrupt sheets return explicit preview failure rather than silently valid empty metadata
+ok 11 - corrupt sheets return explicit preview failure rather than silently valid empty metadata
+  ---
+  duration_ms: 10.492
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 848.868084

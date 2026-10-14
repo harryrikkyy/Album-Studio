@@ -2,7 +2,7 @@
 
 This document describes the source on `codex/album-quality-improvement`. It does not certify an installed application or print-lab approval. The fixed acceptance rubric is in `QUALITY_SCORECARD.json`; the continuing work record is in `QUALITY_IMPROVEMENT_LOG.md`.
 
-Latest source/test checkpoint: `docs/quality/2026-10-14-iteration-3/verification.json`.
+Latest source/test checkpoint: `docs/quality/2026-10-14-iteration-4/verification.json`.
 Earlier evidence remains historical; its coverage numbers do not describe the latest changed modules.
 
 ## Identity and existing albums
@@ -50,10 +50,14 @@ actual sRGB/P3/Gray/CMYK PDF streams passes with explicit sRGB display and perce
 (channel tolerance 3). This synthetic oracle does not certify the wider real-file colour/RAW
 corpus, embedded editor layers or actual lab prints.
 
-RAW, adjustment, thumbnail, proof, template and lab-preview caches now use content evidence;
-edited or unknown derived files are preserved. Rendering/proof/delivery use private verified
-source copies. Photo scoring checks the private copy's identity as well as its digest so a
-change restored after decoding still rejects publication. Real-camera RAW equivalence and
+RAW, adjustment, thumbnail, proof, template and lab-preview caches use content evidence;
+edited or unknown derived files are preserved. Rendering/proof/delivery and image converters
+consume private verified source copies. Copies are made read-only before decoding, then their
+contents and permissions are checked. Hashing compares two streamed passes through the same
+file handle because HFS timestamps can miss a change restored within one second. This is
+verified content consistency, not an atomic snapshot against arbitrary external writers.
+Derivative recipe versions were raised, including scoring version 3, so earlier results cannot
+certify output made through the old live-path converters. Real-camera RAW equivalence and
 JPEG/RAW proxy selection/capture order remain unverified. Some catalogue/metadata caches still
 use timestamps; complete invalidation and realistic full-hash performance remain open.
 
@@ -61,7 +65,32 @@ use timestamps; complete invalidation and realistic full-hash performance remain
 
 ## Jobs and failure recovery
 
-A shared helper lease reserves render/export work before asynchronous preparation. It prevents overlap within one helper process and blocks edits to the active project. Completion releases the lease before announcing the finished event. Separate application processes still need cross-process verification and locking.
+A helper reserves render/export work before asynchronous preparation, then holds a cooperative
+filesystem project lease through completion. Project opening, migration, edits, undo/redo,
+proof refresh and album-cache clearing acquire that same lease. File, folder, case and symlink
+aliases resolve to the actual project file. Hardlinked project JSON is refused. Independent
+macOS processes are tested; the Linux identity adapter is not runtime verified. The native
+editor, older application and arbitrary external programs do not yet cooperate with this lease.
+Different projects sharing an output directory are also not isolated by this project lock.
+Completion releases its lease before announcing the finished event.
+
+Project lock owners carry a private token, machine/boot/process-start identity and operation.
+Dead owners on the verified same host can be reclaimed through an exclusive guard; foreign,
+malformed or uncertain evidence fails closed. Interrupted reclamation/release guards require
+manual review after all relevant helpers have stopped. Preserve the named `.lock`, `.reclaim`,
+candidate and `.album-studio-project-lock-history/` directories; never delete a live owner's
+lock. There is no automatic history pruning.
+
+Project saves use an exact read revision and bounded independent files (64 MiB maximum).
+Before changing public project/backup names, a flushed journal and detached snapshots are
+published under `.album-studio-project-state-<hash>/save-<uuid>/`. Pending saves restore the
+previous revision only to vacant names; committed saves keep the new revision. Opening a
+project recovers a valid interrupted save, including when the project name is temporarily
+absent. Symlink/hardlink backups and conflicting manual edits are preserved. Completed stages
+are retained under that directory's `history/`; a later edit cannot change a detached snapshot.
+An error saying the project was saved reports a committed revision with recovery/retirement
+work remaining. Preserve its exact named history path before retrying. Real SIGKILL tests
+cover project and backup capture/install/commit boundaries; hardware power loss is unverified.
 
 Export stages every requested JPEG and the complete whole-album PDF before publication. PDF-only export requires fresh review JPEGs for every spread. Before trusting a cached delivery, planning recovers journals. Publication flushes staged bytes and records content fingerprints for the JPEG/PDF set and its next ownership cache in `delivery-*/journal.json`. Pending/interrupted publication rolls back; a committed marker keeps the complete new set and resumes cleanup. Real killed-subprocess tests cover publication, rollback and cleanup boundaries. New delivery cache entries use SHA-256 content verification, detecting same-size/preserved-timestamp edits. Legacy entries retain their stamp-only compatibility policy and are not claimed to provide equivalent freshness.
 
@@ -82,16 +111,20 @@ recovery scanning excludes that history. Existing sheets captured during replace
 automatic pruning: disk-growth limits and a reviewed cleanup workflow remain open. Do not
 delete a stage/history until its files and ownership have been reconciled. A killed render
 after capture can require manual restoration from render history: its full restart journal
-and cache/project durability are not implemented. Killed partial copies and reclamation-guard
+and cache durability are not implemented. Killed partial copies and reclamation-guard
 interruption can also need manual conflict resolution. Physical power loss, real full disks
 and exFAT/SMB/removable-drive cases remain unverified.
 
-**Highest unresolved defect:** `jobs.js` is process-local. A diagnostic held two same-album
-leases concurrently in different live Node processes. Delivery's publication lock does not
-cover render preparation or project edits. Next, add a whole-album cross-process lease before
-migration/preparation/edit, safe stale-owner recovery, then real killed-process and alias-path
-regressions. Keep the current content and history safeguards while adding durable project,
-cache and render publication.
+**Highest unresolved data risks:** different project files can still share an output root,
+whose render cache and numbered delivery files are not isolated by the project lease. Even
+sibling output roots share a parent JPEG directory. A disposable two-process diagnostic
+confirms concurrent job reservations and colliding destinations; it did not attempt publication
+or establish actual overwriting. Render
+capture/cache publication also lacks a complete restart journal. Reproduce the shared-root
+collision with two disposable projects, then require explicit output ownership or serialize
+that root. Add durable render/cache recovery with real kill/conflict/ENOSPC tests. Print
+resolution/preflight metadata still needs consumption-boundary review: checking live metadata
+between content hashes does not prove it describes the frozen bytes later exported.
 
 Lab naming uses `.as-rename-<id>.json` journals and `.as-lab-rename.lock`. Reopening a folder attempts recovery after verifying ownership and content. A conflict or malformed journal preserves files and reports the journal path. Keep both files and the journal, reconnect the original drive and resolve the named conflict before retrying. Restart and cyclic-rename tests include real killed subprocesses; the hard-link fallback is fault-injected. Physical exFAT/SMB, hardware power loss and large-copy performance are not verified.
 
@@ -105,23 +138,30 @@ Tests use fake REST responses and disposable loopback OAuth endpoints. They are 
 
 Legacy client-held HMAC licences remain compatible and remain a security weakness. The existing Ed25519 signed fields also omit the device binding. Do not remove legacy validation or invalidate legitimate customers without an issuer-compatible, verified migration. Prepare versioned device-bound claims, issuer tests and a rollback plan, then verify the real activation/offline/renewal/machine-change flows before rollout. No credentials, real accounts or customer licences were changed in this checkpoint.
 
-Root and interface npm dependencies report zero advisories after the compatible Sharp and tooling updates. Rust advisory coverage and hardened distribution remain unverified. The current keychain query reports zero valid signing identities visible to the command; installation/access to a Developer ID identity and notarisation credentials requires verification.
+The prior root/interface npm audits reported zero advisories after the compatible Sharp and
+tooling updates; those audits were not rerun in iteration 4. Rust advisory coverage and hardened
+distribution remain unverified. The prior keychain query reported zero valid signing identities
+visible to the command; current access to Developer ID/notarisation credentials needs verification.
 
 ## Resume without repeating the audit
 
 1. Read the latest log and scorecard, check the current branch/diff and verify the saved evidence checksums. Preserve `invoice-template/`, the previous audit and engine `.DS_Store` files.
-2. Complete independent review of iterations 2 and 3, especially source snapshots, planar colour
-   decoding, cache capture/history, final transaction validation and shipped C helper. All three
-   workers terminated at the provider usage limit, reporting `Oct 14th, 2026 2:45 AM` without
-   a timezone. This reported time is recorded verbatim and is not a verified reset estimate.
-   The parent completed integration and green final checks; final peer review remains incomplete.
-3. Add the whole-album cross-process lease and durable project/cache/render journal described
-   above. Source-content regressions and synthetic independent PDF rendering now pass; do not
-   restart those diagnoses or mistake them for full invalidation/corpus/lab certification.
+2. Complete independent review of the final project transaction/lease and HFS snapshot changes,
+   plus unresolved review from earlier iterations. All three workers terminated at the provider
+   usage limit, reporting `4:51 PM` without a date/timezone. This is the verbatim provider report,
+   not a verified reset estimate. Scoped worker reviews and parent checks do not complete the
+   final independent review of integration.
+3. Fix shared-output ownership and durable render/cache publication described above. Same-project
+   process exclusion and project recovery now have executable regressions; do not restart those
+   diagnoses or mistake them for whole-app isolation or physical-drive guarantees.
    Preserve manual files and legacy evidence, complete framed high-depth/CMYK support and
    measured high-resolution budgets.
 4. Album association is now captured when edits/undo/redo are queued; the request's operations are copied then, and inactive-album results cannot change the displayed album. Verify the actual native interaction and stale-plan UI race, implement relink/ambiguity workflows, source capture-order invalidation, keyboard/focus/contrast and realistic large grids. The native GUI was not approved for computer-use verification; obtain an approved session and use disposable albums before claiming workflow/accessibility completion.
-5. Measure small, typical and large albums with distinct high-resolution files, retained edits and repeated render/export cycles. Record machine, PPI, wall time, peak memory/CPU, responsiveness and correctness. Coverage is evidence of exercised code, not a scale benchmark.
+5. Review the completed synthetic pilot in iteration 4 (24 distinct 12 MP inputs, eight spreads,
+   300 PPI). The 16 GiB M4 measured 32.0 seconds cold render, 16.1 seconds export/PDF and 1515 MiB
+   sampled process-tree RSS. Three warm cycles/reorder/PDF checks pass; retained histories grow.
+   Next measure customer small/typical/large albums, layered/RAW inputs, true peak/CPU and actual
+   UI latency. The pilot's safety ceilings and synthetic labels are not production budgets.
 6. The engine is now checksum-pinned and reconstructs the unpublished fork from a tracked incremental bundle plus its exact public prerequisite. See `ENGINE_PIN_AND_CI.md`. Local cold engine/shell build and no-skip application gate pass; the full root fresh-checkout package, hosted native workspace/Clippy/corpus jobs, future-incompatible `block 0.1.6`, actual bundle/customer setup, hardened signing and notarised clean-Mac installation remain open. Existing bundles are preserved by atomic no-replace publication. Do not mistake a CLI/interface build or static collector for an installed-app test.
 7. Obtain the actual print-lab spec and issuer/rules test environment. Keep externally dependent rubric criteria at zero until directly verified. Reassess every category against the same criteria after each meaningful iteration.
 
@@ -136,7 +176,7 @@ npm run typecheck
 npm --prefix native/ui run build
 ALBUM_STUDIO_PHOTOCRAFT_CLI=/absolute/target/release/photocraft-cli \
 ALBUM_STUDIO_RENAME_CLI=/absolute/target/release/album-studio-rename-exclusive \
-node --experimental-test-coverage --test test/*.test.js native/backend/test/*.test.js
+node --experimental-test-coverage --test --test-concurrency=2 test/*.test.js native/backend/test/*.test.js
 npm audit --json
 npm --prefix native/ui audit --json
 node native/scripts/collect-backend.mjs

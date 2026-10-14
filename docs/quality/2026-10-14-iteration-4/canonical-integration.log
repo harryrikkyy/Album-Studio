@@ -1,0 +1,576 @@
+TAP version 13
+# Subtest: reads a JPEG size from its header
+ok 1 - reads a JPEG size from its header
+  ---
+  duration_ms: 2.414583
+  type: 'test'
+  ...
+# Subtest: opens a project: spreads, templates, proofs, photos
+ok 2 - opens a project: spreads, templates, proofs, photos
+  ---
+  duration_ms: 18.926834
+  type: 'test'
+  ...
+# Subtest: a missing project explains itself
+ok 3 - a missing project explains itself
+  ---
+  duration_ms: 0.946583
+  type: 'test'
+  ...
+# backend: ignored a line that is not JSON: {not json
+# Subtest: recent albums: newest first, de-duplicated, availability checked
+ok 4 - recent albums: newest first, de-duplicated, availability checked
+  ---
+  duration_ms: 22.251958
+  type: 'test'
+  ...
+# Subtest: the protocol answers unknown methods with an error, not a crash
+ok 5 - the protocol answers unknown methods with an error, not a crash
+  ---
+  duration_ms: 0.350417
+  type: 'test'
+  ...
+# Subtest: a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+ok 6 - a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+  ---
+  duration_ms: 131.852292
+  type: 'test'
+  ...
+# Subtest: a project appearing during creation is preserved instead of overwritten
+ok 7 - a project appearing during creation is preserved instead of overwritten
+  ---
+  duration_ms: 251.802875
+  type: 'test'
+  ...
+# Subtest: background proof refresh cannot publish while another helper owns the album
+ok 8 - background proof refresh cannot publish while another helper owns the album
+  ---
+  duration_ms: 269.982667
+  type: 'test'
+  ...
+# Subtest: album cache clearing cannot remove active render inputs owned by another helper
+ok 9 - album cache clearing cannot remove active render inputs owned by another helper
+  ---
+  duration_ms: 257.604791
+  type: 'test'
+  ...
+# Subtest: a project-file symlink outside the album keeps models and output paths in the actual album
+ok 10 - a project-file symlink outside the album keeps models and output paths in the actual album
+  ---
+  duration_ms: 626.506917
+  type: 'test'
+  ...
+# Subtest: duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+ok 11 - duplicate photo basenames stay distinct; ambiguous legacy references fail visibly
+  ---
+  duration_ms: 12.276083
+  type: 'test'
+  ...
+# Subtest: exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+ok 12 - exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo
+  ---
+  duration_ms: 270.115625
+  type: 'test'
+  ...
+# Subtest: sanitization and recursive template basename collisions receive unique IDs
+ok 13 - sanitization and recursive template basename collisions receive unique IDs
+  ---
+  duration_ms: 25.138625
+  type: 'test'
+  ...
+# Subtest: persistent spread IDs follow move, insert, clear, delete, undo and redo
+ok 14 - persistent spread IDs follow move, insert, clear, delete, undo and redo
+  ---
+  duration_ms: 925.911333
+  type: 'test'
+  ...
+# Subtest: a failed initial edit leaves project migration and undo history untouched
+ok 15 - a failed initial edit leaves project migration and undo history untouched
+  ---
+  duration_ms: 288.799916
+  type: 'test'
+  ...
+# Subtest: explicit source relink preserves IDs and colour edits, and undo restores the original root
+ok 16 - explicit source relink preserves IDs and colour edits, and undo restores the original root
+  ---
+  duration_ms: 481.083333
+  type: 'test'
+  ...
+# Subtest: auto-fill replaces page edits and undo restores their original spread identities
+ok 17 - auto-fill replaces page edits and undo restores their original spread identities
+  ---
+  duration_ms: 317.905625
+  type: 'test'
+  ...
+# Subtest: failed atomic writes do not add, remove or move undo history
+ok 18 - failed atomic writes do not add, remove or move undo history
+  ---
+  duration_ms: 462.515375
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence still identifies the second photo when the first already owns the old ID
+ok 19 - legacy URL evidence still identifies the second photo when the first already owns the old ID
+  ---
+  duration_ms: 124.589708
+  type: 'test'
+  ...
+# Subtest: legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+ok 20 - legacy URL evidence for an absent collided asset cannot resolve to a different present photo
+  ---
+  duration_ms: 133.440541
+  type: 'test'
+  ...
+# Subtest: duplicate persisted spread IDs and conflicting asset registry records fail before saving
+ok 21 - duplicate persisted spread IDs and conflicting asset registry records fail before saving
+  ---
+  duration_ms: 188.919583
+  type: 'test'
+  ...
+# Subtest: project edits and undo cannot change a plan while its files are being produced
+ok 22 - project edits and undo cannot change a plan while its files are being produced
+  ---
+  duration_ms: 676.641542
+  type: 'test'
+  ...
+# Subtest: clearing a spread removes its page edits and undo restores them with the same identity
+ok 23 - clearing a spread removes its page edits and undo restores them with the same identity
+  ---
+  duration_ms: 342.097458
+  type: 'test'
+  ...
+# Subtest: a real child-held lease blocks every album mutation and plan through canonical and symlink aliases
+    # Subtest: alias 1: reserve
+    ok 1 - alias 1: reserve
+      ---
+      duration_ms: 80.880875
+      type: 'test'
+      ...
+    # Subtest: alias 1: update
+    ok 2 - alias 1: update
+      ---
+      duration_ms: 48.427334
+      type: 'test'
+      ...
+    # Subtest: alias 1: undo
+    ok 3 - alias 1: undo
+      ---
+      duration_ms: 51.190667
+      type: 'test'
+      ...
+    # Subtest: alias 1: redo
+    ok 4 - alias 1: redo
+      ---
+      duration_ms: 44.503708
+      type: 'test'
+      ...
+    # Subtest: alias 1: migrate
+    ok 5 - alias 1: migrate
+      ---
+      duration_ms: 54.050042
+      type: 'test'
+      ...
+    # Subtest: alias 1: renderPlan
+    ok 6 - alias 1: renderPlan
+      ---
+      duration_ms: 48.626667
+      type: 'test'
+      ...
+    # Subtest: alias 1: exportPlan
+    ok 7 - alias 1: exportPlan
+      ---
+      duration_ms: 65.898916
+      type: 'test'
+      ...
+    # Subtest: alias 2: reserve
+    ok 8 - alias 2: reserve
+      ---
+      duration_ms: 44.940291
+      type: 'test'
+      ...
+    # Subtest: alias 2: update
+    ok 9 - alias 2: update
+      ---
+      duration_ms: 57.316625
+      type: 'test'
+      ...
+    # Subtest: alias 2: undo
+    ok 10 - alias 2: undo
+      ---
+      duration_ms: 57.830834
+      type: 'test'
+      ...
+    # Subtest: alias 2: redo
+    ok 11 - alias 2: redo
+      ---
+      duration_ms: 42.651917
+      type: 'test'
+      ...
+    # Subtest: alias 2: migrate
+    ok 12 - alias 2: migrate
+      ---
+      duration_ms: 39.578667
+      type: 'test'
+      ...
+    # Subtest: alias 2: renderPlan
+    ok 13 - alias 2: renderPlan
+      ---
+      duration_ms: 46.979042
+      type: 'test'
+      ...
+    # Subtest: alias 2: exportPlan
+    ok 14 - alias 2: exportPlan
+      ---
+      duration_ms: 55.605167
+      type: 'test'
+      ...
+    # Subtest: alias 3: reserve
+    ok 15 - alias 3: reserve
+      ---
+      duration_ms: 47.465583
+      type: 'test'
+      ...
+    # Subtest: alias 3: update
+    ok 16 - alias 3: update
+      ---
+      duration_ms: 46.654417
+      type: 'test'
+      ...
+    # Subtest: alias 3: undo
+    ok 17 - alias 3: undo
+      ---
+      duration_ms: 57.068333
+      type: 'test'
+      ...
+    # Subtest: alias 3: redo
+    ok 18 - alias 3: redo
+      ---
+      duration_ms: 61.891625
+      type: 'test'
+      ...
+    # Subtest: alias 3: migrate
+    ok 19 - alias 3: migrate
+      ---
+      duration_ms: 58.851458
+      type: 'test'
+      ...
+    # Subtest: alias 3: renderPlan
+    ok 20 - alias 3: renderPlan
+      ---
+      duration_ms: 48.766167
+      type: 'test'
+      ...
+    # Subtest: alias 3: exportPlan
+    ok 21 - alias 3: exportPlan
+      ---
+      duration_ms: 52.970333
+      type: 'test'
+      ...
+    # Subtest: alias 4: reserve
+    ok 22 - alias 4: reserve
+      ---
+      duration_ms: 46.943042
+      type: 'test'
+      ...
+    # Subtest: alias 4: update
+    ok 23 - alias 4: update
+      ---
+      duration_ms: 62.63925
+      type: 'test'
+      ...
+    # Subtest: alias 4: undo
+    ok 24 - alias 4: undo
+      ---
+      duration_ms: 55.8225
+      type: 'test'
+      ...
+    # Subtest: alias 4: redo
+    ok 25 - alias 4: redo
+      ---
+      duration_ms: 58.131834
+      type: 'test'
+      ...
+    # Subtest: alias 4: migrate
+    ok 26 - alias 4: migrate
+      ---
+      duration_ms: 43.692083
+      type: 'test'
+      ...
+    # Subtest: alias 4: renderPlan
+    ok 27 - alias 4: renderPlan
+      ---
+      duration_ms: 36.15725
+      type: 'test'
+      ...
+    # Subtest: alias 4: exportPlan
+    ok 28 - alias 4: exportPlan
+      ---
+      duration_ms: 41.789292
+      type: 'test'
+      ...
+    # Subtest: alias 5: reserve
+    ok 29 - alias 5: reserve
+      ---
+      duration_ms: 43.081416
+      type: 'test'
+      ...
+    # Subtest: alias 5: update
+    ok 30 - alias 5: update
+      ---
+      duration_ms: 49.763584
+      type: 'test'
+      ...
+    # Subtest: alias 5: undo
+    ok 31 - alias 5: undo
+      ---
+      duration_ms: 37
+      type: 'test'
+      ...
+    # Subtest: alias 5: redo
+    ok 32 - alias 5: redo
+      ---
+      duration_ms: 45.947375
+      type: 'test'
+      ...
+    # Subtest: alias 5: migrate
+    ok 33 - alias 5: migrate
+      ---
+      duration_ms: 45.968
+      type: 'test'
+      ...
+    # Subtest: alias 5: renderPlan
+    ok 34 - alias 5: renderPlan
+      ---
+      duration_ms: 32.041625
+      type: 'test'
+      ...
+    # Subtest: alias 5: exportPlan
+    ok 35 - alias 5: exportPlan
+      ---
+      duration_ms: 60.008625
+      type: 'test'
+      ...
+    1..35
+ok 24 - a real child-held lease blocks every album mutation and plan through canonical and symlink aliases
+  ---
+  duration_ms: 2040.974042
+  type: 'test'
+  ...
+# Subtest: direct migration cannot persist identity while this helper holds a heavy lease
+ok 25 - direct migration cannot persist identity while this helper holds a heavy lease
+  ---
+  duration_ms: 105.7935
+  type: 'test'
+  ...
+# Subtest: same-helper concurrent render and export plans serialize their project access across aliases
+ok 26 - same-helper concurrent render and export plans serialize their project access across aliases
+  ---
+  duration_ms: 361.078791
+  type: 'test'
+  ...
+# Subtest: folder, project-file and symlink aliases share one undo and redo history
+ok 27 - folder, project-file and symlink aliases share one undo and redo history
+  ---
+  duration_ms: 360.896583
+  type: 'test'
+  ...
+# Subtest: an external project edit invalidates in-memory undo and redo without replacing the child revision
+ok 28 - an external project edit invalidates in-memory undo and redo without replacing the child revision
+  ---
+  duration_ms: 589.297625
+  type: 'test'
+  ...
+# Subtest: failed render/export starts release the whole-album lease for another process
+ok 29 - failed render/export starts release the whole-album lease for another process
+  ---
+  duration_ms: 658.209333
+  type: 'test'
+  ...
+# Subtest: render completion releases its lease before a new helper can reserve the album
+ok 30 - render completion releases its lease before a new helper can reserve the album
+  ---
+  duration_ms: 309.809708
+  type: 'test'
+  ...
+# Subtest: the library: collections albums use and ones added, defaults for new albums, removal leaves files
+ok 31 - the library: collections albums use and ones added, defaults for new albums, removal leaves files
+  ---
+  duration_ms: 41.502792
+  type: 'test'
+  ...
+# Subtest: storage: cache sizes, and clearing only what was asked
+ok 32 - storage: cache sizes, and clearing only what was asked
+  ---
+  duration_ms: 140.878583
+  type: 'test'
+  ...
+# Subtest: an edit saves in the Electron format and keeps the previous version
+ok 33 - an edit saves in the Electron format and keeps the previous version
+  ---
+  duration_ms: 152.949167
+  type: 'test'
+  ...
+# Subtest: adding moves a photo off its old spread; replacing swaps across spreads
+ok 34 - adding moves a photo off its old spread; replacing swaps across spreads
+  ---
+  duration_ms: 572.690417
+  type: 'test'
+  ...
+# Subtest: spreads insert, move and delete, and their page edits move with them
+ok 35 - spreads insert, move and delete, and their page edits move with them
+  ---
+  duration_ms: 729.055792
+  type: 'test'
+  ...
+# Subtest: templates are set by id; a failed edit saves nothing
+ok 36 - templates are set by id; a failed edit saves nothing
+  ---
+  duration_ms: 451.72575
+  type: 'test'
+  ...
+# Subtest: undo and redo walk the history; a new edit clears redo; no-op edits are not steps
+ok 37 - undo and redo walk the history; a new edit clears redo; no-op edits are not steps
+  ---
+  duration_ms: 841.950542
+  type: 'test'
+  ...
+# Subtest: auto-fill re-plans the album from every photo, as one undoable step
+ok 38 - auto-fill re-plans the album from every photo, as one undoable step
+  ---
+  duration_ms: 360.122625
+  type: 'test'
+  ...
+# Subtest: several photos are added at once, copied on request, and reordered
+ok 39 - several photos are added at once, copied on request, and reordered
+  ---
+  duration_ms: 521.659709
+  type: 'test'
+  ...
+# Subtest: fitTemplate picks a template whose frames fit the photos, from the same collection first
+ok 40 - fitTemplate picks a template whose frames fit the photos, from the same collection first
+  ---
+  duration_ms: 493.354333
+  type: 'test'
+  ...
+# Subtest: the print-sheet folder changes like any edit, and undoes
+ok 41 - the print-sheet folder changes like any edit, and undoes
+  ---
+  duration_ms: 287.774625
+  type: 'test'
+  ...
+# Subtest: edits sent together apply in order, none lost
+ok 42 - edits sent together apply in order, none lost
+  ---
+  duration_ms: 157.82875
+  type: 'test'
+  ...
+# Subtest: a very old project with a bare workspace stays bare
+ok 43 - a very old project with a bare workspace stays bare
+  ---
+  duration_ms: 50.920417
+  type: 'test'
+  ...
+# Subtest: photos turn in quarter turns, everywhere they appear, and the turn undoes
+ok 44 - photos turn in quarter turns, everywhere they appear, and the turn undoes
+  ---
+  duration_ms: 313.939916
+  type: 'test'
+  ...
+# Subtest: templates picked for the photos skip ones with a frame parked off the page
+ok 45 - templates picked for the photos skip ones with a frame parked off the page
+  ---
+  duration_ms: 51.993625
+  type: 'test'
+  ...
+# Subtest: templates picked for the photos keep to the album’s page shape
+ok 46 - templates picked for the photos keep to the album’s page shape
+  ---
+  duration_ms: 47.974125
+  type: 'test'
+  ...
+# Subtest: a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it
+ok 47 - a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it
+  ---
+  duration_ms: 173.824125
+  type: 'test'
+  ...
+# Subtest: a photo’s colour is set, clamped and cleared; undo covers it
+ok 48 - a photo’s colour is set, clamped and cleared; undo covers it
+  ---
+  duration_ms: 146.165916
+  type: 'test'
+  ...
+# Subtest: a template is read with its frames in drawing order, their shapes and strokes
+ok 49 - a template is read with its frames in drawing order, their shapes and strokes
+  ---
+  duration_ms: 110.528125
+  type: 'test'
+  ...
+# Subtest: erode shrinks a mask from its edges by r pixels
+ok 50 - erode shrinks a mask from its edges by r pixels
+  ---
+  duration_ms: 0.171042
+  type: 'test'
+  ...
+# Subtest: proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+ok 51 - proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+  ---
+  duration_ms: 1561.253125
+  type: 'test'
+  ...
+# Subtest: a spread layout says where each frame is and which photo fills it
+ok 52 - a spread layout says where each frame is and which photo fills it
+  ---
+  duration_ms: 106.55025
+  type: 'test'
+  ...
+# Subtest: a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+ok 53 - a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+  ---
+  duration_ms: 1035.839541
+  type: 'test'
+  ...
+# Subtest: proofs without source evidence are preserved in history and regenerated from current sources
+ok 54 - proofs without source evidence are preserved in history and regenerated from current sources
+  ---
+  duration_ms: 577.023458
+  type: 'test'
+  ...
+# Subtest: identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+ok 55 - identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+  ---
+  duration_ms: 729.358917
+  type: 'test'
+  ...
+# Subtest: the JPEG a TIFF-based RAW embeds is found, with its orientation
+ok 56 - the JPEG a TIFF-based RAW embeds is found, with its orientation
+  ---
+  duration_ms: 5.325417
+  type: 'test'
+  ...
+# Subtest: reorder, delete, undo and redo retain exact owned PSD paths and hand-edited bytes
+ok 57 - reorder, delete, undo and redo retain exact owned PSD paths and hand-edited bytes
+  ---
+  duration_ms: 826.892792
+  type: 'test'
+  ...
+# Subtest: inserting a spread never adopts another spread numbered PSD
+ok 58 - inserting a spread never adopts another spread numbered PSD
+  ---
+  duration_ms: 400.419375
+  type: 'test'
+  ...
+# Subtest: overlapping render starts cannot acquire two running jobs
+ok 59 - overlapping render starts cannot acquire two running jobs
+  ---
+  duration_ms: 251.801666
+  type: 'test'
+  ...
+1..59
+# tests 94
+# suites 0
+# pass 94
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5463.161375

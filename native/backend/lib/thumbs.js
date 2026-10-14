@@ -9,8 +9,8 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
-const { embeddedJpeg, isRaw, readEvidence, sourceIdentity, unchangedSource, publishExclusive } = require('./raw')
-const { contentFileKey, fileDigest } = require('./cache')
+const { embeddedJpeg, isRaw, readEvidence, sourceIdentity, unchangedSource, publishExclusive, consumeSnapshot } = require('./raw')
+const { contentFileKey, fileDigest, snapshotFile } = require('./cache')
 const exclusiveRename = require('./exclusive_rename')
 
 const THUMB_DIR = '_Thumbnails'
@@ -18,7 +18,7 @@ const MAX_EDGE = 400
 const QUALITY = 70
 const SHARP_READS = /\.(jpe?g|png|tiff?|webp|heic|heif|avif)$/i
 const POOL = 6
-const RECIPE = 'upright-sharp400-jpeg70-v1'
+const RECIPE = 'upright-sharp400-jpeg70-v2-frozen'
 const jobs = new Map()
 
 const getSharp = () => require('../../../src/sharp_config').getSharp()
@@ -122,16 +122,19 @@ async function refreshThumb(src, dest) {
   const identity = await sourceIdentity(src)
   const before = await thumbState(src, dest, sourceKey)
   if (before.fresh) { await unchangedSource(src, sourceKey, identity); return }
+  return consumeSnapshot(src, sourceKey, evidenceRoot(dest), async (frozen, sources) => {
   const sharp = getSharp()
-  let input = src
+  let input = frozen
   let rotate = null // null: follow EXIF
   if (isRaw(src)) {
-    const emb = await embeddedJpeg(src)
+    const emb = await embeddedJpeg(frozen)
     if (emb) {
       input = emb.jpeg
       rotate = emb.rotation
     } else {
-      input = await require('./raw').placeable(src, path.join(path.dirname(dest), '.develop'))
+      const developed = await require('./raw').placeableEvidence(src, path.join(path.dirname(dest), '.develop'))
+      if (developed.sourceKey !== sourceKey) throw new Error('The original changed before its thumbnail could be made.')
+      input = await snapshotFile(developed.file, sources, developed.digest)
     }
   }
   const pipe = sharp(input, { failOn: 'error' })
@@ -182,6 +185,7 @@ async function refreshThumb(src, dest) {
     await fs.promises.unlink(recordTmp).catch(() => {})
     await fs.promises.rmdir(stage).catch(() => {})
   }
+  })
 }
 
 /**

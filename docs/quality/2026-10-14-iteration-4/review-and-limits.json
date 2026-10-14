@@ -1,0 +1,55 @@
+{
+  "iteration": 4,
+  "scopedReviews": [
+    {
+      "scope": "Project lease implementation and subprocess regressions",
+      "findings": "Locale/timezone-dependent process-start identities and interrupted acquisition/reclamation gaps fixed with dedicated real subprocess tests.",
+      "limit": "Final parent integration and journaled project-save code not independently reviewed."
+    },
+    {
+      "scope": "Delivery history and metadata application",
+      "findings": "Hardlinked history/public files and path-based metadata replacement races reproduced and fixed with detached copies and no-follow file handles.",
+      "limit": "Shared output root/parent ownership and physical drive/power-loss behavior remain open."
+    },
+    {
+      "scope": "PSD fallback and JPEG/PDF inputs",
+      "findings": "Transient live PSD fallback substitution, malformed JPEG scans/entropy, progressive/arithmetic acceptance and five-page colour oracle covered.",
+      "limit": "Real customer layer/RAW corpus and final parent HFS decoder integration remain unreviewed."
+    }
+  ],
+  "parentReview": {
+    "scope": "Integrated module/error/lease flows, durable project journal, aliases, killed-process recovery and HFS source snapshot regressions; raw failed runs inspected and final gate/coverage obtained.",
+    "independent": false
+  },
+  "executionLimit": {
+    "kind": "provider usage limit",
+    "agents": [
+      "account_binding",
+      "delivery_recovery",
+      "identity_design"
+    ],
+    "terminalMessage": "You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at 4:51 PM.",
+    "reportedReset": "4:51 PM; date/timezone unspecified, not verified as a future reset estimate",
+    "requiredUnfinishedReview": [
+      "Final project_transaction.js integration and project opening/recovery/error behavior",
+      "Final canonical project lease integration across edits/jobs/proofs/cache",
+      "HFS two-pass hashing/read-only source and private-cache consumption",
+      "Prior open colour/history/helper review requirements"
+    ]
+  },
+  "externalRequirements": [
+    "Approved native GUI/accessibility session with disposable albums",
+    "Actual printer/lab specification and physical samples",
+    "Authorized issuer/Firestore rules test environment, device-bound licensing migration inputs and rollback plan",
+    "Physical drive/full-disk/power-loss setup including removable/exFAT/SMB cases",
+    "Developer ID/notarization credentials and clean customer Mac"
+  ],
+  "unrunLocalRequirements": [
+    "Full native workspace tests/Clippy/layering/corpus",
+    "Hosted CI",
+    "Fresh staged root package and packaged pinned-Node execution",
+    "Real camera RAW/layered/high-depth/CMYK corpus",
+    "Realistic small/typical/large customer workloads and hardware acceptance budgets"
+  ],
+  "missionComplete": false
+}

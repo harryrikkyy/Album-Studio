@@ -8,7 +8,7 @@ const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
 const { cacheRoot, contentFileKey } = require('./cache')
-const { deriveCached, derivedKey, sourceIdentity, unchangedSource } = require('./raw')
+const { deriveCached, derivedKey, sourceIdentity, unchangedSource, consumeSnapshot } = require('./raw')
 
 const SHEET = /\.(jpe?g|png|psd|psb)$/i
 const THUMB_EDGE = 480
@@ -53,20 +53,21 @@ async function readHead(file, bytes) {
 async function thumbFor(file) {
   const ext = path.extname(file).toLowerCase()
   const dir = path.join(cacheRoot(), 'lab-thumbs')
-  const sourceKey = await contentFileKey(file), recipe = 'lab-preview-sharp480-jpeg78-v1'
+  const sourceKey = await contentFileKey(file), recipe = 'lab-preview-sharp480-jpeg78-v2-frozen'
   const identity = await sourceIdentity(file)
   const out = path.join(dir, `${derivedKey(sourceKey, recipe)}.jpg`)
+  return consumeSnapshot(file, sourceKey, dir, async (frozen) => {
   const sharp = getSharp()
   let width = 0
   let height = 0
-  let input = file
+  let input = frozen
   if (ext === '.psd' || ext === '.psb') {
-    const head = await readHead(file, 4 << 20)
+    const head = await readHead(frozen, 4 << 20)
     if (head.length < 26 || head.toString('latin1', 0, 4) !== '8BPS' || ![1, 2].includes(head.readUInt16BE(4))) throw new Error(`The PSD/PSB ${file} has an invalid header; its preview could not be verified.`)
     height = head.readUInt32BE(14); width = head.readUInt32BE(18)
     input = psdThumbnail(head)
   } else {
-    const meta = await sharp(file, { failOn: 'error' }).metadata()
+    const meta = await sharp(frozen, { failOn: 'error' }).metadata()
     width = meta.width; height = meta.height
   }
   if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) throw new Error(`The sheet ${file} has invalid dimensions; its preview could not be verified.`)
@@ -78,6 +79,7 @@ async function thumbFor(file) {
   await deriveCached(file, out, sourceKey, recipe, (tmp) => sharp(input, { failOn: 'error' }).rotate().resize(THUMB_EDGE, THUMB_EDGE, { fit: 'inside' }).jpeg({ quality: 78 }).toFile(tmp), { width, height })
   await unchangedSource(file, sourceKey, identity)
   return { thumb: out, width, height }
+  })
 }
 
 /** The sheets of a folder (JPEG, PNG, PSD, PSB), in natural name order. */

@@ -8,7 +8,7 @@ const fs = require('fs')
 const account = require('./lib/account')
 const { openAlbum } = require('./lib/album')
 const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('./lib/newalbum')
-const { redo, undo, updateAlbum } = require('./lib/project')
+const { redo, undo, updateAlbum, withProjectLease } = require('./lib/project')
 const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
 const { cancelExport, exportPlan, exportStatus, startExport } = require('./lib/deliver')
@@ -40,7 +40,7 @@ const methods = {
   'account.signOut': async () => account.signOut(),
 
   'album.open': withProofs(async (p) => {
-    const album = await openAlbum(p)
+    const album = await withProjectLease(p.path, ({ file }) => openAlbum({ path: file }), { kind: 'open-project' })
     await rememberAlbum(album)
     return album
   }),

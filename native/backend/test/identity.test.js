@@ -135,9 +135,9 @@ test('failed atomic writes do not add, remove or move undo history', async () =>
   const { proj } = makeProject(), file = path.join(proj, 'project.json')
   await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 1 }] })
   const before = fs.readFileSync(file)
-  const rename = fs.promises.rename
-  fs.promises.rename = async (from, to) => {
-    if (to === file) throw Object.assign(new Error('simulated disk failure'), { code: 'EIO' })
+  const exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  exclusive.renameExclusive = async (from, to) => {
+    if (to === file && path.basename(from) === 'install-project.json') throw Object.assign(new Error('simulated disk failure'), { code: 'EIO' })
     return rename(from, to)
   }
   try {
@@ -145,7 +145,7 @@ test('failed atomic writes do not add, remove or move undo history', async () =>
     await assert.rejects(undo({ album: proj }), /simulated disk failure/)
     assert.deepEqual(fs.readFileSync(file), before)
     assert.equal(fs.existsSync(`${file}.tmp-${process.pid}`), false)
-  } finally { fs.promises.rename = rename }
+  } finally { exclusive.renameExclusive = rename }
   const restored = await undo({ album: proj })
   assert.equal(restored.changed, true)
   assert.equal(restored.album.spreads[0].photoIds.length, 2)
@@ -200,16 +200,16 @@ test('project edits and undo cannot change a plan while its files are being prod
   await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 1 }] })
   const before = fs.readFileSync(file), jobs = require('../lib/jobs'), other = makeProject()
   for (const kind of ['render', 'export']) {
-    const lease = jobs.reserveJob(kind, proj)
+    const lease = await jobs.reserveJob(kind, proj)
     try {
       const match = kind === 'render' ? /album is rendering/ : /album is exporting/
       await assert.rejects(updateAlbum({ album: proj, ops: [{ op: 'insertSpread', at: 1 }] }), match)
       await assert.rejects(undo({ album: proj }), match)
       await assert.rejects(redo({ album: proj }), match)
-      assert.equal((await migrateAlbum({ album: proj })).path, proj, 'the job can persist identity migration during preparation')
+      assert.equal((await migrateAlbum({ album: proj }, { lease: lease.project })).path, proj, 'only the job holding the capability can migrate during preparation')
       await updateAlbum({ album: other.proj, ops: [{ op: 'insertSpread', at: 1 }] })
       assert.deepEqual(fs.readFileSync(file), before)
-    } finally { jobs.releaseJob(lease) }
+    } finally { await jobs.releaseJob(lease) }
   }
   assert.equal((await undo({ album: proj })).changed, true)
 })

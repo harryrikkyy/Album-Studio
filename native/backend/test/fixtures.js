@@ -17,7 +17,7 @@ function fakeJpeg(width, height) {
 }
 
 function tmpdir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'as-backend-'))
+  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'as-backend-')))
 }
 
 /** A project with one photo folder (thumbnails + originals) and two spreads. */

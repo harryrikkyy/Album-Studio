@@ -53,11 +53,18 @@ test('inserting a spread never adopts another spread numbered PSD', async () => 
 test('overlapping render starts cannot acquire two running jobs', async () => {
   const { proj } = await fixture()
   const finished = []
-  const ctx = { emit: (event, data) => { if (event === 'render.finished') finished.push(data) } }
-  const requests = await Promise.allSettled([startRender({ album: proj }, ctx), startRender({ album: proj }, ctx)])
-  assert.equal(requests.filter((r) => r.status === 'fulfilled').length, 1)
-  assert.match(requests.find((r) => r.status === 'rejected').reason.message, /already|running|starting/i)
-  for (let i = 0; i < 100 && !finished.length; i++) await new Promise((resolve) => setTimeout(resolve, 10))
-  assert.equal(finished.length, 1)
-  assert.equal(finished[0].failed, 0)
+  let finish, timer
+  const completion = new Promise((resolve, reject) => {
+    finish = resolve
+    timer = setTimeout(() => reject(new Error('The accepted render did not finish within the functional-test deadline.')), 60000)
+  })
+  const ctx = { emit: (event, data) => { if (event === 'render.finished') { finished.push(data); finish() } } }
+  try {
+    const requests = await Promise.allSettled([startRender({ album: proj }, ctx), startRender({ album: proj }, ctx)])
+    assert.equal(requests.filter((r) => r.status === 'fulfilled').length, 1)
+    assert.match(requests.find((r) => r.status === 'rejected').reason.message, /already|running|starting/i)
+    await completion
+    assert.equal(finished.length, 1)
+    assert.equal(finished[0].failed, 0)
+  } finally { clearTimeout(timer) }
 })

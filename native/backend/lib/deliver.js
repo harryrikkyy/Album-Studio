@@ -15,7 +15,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { migrateAlbum } = require('./project')
+const { migrateAlbum, withProjectLease } = require('./project')
 const { fileStamp, fileDigest, snapshotFile } = require('./cache')
 const { writeJpegPdf } = require('./pdf')
 const { outputName } = require('./sheet')
@@ -27,7 +27,7 @@ const { preflightAlbum } = require('./preflight')
 const { printSettings, psdDimensions } = require('./print_settings')
 const { publishDelivery, recoverDeliveries, verifyOwnedArtifact } = require('./delivery_transaction')
 
-const EXPORT_VERSION = 'export-2-colour'
+const EXPORT_VERSION = 'export-3-frozen-and-scans'
 const DEFAULTS = { heightInches: 12, ppi: 300, highQuality: 97, lowQuality: 25 }
 
 const getSharp = () => require('../../../src/sharp_config').getSharp()
@@ -104,11 +104,11 @@ async function exportSheet(psdPath, targets, s) {
  */
 async function exportPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
-  return (await prepareExport({ album: albumPath, ...p })).plan
+  return withProjectLease(albumPath, async ({ lease }) => (await prepareExport({ album: albumPath, ...p }, lease)).plan, { kind: 'export-plan' })
 }
 
-async function prepareExport(p) {
-  const album = await migrateAlbum({ album: p.album })
+async function prepareExport(p, lease) {
+  const album = await migrateAlbum({ album: p.album }, { lease })
   const projectText = await fs.promises.readFile(album.file, 'utf8')
   const data = JSON.parse(projectText), ws = data.workspace || data
   const paths = deliverPaths(album, outputFolder(ws, album.path))
@@ -168,12 +168,12 @@ async function readJson(file) {
  */
 async function startExport(p, { emit }) {
   if (!p.album) throw new Error('missing `album`')
-  const lease = reserveJob('export', p.album)
+  const lease = await reserveJob('export', p.album)
   try {
     const want = { jpegs: p.jpegs !== false, pdf: p.pdf !== false }
     if (!want.jpegs && !want.pdf) throw new Error('Choose at least one kind of file to export.')
-    const prepared = await prepareExport(p)
-    identifyJob(lease, prepared.album)
+    const prepared = await prepareExport(p, lease.project)
+    await identifyJob(lease, prepared.album)
     const { plan } = prepared, { paths, settings: s } = plan
     const wanted = spreadSelection(p.spreads, plan.spreads)
     const spreads = want.jpegs ? plan.spreads.filter((sp) => !wanted || wanted.has(sp.n)) : []
@@ -192,7 +192,10 @@ async function startExport(p, { emit }) {
     // runExport catches failures and releases the lease before its completion event.
     void runExport(job, { ...prepared, p, spreads, want, s, paths, missingSheets, lease }, emit)
     return { jobId: job.id, total: job.total, paths, missingSheets }
-  } catch (e) { releaseJob(lease); throw e }
+  } catch (e) {
+    try { await releaseJob(lease) } catch (release) { e.message += ` ${release.message}` }
+    throw e
+  }
 }
 
 async function assertSnapshot({ album, ws, projectText }, required) {
@@ -261,7 +264,8 @@ async function runExport(job, prepared, emit) {
     if (pdfResult) next.pdf = { path: paths.pdf }
     // Cache bytes and ownership fingerprints are journaled together with the files. The
     // builder runs before publication, so it must use staged records rather than target stats.
-    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, validateSnapshot: () => assertSnapshot(prepared, required), makeCache: async () => {
+    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, validateSnapshot: async () => { await lease.project.assertOwned(); await assertSnapshot(prepared, required) }, makeCache: async () => {
+      await lease.project.assertOwned()
       await assertSnapshot(prepared, required)
       return next
     } })
@@ -287,7 +291,7 @@ async function runExport(job, prepared, emit) {
     // A recovery error owns this stage. Never discard its journal or captured customer files.
     if (stage && !preserveStage) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {})
     if (current === job) current = null
-    releaseJob(lease)
+    try { await releaseJob(lease) } catch (release) { error = [error, release.message].filter(Boolean).join(' '); job.failed++ }
     emit('export.finished', {
       jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed, cancelled: job.cancelled,
       ms: Date.now() - job.startedAt, paths, results, pdf: pdfResult, missingSheets, error,

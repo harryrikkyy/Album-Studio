@@ -7,9 +7,10 @@
 
 'use strict'
 
-const fs = require('fs')
 const path = require('path')
-const { openAlbum, locateProject } = require('./album')
+const { openAlbum } = require('./album')
+const { canonicalProject, acquireProjectLease, serializeProject } = require('./project_lock')
+const { saveProject, recoverProject, readProjectSnapshot } = require('./project_transaction')
 const { newSpreadId, relinkRoot } = require('./identity')
 const { planAlbum } = require('./autofill')
 const { firstUsable, offPageFrames } = require('./template_check')
@@ -19,27 +20,18 @@ const { commonShape, listTemplates, shapeOf } = require('./templates')
 const PAGE_KEYED = ['pageOverlays', 'pageLayerEdits', 'pageBackgrounds']
 const HISTORY_LIMIT = 100
 
-const histories = new Map() // project file → { undo: string[], redo: string[] }
-const queues = new Map()    // project file → the tail of its edit chain
+const histories = new Map() // canonical project file → { undo, redo, revision }
 
 // ── file I/O ────────────────────────────────────────────────────────────────
 
 async function readProject(file) {
-  return JSON.parse(await fs.promises.readFile(file, 'utf8'))
+  return readProjectSnapshot(file)
 }
 
 /** Write atomically; the version being replaced is kept as project.json.bak. */
-async function writeProject(file, data) {
+async function writeProject(file, data, revision, lease) {
   data.savedAt = new Date().toISOString()
-  const tmp = `${file}.tmp-${process.pid}`
-  try {
-    await fs.promises.writeFile(tmp, JSON.stringify(data, null, 2))
-    await fs.promises.copyFile(file, `${file}.bak`)
-    await fs.promises.rename(tmp, file)
-  } catch (error) {
-    await fs.promises.unlink(tmp).catch(() => {})
-    throw error
-  }
+  return (await saveProject(file, data, revision, { assertOwned: () => lease.assertOwned() })).revision
 }
 
 /** The workspace object; very old projects saved it bare, at the top level (as restoreWorkspace reads it). */
@@ -431,17 +423,41 @@ const OPS = {
 
 // ── public ──────────────────────────────────────────────────────────────────
 
-/** Run `fn` after every earlier edit of the same project has finished. */
-function serialize(file, fn) {
-  const prev = queues.get(file) || Promise.resolve()
-  const next = prev.then(fn, fn)
-  queues.set(file, next.catch(() => {}))
-  return next
+/** Hold one canonical project lease for the complete operation, including migration/readback.
+ * A job passes its existing capability; nested migration must not queue behind its caller.
+ */
+async function withProjectLease(albumPath, work, { lease: provided, kind = 'edit' } = {}) {
+  const location = await canonicalProject(albumPath)
+  const run = async () => {
+    if (provided && provided.file !== location.file) throw new Error('The project lease belongs to another album.')
+    if (!provided) require('./jobs').assertProjectIdle(location.file, location.folder)
+    const lease = provided || await acquireProjectLease(location, { kind })
+    let result, failure
+    try {
+      await lease.assertOwned()
+      await recoverProject(location.file, { assertOwned: () => lease.assertOwned() })
+      result = await work({ ...location, lease })
+    } catch (error) { failure = error }
+    if (!provided) {
+      try { await lease.release() } catch (release) {
+        if (failure) { failure.message += ` Project lease release also failed: ${release.message}`; failure.releaseError = release }
+        else failure = release
+      }
+    }
+    if (failure) throw failure
+    return result
+  }
+  return provided ? run() : serializeProject(location.file, run)
 }
 
-function historyOf(file) {
-  if (!histories.has(file)) histories.set(file, { undo: [], redo: [] })
-  return histories.get(file)
+function historyOf(file, revision) {
+  if (!histories.has(file)) histories.set(file, { undo: [], redo: [], revision: null })
+  const h = histories.get(file)
+  // Another helper/editor may have saved after our last operation. Its revision must never
+  // inherit undo snapshots from this process's earlier project state.
+  if (revision && h.revision && revision !== h.revision) { h.undo.length = 0; h.redo.length = 0 }
+  if (revision) h.revision = revision
+  return h
 }
 
 /**
@@ -452,10 +468,9 @@ function historyOf(file) {
 async function updateAlbum({ album: albumPath, ops }, opts = {}) {
   if (!albumPath) throw new Error('missing `album`')
   if (!Array.isArray(ops) || !ops.length) throw new Error('missing `ops`')
-  const { file, folder } = await locateProject(albumPath)
-  return serialize(file, async () => {
-    require('./jobs').assertProjectIdle(file, folder)
-    const d = await readProject(file)
+  return withProjectLease(albumPath, async ({ file, folder, lease }) => {
+    const { data: d, revision } = await readProject(file)
+    const h = historyOf(file, revision)
     const original = JSON.stringify(d)
     const model = await prepare(d, file, folder)
     const before = snapshot(d)
@@ -474,7 +489,7 @@ async function updateAlbum({ album: albumPath, ops }, opts = {}) {
       await fn(ctx, o)
       if (['setPhotoFolders', 'setCollections', 'relinkFolder'].includes(o.op)) {
         setPages(d, ctx.pages)
-        ctx.model = await openAlbum({ path: albumPath }, { data: d })
+        ctx.model = await openAlbum({ path: file }, { data: d })
         ctx.pages = pagesOf(d)
         templates = null
       }
@@ -482,10 +497,10 @@ async function updateAlbum({ album: albumPath, ops }, opts = {}) {
     setPages(d, ctx.pages)
     const changed = snapshot(d) !== before
     if (changed || JSON.stringify(d) !== original) {
-      await writeProject(file, d)
+      await lease.assertOwned()
+      h.revision = await writeProject(file, d, revision, lease)
     }
     if (changed) {
-      const h = historyOf(file)
       h.undo.push(before)
       if (h.undo.length > HISTORY_LIMIT) h.undo.shift()
       h.redo.length = 0
@@ -500,16 +515,15 @@ function historyState(file) {
 }
 
 async function step(albumPath, from, to) {
-  const { file, folder } = await locateProject(albumPath)
-  return serialize(file, async () => {
-    require('./jobs').assertProjectIdle(file, folder)
-    const h = historyOf(file)
+  return withProjectLease(albumPath, async ({ file, lease }) => {
+    const { data: d, revision } = await readProject(file)
+    const h = historyOf(file, revision)
     const snap = h[from].at(-1)
     if (snap) {
-      const d = await readProject(file)
       const before = snapshot(d)
       restore(d, snap)
-      await writeProject(file, d)
+      await lease.assertOwned()
+      h.revision = await writeProject(file, d, revision, lease)
       h[from].pop()
       h[to].push(before)
     }
@@ -524,19 +538,19 @@ async function prepare(data, file, folder) {
   return model
 }
 
-async function migrateAlbum({ album: albumPath }) {
+async function migrateAlbum({ album: albumPath }, { lease } = {}) {
   if (!albumPath) throw new Error('missing `album`')
-  const { file, folder } = await locateProject(albumPath)
-  return serialize(file, async () => {
-    const data = await readProject(file)
+  return withProjectLease(albumPath, async ({ file, folder, lease: held }) => {
+    const { data, revision } = await readProject(file)
+    const h = historyOf(file, revision)
     const before = JSON.stringify(data)
     await prepare(data, file, folder)
-    if (JSON.stringify(data) !== before) await writeProject(file, data)
+    if (JSON.stringify(data) !== before) { await held.assertOwned(); h.revision = await writeProject(file, data, revision, held) }
     return openAlbum({ path: albumPath })
-  })
+  }, { lease, kind: 'migration' })
 }
 
 const undo = ({ album }) => step(album, 'undo', 'redo')
 const redo = ({ album }) => step(album, 'redo', 'undo')
 
-module.exports = { updateAlbum, undo, redo, migrateAlbum }
+module.exports = { updateAlbum, undo, redo, migrateAlbum, withProjectLease }

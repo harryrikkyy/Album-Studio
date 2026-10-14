@@ -488,12 +488,19 @@ async function psdPixels(psdPath, { buffer } = {}) {
   }
   const { PhotoCraftSession } = require('./photocraft')
   const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'as-export-')), out = path.join(dir, 'sheet.png')
-  const pc = new PhotoCraftSession({ writeRoot: dir }), cleanup = () => fs.promises.rm(dir, { recursive: true, force: true })
+  const frozen = path.join(dir, `source.${buf.readUInt16BE(4) === 2 ? 'psb' : 'psd'}`)
+  const cleanup = () => fs.promises.rm(dir, { recursive: true, force: true })
+  let pc = null
   try {
-    await pc.call('doc.open', { path: PhotoCraftSession.readPath(psdPath) })
+    // The source can change after readPsdBuffer's verification, including A→B→A
+    // changes hidden from later source hashes. The engine must consume these exact
+    // verified bytes, with the same PSD/PSB encoding, rather than reopening its path.
+    await fs.promises.writeFile(frozen, buf, { flag: 'wx', mode: 0o400 })
+    pc = new PhotoCraftSession({ writeRoot: dir })
+    await pc.call('doc.open', { path: PhotoCraftSession.readPath(frozen) })
     await pc.run('edit.convertToProfile', SRGB_POLICY)
     await pc.call('doc.save', { path: pc.writePath(out) })
-  } catch (error) { await cleanup(); throw error } finally { await pc.close() }
+  } catch (error) { await cleanup(); throw error } finally { if (pc) await pc.close() }
   try {
     const meta = await require('../../../src/sharp_config').getSharp()(out, { failOn: 'warning' }).metadata()
     if (profile && !meta.icc) throw new Error('The editor render did not retain a verifiable colour profile. Save an 8-bit RGB sheet with its compatibility composite before delivery.')

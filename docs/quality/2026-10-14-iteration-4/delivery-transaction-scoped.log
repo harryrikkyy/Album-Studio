@@ -1,0 +1,542 @@
+TAP version 13
+# Subtest: complete delivery and its cache publish together with content ownership
+ok 1 - complete delivery and its cache publish together with content ownership
+  ---
+  duration_ms: 162.623792
+  type: 'test'
+  ...
+# Subtest: later public-file edits cannot change any retained delivery source, backup or discard
+    # Subtest: committed delivery
+    ok 1 - committed delivery
+      ---
+      duration_ms: 155.765291
+      type: 'test'
+      ...
+    # Subtest: restored delivery
+    ok 2 - restored delivery
+      ---
+      duration_ms: 261.500917
+      type: 'test'
+      ...
+    1..2
+ok 2 - later public-file edits cannot change any retained delivery source, backup or discard
+  ---
+  duration_ms: 417.581875
+  type: 'test'
+  ...
+# Subtest: readiness verifies digest ownership and rejects same-stamp edits, symlinks and invalid records
+ok 3 - readiness verifies digest ownership and rejects same-stamp edits, symlinks and invalid records
+  ---
+  duration_ms: 4.313584
+  type: 'test'
+  ...
+# Subtest: first publication and legacy stamp ownership upgrade to digest ownership
+    # Subtest: {"existing":false}
+    ok 1 - {"existing":false}
+      ---
+      duration_ms: 102.697208
+      type: 'test'
+      ...
+    # Subtest: {"strong":false}
+    ok 2 - {"strong":false}
+      ---
+      duration_ms: 171.89125
+      type: 'test'
+      ...
+    1..2
+ok 4 - first publication and legacy stamp ownership upgrade to digest ownership
+  ---
+  duration_ms: 274.931458
+  type: 'test'
+  ...
+# Subtest: caught data and cache failures restore every previous byte
+    # Subtest: backup-1
+    ok 1 - backup-1
+      ---
+      duration_ms: 110.605459
+      type: 'test'
+      ...
+    # Subtest: backup-3
+    ok 2 - backup-3
+      ---
+      duration_ms: 214.02925
+      type: 'test'
+      ...
+    1..2
+ok 5 - caught data and cache failures restore every previous byte
+  ---
+  duration_ms: 325.300125
+  type: 'test'
+  ...
+# Subtest: cache construction fails before exposing any prepared delivery file
+ok 6 - cache construction fails before exposing any prepared delivery file
+  ---
+  duration_ms: 20.075667
+  type: 'test'
+  ...
+# Subtest: a cache or target edit while an asynchronous cache builder runs is rejected before publication
+    # Subtest: cache
+    ok 1 - cache
+      ---
+      duration_ms: 20.570458
+      type: 'test'
+      ...
+    # Subtest: jpeg
+    ok 2 - jpeg
+      ---
+      duration_ms: 18.935542
+      type: 'test'
+      ...
+    1..2
+ok 7 - a cache or target edit while an asynchronous cache builder runs is rejected before publication
+  ---
+  duration_ms: 39.689709
+  type: 'test'
+  ...
+# Subtest: source revision changes during final validation or marker flush restore the complete previous delivery
+    # Subtest: final-validation
+    ok 1 - final-validation
+      ---
+      duration_ms: 304.399292
+      type: 'test'
+      ...
+    # Subtest: commit-record-flush
+    ok 2 - commit-record-flush
+      ---
+      duration_ms: 244.536667
+      type: 'test'
+      ...
+    1..2
+ok 8 - source revision changes during final validation or marker flush restore the complete previous delivery
+  ---
+  duration_ms: 549.215208
+  type: 'test'
+  ...
+# Subtest: a snapshot validator must be a function before publication can begin
+ok 9 - a snapshot validator must be a function before publication can begin
+  ---
+  duration_ms: 3.073459
+  type: 'test'
+  ...
+# Subtest: cancellation before publication, between files and after cache publication restores the complete prior set
+    # Subtest: before
+    ok 1 - before
+      ---
+      duration_ms: 15.805167
+      type: 'test'
+      ...
+    # Subtest: second-file
+    ok 2 - second-file
+      ---
+      duration_ms: 151.910292
+      type: 'test'
+      ...
+    # Subtest: cache
+    ok 3 - cache
+      ---
+      duration_ms: 285.370333
+      type: 'test'
+      ...
+    # Subtest: final-validation
+    ok 4 - final-validation
+      ---
+      duration_ms: 230.240542
+      type: 'test'
+      ...
+    # Subtest: commit-record-flush
+    ok 5 - commit-record-flush
+      ---
+      duration_ms: 253.792917
+      type: 'test'
+      ...
+    # Subtest: snapshot-validation
+    ok 6 - snapshot-validation
+      ---
+      duration_ms: 266.558541
+      type: 'test'
+      ...
+    1..6
+ok 10 - cancellation before publication, between files and after cache publication restores the complete prior set
+  ---
+  duration_ms: 1204.25775
+  type: 'test'
+  ...
+# Subtest: unowned, edited and same-stamp content edits cannot be replaced
+    # Subtest: unowned
+    ok 1 - unowned
+      ---
+      duration_ms: 17.668167
+      type: 'test'
+      ...
+    # Subtest: edited
+    ok 2 - edited
+      ---
+      duration_ms: 16.995375
+      type: 'test'
+      ...
+    # Subtest: same-stamp
+    ok 3 - same-stamp
+      ---
+      duration_ms: 15.92675
+      type: 'test'
+      ...
+    1..3
+ok 11 - unowned, edited and same-stamp content edits cannot be replaced
+  ---
+  duration_ms: 50.881709
+  type: 'test'
+  ...
+# Subtest: ownership cache from another album or a concurrently changed cache is preserved
+    # Subtest: album
+    ok 1 - album
+      ---
+      duration_ms: 21.840583
+      type: 'test'
+      ...
+    # Subtest: content
+    ok 2 - content
+      ---
+      duration_ms: 15.894375
+      type: 'test'
+      ...
+    1..2
+ok 12 - ownership cache from another album or a concurrently changed cache is preserved
+  ---
+  duration_ms: 38.087875
+  type: 'test'
+  ...
+# Subtest: an absent ownership cache cannot be replaced by caller claims about existing files
+ok 13 - an absent ownership cache cannot be replaced by caller claims about existing files
+  ---
+  duration_ms: 17.6345
+  type: 'test'
+  ...
+# Subtest: a destination appearing at the exclusive install boundary survives with backups and journal
+ok 14 - a destination appearing at the exclusive install boundary survives with backups and journal
+  ---
+  duration_ms: 121.02925
+  type: 'test'
+  ...
+# Subtest: a replacement file at the copy-metadata boundary keeps its bytes, mode and timestamps
+    # Subtest: regular replacement
+    ok 1 - regular replacement
+      ---
+      duration_ms: 61.464834
+      type: 'test'
+      ...
+    # Subtest: symlink replacement
+    ok 2 - symlink replacement
+      ---
+      duration_ms: 57.953458
+      type: 'test'
+      ...
+    1..2
+ok 15 - a replacement file at the copy-metadata boundary keeps its bytes, mode and timestamps
+  ---
+  duration_ms: 119.7725
+  type: 'test'
+  ...
+# Subtest: an unrelated file appearing at a private backup destination is never overwritten
+ok 16 - an unrelated file appearing at a private backup destination is never overwritten
+  ---
+  duration_ms: 42.814
+  type: 'test'
+  ...
+# Subtest: an unrelated file appearing at a private discard destination is never overwritten during rollback
+ok 17 - an unrelated file appearing at a private discard destination is never overwritten during rollback
+  ---
+  duration_ms: 101.569042
+  type: 'test'
+  ...
+# Subtest: a recovery backup changed after enumeration is preserved with its journal
+ok 18 - a recovery backup changed after enumeration is preserved with its journal
+  ---
+  duration_ms: 127.212042
+  type: 'test'
+  ...
+# Subtest: a history destination appearing during retirement is preserved without replacing either directory
+ok 19 - a history destination appearing during retirement is preserved without replacing either directory
+  ---
+  duration_ms: 152.913834
+  type: 'test'
+  ...
+# Subtest: an edit racing history retirement is retained and reported at the actual history path
+ok 20 - an edit racing history retirement is retained and reported at the actual history path
+  ---
+  duration_ms: 165.569292
+  type: 'test'
+  ...
+# Subtest: a helper error after completed history movement reports the actual retained journal
+    # Subtest: committed
+    ok 1 - committed
+      ---
+      duration_ms: 150.722458
+      type: 'test'
+      ...
+    # Subtest: restored
+    ok 2 - restored
+      ---
+      duration_ms: 118.667375
+      type: 'test'
+      ...
+    1..2
+ok 21 - a helper error after completed history movement reports the actual retained journal
+  ---
+  duration_ms: 269.68725
+  type: 'test'
+  ...
+# Subtest: exclusive copies remain available without hard links and preserve timestamps
+ok 22 - exclusive copies remain available without hard links and preserve timestamps
+  ---
+  duration_ms: 159.106
+  type: 'test'
+  ...
+# Subtest: a synchronous commit-journal flush failure restores the old set before a marker is installed
+ok 23 - a synchronous commit-journal flush failure restores the old set before a marker is installed
+  ---
+  duration_ms: 269.265
+  type: 'test'
+  ...
+# Subtest: a history retirement failure after commit reports committed status and restart keeps the new set
+ok 24 - a history retirement failure after commit reports committed status and restart keeps the new set
+  ---
+  duration_ms: 160.395334
+  type: 'test'
+  ...
+# Subtest: an edit racing the capture of an old target is preserved in its recovery backup
+ok 25 - an edit racing the capture of an old target is preserved in its recovery backup
+  ---
+  duration_ms: 46.90225
+  type: 'test'
+  ...
+# Subtest: an edit racing rollback remains at its name and in a retained recovery copy
+ok 26 - an edit racing rollback remains at its name and in a retained recovery copy
+  ---
+  duration_ms: 146.163958
+  type: 'test'
+  ...
+# Subtest: a symlink or unknown file at the temporary journal name cannot be overwritten or deleted
+    # Subtest: symlink
+    ok 1 - symlink
+      ---
+      duration_ms: 129.831959
+      type: 'test'
+      ...
+    # Subtest: regular
+    ok 2 - regular
+      ---
+      duration_ms: 116.6935
+      type: 'test'
+      ...
+    1..2
+ok 27 - a symlink or unknown file at the temporary journal name cannot be overwritten or deleted
+  ---
+  duration_ms: 246.783666
+  type: 'test'
+  ...
+# Subtest: restart restores the previous set at actual SIGKILL publication boundaries
+    # Subtest: prepared-journal
+    ok 1 - prepared-journal
+      ---
+      duration_ms: 115.027291
+      type: 'test'
+      ...
+    # Subtest: old-to-backup
+    ok 2 - old-to-backup
+      ---
+      duration_ms: 138.844834
+      type: 'test'
+      ...
+    # Subtest: new-install
+    ok 3 - new-install
+      ---
+      duration_ms: 163.984959
+      type: 'test'
+      ...
+    # Subtest: new-copy
+    ok 4 - new-copy
+      ---
+      duration_ms: 211.330084
+      type: 'test'
+      ...
+    # Subtest: cache-to-backup
+    ok 5 - cache-to-backup
+      ---
+      duration_ms: 586.600292
+      type: 'test'
+      ...
+    # Subtest: cache-install
+    ok 6 - cache-install
+      ---
+      duration_ms: 429.812709
+      type: 'test'
+      ...
+    1..6
+ok 28 - restart restores the previous set at actual SIGKILL publication boundaries
+  ---
+  duration_ms: 1646.029
+  type: 'test'
+  ...
+# Subtest: restart keeps the complete new set after committed marker and interrupted cleanup
+    # Subtest: committed-marker
+    ok 1 - committed-marker
+      ---
+      duration_ms: 266.510209
+      type: 'test'
+      ...
+    # Subtest: committed-cleanup
+    ok 2 - committed-cleanup
+      ---
+      duration_ms: 245.344417
+      type: 'test'
+      ...
+    1..2
+ok 29 - restart keeps the complete new set after committed marker and interrupted cleanup
+  ---
+  duration_ms: 512.035209
+  type: 'test'
+  ...
+# Subtest: rollback can itself be killed and restarted without losing previous copies
+    # Subtest: rollback-discard
+    ok 1 - rollback-discard
+      ---
+      duration_ms: 246.513625
+      type: 'test'
+      ...
+    # Subtest: restored-install
+    ok 2 - restored-install
+      ---
+      duration_ms: 252.815417
+      type: 'test'
+      ...
+    1..2
+ok 30 - rollback can itself be killed and restarted without losing previous copies
+  ---
+  duration_ms: 499.513875
+  type: 'test'
+  ...
+# Subtest: a killed partial exclusive copy is a recovery conflict, never an excuse to delete unknown bytes
+ok 31 - a killed partial exclusive copy is a recovery conflict, never an excuse to delete unknown bytes
+  ---
+  duration_ms: 180.851541
+  type: 'test'
+  ...
+# Subtest: external edits after a kill retain all recovery copies and the journal
+ok 32 - external edits after a kill retain all recovery copies and the journal
+  ---
+  duration_ms: 132.987583
+  type: 'test'
+  ...
+# Subtest: unknown stage files survive recovery and keep the journal and backups
+ok 33 - unknown stage files survive recovery and keep the journal and backups
+  ---
+  duration_ms: 153.138125
+  type: 'test'
+  ...
+# Subtest: malformed path and album journals fail before mutating delivery files
+    # Subtest: target
+    ok 1 - target
+      ---
+      duration_ms: 135.622958
+      type: 'test'
+      ...
+    # Subtest: source
+    ok 2 - source
+      ---
+      duration_ms: 118.30325
+      type: 'test'
+      ...
+    # Subtest: album
+    ok 3 - album
+      ---
+      duration_ms: 117.837833
+      type: 'test'
+      ...
+    # Subtest: fingerprint
+    ok 4 - fingerprint
+      ---
+      duration_ms: 114.98725
+      type: 'test'
+      ...
+    1..4
+ok 34 - malformed path and album journals fail before mutating delivery files
+  ---
+  duration_ms: 487.048792
+  type: 'test'
+  ...
+# Subtest: target-directory and staged-source symlinks are rejected without touching their referents
+    # Subtest: directory
+    ok 1 - directory
+      ---
+      duration_ms: 13.710917
+      type: 'test'
+      ...
+    # Subtest: source
+    ok 2 - source
+      ---
+      duration_ms: 13.890416
+      type: 'test'
+      ...
+    1..2
+ok 35 - target-directory and staged-source symlinks are rejected without touching their referents
+  ---
+  duration_ms: 27.758791
+  type: 'test'
+  ...
+# Subtest: another process cannot publish or recover while publication holds the album lock
+ok 36 - another process cannot publish or recover while publication holds the album lock
+  ---
+  duration_ms: 206.153458
+  type: 'test'
+  ...
+# Subtest: a prepared stage without a journal is preserved and cannot affect delivered files
+ok 37 - a prepared stage without a journal is preserved and cannot affect delivered files
+  ---
+  duration_ms: 14.2645
+  type: 'test'
+  ...
+# Subtest: competing restarted processes cannot unlink a newly acquired lock while reclaiming stale ownership
+ok 38 - competing restarted processes cannot unlink a newly acquired lock while reclaiming stale ownership
+  ---
+  duration_ms: 238.858667
+  type: 'test'
+  ...
+# Subtest: an interrupted lock reclamation fails closed and preserves its guard without publishing
+ok 39 - an interrupted lock reclamation fails closed and preserves its guard without publishing
+  ---
+  duration_ms: 6.403458
+  type: 'test'
+  ...
+# Subtest: a real SIGKILL during stale-lock reclamation preserves the guard and all delivery recovery data
+ok 40 - a real SIGKILL during stale-lock reclamation preserves the guard and all delivery recovery data
+  ---
+  duration_ms: 221.395584
+  type: 'test'
+  ...
+# Subtest: an edited reclamation guard cannot be removed as if it were still process-owned
+ok 41 - an edited reclamation guard cannot be removed as if it were still process-owned
+  ---
+  duration_ms: 113.907375
+  type: 'test'
+  ...
+# Subtest: publication lock cleanup errors retain committed status and a later call clears its own stale owner
+ok 42 - publication lock cleanup errors retain committed status and a later call clears its own stale owner
+  ---
+  duration_ms: 143.392625
+  type: 'test'
+  ...
+# Subtest: unsupported directory synchronization is a best-effort fallback while files are flushed
+ok 43 - unsupported directory synchronization is a best-effort fallback while files are flushed
+  ---
+  duration_ms: 90.039292
+  type: 'test'
+  ...
+1..43
+# tests 86
+# suites 0
+# pass 86
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9978.446833

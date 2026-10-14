@@ -19,14 +19,14 @@ const { recordSheetProof, proofInputHash } = require('./proofs')
 const { bakeAdjustmentsEvidence } = require('./parity')
 const { placeableEvidence } = require('./raw')
 const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
-const { migrateAlbum } = require('./project')
+const { migrateAlbum, withProjectLease } = require('./project')
 const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
 const { preflightAlbum } = require('./preflight')
 const { printSettings, meetsPrintResolution } = require('./print_settings')
 
 /** Bump when the way sheets are built changes, so old caches don't hide the change. */
-const BUILDER_VERSION = 'photocraft-0.6.0/sheet-1'
+const BUILDER_VERSION = 'photocraft-0.6.0/sheet-2-frozen'
 
 let current = null // the running job
 
@@ -84,13 +84,13 @@ function unsupportedEdits(spread, ws) {
 async function startRender(p, { emit }) {
   if (!p.album) throw new Error('missing `album`')
   const settings = printSettings(p)
-  const lease = reserveJob('render', p.album)
+  const lease = await reserveJob('render', p.album)
   try {
-    let album = await migrateAlbum({ album: p.album })
+    let album = await migrateAlbum({ album: p.album }, { lease: lease.project })
     const projectText = await fs.promises.readFile(album.file, 'utf8')
     const data = JSON.parse(projectText)
     album = await require('./album').openAlbum({ path: album.path }, { data })
-    identifyJob(lease, album)
+    await identifyJob(lease, album)
     const ws = data.workspace || data
     const outputFolder = ws.outputToken || path.join(album.path, 'exports')
     await fs.promises.mkdir(outputFolder, { recursive: true })
@@ -101,19 +101,23 @@ async function startRender(p, { emit }) {
     emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
     void (async () => {
       let results = [], error = null
-      try { results = await runJob(job, { album, ws, projectText, spreads, settings, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
+      try { results = await runJob(job, { album, ws, projectText, spreads, settings, lease, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
       catch (e) { error = e.message; job.failed = Math.max(1, job.failed) }
       finally {
         if (current === job) current = null
-        releaseJob(lease)
+        try { await releaseJob(lease) } catch (e) { error = [error, e.message].filter(Boolean).join(' '); job.failed = Math.max(1, job.failed) }
         emit('render.finished', { jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed, cancelled: job.cancelled, error, results, ms: Date.now() - job.startedAt, outputFolder })
       }
     })()
     return { jobId: job.id, total: job.total, outputFolder }
-  } catch (e) { releaseJob(lease); throw e }
+  } catch (e) {
+    try { await releaseJob(lease) } catch (release) { e.message += ` ${release.message}` }
+    throw e
+  }
 }
 
-async function runJob(job, { album, ws, projectText, spreads, settings, force, overwriteEdited }, emit) {
+async function runJob(job, { album, ws, projectText, spreads, settings, lease, force, overwriteEdited }, emit) {
+  await lease.project.assertOwned()
   const paths = cachePaths(job.outputFolder)
   const previous = await readRenderCache(job.outputFolder)
   const cache = previous.version === 2 ? previous : { version: 2, spreads: {} }
@@ -135,6 +139,7 @@ async function runJob(job, { album, ws, projectText, spreads, settings, force, o
       const stagedPsd = `${outPsd}.${crypto.randomUUID()}.part.psd`
       let sourceStage = null, captured = null, previousDigest = null, published = false, preserveSources = false
       try {
+        await lease.project.assertOwned()
         if (!s.template || !s.template.file) throw new Error(s.template ? `the template ${s.template.name} isn't on disk` : 'the spread has no template')
         if (!s.photoIds.length) throw new Error('the spread has no photos')
         const exists = existingPath && await fs.promises.access(existingPath).then(() => true, () => false)
@@ -199,6 +204,7 @@ async function runJob(job, { album, ws, projectText, spreads, settings, force, o
           preserveSources = true
           throw new Error(`A private render source changed during construction. Preserve ${sourceStage} before retrying.`)
         }
+        await lease.project.assertOwned()
         if (previousDigest) {
           const history = path.join(paths.dir, 'render-history')
           await fs.promises.mkdir(history, { recursive: true, mode: 0o700 })
@@ -215,7 +221,7 @@ async function runJob(job, { album, ws, projectText, spreads, settings, force, o
         const stagedProof = `${stagedPsd}.proof.jpg`
         await sipsResize(preview, stagedProof, 2400)
         await fs.promises.unlink(preview).catch(() => {})
-        await recordSheetProof(album, ws, s, outPsd, { proof: stagedProof, expectedHash: proofInputHash(inputValues), projectText })
+        await recordSheetProof(album, ws, s, outPsd, { proof: stagedProof, expectedHash: proofInputHash(inputValues), projectText, lease: lease.project })
         emit('proofs.updated', { album: album.path, n: s.n, proof: path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), source: 'sheet' })
         job.done++
         const r = { n: s.n, state: 'done', ms: Date.now() - t0, path: outPsd, warnings: [...warnings, ...built.warnings] }
@@ -251,7 +257,8 @@ async function runJob(job, { album, ws, projectText, spreads, settings, force, o
  */
 async function renderPlan({ album: albumPath, ...p }) {
   if (!albumPath) throw new Error('missing `album`')
-  const album = await migrateAlbum({ album: albumPath })
+  return withProjectLease(albumPath, async ({ lease }) => {
+  const album = await migrateAlbum({ album: albumPath }, { lease })
   const settings = printSettings(p)
   const data = await readProject(album.file)
   const ws = data.workspace || data
@@ -271,6 +278,7 @@ async function renderPlan({ album: albumPath, ...p }) {
     return { n: s.n, id: s.id, state: verified && entryHash(record) === hash && resolutionReady ? 'current' : 'stale', reason: !verified ? 'This older sheet has no verified content history. Preserve manual work before explicitly rendering a replacement.' : resolutionReady ? undefined : 'Render at the configured print resolution', edited: !verified || await editedSince(record, out), unverified: !verified, unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
+  }, { kind: 'render-plan' })
 }
 
 function cancelRender({ jobId } = {}) {

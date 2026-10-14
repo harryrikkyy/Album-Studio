@@ -38,22 +38,29 @@ async function fileDigest(file) {
     const changed = () => Object.assign(new Error(`The source ${file} changed while its content was read. Retry from a stable source file.`), { code: 'SOURCE_CHANGED' })
     const before = await fs.promises.lstat(file, { bigint: true })
     if (!before.isFile()) throw new Error(`The source ${file} is not a regular file. Resolve its symlink or restore the original before continuing.`)
-    const handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
+    let handle
     try {
+      handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
       const opened = await handle.stat({ bigint: true })
       if (!same(before, opened)) throw changed()
       if (opened.size > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error(`The source ${file} exceeds the supported file size.`)
-      const hash = crypto.createHash('sha256'), buffer = Buffer.alloc(1024 * 1024)
-      let position = 0
-      for (;;) {
-        const { bytesRead } = await handle.read(buffer, 0, buffer.length, position)
-        if (!bytesRead) break
-        hash.update(buffer.subarray(0, bytesRead)); position += bytesRead
+      const buffer = Buffer.alloc(1024 * 1024)
+      const pass = async () => {
+        const hash = crypto.createHash('sha256')
+        let position = 0
+        for (;;) {
+          const { bytesRead } = await handle.read(buffer, 0, buffer.length, position)
+          if (!bytesRead) break
+          hash.update(buffer.subarray(0, bytesRead)); position += bytesRead
+        }
+        if (BigInt(position) !== opened.size) throw changed()
+        return hash.digest('hex')
       }
+      const first = await pass(), second = await pass()
       const after = await handle.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
-      if (!same(opened, after) || !same(after, named) || BigInt(position) !== after.size) throw changed()
-      return hash.digest('hex')
-    } finally { await handle.close() }
+      if (first !== second || !same(opened, after) || !same(after, named)) throw changed()
+      return first
+    } finally { if (handle) await handle.close() }
   })
 }
 
@@ -74,6 +81,7 @@ async function snapshotFile(file, folder, digest) {
     await fs.promises.copyFile(file, target, fs.constants.COPYFILE_EXCL)
     if (await fileDigest(target) !== digest) throw new Error(`The image ${file} changed before its verified snapshot could be made. Its original bytes were preserved.`)
     await fs.promises.chmod(target, 0o400)
+    if ((await fs.promises.lstat(target)).mode & 0o222) throw new Error('This filesystem cannot protect a private read-only source snapshot. Use a volume with file-permission support.')
     return target
   } catch (e) { await fs.promises.unlink(target).catch(() => {}); throw e }
 }

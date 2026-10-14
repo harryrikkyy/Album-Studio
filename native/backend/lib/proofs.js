@@ -18,10 +18,10 @@ const { cacheRoot, fileDigest, contentKey, snapshotFile, writeAtomic } = require
 const { renameExclusive } = require('./exclusive_rename')
 const { inputsHash, spreadInputs, hashInputValues } = require('./inputs')
 const { templateArt, framesByName } = require('./psd_template')
-const { isRaw, previewable } = require('./raw')
+const { isRaw, previewable, readEvidence } = require('./raw')
 
 /** Bump when proofs are drawn differently, so every proof is redrawn once. */
-const PROOF_VERSION = 'proof-2-colour'
+const PROOF_VERSION = 'proof-3-frozen'
 const MAX_EDGE = 2400
 const MANIFEST = '.album-studio-proofs.json'
 const SHARP_READS = /\.(jpe?g|png|tiff?|webp|avif|heic|heif)$/i
@@ -75,19 +75,32 @@ function manifestOf(albumDir) {
 
 function saveManifest(m) {
   const text = JSON.stringify(m.data)
-  m.chain = m.chain.then(() => writeAtomic(m.file, text)).catch(() => {})
-  return m.chain
+  const saved = m.chain.then(() => writeAtomic(m.file, text))
+  m.chain = saved.catch(() => {})
+  return saved
+}
+
+async function freshManifest(albumDir) {
+  const m = await manifestOf(albumDir)
+  await m.chain
+  const data = await readEvidence(m.file, 64 * 1024 * 1024)
+  if (data && (!data.spreads || typeof data.spreads !== 'object' || Array.isArray(data.spreads))) throw new Error(`The proof manifest ${m.file} is invalid. Preserve it before refreshing.`)
+  m.data = data || { version: 1, spreads: {} }
+  return m
 }
 
 /**
  * A rendered sheet's own image became spread n's proof: it is current until the spread changes,
  * or until the sheet is saved again from the editor (then the proof is redrawn from it).
  */
-async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText } = {}) {
-  const m = await manifestOf(album.path)
+async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease } = {}) {
+  if (!lease) return require('./project').withProjectLease(album.file, ({ lease: held }) => recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease: held }), { kind: 'sheet-proof' })
+  await lease.assertOwned()
+  const m = await freshManifest(album.path)
   const hash = await proofHash(spread, album, ws)
   if (expectedHash && expectedHash !== hash || projectText !== undefined && await fs.promises.readFile(album.file, 'utf8') !== projectText) throw new Error('The project or proof sources changed before publication. Retry from the current revision.')
   const digest = await optionalDigest(proof || proofPath(album.path, spread.n))
+  await lease.assertOwned()
   if (proof) {
     await preserveProof(album.path, proofPath(album.path, spread.n))
     await renameExclusive(proof, proofPath(album.path, spread.n))
@@ -370,11 +383,15 @@ async function proofsSettled(albumPath) {
 }
 
 async function refreshOnce(albumPath, r) {
+  return require('./project').withProjectLease(albumPath, ({ file, lease }) => refreshUnderLease(file, r, lease), { kind: 'proof-refresh' })
+}
+
+async function refreshUnderLease(albumPath, r, lease) {
   let album = await openAlbum({ path: albumPath })
   const projectText = await fs.promises.readFile(album.file, 'utf8'), data = JSON.parse(projectText)
   album = await openAlbum({ path: albumPath }, { data })
   const ws = data.workspace || data
-  const m = await manifestOf(album.path)
+  const m = await freshManifest(album.path)
   const known = m.data.spreads
   const hashes = await Promise.all(album.spreads.map((s) => proofHash(s, album, ws)))
 
@@ -438,6 +455,7 @@ async function refreshOnce(albumPath, r) {
   // Spreads past the end (the album got shorter): their pictures and records go.
   for (const n of Object.keys(known).map(Number)) {
     if (n > album.spreads.length) {
+      await lease.assertOwned()
       delete known[n]
       await preserveProof(album.path, proofPath(album.path, n))
       changed = true
@@ -454,6 +472,7 @@ async function refreshOnce(albumPath, r) {
     const t0 = Date.now()
     try {
       if (t.remove) {
+        await lease.assertOwned()
         await preserveProof(album.path, out)
         delete known[n]
         await saveManifest(m)
@@ -469,6 +488,7 @@ async function refreshOnce(albumPath, r) {
       else ({ skipped } = await drawProof(t.s, album, ws, staging))
       if (await fs.promises.readFile(album.file, 'utf8') !== projectText || await proofHash(t.s, album, ws) !== t.hash || t.fromSheet && await optionalDigest(t.fromSheet) !== t.sheetDigest) throw new Error('The project or proof sources changed while drawing. Retry from the current revision.')
       const digest = await fileDigest(staging)
+      await lease.assertOwned()
       await preserveProof(album.path, out)
       await renameExclusive(staging, out)
       known[n] = t.fromSheet ? { id: t.s.id, hash: t.hash, digest, source: 'sheet', sheetPath: t.fromSheet, sheetDigest: t.sheetDigest } : { id: t.s.id, hash: t.hash, digest, source: re ? re.source : 'live', ...(re && re.source === 'sheet' ? { sheetDigest: re.sheetDigest, sheetPath: re.sheetPath } : {}) }

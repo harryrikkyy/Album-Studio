@@ -4,10 +4,11 @@
 
 Target: all nine categories must independently score strictly above 9.5/10 with verification. Mission remains active; no category is certified.
 
-Latest checkpoint: iteration 3 on 14 October 2026; evidence is in
-`docs/quality/2026-10-14-iteration-3/verification.json`. The sections below preserve the earlier
-baseline and iterations. Current unresolved priority is whole-album cross-process isolation
-and durable project/cache/render publication. Independent final review hit the provider limit.
+Latest checkpoint: iteration 4 on 14 October 2026; evidence is in
+`docs/quality/2026-10-14-iteration-4/verification.json`. Earlier sections remain historical.
+Same-project backend isolation and restart-recoverable project saves now have regression
+coverage. Shared output ownership, durable render/cache publication and print/preflight
+metadata consumption remain open. Final independent integration review hit the provider limit.
 
 Continuation verified on 13 October 2026 (Asia/Kolkata). No earlier `QUALITY_IMPROVEMENT_LOG.md` or objective scorecard exists in this checkout. The last persisted state is the audit in `docs/reviews/2026-10-13-project-review.md`, root commit `81bd5b4`, engine commit `bdb1f8f`. This continuation preserves that audit and does not restart it.
 
@@ -389,3 +390,231 @@ Next executable steps:
 New evidence and source/artifact checksums are in
 `docs/quality/2026-10-14-iteration-3/verification.json`. Older evidence is unchanged. User
 `docs/reviews/`, `invoice-template/` and the three engine `.DS_Store` files remain untouched.
+
+
+## Iteration 4 — cooperative project ownership, journaled saves and frozen decoder inputs
+
+### Verified starting state and scope
+
+Resumed on `codex/album-quality-improvement` from `89ebcc580d0570bc9407bda70b028f22912d094c`.
+All **177 source and 40 evidence hashes** from iteration 3 verify against that committed source
+and the unchanged evidence files. Engine checkout remains
+`bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9`, with no tracked engine changes. User audit/invoice
+folders and the three engine `.DS_Store` entries remain untouched. No real albums, accounts,
+licenses, existing application bundles or external services were changed.
+
+The recorded priority was reproduced before implementation: independent helpers could hold
+same-project jobs concurrently. The retained baseline loader reproduces the old source; its
+job-isolation regression has 40 failures of 42 cases. Separate fail-first evidence also covers
+project temp/backup symlinks and external revisions (0/3), album-creation/proof/cache mutation
+races (0/3), project-file symlink location (0/1), engine fallback changed/restored PSD inputs
+(0/3), and detached delivery-history and metadata replacement races (0/3 each).
+
+### Implemented fixes and exact boundaries
+
+- Canonical project leases now cover backend render/export preparation through publication,
+  project opening/migration/edits/undo/redo, proof refresh and album-cache clearing. Folder,
+  JSON, case and symlink aliases share ownership/history; hardlinked project JSON is refused.
+  A complete flushed owner directory is atomically published with a private token and verified
+  machine, boot, PID and process-start identity. Stale same-host dead owners use an exclusive
+  reclamation guard; malformed/foreign/uncertain owners and interrupted guards fail closed.
+  Locale/timezone differences initially allowed a live owner to appear stale: process-start
+  commands now force UTC/C locale, with a real cross-environment regression. Real SIGKILL tests
+  cover guard publication/capture/release and competing reclaim/acquisition windows. The Linux
+  adapter is not runtime verified; native/editor/external writers are not cooperative yet.
+- Project saves now require their exact read SHA-256 and an owned lease. Independent bounded
+  no-follow reads reject over-64-MiB projects before whole-file allocation. Unique exclusive,
+  flushed snapshots and install copies precede a durable journal, backup/project capture and
+  commit marker. Public files and history are detached copies. Pending saves restore retained
+  before bytes only to vacant names; committed saves retain the new revision. Reopening through
+  the actual `album.open` route recovers valid interrupted saves even when the JSON name is
+  absent. Existing manual revisions, symlink/hardlink backups, conflicting entries and all
+  recovery snapshots are preserved. A committed retirement error explicitly says the project
+  was saved and names the retained history. Real kills cover six save boundaries plus actual
+  folder/file/dangling-symlink reopen recovery. Physical power-loss durability remains unverified.
+- Direct album creation publishes a flushed exclusive private JSON without replacing a late
+  arriving project. Proof refresh now holds a lease, reloads bounded manifest evidence under
+  it and propagates publication failures. Job reservation occurs before its first await;
+  internal migration/proof work reuses its owned capability. Completion releases the lease
+  before the finished event. Undo/redo keys use canonical file/revision and refuse to apply an
+  in-memory history across another process's saved revision.
+- Delivery publication/rollback installs detached exclusive copies instead of hardlinks to
+  archived bytes. A later normal public edit cannot change the only history copy. Metadata is
+  applied through the verified no-follow handle; replacement regular/symlink entries preserve
+  their unrelated bytes/mode/times. Existing delivery journals/capture guards remain intact.
+- RGB layer fallback now passes the already verified bounded PSD/PSB buffer through a private
+  read-only file to the real engine. Changed/restored originals cannot substitute a different
+  layer composite. Explicit buffer callers consume those bytes. Source extension/profile
+  conversion stays intact; synthetic fixtures do not certify arbitrary editor layers.
+- PDF inputs now require complete bounded JPEG marker/scan structure and successful full
+  entropy decoding before replacement. Missing/truncated scans, empty entropy, missing tables
+  and oversized sparse files fail explicitly. Valid tested baseline, progressive and arithmetic
+  sequential/progressive JPEG bytes are embedded unchanged. The independent colour oracle now
+  renders five actual PDF pages, adding progressive JPEG, with the existing channel tolerance
+  **3** unchanged. The benchmark's separate textured-patch check is not that colour oracle.
+
+### HFS findings, rejected approach and test scheduling
+
+The internal system temp disk had about 8 GiB free, so heavy tests use new disposable ignored
+`bench/fixture/` directories on the external volume. That volume is **HFS journaled/noowners**
+with coarse timestamps. This uncovered actual changed/restored input gaps: stat checks alone
+could accept pixels consumed during a transient edit. A filesystem-notification attempt both
+missed one such edit and produced false alarms; it was rejected and removed. Raw failed runs,
+including this rejected approach, remain separate from final passing evidence.
+
+Final source hashing compares two streamed SHA-256 passes through the same no-follow handle,
+with before/after identity checks and at most four active readers. Decoder paths consume
+verified private copies made read-only before RAW/adjustment/embedded preview/thumbnail/lab
+conversion. Their content and write permissions are checked after use; unexpected edits are
+preserved. Scoring applies the same permission/content rule. On coarse HFS, an original that
+changes and restores may be accepted only when the converter actually consumed the verified
+original snapshot. The RAW regression now checks those consumed pixels and the passed path;
+a fake converter that ignores its arguments is not valid evidence. Private-edit regressions
+explicitly make a copy writable before editing, then require refusal and byte preservation.
+
+Derivative recipes, render/proof/export versions and scoring schema 3 invalidate older results
+that could have been produced through live-path decoders. A legacy v2 scoring record falsely
+calling a white image black is recalculated without replacing the old evidence. This does
+not establish an atomic snapshot against arbitrary concurrent external programs or complete
+catalogue/capture-order/preflight metadata invalidation.
+
+Default file-level test parallelism plus simultaneous full coverage/gate runs exceeded useful
+memory on this 16 GiB Mac and caused timeouts. Final backend files run with concurrency **2**;
+coverage and full gate run sequentially. In-file/process races still execute concurrently.
+Two old render/export tests now await the actual completion event with a cleared 60-second
+functional deadline instead of leaving a live job after a one/two-second polling assumption.
+The expected accepted/completed/failed job assertions are unchanged. The identity fault hook
+now targets the intended project-install boundary rather than also preventing recovery.
+No test was removed or skipped, no colour tolerance was raised, and no production latency
+budget was weakened: production performance budgets remain unverified.
+
+### Final application verification
+
+Strict pinned-engine/helper gate: **273 shared + 515 backend + 33 interface = 821 passed**,
+zero failures, cancellations or skips. Separate shared/backend source coverage: **788 passed**,
+zero failures, cancellations or skips. Earlier 820/787 passing results predate scoring schema 3
+and are retained as historical, not current-source evidence. The full failed/intermediate runs
+are also retained. Representative current source line/branch coverage: project lock 95.19/84.92,
+project transaction 97.15/79.19, colour 97.27/82.35, cache 97.06/86.27, delivery 99.04/88.34,
+delivery transaction 98.10/90.00, PDF 100/88.37, RAW 94.31/73.94, proofs 88.56/78.44 and render
+97.28/77.42. Aggregate coverage includes test files and is not product coverage.
+
+Lint has zero errors/warnings; shared/interface type checks and the unchanged interface build
+pass (167.2 KiB JS, 54.5 KiB CSS). Static runtime closure is **52 files and 10 packages**,
+including the new lease/transaction modules. Whole native workspace formatting passes freshly;
+full native tests/Clippy/layering/corpus and hosted CI remain unrun here. Local Node is 22.22.3,
+not the packaged/CI pin 22.23.3. Rust/Cargo are 1.99.0. The CLI/shell remain the prior pinned
+reconstruction and the atomic helper remains the source-checksummed compiled helper; no new
+full app package or installed-app check is claimed. Prior dependency audits/native test counts
+remain historical.
+
+
+### High-resolution pilot and retained failed measurement
+
+The new guarded harness uses independent deterministic textured **4000×3000 JPEGs**, rather
+than many IDs pointing to one tiny image. The final pilot uses 24 unique sources, eight simple
+three-frame RGB spreads, **5400×1800 output at 6 inches/300 PPI**, three warm cycles, preserved-
+stamp invalidation, spread reorder and independent PDF page/order/pixel checks. It uses a fresh
+owned ignored folder, explicit 4 GiB disk/2 GiB sampled-RSS/900-second safety ceilings, a free-
+space reserve, bounded workers and before/after source/executable hashes. No customer folder
+is scanned. These limits are safeguards for the harness, not accepted production budgets.
+
+The first pilot failed its oracle's assumption that Poppler single-axis scaling yields exactly
+400 rows; the actual raster was 1200×401. Inspection confirmed every PDF MediaBox was the correct
+**1296×432 points (18×6 inches)**. The corrected harness independently asserts every physical
+page box, then explicitly requests both raster dimensions 1200×400. It retains the same pixel
+checks/tolerance and reruns from fresh fixtures. The first failed report/log remains retained.
+No application/PDF geometry code changed to accommodate that oracle error.
+
+Final pilot: **completed**, source hashes unchanged during measurement, Apple M4/16 GiB,
+Node 22.22.3, external HFS. Cold proof **3.417 s**, cold render **32.024 s**, cold export/PDF
+**16.130 s**. Three warm renders **1.088/0.907/0.904 s**, three warm exports including rebuilt
+PDF **7.652/8.209/7.485 s**, all eight sheets/JPEGs reused. Sampled aggregate process-tree RSS
+maximum **1514.7 MiB**. Per-phase CPU/event-loop/disk samples are retained. Source/sheet/JPEG
+hashes survive reorder; preserved-stamp mutation invalidates one spread. All eight PDF pages,
+physical geometry, order and textured patches pass (maximum observed channel-average delta
+**1.54**, predeclared texture tolerance 8; distinct from the strict colour-patch tolerance 3).
+Across three warm cycles retained files grew **4,814,058 logical bytes**. Final logical footprint
+**1.123 GiB**. This demonstrates growth, not an approved retention budget.
+
+The fixture/report remain locally under `bench/fixture/native-pipeline-PI8tLH/`; the failed
+fixture remains under `bench/fixture/native-pipeline-KIDFdL/`. Tracked reports and source/output
+hashes preserve provenance; full generated images/PSDs are local ignored data, not shipped
+release files. Cold is application-cache cold, not OS-cache cold. Synthetic textures/simple
+RGB layers are not customer photo/RAW/high-depth/CMYK corpus. 250-ms RSS sampling can miss peaks;
+ps CPU is a process-lifetime average and worker event-loop delay is not native UI latency.
+Small/typical/large customer distributions and accepted hardware budgets remain unverified.
+
+### All nine categories reassessed against the unchanged rubric
+
+| Category | Iteration 3 /10 | Iteration 4 /10 | Remaining acceptance gap |
+|---|---:|---:|---|
+| Architecture | 6.5 | 6.5 | Whole-app/output ownership, contracts and complete invalidation |
+| UI and workflow | 4.5 | 4.5 | Actual native relink/recovery/focus/accessibility and large grids |
+| Testing | 5.0 | 5.0 | Final independent review, native GUI/workspace/corpus and hosted gates |
+| Performance and scalability | 1.5 | 3.0 | Customer scale, true peak/latency, accepted budgets and retention |
+| Data integrity and recovery | 6.5 | 6.5 | Shared outputs, durable render/cache journal and physical storage |
+| Documentation | 4.5 | 4.5 | Verified customer/release/manual/external procedures |
+| Security and licensing | 4.0 | 4.0 | Device-bound issuer/rules migration and hardened distribution |
+| Print and delivery correctness | 4.0 | 4.0 | Metadata consumption, real corpus, bleed/gutter and lab samples |
+| Build and distribution | 4.0 | 4.0 | Full package/native/hosted gates, notarisation and clean customer Mac |
+
+All 90 fixed criteria were reassessed; no names or weights changed. Only performance criteria
+4 (high-resolution render/export), 5 (peak memory/CPU) and 9 (repeated resource growth) move from
+0 to **5 verified partial points each**, supported by the completed pilot. They remain partial
+because their realistic/complete measurement requirements are open. No criterion receives new
+full points and no category is certified. Strengthened project/process/print/backend tests do
+not complete their remaining whole-app or external requirements. Mission remains incomplete.
+
+### Actual execution limit, highest unresolved issue and next executable steps
+
+All three review workers are terminal at the provider usage limit: **“You’ve hit your usage
+limit”**, reporting **“4:51 PM”** without a date/timezone. This records the returned report,
+not a verified future reset estimate. Scoped worker reviews found and fixed real defects, but
+final independent review of the parent's project transaction, lease integration and HFS input
+changes did not finish. Parent integration, targeted failure review, strict gate, source
+coverage and pilot complete; they do not substitute for that required independent review.
+Work is preserved at this actual review execution limit. The goal stays active, not complete.
+
+The highest unresolved isolation issue is **shared output ownership**. A new disposable
+same-time two-process diagnostic holds a render reservation for project A and export reservation
+for B when both declare the same output root. Actual delivery path calculation gives the same
+cache and numbered JPEG destinations. Even distinct sibling output roots share a parent JPEG
+directory. The diagnostic confirms overlapping preparation/namespaces; it does not attempt
+publication and does not claim that existing overwrite protections were bypassed. Its first
+invocation omitted the required helper environment and failed closed; that setup diagnostic and
+the corrected successful run are both retained. The next fix needs an explicit root/parent
+ownership policy and tests, not a broad claim that project locks protect every output path.
+
+Next executable steps, preserving existing recovery histories and user files:
+
+1. Verify iteration-4 source/evidence checksums and Git state. Complete independent review of
+   final project journal/open/recovery/committed-error paths, alias/process lease integration,
+   HFS read-only snapshots, and unresolved prior colour/history/helper review. Inspect the
+   retained failed runs as well as final results; do not relabel the rejected watcher approach
+   or earlier-source 820/787 results as current evidence.
+2. Reuse `shared-output-diagnostic.cjs` with the mandatory atomic helper path. Add fail-first
+   integration tests for two projects sharing an output root and different roots sharing a
+   delivery parent, including existing/manual files and concurrent/killed jobs. Choose explicit
+   ownership/refusal or root serialization plus compatible migration; preserve all ambiguities.
+   Do not delete existing shared outputs or silently choose a project owner.
+3. Journal render capture/install/cache publication and recovery durably, testing real kills at
+   every boundary, source/manual edits, ENOSPC and committed cleanup. Add a reviewed history
+   cleanup/retention workflow before pruning anything. Whole-app/native writers and global
+   app-cache clearing also need an explicit ownership policy.
+4. Reproduce live-metadata changes around `print_settings.psdDimensions` and preflight template/
+   original decoding. Bind dimensions/resolution/profile/preflight to the same verified bytes
+   later consumed, or refuse changes. Complete catalogue/capture-order invalidation, real RAW/
+   JPEG proxy equivalence, framed high-depth/CMYK and real layer/mask/profile corpus.
+5. Review the pilot before running small/typical/large customer workloads. Keep each new run
+   isolated with explicit disk/RSS/time safeguards. Establish true peak/CPU, UI latency and
+   retention budgets on realistic hardware; synthetic performance evidence is only partial.
+6. Run full native workspace/Clippy/layering/corpus, hosted CI and a new staged root package.
+   `block 0.1.6` future-compiler incompatibility and packaged pinned-Node verification remain
+   open. Obtain an approved GUI/accessibility session, real lab spec/samples, authorized issuer/
+   Firestore migration/test environment, physical drive/power-loss setup, Developer ID/
+   notarisation access and clean customer Mac. Keep unverified acceptance requirements at zero.
+
+Exact logs, review limits, benchmark measurements, diagnostic and SHA-256 source/evidence
+manifest: `docs/quality/2026-10-14-iteration-4/verification.json`. User `docs/reviews/`,
+`invoice-template/` and engine `.DS_Store` files remain untouched and excluded from checkpoints.
