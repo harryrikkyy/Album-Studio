@@ -21,15 +21,15 @@ const inside = (folder, file) => {
   return !!rel && rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)
 }
 
-async function readRenderCache(output, { albumFile } = {}) {
-  let data
+async function readRenderCacheSnapshot(output, { albumFile } = {}) {
+  let data, revision
   try {
-    data = (await readProjectSnapshot(renderCachePath(output))).data
+    ;({ data, revision } = await readProjectSnapshot(renderCachePath(output)))
     if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('The render record is not an object.')
     if (data.albumFile !== undefined && (typeof data.albumFile !== 'string' || !path.isAbsolute(data.albumFile))) throw new Error('The render record has an invalid project association.')
     if (data.version === 2 && (!data.spreads || typeof data.spreads !== 'object' || Array.isArray(data.spreads))) throw new Error('The render record has invalid spread entries.')
   } catch (error) {
-    if (error.code === 'ENOENT') return {}
+    if (error.code === 'ENOENT') return { data: {}, revision: null }
     throw new Error(`The rendered-sheet record ${renderCachePath(output)} could not be verified: ${error.message} Its existing bytes were preserved.`)
   }
   if (albumFile && data.albumFile !== undefined) {
@@ -41,8 +41,10 @@ async function readRenderCache(output, { albumFile } = {}) {
       throw error
     }
   }
-  return data
+  return { data, revision }
 }
+
+async function readRenderCache(output, options) { return (await readRenderCacheSnapshot(output, options)).data }
 
 /** Freeze old numbered-file ownership before the first structural edit; never move open files. */
 async function adoptLegacySheets(data, albumFolder) {
@@ -93,4 +95,4 @@ async function resolveSpreadSheet(ws, albumFolder, id, n, albumFile) {
   return null
 }
 
-module.exports = { adoptLegacySheets, canonicalSheetPath, outputFolder, ownedSheetRecord, readRenderCache, renderCachePath, resolveSpreadSheet, verifiedSheetRecord }
+module.exports = { adoptLegacySheets, canonicalSheetPath, outputFolder, ownedSheetRecord, readRenderCache, readRenderCacheSnapshot, renderCachePath, resolveSpreadSheet, verifiedSheetRecord }

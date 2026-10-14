@@ -40,7 +40,7 @@ const methods = {
   'account.signOut': async () => account.signOut(),
 
   'album.open': withProofs(async (p) => {
-    const album = await withProjectLease(p.path, ({ file }) => openAlbum({ path: file }), { kind: 'open-project' })
+    const album = await withProjectLease(p.path, ({ file, lease }) => require('./lib/output_lock').withProjectOutputs(lease, () => openAlbum({ path: file }), { kind: 'open-project', allowForeignCache: true }), { kind: 'open-project' })
     await rememberAlbum(album)
     return album
   }),

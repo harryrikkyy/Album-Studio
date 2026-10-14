@@ -33,13 +33,22 @@ test('a temporary source mutation during copy cannot hide behind content restore
   const dir = tmpdir(), file = path.join(dir, 'source.jpg'), stage = path.join(dir, 'private'), original = Buffer.from('ORIGINAL')
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   fs.writeFileSync(file, original)
-  const expected = crypto.createHash('sha256').update(original).digest('hex'), copy = fs.promises.copyFile
-  fs.promises.copyFile = async (...args) => {
-    fs.writeFileSync(file, 'REPLACED')
-    try { return await copy.apply(fs.promises, args) } finally { fs.writeFileSync(file, original) }
-  }
-  try { await assert.rejects(snapshotFile(file, stage, expected), /changed|snapshot/i) }
-  finally { fs.promises.copyFile = copy }
+  const expected = crypto.createHash('sha256').update(original).digest('hex'), open = fs.promises.open
+  let injected = false
+  t.mock.method(fs.promises, 'open', async (target, ...args) => {
+    const handle = await open(target, ...args)
+    if (target === file) {
+      const read = handle.read.bind(handle)
+      handle.read = async (...call) => {
+        if (injected || call[3] !== 0) return read(...call)
+        injected = true; fs.writeFileSync(file, 'REPLACED')
+        try { return await read(...call) } finally { fs.writeFileSync(file, original) }
+      }
+    }
+    return handle
+  })
+  await assert.rejects(snapshotFile(file, stage, expected), /changed|snapshot/i)
+  assert.equal(injected, true)
   assert.deepEqual(fs.readFileSync(file), original)
   assert.deepEqual(fs.readdirSync(stage), [])
 })

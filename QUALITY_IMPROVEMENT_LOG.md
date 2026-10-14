@@ -768,3 +768,175 @@ active and incomplete.
 
 Source/evidence manifest: `docs/quality/2026-10-14-iteration-5/verification.json`. Earlier artifacts,
 user `docs/reviews/`, `invoice-template/`, engine `.DS_Store` and existing bundles remain preserved.
+
+## Iteration 6 — resumed checkpoint, durable renders and independently reproduced loss paths
+
+### Starting state and priority
+
+Resumed `180c56ab1753838cbb8ddf00e11d81dcfc21d0d9` on the existing quality branch. Tracked
+files were clean; user `docs/reviews/` and `invoice-template/` remained untracked and untouched.
+All **480** iteration-5 source, artifact, executable and locally retained benchmark hashes
+matched before implementation. The engine remains `bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9`;
+only the same three untracked engine `.DS_Store` files remain. No audit restart, dependency
+upgrade, old-bundle modification, publication or real-account migration occurred.
+
+The highest recorded local issue was the gap between PSD capture/install and render-cache
+publication. Two real-engine regressions first fail **0/2**: after a worker is killed at sheet
+capture or install, the ordinary render plan cannot restore the exact old sheet/cache pair.
+New standalone journal API tests are contract checks, not 18 separate historical bug claims.
+
+### Implementation and exact verified scope
+
+- `render_transaction.js` streams large PSDs with fixed 1 MiB allocations and two complete
+  SHA-256 passes through the same no-follow handle, including declared-length, inode, link,
+  permissions and metadata checks. JSON cache reads are limited to 64 MiB; journals to 64 KiB.
+  Old/next PSD and cache snapshots are detached and read-only. A flushed immutable journal
+  precedes any public-name change; installs are detached copies and captures use no-replace
+  moves. The separate read-only commit marker binds the exact journal checksum.
+- Pending recovery validates both public names before modifying either, rolls cache back
+  before the sheet, and restores only vacant or exactly transaction-owned names. Manual,
+  unknown, symlink, hard-link, malformed, foreign-project and modified-snapshot conflicts
+  preserve their bytes/history and fail visibly. Interrupted preparation is retained as an
+  orphan. Committed recovery does not rewrite later public manual edits; history retirement
+  errors retain commit/revision/path metadata. No recovery history is pruned.
+- Project and physical output leases are held before restart recovery and render-cache reads.
+  Render planning/running, proof refresh, export preparation/cache clearing and ordinary album
+  reopening enter that guarded recovery path. An inspecting open may report a foreign cache
+  without adopting its sheets, so its output can be changed; mutation paths still reject the
+  association. Exact before-cache bytes and before-sheet fingerprints are checked again at
+  publication. Logical output paths remain logical in cache records; journals bind physical
+  targets and canonical project identity.
+- Render publication uses the journal and receives its final cache revision/sheet record.
+  Unique private previews replace the previously shared temporary name. A failed preview
+  after durable commit reports the saved sheet with a warning. Refresh regenerates the exact
+  verified current sheet's preview even when a stale proof-manifest entry already exists.
+  Cancellation before commit rolls back and reports stopped without a false failed sheet;
+  cancellation after commit preserves the committed pair. The interface handles the cancelled
+  result without marking it current. Native visual/interaction verification remains open.
+
+Review capacity briefly became available. Two reviewers independently reproduced **four P1
+loss/permission paths**. The output reviewer held a real child job while another project
+followed an intermediate `.album-studio` alias to delete its derivative; shared `proofs/pages`
+aliases also allowed preview removal and manifest replacement. The five-module pinned
+`180c56a` replay was byte-verified against Git; both regressions fail **0/2** before fixes.
+The cache reviewer reproduced an EEXIST catch deleting a pre-existing destination and
+path-based chmod following a substituted snapshot alias to change customer-file permissions.
+The parent's fail-first regressions also fail **0/2** before the snapshot fix.
+
+- `output_paths.js` canonicalizes allowed root aliases but rejects intermediate output/proof
+  aliases, special entries and invalid managed-directory slots. Bounded existing-descendant
+  validation participates in output acquisition/held assertions and proof manifest read/write/
+  preview capture/removal. Directory substitutions during enumeration fail closed. Cache
+  clearing validates its actual target again and refuses to remove retained recovery or
+  unknown subdirectories. Customer bytes and unrelated histories remain intact in tests.
+- `snapshotFile` now creates an exclusive read-only file through a held descriptor and streams
+  verified source bytes. Permission changes use that descriptor; named-node/link/mode/digest
+  checks precede consumption. It never unlinks a failed exclusive destination or substituted
+  name. An unchanged generated failure is retained through a no-replace history move; errors
+  carry snapshot/retained paths so RAW/proof/render/delivery callers preserve uncertain stages.
+  Partial-write ENOSPC, manual private edits, bounded allocations and read-only-from-first-write
+  checks pass. The old copy-hook ABA fixture now injects the same mutation at source-handle
+  reading; its refusal, original-byte and empty-owned-stage assertions remain intact.
+
+The parent caught and corrected the unfinished validator's broad `render-` directory prefix
+(which would classify `render-cache.json` as a directory) before final gates. An intermediate
+integration run found a wrong exported-method reference in one test and the actual live-proof
+fallback described above. Their failures and final repairs are retained separately; no
+intermediate result is represented as a final-source verification.
+
+### Tests, resources and review execution limit
+
+The final strict application gate passes **273 shared + 587 backend + 33 interface = 893**,
+with zero failures, cancellations or skips. Separate final shared/backend coverage passes
+**860**, also zero failures/cancellations/skips. Production line/branch coverage includes
+render journal **100/85.01**, output paths **100/87.84**, cache **95.51/82.02**, output locking
+**97.35/84.00**, render **99.04/78.52** and proofs **89.75/78.77**. The raw report keeps uncovered
+paths and the aggregate including tests; UI/Rust coverage is not claimed. Eleven standalone
+publication/recovery SIGKILL boundaries, five engine-render boundaries, normal reopen,
+manual/conflicting entries, read-only/coarse-time ABA, injected partial-write/fsync ENOSPC,
+committed cleanup, preview failure and cancellation are exercised locally. This does not
+substitute for physical power-loss, unplugged-drive or real-full-volume tests.
+
+Lint passes with zero errors/warnings, shared/interface types pass and production interface
+build passes (167.3 KiB JavaScript, 54.5 KiB CSS). Runtime closure contains **55 files and ten
+packages**, including both new modules. Engine/helper pins are checked by the gate. No new
+native source, full native-workspace/Clippy run, hosted gate, packaged pinned-Node runtime,
+installed bundle or hardened release is claimed.
+
+The sequential current-source pilot completed at `bench/fixture/native-pipeline-PdgWy1/`,
+with unchanged source/executable hashes: 24 distinct synthetic 4000×3000 JPEGs, eight simple
+RGB spreads, 5400×1800 output at six inches/300 PPI, three warm cycles, preserved-stamp
+invalidation, reorder association and all eight independent PDF raster/geometry/patch checks.
+Cold proof **3.698 s**, render **51.091 s**, export/PDF **17.123 s**; warm renders
+**1.080/0.950/1.097 s**, warm export/PDF **7.839/7.484/7.267 s**. All eight sheets/JPEGs reuse
+each warm cycle. Sampled aggregate process-tree RSS maximum **1561.875 MiB**; retained logical
+footprint **1.820 GiB**, 311 generated files. Exact bytes/ordering and independent PDF checks
+pass with the same tolerances; no product geometry, colour tolerance or workload was reduced.
+
+Cold render is higher than iteration-5's **30.459 s**, and retained footprint higher than
+**1.123 GiB**. The durable copies/checks add work and retained bytes; the measured total is
+higher. These single synthetic runs are
+not a controlled statistical comparison, but the result prevents any claim that recovery
+was free or that performance/retention budgets are complete. Optimize only while preserving
+snapshot/journal/manual-edit guarantees; measure again. Real customer distributions, RAW/
+layered scale, true peak/CPU/UI and approved cleanup budgets remain open.
+
+All three workers terminated at the provider usage limit reporting **“Oct 15th, 2026 3:02 AM”**,
+without a timezone. This supersedes the previous turn's bare reset text; it is recorded
+verbatim, not treated as a verified future reset estimate. They delivered scoped findings and
+partial implementation, but final independent review of journal/path/snapshot integration,
+and completion of the prior project transaction/lock/HFS review, remain incomplete. The
+parent finished the saved work and current local gates. Parent inspection/tests do not
+substitute for the missing independent review. The source checkpoint is preserved at this
+actual review execution limit; the mission remains active and unfinished.
+
+### All nine categories reassessed with all 90 fixed criteria
+
+| Category | Iteration 5 /10 | Iteration 6 /10 | Remaining acceptance gap |
+|---|---:|---:|---|
+| Architecture | 6.5 | 6.5 | Contracts, permanent/legacy/native/global ownership and invalidation |
+| UI and workflow | 4.5 | 4.5 | Native recovery/relink/focus/accessibility and real large grids |
+| Testing | 5.0 | 5.0 | Final independent/native/GUI/corpus/hosted verification |
+| Performance and scalability | 3.0 | 3.0 | Cold journal cost, customer scale, true peaks/UI and retention budgets |
+| Data integrity and recovery | 6.5 | 6.5 | Whole-app ownership, private-stage policies and physical drive/power tests |
+| Documentation | 4.5 | 4.5 | Verified native/customer/physical/security/release procedures |
+| Security and licensing | 4.0 | 4.0 | Global/external filesystem races, real issuer/rules and hardened release |
+| Print and delivery correctness | 4.0 | 4.0 | Consumed metadata, real corpus, bleed/gutter and actual lab samples |
+| Build and distribution | 4.0 | 4.0 | Full native/package/hosted/packaged-Node/notarised clean-Mac gates |
+
+`reassessment.json` records every criterion's name, weight, previous/current points, inherited
+evidence and current scoped assessment. A live comparison to `180c56a` confirms that all 90
+names, weights and points are unchanged and score sums match. Stronger local evidence within
+partial criteria does not complete their outstanding requirements. No category is certified.
+
+### Next executable steps and precise external dependencies
+
+1. Verify this source/evidence manifest, Git state and unchanged engine/executable pins. When
+   review execution is available, independently review `render_transaction.js`, `output_paths.js`,
+   their production consumers and the parent `snapshotFile`/retention changes. Finish the prior
+   project transaction/lock/HFS scoped review. Add fail-first engine-close/job-lease finish-error
+   checks for retaining committed per-sheet results and accurate job counts; those full paths
+   have not been certified by the narrower preview/history/cancellation tests. Retain provider-terminal evidence; do not claim
+   a completed review from a dispatch or passing parent tests.
+2. Reproduce consumed print-dimension/preflight metadata A/B/A substitution. Tie the exact
+   metadata bytes to the verified/frozen PSD/photo consumed by export/render, then test source
+   and private changes without weakening colour/resolution gates. Complete catalogue/capture-
+   order invalidation and project runtime bounds/contracts with fail-first evidence.
+3. Complete explicit ownerless/legacy/moved/copied reconciliation and native/editor/global
+   ownership. Protect remaining global-cache/private-stage cleanup boundaries and external
+   descendant replacements. Establish approved history budgets; do not prune existing retained
+   evidence. Measure and safely optimize cold-render copy/hash/path costs before broader scale.
+4. Run customer small/typical/large, real RAW/layer/mask/high-depth/CMYK and native GUI/focus/
+   accessibility workflows. They require an approved GUI/AT session and actual customer/camera
+   corpus. Obtain an actual lab specification plus physical printed samples for bleed/gutter,
+   profile/colour and production acceptance. Synthetic/headless checks cannot satisfy these.
+5. Use an authorized issuer/Firestore device-migration/rules environment; signing/notarization
+   credentials and a clean customer Mac; physical removable/exFAT/SMB/full-volume/power-loss
+   setup. Run full native workspace/Clippy/layer/corpus, hosted CI, staged root package and
+   packaged Node **22.23.3** plus `block 0.1.6` compatibility. Local Node **22.22.3** success is
+   not packaged-runtime verification. These external requirements remain unverified.
+
+Source/evidence manifest: `docs/quality/2026-10-14-iteration-6/verification.json`. Prior evidence,
+all local benchmark data, user folders, engine `.DS_Store` files and existing bundles remain
+preserved. Goal status is active; no completion, pause or blocked certification is inferred
+from this checkpoint or the provider review limit.

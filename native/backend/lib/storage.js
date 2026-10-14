@@ -11,6 +11,7 @@ const fs = require('fs')
 const path = require('path')
 const { openAlbum } = require('./album')
 const { cacheRoot } = require('./cache')
+const { validateOutputPaths } = require('./output_paths')
 
 const APP = [
   { id: 'templates', label: 'Template backdrops and frame shapes' },
@@ -60,9 +61,17 @@ async function clearStorage({ ids, album }) {
   if (album) return require('./project').withProjectLease(album, async ({ lease }) => require('./output_lock').withProjectOutputs(lease, async () => {
     const dir = await albumCacheDir(album)
     await lease.outputNamespace.assertFor(path.dirname(dir))
+    await validateOutputPaths(path.dirname(dir))
     for (const id of ids) {
       await lease.assertOwned()
-      await fs.promises.rm(path.join(APP.some((c) => c.id === id) ? cacheRoot() : dir, id), { recursive: true, force: true })
+      if (APP.some((c) => c.id === id)) await fs.promises.rm(path.join(cacheRoot(), id), { recursive: true, force: true })
+      else {
+        // Revalidate the actual managed descendants at the removal boundary. Never follow
+        // an intermediate metadata alias or prune retained source/recovery directories.
+        const checked = await validateOutputPaths(path.dirname(dir)), selected = checked.directories[id]
+        if (selected.descendantDirectories.length) throw new Error(`The cache ${selected.path} contains retained recovery or unknown directories. Preserve ${selected.descendantDirectories.join(', ')} before clearing ordinary cache files; no histories were removed.`)
+        if (selected.identity) await fs.promises.rm(selected.path, { recursive: true, force: true })
+      }
     }
     return storageUsage({ album })
   }, { kind: 'cache-clear' }), { kind: 'cache-clear' })

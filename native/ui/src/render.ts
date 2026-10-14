@@ -11,7 +11,7 @@ export type SheetState = 'current' | 'stale' | 'missing' | 'blocked'
 export interface PlanEntry { n: number; state: SheetState; edited?: boolean; reason?: string; unsupported?: string[] }
 export interface Plan { outputFolder: string; spreads: PlanEntry[] }
 
-export interface SheetResult { n: number; state: 'done' | 'failed' | 'skipped'; ms?: number; error?: string; warnings?: string[] }
+export interface SheetResult { n: number; state: 'done' | 'failed' | 'skipped' | 'cancelled'; ms?: number; error?: string; warnings?: string[] }
 export interface Job {
   jobId: string
   album: string
@@ -59,7 +59,7 @@ export async function cancelRender() {
   const j = job.value
   if (!j) return
   await call('render.cancel', { jobId: j.jobId }).catch(() => {})
-  toast('info', 'Stopping after the sheet in progress…')
+  toast('info', 'Stopping before the next sheet is saved…')
 }
 
 function duration(ms: number): string {
@@ -117,7 +117,7 @@ onEvent('render.progress', (d) => {
   const j = job.value
   if (!j || j.jobId !== p.jobId) return
   const phase = p.state === 'preparing' ? 'Preparing photos' : p.state === 'building' ? 'Building in PhotoCraft' : ''
-  const settled = p.state === 'done' || p.state === 'failed' || p.state === 'skipped'
+  const settled = p.state === 'done' || p.state === 'failed' || p.state === 'skipped' || p.state === 'cancelled'
   job.value = {
     ...j,
     current: settled ? null : p.n,
@@ -126,7 +126,7 @@ onEvent('render.progress', (d) => {
     results: settled ? [...j.results, { n: p.n, state: p.state as SheetResult['state'], ms: p.ms, error: p.error, warnings: p.warnings }] : j.results,
   }
   if (settled && plan.value) {
-    const state: SheetState | null = p.state === 'failed' ? null : 'current'
+    const state: SheetState | null = p.state === 'done' || p.state === 'skipped' ? 'current' : null
     if (state) plan.value = { ...plan.value, spreads: plan.value.spreads.map((s) => (s.n === p.n ? { ...s, state } : s)) }
   }
 })

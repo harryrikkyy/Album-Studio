@@ -41,7 +41,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Physical output-sheet and actual delivery-parent namespaces now serialize cooperating backend jobs/plans/proofs/cache clearing across different projects and aliases. Known foreign render-cache associations fail closed. Permanent/legacy/native/global ownership remains partial. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Project/output capabilities now precede PSD/cache restart recovery; intermediate managed aliases are refused. Permanent/legacy/native/global ownership remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -57,7 +57,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Committed render errors carry revision/history metadata; cancellation and derived-preview failures distinguish saved sheets from rolled-back work. Complete runtime contracts remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "7",
@@ -73,7 +73,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Full-content/read-only source safeguards remain; output paths are checked at consumed preparation boundaries. Complete preflight/catalogue/capture-order invalidation remains open. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Render publication validates exact prior cache/project and sheet revisions plus consumed frozen sources. Live print/preflight/catalogue/capture-order metadata remains open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "9",
@@ -93,7 +93,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Physical backend output/parent exclusion and guarded cache associations strengthen state ownership. Permanent/legacy/native/global ownership, contracts, complete invalidation and durable render/cache publication remain partial."
+      "assessment": "Explicit render/cache transaction and no-follow descendant validation strengthen existing ownership/error/invalidation partial criteria. Complete contracts, permanent/legacy/native/global ownership and complete invalidation remain open."
     },
     {
       "name": "UI and workflow",
@@ -131,7 +131,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Shared-output busy/foreign/history errors are actionable and preserve retained evidence. Actual native progress/recovery and ambiguous ownership workflows remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Real engine crashes, normal reopening, cancellation and committed-sheet preview failure/regeneration pass at the backend boundary. Actual native interactions remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -139,7 +139,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Unexpected namespace files, malformed render evidence and known foreign project associations now fail visibly. Actual customer/native recovery flow remains unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Manual/foreign/malformed recovery, directory aliases and snapshot preservation report retained paths; full customer/native reconciliation remains unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "6",
@@ -183,7 +183,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Canonical undo/recovery errors have backend evidence. Native relink/ambiguity, progress, focus/accessibility and realistic large grids remain unverified; no new GUI result is claimed."
+      "assessment": "Reopening, committed-sheet preview warnings, regeneration and cancellation are backend-tested. Native recovery/ambiguity/relink, focus, accessibility and large-grid workflows remain unverified."
     },
     {
       "name": "Testing",
@@ -205,7 +205,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Final strict gate: 273 shared + 525 backend + 33 interface = 831 passed, no failures/cancellations/skips, real pinned CLI/current helper/Poppler. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "893 current-source pinned application tests pass, including real engine/reopen integration. Full native/GUI integration remains open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "3",
@@ -221,7 +221,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Critical identity, auth, engine, colour and stale/incomplete delivery regressions added; original audit still has unresolved release/licensing/cache/UI issues. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Fail-first engine render recovery, metadata/proof alias loss and snapshot EEXIST/chmod regressions are preserved with passing fixes. Entire original/native/corpus regression scope remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -229,7 +229,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Bounded independent render-history parsing and malformed/foreign/namespace symlink/mutation cases pass. General runtime/domain schemas and broad invalid-input corpus remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Manual/unknown/symlink/hardlink/malformed/foreign/oversized/read-only recovery cases pass; complete project/runtime input contracts remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "6",
@@ -237,7 +237,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Frozen PSD/PSB layer fallback, baseline/progressive/arithmetic JPEG validation and a five-page independent ICCBased Poppler oracle pass; real-file/layer/RAW corpus remains open. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Current print/PDF oracle suites and snapshot boundaries pass. Broad real RAW/layer/mask/high-depth/CMYK corpus remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "7",
@@ -245,7 +245,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Ten new output-boundary cases cover real independent processes, sibling parents, physical aliases, partial release, SIGKILL stale owners, cache/proof participation and external output change before recovery scans. Whole-app/external/native ownership and final independent review remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Publication and recovery SIGKILL, partial-write/fsync ENOSPC injection, stale revision/manual changes, cancellation and committed cleanup pass. Physical drive/power/full-volume scenarios remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "8",
@@ -253,7 +253,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Final separate shared/backend coverage: 798 passed, no failures/cancellations/skips, file concurrency 2. Output namespace source coverage lines/branches 97.20/80.95; rendered-history source 100/88.89. UI/Rust and complete acceptance coverage remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "860 shared/backend coverage tests pass. Production journal100/85.01 and paths100/87.84 line/branch; raw uncovered paths retained. UI/Rust coverage unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "9",
@@ -261,7 +261,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Pinned real-engine integration passes in current app gate. Full native workspace and broad camera/layer/corpus remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "10",
@@ -273,7 +273,7 @@
         }
       ],
       "certified": false,
-      "assessment": "831 strict application tests pass without skips. Ten output-boundary cases and guarded cache parsing extend the prior killed-project/delivery and source/PDF evidence. Final independent review, full native/GUI/corpus/hosted checks remain unverified."
+      "assessment": "Current pinned application gate passes 893 tests (273 shared,587 backend,33 interface) without skips. Final independent review, full native workspace/GUI/corpus and hosted checks remain incomplete."
     },
     {
       "name": "Performance and scalability",
@@ -287,7 +287,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
+          "evidence": "Current-source synthetic24x12MP/eight-spread pilot completes; actual customer small workload definition/measurement remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "2",
@@ -311,7 +311,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
+          "evidence": "5400x1800/6in/300PPI cold proof3.698s,render51.091s,export17.123s. Cold render exceeds previous30.459s singlepilot; realistic broader high-resolution/corpus/budgets remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -319,7 +319,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
+          "evidence": "Sampled process-tree peak1561.875MiB; ps CPU is lifetime averages. True peak/GPU/kernel/CPU/UI budgets remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "6",
@@ -335,7 +335,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
+          "evidence": "All eight sheets/JPEGs reuse each of three warm cycles; exactbytes, preserved-stamp invalidation and reorder checks pass. Complete metadata/catalogue invalidation remains open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "8",
@@ -343,7 +343,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "New bounded namespace markers and 64-MiB no-follow independent render-history reads strengthen filesystem limits. Production aggregate workers/memory/history/retention budgets remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Fixed1MiB PSD/snapshot streaming, bounded64MiBJSON and100000-entry/64-depth path checks tested. Whole-app worker/cache/history budgets remain incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "9",
@@ -351,7 +351,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current iteration-5 synthetic 24x12-MP/eight-spread pilot completed with unchanged source hashes, 300-PPI output, three warm cycles, preserved-stamp invalidation, stable reorder bytes and independent PDF checks. Sampled aggregate RSS maximum 1603.2 MiB and retained-file warm growth 4827875 bytes. True peak/CPU, native UI, realistic customer/RAW/layered small/typical/large and accepted budgets remain incomplete. See docs/quality/2026-10-14-iteration-5/pipeline-pilot.json and pipeline-metrics.json."
+          "evidence": "Three warm cycles grow4837734bytes; final retained footprint1.820GiB versus previous1.123GiB. Long-term customer growth and approved history cleanup/budgets remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "10",
@@ -363,7 +363,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Current-source guarded synthetic pilot passes output/reorder/cache/PDF checks and records sampled resources and growing retained histories. Production customer workloads, true peak/CPU/UI, permanent ownership and accepted retention/hardware budgets remain unverified; performance remains 3.0/10."
+      "assessment": "Current-source24x12MP/eight-spread synthetic pilot passes correctness; cold render51.091s and retained1.820GiB exceed prior singlepilot30.459s/1.123GiB. Customer scale, true peak/CPU/UI, approved retention/budgets remain incomplete."
     },
     {
       "name": "Data integrity and recovery",
@@ -401,7 +401,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Known foreign canonical project associations block rendered-cache use; malformed history is preserved, not treated as empty. Ownerless legacy/moved/copied/absent-evidence migration remains incomplete. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Exact project/cache/sheet revisions and frozen render sources bind publication; whole-app metadata/editor/global freshness remains partial. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -409,7 +409,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Revision-checked detached project/backup journal restores pending saves and preserves committed saves/history. Real process kills pass; durable render/cache publication and physical drives remain unverified. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Detached read-only PSD/cache snapshots and immutable fsynced journal/checksum commit join previous project/delivery transactions. Proof/app-global writes and actual hardware storage durability remain incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "6",
@@ -417,7 +417,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Capture/recovery stage races preserve destination/manual bytes with exact paths. Whole-app/render restart and physical filesystems remain incomplete. See docs/quality/2026-10-14-iteration-3/verification.json"
+          "evidence": "No-replace capture/install/restore preserves manual/unknown targets, snapshots and histories; interrupted recovery and snapshot collisions tested. Full native/legacy/global reconciliation remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "7",
@@ -425,7 +425,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "New project and lease SIGKILL boundaries pass alongside delivery recovery. Full render/cache restart journal and real power-loss/storage testing remain open. See docs/quality/2026-10-14-iteration-4/verification.json"
+          "evidence": "Eleven standalone render publication/recovery crash boundaries, real-engine crash/reopen, committed/manual/ENOSPC cases pass. Actual power/removable/native/global recovery remains unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "8",
@@ -433,7 +433,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Cancellation/source validation runs after final hashing/record flush immediately before the commit marker; committed completion clears late cancellation. Whole-app shutdown/drive verification remains partial. See docs/quality/2026-10-14-iteration-3/verification.json"
+          "evidence": "Stop before commit restores pair; after commit retains it; backend reports cancellation without false failed-sheet, preview failure retains committed sheet. Actual native shutdown/UI bounds remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "9",
@@ -441,7 +441,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Cooperating backend processes now reserve physical sheet and actual delivery-parent scopes, including alias roots, plans, proofs and album cache clearing. Lost output paths are checked before recovery scans/mutation. Permanent legacy/native/global/external ownership remains partial. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Managed output/proof aliases are rejected while root aliases remain valid; physical cooperative project/output leases cover restart recovery. Native/global/external writer policies remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "10",
@@ -453,7 +453,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Same-project and shared physical output/parent cooperative exclusion now pass. Known foreign/malformed render records remain protected and output changes cannot enter unleased recovery scans. Permanent legacy/native/global ownership and durable render/cache/physical storage guarantees remain open."
+      "assessment": "Streaming detached PSD/cache journal, pending/committed and interrupted-recovery SIGKILL tests, ENOSPC, manual edits and cancellation pass locally. Whole-app/native/global/legacy ownership, descendant external races and real power/storage recovery remain incomplete."
     },
     {
       "name": "Documentation",
@@ -467,7 +467,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Updated notes distinguish project leases, physical service namespaces, known cache associations and incomplete permanent/legacy/native ownership. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Current module/capability/journal/path contracts and remaining whole-app ownership limits documented; full customer/native contracts remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "2",
@@ -483,7 +483,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Current 831-test strict gate and bounded separate coverage commands require the real pinned CLI/helper/Poppler. Full native/hosted/installed gates remain separate. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Current893strict/860coverage/type/lint/UI/staticclosure evidence and exact pinned commands retained. Full native/hosted/staged-package procedures remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "4",
@@ -507,7 +507,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Namespace marker/owner/guard/history policy, fail-closed malformed/foreign records, and preserved legacy/manual data are documented; customer/manual drive procedures remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Pending/committed/manual/foreign/orphan/snapshot recovery and retained paths documented with local tests. Real physical/customer/native reconciliation remains open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "7",
@@ -539,11 +539,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Iteration 5 separates final-source checks from prior 830/797 intermediate evidence, historical native/build results, scope limits and remaining external requirements. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Current source/evidence hashes and limitations preserved without score inflation; old native/bundle/GUI/physical/customer claims are not relabelled as verified. See docs/quality/2026-10-14-iteration-6/verification.json."
         }
       ],
       "certified": false,
-      "assessment": "Source-checkpoint recovery notes reflect project and output namespaces, cache associations, exact boundary checks, preserved failed runs and current limits. Real customer/release/manual/external workflows remain unverified."
+      "assessment": "Iteration-6 sources, raw failures/fixes and continuing limits are documented; real customer/native/physical print/storage/security/release procedures remain unverified."
     },
     {
       "name": "Security and licensing",
@@ -605,7 +605,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Small read-only exclusive namespace markers and bounded no-follow independent render-history parsing reject symlink/hardlink/malformed/mutated evidence. Descendant symlink races, native/external writers and deployed security verification remain open. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Fail-first intermediate metadata/proof alias deletion and snapshot EEXIST/chmod loss fixed with descriptor/identity/consumption checks. Arbitrary external syscall races, app-global safety and complete policy remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "8",
@@ -633,7 +633,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Output markers and bounded render-history reads strengthen tested filesystem/process safety. Descendant symlink/external-writer policy, device-bound issuer/rules migration, real security environment and hardened distribution remain unverified."
+      "assessment": "Intermediate output/proof aliases and snapshot chmod/EEXIST loss now fail closed in local tests. Arbitrary external filesystem races, app-global safety, actual issuer/Firestore migration and hardened distribution remain incomplete."
     },
     {
       "name": "Print and delivery correctness",
@@ -663,7 +663,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Verified content inputs and tested actual output-path consumption prevent recovery scanning in a changed unleased root. Live print-dimension/preflight metadata still needs binding to exported bytes. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "PSD+render-cache exactrevision transaction and current-sheet proof regeneration pass. Live dimension/preflight metadata substitution and broad frozen-pixel equivalence remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "4",
@@ -711,7 +711,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Shared physical output/parent serialization strengthens existing complete-delivery journals. Permanent legacy ownership, complete render/cache recovery and real storage/powerloss remain partial. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Current complete delivery tests plus journaled render sheet/cache failure recovery pass. Physical storage/full-volume/native/manual-global scope remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "10",
@@ -723,7 +723,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Shared-output/parent exclusion and exact output-path consumption protect tested preparation/publication. Permanent ownership, render/cache restart journals, consumed print/preflight metadata, broad corpus and actual lab requirements remain incomplete."
+      "assessment": "Committed render metadata and exact sheet-derived preview recovery strengthen revision evidence. Live print/preflight metadata substitution, real RAW/layers/masks/high-depth/CMYK, bleed/gutter and physical lab samples remain open."
     },
     {
       "name": "Build and distribution",
@@ -753,7 +753,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Fresh reconstructed engine/shell cold build observed; final strict application gate uses its tagged CLI. Full root fresh package/install not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Current pinned source/helper gate and productionUIbuild pass. Clean full native workspace/root package/packaged Node22.23.3 remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "4",
@@ -761,7 +761,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Final 831-test application gate, lint/types/UI build pass. Engine/helper/source pin unchanged; full native workspace/Clippy/layering/corpus and hosted CI remain unrun. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "893 application tests plus860coverage/type/lint/UI pass locally. Full native/hosted/GUI checks remain incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "5",
@@ -769,7 +769,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Static closure is 53 files/10 packages, including output_lock.js. A fresh staged/installed bundle and packaged pinned-Node execution remain unverified. See docs/quality/2026-10-14-iteration-5/verification.json."
+          "evidence": "Static closure55files/10packages includes both new runtime modules. Fresh staged/installed package contents remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
         },
         {
           "id": "6",
@@ -813,13 +813,13 @@
         }
       ],
       "certified": false,
-      "assessment": "Pinned application gate and 53-file static closure pass; no new native source or installed package is claimed. Full native/hosted/package/packaged-Node/signing/notarization/clean-Mac requirements remain incomplete."
+      "assessment": "Pinned application gate, types, lint and production interface build plus 55-file runtime closure pass. Full native/hosted/staged package/packaged Node22.23.3/hardened signing/notarization/clean-Mac checks remain incomplete."
     }
   ],
   "latestAssessment": {
     "date": "2026-10-14",
-    "iteration": 5,
-    "evidence": "docs/quality/2026-10-14-iteration-5/verification.json",
+    "iteration": 6,
+    "evidence": "docs/quality/2026-10-14-iteration-6/verification.json",
     "previousScores": {
       "Architecture": 6.5,
       "UI and workflow": 4.5,
@@ -832,9 +832,9 @@
       "Build and distribution": 4
     },
     "missionComplete": false,
-    "independentReview": "All three read-only review/diagnosis workers attempted execution and again terminated at provider usage limit. Final independent review of iteration-5 output lease integration and prior parent transaction/HFS changes remains incomplete.",
-    "highestPriority": "Durable render/cache capture/install/restart journal and explicit permanent/legacy/native/global output ownership; consume verified print/preflight metadata.",
-    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported 10:00 PM without date/timezone. Recorded verbatim, not a verified reset estimate.",
-    "scoringDecision": "All 90 fixed criteria reassessed; names, weights and points unchanged. Backend namespace and cache evidence strengthen partial criteria without completing whole-app/real-world requirements."
+    "independentReview": "Scoped reviewers reproduced metadata/proof alias deletion and snapshot collision/permission bugs. Final review of the new render journal, path integration and parent snapshot fix was interrupted by a provider limit and remains incomplete.",
+    "highestPriority": "Complete independent review and fail-first fixes for consumed print/preflight metadata; permanent/legacy/native/global ownership and physical recovery remain open.",
+    "executionLimit": "All three workers terminated at provider usage limit reporting Oct 15th, 2026 3:02 AM. Timezone unspecified; no verified future reset estimate.",
+    "scoringDecision": "All 90 fixed names, weights and points reassessed without inflation. Local recovery/path/snapshot evidence strengthens partial criteria. No whole-app, native GUI, physical print/storage or release certification."
   }
 }

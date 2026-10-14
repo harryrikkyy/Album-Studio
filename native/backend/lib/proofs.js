@@ -39,6 +39,7 @@ async function optionalDigest(file) {
 
 /** Retain the exact file removed from a mutable proof name, including unexpected edits. */
 async function preserveProof(albumDir, file) {
+  await require('./output_paths').validateProofPaths(albumDir)
   const history = path.join(albumDir, 'proofs', '.album-studio-history')
   await fs.promises.mkdir(history, { recursive: true, mode: 0o700 })
   for (const dir of [path.dirname(history), history]) {
@@ -67,7 +68,7 @@ function manifestOf(albumDir) {
         const d = JSON.parse(await fs.promises.readFile(file, 'utf8'))
         if (d && d.spreads && typeof d.spreads === 'object') data = d
       } catch (_) { /* first proofs of this album */ }
-      return { file, data, chain: Promise.resolve() }
+      return { file, data, albumDir, chain: Promise.resolve() }
     })())
   }
   return manifests.get(albumDir)
@@ -75,12 +76,13 @@ function manifestOf(albumDir) {
 
 function saveManifest(m) {
   const text = JSON.stringify(m.data)
-  const saved = m.chain.then(() => writeAtomic(m.file, text))
+  const saved = m.chain.then(async () => { await require('./output_paths').validateProofPaths(m.albumDir); await writeAtomic(m.file, text) })
   m.chain = saved.catch(() => {})
   return saved
 }
 
 async function freshManifest(albumDir) {
+  await require('./output_paths').validateProofPaths(albumDir)
   const m = await manifestOf(albumDir)
   await m.chain
   const data = await readEvidence(m.file, 64 * 1024 * 1024)
@@ -98,6 +100,7 @@ async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedH
   if (!lease.outputNamespace) return require('./output_lock').withProjectOutputs(lease, () => recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease }), { kind: 'sheet-proof' })
   await lease.outputNamespace.assertFor(ws.outputToken || path.join(album.path, 'exports'))
   await lease.assertOwned()
+  await require('./output_paths').validateProofPaths(album.path)
   const m = await freshManifest(album.path)
   const hash = await proofHash(spread, album, ws)
   if (expectedHash && expectedHash !== hash || projectText !== undefined && await fs.promises.readFile(album.file, 'utf8') !== projectText) throw new Error('The project or proof sources changed before publication. Retry from the current revision.')
@@ -116,7 +119,7 @@ async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedH
 async function proofFromSheet(sheetPath, out, digest) {
   await fs.promises.mkdir(cacheRoot(), { recursive: true })
   const stage = await fs.promises.mkdtemp(path.join(cacheRoot(), 'proof-sheet-'))
-  let px
+  let px, preserveStage = false
   try {
   const frozen = await snapshotFile(sheetPath, stage, digest || await fileDigest(sheetPath))
   const sharp = getSharp()
@@ -131,7 +134,8 @@ async function proofFromSheet(sheetPath, out, digest) {
   } finally {
     if (px.cleanup) await px.cleanup()
   }
-  } finally { await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {}) }
+  } catch (error) { preserveStage = !!(error.snapshotPath || error.retainedPath); throw error }
+  finally { if (!preserveStage) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {}) }
 }
 
 // ── drawing ─────────────────────────────────────────────────────────────────
@@ -245,6 +249,7 @@ async function spreadLayout({ album: albumPath, n }) {
 async function drawProof(spread, album, ws, out) {
   await fs.promises.mkdir(cacheRoot(), { recursive: true })
   const sourceStage = await fs.promises.mkdtemp(path.join(cacheRoot(), 'proof-sources-'))
+  let preserveStage = false
   try {
   const inputValues = await spreadInputs(spread, album, ws)
   const template = await snapshotFile(spread.template.file, sourceStage, inputValues[1])
@@ -343,7 +348,8 @@ async function drawProof(spread, album, ws, out) {
   await base.jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
   await fs.promises.rename(tmp, out)
   return { skipped }
-  } finally { await fs.promises.rm(sourceStage, { recursive: true, force: true }).catch(() => {}) }
+  } catch (error) { preserveStage = !!(error.snapshotPath || error.retainedPath); throw error }
+  finally { if (!preserveStage) await fs.promises.rm(sourceStage, { recursive: true, force: true }).catch(() => {}) }
 }
 
 // ── refreshing ──────────────────────────────────────────────────────────────
@@ -389,6 +395,7 @@ async function refreshOnce(albumPath, r) {
 }
 
 async function refreshUnderLease(albumPath, r, lease) {
+  await require('./output_paths').validateProofPaths(path.dirname(albumPath))
   let album = await openAlbum({ path: albumPath })
   const projectText = await fs.promises.readFile(album.file, 'utf8'), data = JSON.parse(projectText)
   album = await openAlbum({ path: albumPath }, { data })
@@ -448,7 +455,7 @@ async function refreshUnderLease(albumPath, r, lease) {
       }
       const buf = await fs.promises.readFile(proofPath(album.path, from)).catch(() => null)
       if (buf && known[from].digest === crypto.createHash('sha256').update(buf).digest('hex')) reuse.set(t.s.n, { buf, source: known[from].source, sheetDigest: known[from].sheetDigest, sheetPath: known[from].sheetPath })
-    } else if (!source && t.s.sheet) {
+    } else if (t.s.sheet) {
       const record = await require('./sheets').ownedSheetRecord(ws, album.path, t.s.id)
       if (require('./sheets').verifiedSheetRecord(record) && record.hash === await require('./render').spreadHash(t.s, album, ws)) {
         t.fromSheet = t.s.sheet; t.sheetDigest = await optionalDigest(t.s.sheet)

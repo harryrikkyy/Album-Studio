@@ -1,0 +1,419 @@
+{
+  "status": "completed",
+  "sourceUnchanged": true,
+  "workingTreeProvisional": false,
+  "peakSampledAggregateRssMiB": 1561.875,
+  "logicalGiB": 1.8195131393149495,
+  "files": 311,
+  "phases": [
+    {
+      "name": "fixture.generate",
+      "seconds": 6.081823875,
+      "logicalBytes": 241496373,
+      "files": 28
+    },
+    {
+      "name": "album.open-and-migrate.cold",
+      "seconds": 0.21740124999999988,
+      "logicalBytes": 241536517,
+      "files": 37
+    },
+    {
+      "name": "proof.cold",
+      "seconds": 3.697808583,
+      "logicalBytes": 242303983,
+      "files": 53
+    },
+    {
+      "name": "proof.warm",
+      "seconds": 0.3894590419999986,
+      "logicalBytes": 242307320,
+      "files": 57
+    },
+    {
+      "name": "render.cold",
+      "seconds": 51.091070958,
+      "logicalBytes": 1739996470,
+      "files": 124,
+      "done": 8,
+      "skipped": 0
+    },
+    {
+      "name": "export-jpeg-and-pdf.cold",
+      "seconds": 17.12317737499999,
+      "logicalBytes": 1842095052,
+      "files": 168,
+      "done": 8,
+      "skipped": 0
+    },
+    {
+      "name": "correctness.snapshot",
+      "seconds": 0.3443311670000112,
+      "logicalBytes": 1842098101,
+      "files": 168
+    },
+    {
+      "name": "proof.warm-1",
+      "seconds": 1.0225087090000016,
+      "logicalBytes": 1842107953,
+      "files": 172
+    },
+    {
+      "name": "render.warm-1",
+      "seconds": 1.0800978340000003,
+      "logicalBytes": 1842111286,
+      "files": 176,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-1",
+      "seconds": 7.838511417000001,
+      "logicalBytes": 1843713982,
+      "files": 187,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "proof.warm-2",
+      "seconds": 1.0583132500000065,
+      "logicalBytes": 1843718881,
+      "files": 191
+    },
+    {
+      "name": "render.warm-2",
+      "seconds": 0.9497438340000081,
+      "logicalBytes": 1843722214,
+      "files": 195,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-2",
+      "seconds": 7.483739499999996,
+      "logicalBytes": 1845324909,
+      "files": 206,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "proof.warm-3",
+      "seconds": 1.0030012920000009,
+      "logicalBytes": 1845329807,
+      "files": 210
+    },
+    {
+      "name": "render.warm-3",
+      "seconds": 1.0972341250000026,
+      "logicalBytes": 1845333139,
+      "files": 214,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "export-jpeg-and-pdf.warm-3",
+      "seconds": 7.267426458000002,
+      "logicalBytes": 1846935835,
+      "files": 225,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "source.preserved-stamp-invalidation",
+      "seconds": 5.229088166999994,
+      "logicalBytes": 1846944419,
+      "files": 235
+    },
+    {
+      "name": "reorder.update",
+      "seconds": 0.46229975000000556,
+      "logicalBytes": 1846996690,
+      "files": 244
+    },
+    {
+      "name": "reorder.proof",
+      "seconds": 1.2187247079999943,
+      "logicalBytes": 1849505030,
+      "files": 256
+    },
+    {
+      "name": "reorder.render",
+      "seconds": 1.0445053340000012,
+      "logicalBytes": 1849508364,
+      "files": 260,
+      "done": 0,
+      "skipped": 8
+    },
+    {
+      "name": "reorder.export-jpeg-and-pdf",
+      "seconds": 15.539943832999983,
+      "logicalBytes": 1951607775,
+      "files": 303,
+      "done": 8,
+      "skipped": 0
+    },
+    {
+      "name": "reorder.verify-owner-and-bytes",
+      "seconds": 0.35256587500000025,
+      "logicalBytes": 1951610825,
+      "files": 303
+    },
+    {
+      "name": "pdf.independent-page-order-and-pixels",
+      "seconds": 3.0719197090000088,
+      "logicalBytes": 1953660810,
+      "files": 311
+    }
+  ],
+  "correctness": {
+    "sourcesStillMatch": true,
+    "stableSpreadIdsAfterReorder": true,
+    "warmSheetsAndJpegsUnchanged": true,
+    "preservedStampInvalidation": true,
+    "pdfPageCount": 8,
+    "original": [
+      {
+        "id": "spread_6ab6712e8e92d13644db7f7d1b9444b5d2affab14fcbb2195529c5997eef597b",
+        "n": 1,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0001_jpg",
+          "img_Shoot_photo_0002_jpg",
+          "img_Shoot_photo_0003_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_6ab6712e8e92d13644db7f7d1b9444b5d2affab14fcbb2195529c5997eef597b.psd",
+        "sheetSha256": "9021112a83a91f4844f07fd42ff7f3d6232ca5e4de4a736f843bb9ebcb342198",
+        "highSha256": "c21a9457b95b6c6f15591d653a5564f83ae26410916034b86fce747fd43e1e46",
+        "lowSha256": "a585a2486c56de6c5abcc9ad4cb0d168fa370d25a4044685695a148ba4627315",
+        "highBytes": 5489926,
+        "lowBytes": 91099
+      },
+      {
+        "id": "spread_9ef4505c3f3837c040556fee20dc6fd0f65434c5988558d68c5047482c410181",
+        "n": 2,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0004_jpg",
+          "img_Shoot_photo_0005_jpg",
+          "img_Shoot_photo_0006_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_9ef4505c3f3837c040556fee20dc6fd0f65434c5988558d68c5047482c410181.psd",
+        "sheetSha256": "e5162ee15c0e53c6ba28a93f58253bc5da63f01d37e4bd74f93b4b132f1630bc",
+        "highSha256": "fff33be1de34d24cdf27bbc6644591e6a4e32cb08e500fb5f80fe7ef0dba5378",
+        "lowSha256": "fa69493c9b52bbbe7c21c463a02ebcbf53bf882c7c0ac47a8f6f84e17c967893",
+        "highBytes": 6560574,
+        "lowBytes": 102084
+      },
+      {
+        "id": "spread_201bb616cfad120088526bbff53e6bb49e0ff6ae1ba41f1f8afa07339b59f49f",
+        "n": 3,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0007_jpg",
+          "img_Shoot_photo_0008_jpg",
+          "img_Shoot_photo_0009_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_201bb616cfad120088526bbff53e6bb49e0ff6ae1ba41f1f8afa07339b59f49f.psd",
+        "sheetSha256": "d78dff3e263c64602717bf50b6bf5f6f5586bfc21f31f97eb3b7252ffea60dba",
+        "highSha256": "c1dc9eb8dac6146e2288c14cbf95741b16b6a22b49bc3351bc12104e81927761",
+        "lowSha256": "7cc222edd77f5e72577038e2443f326500600179a7029a1ffff3b65dab37ff97",
+        "highBytes": 6094268,
+        "lowBytes": 98148
+      },
+      {
+        "id": "spread_b7356a8016beef639fed90d5dfd4ab138c4e6cd18654c762a1aa52e5bd2527ca",
+        "n": 4,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0010_jpg",
+          "img_Shoot_photo_0011_jpg",
+          "img_Shoot_photo_0012_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_b7356a8016beef639fed90d5dfd4ab138c4e6cd18654c762a1aa52e5bd2527ca.psd",
+        "sheetSha256": "1979342c162c173f78f31710f7cc365de9cdbdae3bf9b98ec7b55f42cde4fccf",
+        "highSha256": "e0d9ad0e3400329b1f4c179d8d2ef3f2f0e7e0250f221d696ff7d92bfaa84fc7",
+        "lowSha256": "377f686b526ef12696dac8ac8dbbee05c49bd37c3894751c92b2baf076642645",
+        "highBytes": 6383967,
+        "lowBytes": 99668
+      },
+      {
+        "id": "spread_b84ba04bc3ea4021d0056aeca9f997672fd7b95ed39a2157d11c1ab04eb13abe",
+        "n": 5,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0013_jpg",
+          "img_Shoot_photo_0014_jpg",
+          "img_Shoot_photo_0015_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_b84ba04bc3ea4021d0056aeca9f997672fd7b95ed39a2157d11c1ab04eb13abe.psd",
+        "sheetSha256": "7422310c94f8adcd63f2c54843bb08492ab7987b5c5a2911257f3a8b3921a4a0",
+        "highSha256": "18352466ec9d4d1c0fac504152665ac892591db3912f5e71385d424e52cee93d",
+        "lowSha256": "e4b907d7f9d55eb6f172e3ab04a28825a4d3501f562cf83dcf0243425993d44a",
+        "highBytes": 6368920,
+        "lowBytes": 101867
+      },
+      {
+        "id": "spread_a5da11fdff47b7c7707bb6ced6ee5220c10cbb1a9c6f302623eb3bf638bd6e65",
+        "n": 6,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0016_jpg",
+          "img_Shoot_photo_0017_jpg",
+          "img_Shoot_photo_0018_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_a5da11fdff47b7c7707bb6ced6ee5220c10cbb1a9c6f302623eb3bf638bd6e65.psd",
+        "sheetSha256": "7376d24385eed2f60b2a1fbffbf3826683c4ad615276695a88357606e9e65ca1",
+        "highSha256": "02e9cf5fb293e3748791c00768777d775841bb28e7a94af6b0d9e2046c896ca6",
+        "lowSha256": "f39028c38488a0097c6a0ba9f54db847654780de6dcbbb95e6d8088bfc3cebd6",
+        "highBytes": 6343925,
+        "lowBytes": 95577
+      },
+      {
+        "id": "spread_699ea88c9afcb4fccfbe0a5f7fb256bd4ca2caa3a1fa346f2d5e8b315d450445",
+        "n": 7,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0019_jpg",
+          "img_Shoot_photo_0020_jpg",
+          "img_Shoot_photo_0021_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_699ea88c9afcb4fccfbe0a5f7fb256bd4ca2caa3a1fa346f2d5e8b315d450445.psd",
+        "sheetSha256": "72bbe2e007990af19dcb7d47ecc27cbee4546dc32e66c2c07082d1d30c1ea34c",
+        "highSha256": "4e601cb8abbd0afb80b245584e83e9b221d92d0ff7944b6e9fa41b92180e904b",
+        "lowSha256": "50be2d4ce43f3948c2d95f2b2cd067c3d75240c596b787bc9e0b58612b296d35",
+        "highBytes": 5954091,
+        "lowBytes": 100012
+      },
+      {
+        "id": "spread_af0ddac1f641f7fbd69721362f860546f6c50698b2e81ae007eeeee9113de37c",
+        "n": 8,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0022_jpg",
+          "img_Shoot_photo_0023_jpg",
+          "img_Shoot_photo_0024_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_af0ddac1f641f7fbd69721362f860546f6c50698b2e81ae007eeeee9113de37c.psd",
+        "sheetSha256": "d389b1fdcf7926ea12b915a917ad6b7752124388d86f2314fd0c8c32a1e7d5d1",
+        "highSha256": "9fdbd4121cc469bb8777729387d91c806794a21dce9725e1f1879ebedfe7fd0f",
+        "lowSha256": "363467736e6e2c6fe2e77ee6a2c563ef25e42e86e69238b0dbe7272b37df3293",
+        "highBytes": 6269233,
+        "lowBytes": 90328
+      }
+    ],
+    "reordered": [
+      {
+        "id": "spread_9ef4505c3f3837c040556fee20dc6fd0f65434c5988558d68c5047482c410181",
+        "n": 1,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0004_jpg",
+          "img_Shoot_photo_0005_jpg",
+          "img_Shoot_photo_0006_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_9ef4505c3f3837c040556fee20dc6fd0f65434c5988558d68c5047482c410181.psd",
+        "sheetSha256": "e5162ee15c0e53c6ba28a93f58253bc5da63f01d37e4bd74f93b4b132f1630bc",
+        "highSha256": "fff33be1de34d24cdf27bbc6644591e6a4e32cb08e500fb5f80fe7ef0dba5378",
+        "lowSha256": "fa69493c9b52bbbe7c21c463a02ebcbf53bf882c7c0ac47a8f6f84e17c967893",
+        "highBytes": 6560574,
+        "lowBytes": 102084
+      },
+      {
+        "id": "spread_201bb616cfad120088526bbff53e6bb49e0ff6ae1ba41f1f8afa07339b59f49f",
+        "n": 2,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0007_jpg",
+          "img_Shoot_photo_0008_jpg",
+          "img_Shoot_photo_0009_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_201bb616cfad120088526bbff53e6bb49e0ff6ae1ba41f1f8afa07339b59f49f.psd",
+        "sheetSha256": "d78dff3e263c64602717bf50b6bf5f6f5586bfc21f31f97eb3b7252ffea60dba",
+        "highSha256": "c1dc9eb8dac6146e2288c14cbf95741b16b6a22b49bc3351bc12104e81927761",
+        "lowSha256": "7cc222edd77f5e72577038e2443f326500600179a7029a1ffff3b65dab37ff97",
+        "highBytes": 6094268,
+        "lowBytes": 98148
+      },
+      {
+        "id": "spread_b7356a8016beef639fed90d5dfd4ab138c4e6cd18654c762a1aa52e5bd2527ca",
+        "n": 3,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0010_jpg",
+          "img_Shoot_photo_0011_jpg",
+          "img_Shoot_photo_0012_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_b7356a8016beef639fed90d5dfd4ab138c4e6cd18654c762a1aa52e5bd2527ca.psd",
+        "sheetSha256": "1979342c162c173f78f31710f7cc365de9cdbdae3bf9b98ec7b55f42cde4fccf",
+        "highSha256": "e0d9ad0e3400329b1f4c179d8d2ef3f2f0e7e0250f221d696ff7d92bfaa84fc7",
+        "lowSha256": "377f686b526ef12696dac8ac8dbbee05c49bd37c3894751c92b2baf076642645",
+        "highBytes": 6383967,
+        "lowBytes": 99668
+      },
+      {
+        "id": "spread_b84ba04bc3ea4021d0056aeca9f997672fd7b95ed39a2157d11c1ab04eb13abe",
+        "n": 4,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0013_jpg",
+          "img_Shoot_photo_0014_jpg",
+          "img_Shoot_photo_0015_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_b84ba04bc3ea4021d0056aeca9f997672fd7b95ed39a2157d11c1ab04eb13abe.psd",
+        "sheetSha256": "7422310c94f8adcd63f2c54843bb08492ab7987b5c5a2911257f3a8b3921a4a0",
+        "highSha256": "18352466ec9d4d1c0fac504152665ac892591db3912f5e71385d424e52cee93d",
+        "lowSha256": "e4b907d7f9d55eb6f172e3ab04a28825a4d3501f562cf83dcf0243425993d44a",
+        "highBytes": 6368920,
+        "lowBytes": 101867
+      },
+      {
+        "id": "spread_a5da11fdff47b7c7707bb6ced6ee5220c10cbb1a9c6f302623eb3bf638bd6e65",
+        "n": 5,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0016_jpg",
+          "img_Shoot_photo_0017_jpg",
+          "img_Shoot_photo_0018_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_a5da11fdff47b7c7707bb6ced6ee5220c10cbb1a9c6f302623eb3bf638bd6e65.psd",
+        "sheetSha256": "7376d24385eed2f60b2a1fbffbf3826683c4ad615276695a88357606e9e65ca1",
+        "highSha256": "02e9cf5fb293e3748791c00768777d775841bb28e7a94af6b0d9e2046c896ca6",
+        "lowSha256": "f39028c38488a0097c6a0ba9f54db847654780de6dcbbb95e6d8088bfc3cebd6",
+        "highBytes": 6343925,
+        "lowBytes": 95577
+      },
+      {
+        "id": "spread_699ea88c9afcb4fccfbe0a5f7fb256bd4ca2caa3a1fa346f2d5e8b315d450445",
+        "n": 6,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0019_jpg",
+          "img_Shoot_photo_0020_jpg",
+          "img_Shoot_photo_0021_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_699ea88c9afcb4fccfbe0a5f7fb256bd4ca2caa3a1fa346f2d5e8b315d450445.psd",
+        "sheetSha256": "72bbe2e007990af19dcb7d47ecc27cbee4546dc32e66c2c07082d1d30c1ea34c",
+        "highSha256": "4e601cb8abbd0afb80b245584e83e9b221d92d0ff7944b6e9fa41b92180e904b",
+        "lowSha256": "50be2d4ce43f3948c2d95f2b2cd067c3d75240c596b787bc9e0b58612b296d35",
+        "highBytes": 5954091,
+        "lowBytes": 100012
+      },
+      {
+        "id": "spread_af0ddac1f641f7fbd69721362f860546f6c50698b2e81ae007eeeee9113de37c",
+        "n": 7,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0022_jpg",
+          "img_Shoot_photo_0023_jpg",
+          "img_Shoot_photo_0024_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_af0ddac1f641f7fbd69721362f860546f6c50698b2e81ae007eeeee9113de37c.psd",
+        "sheetSha256": "d389b1fdcf7926ea12b915a917ad6b7752124388d86f2314fd0c8c32a1e7d5d1",
+        "highSha256": "9fdbd4121cc469bb8777729387d91c806794a21dce9725e1f1879ebedfe7fd0f",
+        "lowSha256": "363467736e6e2c6fe2e77ee6a2c563ef25e42e86e69238b0dbe7272b37df3293",
+        "highBytes": 6269233,
+        "lowBytes": 90328
+      },
+      {
+        "id": "spread_6ab6712e8e92d13644db7f7d1b9444b5d2affab14fcbb2195529c5997eef597b",
+        "n": 8,
+        "sourcePhotoIds": [
+          "img_Shoot_photo_0001_jpg",
+          "img_Shoot_photo_0002_jpg",
+          "img_Shoot_photo_0003_jpg"
+        ],
+        "sheet": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-pipeline-PdgWy1/Album/exports/.album-studio/sheets/spread_6ab6712e8e92d13644db7f7d1b9444b5d2affab14fcbb2195529c5997eef597b.psd",
+        "sheetSha256": "9021112a83a91f4844f07fd42ff7f3d6232ca5e4de4a736f843bb9ebcb342198",
+        "highSha256": "c21a9457b95b6c6f15591d653a5564f83ae26410916034b86fce747fd43e1e46",
+        "lowSha256": "a585a2486c56de6c5abcc9ad4cb0d168fa370d25a4044685695a148ba4627315",
+        "highBytes": 5489926,
+        "lowBytes": 91099
+      }
+    ]
+  }
+}

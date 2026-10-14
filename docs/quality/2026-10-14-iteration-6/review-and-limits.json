@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-14",
+  "iteration": 6,
+  "startingCheckpoint": "180c56ab1753838cbb8ddf00e11d81dcfc21d0d9",
+  "scopedFindings": [
+    {
+      "reviewer": "delivery_recovery",
+      "severity": "P1",
+      "finding": "Different real output roots with an intermediate .album-studio alias bypassed root leases; another project cache-clear removed active derivative bytes.",
+      "reproduced": true,
+      "fix": "Real managed-descendant validation and preserved recovery directories; parent output-lease integration.",
+      "finalIndependentReview": false
+    },
+    {
+      "reviewer": "delivery_recovery",
+      "severity": "P1",
+      "finding": "Aliased proofs/pages directories allowed another project refresh to remove a preview and replace the owner manifest despite a live render lease.",
+      "reproduced": true,
+      "fix": "Real proof-path checks before manifest read/write and preview capture/removal.",
+      "finalIndependentReview": false
+    },
+    {
+      "reviewer": "account_binding",
+      "severity": "P1",
+      "finding": "Snapshot COPYFILE_EXCL EEXIST catch unlinked an existing destination.",
+      "reproduced": true,
+      "fix": "Parent exclusive descriptor creation; no failure unlink, unchanged generated copy retained in history.",
+      "finalIndependentReview": false
+    },
+    {
+      "reviewer": "account_binding",
+      "severity": "P1",
+      "finding": "Path-based chmod followed a substituted snapshot symlink and changed customer-referent permissions.",
+      "reproduced": true,
+      "fix": "Parent descriptor chmod with created-node/named-node checks and preserved unknown names.",
+      "finalIndependentReview": false
+    }
+  ],
+  "workerDelivery": {
+    "identity_design": "Implemented render_transaction module and tests; parent completed test runs, integration and review after worker limit.",
+    "delivery_recovery": "Implemented output_paths module/tests and storage checks; parent fixed render-cache directory-name classification, integrated lease/proof consumers and ran final gates.",
+    "account_binding": "Scoped cache loss/permission reproductions and design; no implementation files were written before termination. Parent implemented cache/raw/caller preservation and regression tests."
+  },
+  "terminalMessage": "You’ve hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 15th, 2026 3:02 AM.",
+  "reportedReset": "Oct 15th, 2026 3:02 AM; timezone not supplied; not a verified future reset estimate",
+  "independentReviewComplete": false,
+  "missingReviews": [
+    "Final render journal/recovery identity and source/path integration",
+    "Parent snapshot descriptor/retention/caller cleanup fix",
+    "Prior project transaction/lock/HFS full scoped review"
+  ],
+  "parentVerification": "893 strict application tests, separate coverage and pinned engine/static/type/lint/build checks. These do not replace independent review.",
+  "missionComplete": false
+}

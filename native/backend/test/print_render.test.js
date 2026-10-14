@@ -118,7 +118,7 @@ test('a manual PSD edit at the atomic replacement boundary is captured and resto
   const edit = Buffer.from('An external manual sheet edit at the capture boundary')
   let injected = false
   exclusive.renameExclusive = async (from, to) => {
-    if (!injected && from === file && to.includes('render-history')) { injected = true; fs.writeFileSync(file, edit) }
+    if (!injected && from === file && (to.includes('render-history') || path.basename(to) === 'captured-sheet')) { injected = true; fs.writeFileSync(file, edit) }
     return move(from, to)
   }
   let result

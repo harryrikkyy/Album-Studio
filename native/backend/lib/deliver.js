@@ -274,7 +274,7 @@ async function runExport(job, prepared, emit) {
     job.cancelled = false // Stop requested after the committed marker cannot roll back a final set.
     for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
   } catch (e) {
-    preserveStage = !!(e.recoveryStage || e.recoveryJournal || e.recoveryLock)
+    preserveStage = !!(e.recoveryStage || e.recoveryJournal || e.recoveryLock || e.snapshotPath || e.retainedPath)
     if (e.code === 'DELIVERY_CANCELLED' && !preserveStage) job.cancelled = true
     else {
       error = e.message || String(e)

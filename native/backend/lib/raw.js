@@ -55,7 +55,8 @@ async function consumeSnapshot(file, key, parent, consume) {
     if (await fileDigest(frozen) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) { preserve = true; throw changed(frozen) }
     await unchangedSource(file, key, identity)
     return result
-  } finally {
+  } catch (error) { if (error.snapshotPath || error.retainedPath) preserve = true; throw error }
+  finally {
     if (frozen && !preserve) {
       try { preserve = await fileDigest(frozen) !== digest || !!((await fs.promises.lstat(frozen)).mode & 0o222) } catch (_) { preserve = true }
     }

@@ -65,6 +65,7 @@ async function marker(context, scope) {
 }
 async function contexts(output, delivery) {
   const sheet = await directory(output, true)
+  await require('./output_paths').validateOutputPaths(output)
   const all = [await marker(sheet, 'sheets')]
   // Keep existing path semantics for a symlinked sheet folder: JPEGs are beside its logical
   // path, which can differ from the physical sheet folder's parent. Lock that actual parent.
@@ -91,6 +92,7 @@ async function acquireOutputLease(output, { delivery = false, kind = 'output' } 
         const resolved = await directory(context.requested, false), current = await readMarker(context.file, context.bytes)
         if (resolved.folder !== context.folder || !sameNode(resolved.identity, context.identity) || !sameNode(current, context.markerIdentity)) throw uncertain(context.file)
       }
+      await require('./output_paths').validateOutputPaths(output)
     }, async assertFor(requested, needsDelivery = false) {
       if (needsDelivery && !delivery) throw new Error('This operation has no lease for its delivery folder.')
       const sheet = held.find(x => x.context.scope === 'sheets').context
@@ -122,7 +124,13 @@ async function acquireProjectOutputs(project, options = {}) {
   const group = await acquireOutputLease(output, options)
   try {
     await project.assertOwned()
-    await require('./sheets').readRenderCache(output, { albumFile: project.file })
+    // Interrupted publication can leave either public name absent. Recover while both
+    // namespaces are held, before any reader interprets missing ownership as a new album.
+    await require('./render_transaction').recoverRenders({ albumFile: project.file, outputFolder: output }, {
+      assertOwned: () => project.assertOwned(), assertOutput: requested => group.assertFor(requested),
+    })
+    try { await require('./sheets').readRenderCache(output, { albumFile: project.file }) }
+    catch (error) { if (!options.allowForeignCache || error.code !== 'OUTPUT_OWNED_BY_OTHER') throw error }
     return group
   } catch (error) { try { await group.release() } catch (release) { error.message += ` ${release.message}` }; throw error }
 }
