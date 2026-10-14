@@ -41,7 +41,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Same-album cross-process acquisition diagnostic confirms process-local ownership; delivery-only locking is insufficient. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "5",
@@ -73,7 +73,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Full source/derived content evidence and private copies pass preserved-stamp regressions, but catalogue/photo metadata timestamp caches and full invalidation remain open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "9",
@@ -93,7 +93,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Shared print settings and pixel decoding reduce divergent rules; typed runtime contracts, complete invalidation and whole-app state isolation remain partial."
+      "assessment": "Content-bound inputs and derived caches plus private consumption copies strengthen invalidation; complete metadata invalidation, runtime contracts, whole-app state ownership and durable publication remain partial."
     },
     {
       "name": "UI and workflow",
@@ -183,7 +183,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Album-switch queue regressions pass and render plans reject obsolete requests; actual native workflows, focus/accessibility, relink and large grids remain unverified."
+      "assessment": "Backend errors preserve edited/unknown sheets, proxies and recovery history. Native workflow, relink/ambiguity approval, focus/accessibility and realistic large grids remain unverified; no new GUI result is claimed."
     },
     {
       "name": "Testing",
@@ -205,7 +205,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Strict gate: 273 shared + 409 helper + 33 UI = 715 passed, zero failed/skipped/cancelled, using pinned CLI and current atomic helper. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "3",
@@ -237,7 +237,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Expanded valid/semantic ICC, native CMYK 8/16-bit/compression and template pixel oracles pass; real corpus and independent PDF renderer incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "RGB/CMYK PSD/PSB planes, auxiliary-alpha/depth/compression/oversize guards and actual Poppler ICCBased PDF patch rendering pass; real corpus remains open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "7",
@@ -245,7 +245,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Real SIGKILL delivery boundaries, rollback/cleanup, competing stale-lock reclamation and cancellation pass; hardware power loss/whole-app cross-process isolation incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Final snapshot/cancellation boundaries, private-input mutation, capture/history conflicts and killed delivery subprocesses pass. Whole-app process isolation still fails diagnostic. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "8",
@@ -253,7 +253,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "580 shared/helper coverage tests; retained per-source metrics expose RAW/proof gaps. UI/Rust coverage and enforced thresholds absent. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Separate shared/helper source coverage: 682 passed, zero skips. Per-file lines/branches retained; UI/Rust coverage and meaningful complete budgets remain open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "9",
@@ -273,7 +273,7 @@
         }
       ],
       "certified": false,
-      "assessment": "613 no-skip application tests and 580 shared/helper coverage tests pass with the reconstructed engine; final independent review, native GUI and full hosted/workspace/corpus gates are incomplete."
+      "assessment": "715 application tests pass without skips; separate 682-test coverage and independent Poppler PDF oracle strengthen integration/boundary evidence. Final independent review, full native workspace/corpus, GUI and hosted CI remain unverified."
     },
     {
       "name": "Performance and scalability",
@@ -335,7 +335,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Content-based cache freshness regressions pass; actual hit rates and full-hash high-resolution cost are unmeasured. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "8",
@@ -343,7 +343,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Hash readers capped at four, 1 MiB read buffers, 512 MiB source/composite policies and bounded embedded previews pass boundary checks. History/snapshot disk growth and realistic memory limits remain open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "9",
@@ -363,7 +363,7 @@
         }
       ],
       "certified": false,
-      "assessment": "No realistic current hardware benchmarks were added. Safety allocation limits and test durations do not establish throughput, peak memory or UI latency."
+      "assessment": "Four bounded hash readers, bounded PSD/preview reads and private snapshots have regression evidence. Full-file hashing and retained histories require realistic distinct-photo timing/memory/latency/retention budgets; no new benchmark is claimed."
     },
     {
       "name": "Data integrity and recovery",
@@ -401,7 +401,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "New JPEG/PDF cache digests catch preserved-stamp edits; source/render/thumbnail/RAW/adjustment caches still use size/time. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Versioned content input hashes and actual PSD/derived/proof digests detect preserved-size/time edits; real metadata/capture order and complete invalidation remain open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "5",
@@ -409,7 +409,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Delivery cache/files are journaled and flushed together. Project/render publication and hardware durability remain incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Delivery flush/journal and atomic no-replace capture retain history. Cache/project/render durability and reviewed history cleanup are unfinished. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "6",
@@ -417,7 +417,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Restart/cyclic rename journal, exclusive fallback content checks and conflict preservation tested; real removable-drive/power-loss evidence absent. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Capture/recovery stage races preserve destination/manual bytes with exact paths. Whole-app/render restart and physical filesystems remain incomplete. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "7",
@@ -433,7 +433,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Engine request/shutdown bounds, late auth cancellation and staged export cancellation tested; large render/export interruption limits still need verification. See docs/quality/2026-10-13/verification.json."
+          "evidence": "Cancellation/source validation runs after final hashing/record flush immediately before the commit marker; committed completion clears late cancellation. Whole-app shutdown/drive verification remains partial. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "9",
@@ -441,7 +441,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Delivery publication/recovery has process locking; whole-app render/edit isolation remains incomplete. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Two concurrent live Node processes each held a same-album render lease; only delivery publication is process-locked. See job-isolation.json. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "10",
@@ -453,7 +453,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Delivery journals, SIGKILL boundary recovery and cross-process publication tests pass. Strong source/render freshness, durable project/render writes and physical-drive/whole-app isolation remain incomplete."
+      "assessment": "Versioned source hashes, PSD/derived digests, private input copies, exclusive capture and retained history pass mutation/crash regressions. Two live processes still acquire the same album; durable project/cache/render journals and physical-drive guarantees remain incomplete."
     },
     {
       "name": "Documentation",
@@ -543,7 +543,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Current decoder, recovery, pin/setup and restart limitations are documented; customer setup, full release procedures, accessibility/performance and real lab compliance lack verification."
+      "assessment": "Setup, mandatory Poppler/atomic helper, content evidence, conservative legacy policy and history/recovery procedures now match the checkpoint. Customer installation/release workflows, accessibility, performance and external procedures are not yet verified."
     },
     {
       "name": "Security and licensing",
@@ -633,7 +633,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Filesystem recovery checks and pinned reconstruction improve partial evidence; legacy HMAC/device-omitting signatures, actual issuer/rules and hardened distribution remain unresolved."
+      "assessment": "Bounded no-follow source/evidence reads and no-replace file capture strengthen input safety. Existing issuer/rules/device-binding migration, real adversarial environment and hardened distribution remain unverified; no customer credentials/licences were changed."
     },
     {
       "name": "Print and delivery correctness",
@@ -647,7 +647,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Semantic native transform probes, Adobe-compatible matrix/LUT, native CMYK ink and template oracles pass; full real corpus and high-depth/CMYK template masks remain unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Bounded RGB/CMYK planar composites preserve 8/16-bit samples and explicit alpha provenance; synthetic compression/profile routes pass. Broader source/layer/camera corpus remains open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "2",
@@ -655,7 +655,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Actual Poppler 26.05.0 rendering: explicit perceptual PDF intent and sRGB display; sRGB/P3/Gray patch deltas 0, CMYK maximum 3 at unchanged tolerance 3. Broader corpus/lab consistency unverified. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "3",
@@ -663,7 +663,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "JPEG content evidence improved; preserved-stamp source and sheet changes remain unresolved. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Content version prefix, private verified source copies, actual PSD digest and project JSON rechecks reject tested stale/raced inputs. Whole-app revision isolation and metadata completeness remain partial. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "4",
@@ -711,7 +711,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Journaled files+cache, restart rollback/commit cleanup and SIGKILL boundaries tested; instantaneous outside-reader switch and physical power-loss/removable-drive claims not verified. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Final flushed-marker source/cancel check and exclusive capture/history retirement pass fault/SIGKILL/conflict regressions. Full drive/power-loss and whole-app isolation remain open. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "10",
@@ -723,7 +723,7 @@
         }
       ],
       "certified": false,
-      "assessment": "Semantic ICC, native CMYK and template oracles, physical canvas/embedded pixels and recoverable complete export are tested; exact source freshness, full masks/corpora/PDF rendering and actual lab approval remain open."
+      "assessment": "RGB auxiliary-alpha and 16-bit RLE regressions, private PSD sources and independent perceptual ICCBased PDF rendering now pass. Full layer/source corpus, framed high-depth/CMYK, actual bleed/safe area/gutter and lab verification remain incomplete."
     },
     {
       "name": "Build and distribution",
@@ -761,7 +761,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "715-test no-skip local application gate, lint/types/UI build and current helper checksum pass. Full native workspace/Clippy/corpus and hosted CI have not run in this iteration. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "5",
@@ -769,7 +769,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Static collector: 50 files and 10 installed packages; package script copies/signs atomic executable. New complete app contents/installation unverified. See docs/quality/2026-10-14-iteration-3/verification.json"
         },
         {
           "id": "6",
@@ -813,16 +813,17 @@
         }
       ],
       "certified": false,
-      "assessment": "Exact engine pin is verified by reconstructed source/lock/bundle and real-engine tests. Fresh engine/shell build provides partial clean-build evidence; full root package, hosted gates and signed/notarised installation remain unverified."
+      "assessment": "Current checksummed C atomic helper builds and is required by the strict application gate; collector includes its wrapper and packaging stages/signs the binary. Full new root package, pinned packaged-Node execution, hosted native gates and signed/notarised clean-Mac installation remain unverified."
     }
   ],
   "latestAssessment": {
-    "date": "2026-10-13",
-    "iteration": 2,
-    "evidence": "docs/quality/2026-10-13-iteration-2/verification.json",
+    "date": "2026-10-14",
+    "iteration": 3,
+    "evidence": "docs/quality/2026-10-14-iteration-3/verification.json",
     "missionComplete": false,
-    "independentReview": "Interrupted by account execution limit; final parent review and tests completed, second-agent final diff review unverified.",
-    "highestPriority": "Strong source/render and derived-cache freshness for content changes preserving size/time.",
-    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported retry 6:20 PM without date/timezone."
+    "independentReview": "All three review workers terminated at provider usage limit. Parent integration/final checks pass; independent final review of integrated diff remains incomplete.",
+    "highestPriority": "Whole-album cross-process lease before preparation/migration/edit, then durable project/cache/render publication; same-album leases concurrently acquired by two live processes.",
+    "executionLimit": "All three workers terminal: You have hit your usage limit; provider reported Oct 14th, 2026 2:45 AM with no timezone. Recorded verbatim, not a verified future reset estimate.",
+    "scoringDecision": "All 90 fixed criteria reassessed. Points unchanged: new evidence strengthens partial criteria but does not complete their outstanding requirements."
   }
 }

@@ -3,6 +3,8 @@
 
 const fs = require('fs')
 const path = require('path')
+const { contentVerified } = require('./inputs')
+const verifiedSheetRecord = (record) => !!(contentVerified(record) && !record.unverified && /^[a-f0-9]{64}$/.test(record.sheetDigest || ''))
 
 const workspace = (data) => data.workspace || data
 const outputFolder = (ws, albumFolder) => ws.outputToken || path.join(albumFolder, 'exports')
@@ -42,8 +44,9 @@ async function adoptLegacySheets(data, albumFolder) {
       outputFolder: output,
       hash: typeof old === 'string' ? old : old && old.hash || null,
       sheet: old && typeof old === 'object' ? old.sheet || null : null,
+      sheetDigest: old && typeof old === 'object' ? old.sheetDigest || null : null,
       // A file without a verified render record may contain irreplaceable manual work.
-      unverified: !(old && typeof old === 'object' && old.hash && old.sheet),
+      unverified: !verifiedSheetRecord(old),
       adopted: true,
       legacyPosition: Number(n),
     }
@@ -72,4 +75,4 @@ async function resolveSpreadSheet(ws, albumFolder, id, n) {
   return null
 }
 
-module.exports = { adoptLegacySheets, canonicalSheetPath, outputFolder, ownedSheetRecord, readRenderCache, renderCachePath, resolveSpreadSheet }
+module.exports = { adoptLegacySheets, canonicalSheetPath, outputFolder, ownedSheetRecord, readRenderCache, renderCachePath, resolveSpreadSheet, verifiedSheetRecord }

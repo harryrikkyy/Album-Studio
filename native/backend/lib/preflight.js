@@ -6,6 +6,7 @@ const { collectFrames } = require('./psd_template')
 const { coverQuad, embedScale } = require('./sheet')
 const { placeable } = require('./raw')
 const { printCanvas } = require('./print_settings')
+const { readPsdBuffer } = require('./color')
 const sharp = () => require('../../../src/sharp_config').getSharp()
 let ag
 function decoder() {
@@ -53,7 +54,7 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
     let psd
     try {
       if (!templateCache.has(sp.template.file)) {
-        const bytes = await fs.promises.readFile(sp.template.file), outline = decoder().readPsd(bytes, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
+        const bytes = await readPsdBuffer(sp.template.file), outline = decoder().readPsd(bytes, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
         let budget = outline.width * outline.height * 4
         const measure = (nodes) => { for (const n of nodes || []) { budget += Math.max(0, (n.right - n.left) * (n.bottom - n.top)) * 8; measure(n.children) } }
         measure(outline.children)

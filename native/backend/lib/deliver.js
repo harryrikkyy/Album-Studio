@@ -16,12 +16,12 @@ const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
 const { migrateAlbum } = require('./project')
-const { fileStamp } = require('./cache')
+const { fileStamp, fileDigest, snapshotFile } = require('./cache')
 const { writeJpegPdf } = require('./pdf')
 const { outputName } = require('./sheet')
 const { psdPixels } = require('./color')
 const { spreadHash } = require('./render')
-const { outputFolder, ownedSheetRecord, readRenderCache } = require('./sheets')
+const { outputFolder, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
 const { preflightAlbum } = require('./preflight')
 const { printSettings, psdDimensions } = require('./print_settings')
@@ -126,20 +126,21 @@ async function prepareExport(p) {
     const base = { n: sp.n, id: sp.id, psd, stamp }
     if (stamp === 'missing') return { ...base, state: 'nosheet', reason: `Spread ${sp.n} is not rendered. Render the album first.` }
     const hash = await spreadHash(sp, album, ws)
-    if (record.unverified || record.hash !== hash) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n} has changed or its sheet is unverified. Render this spread before delivery; preserve any manual edits first.` }
+    if (!verifiedSheetRecord(record) || record.hash !== hash) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n} has changed or its sheet has no verified content history. Render this spread before delivery; preserve any manual edits first.` }
+    const sheetDigest = await fileDigest(psd)
     let dimensions
     try { dimensions = await psdDimensions(psd) } catch (_) { return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet has invalid dimensions. Recover or render it again.` } }
     const { height, width } = dimensions
     if (s.size === 'print' && height / s.heightInches + 1e-7 < s.ppi) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet supplies ${(height / s.heightInches).toFixed(1)} PPI at this print size, below the configured ${s.ppi} PPI policy. Render a larger sheet or choose a smaller physical print size.` }
     const spec = ws.printSpec
     if (spec && spec.widthInches > 0 && spec.heightInches > 0 && Math.abs(width / height - spec.widthInches / spec.heightInches) > 0.001) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s actual sheet proportions differ from the configured lab dimensions.` }
-    const key = exportKey(stamp, s)
+    const key = exportKey(sheetDigest, s)
     const high = path.join(paths.high, `${name}.jpg`), low = path.join(paths.low, `${name}.jpg`)
     const e = cache.spreads[sp.id]
     const fresh = e && e.key === key && e.hash === hash && e.psd === psd && e.n === sp.n &&
       e.high && e.high.path === high && await verifyOwnedArtifact(high, e.high.stamp, e.high.digest) &&
       e.low && e.low.path === low && await verifyOwnedArtifact(low, e.low.stamp, e.low.digest)
-    return { ...base, hash, key, high, low, state: fresh ? 'ready' : e ? 'stale' : 'todo' }
+    return { ...base, sheetDigest, hash, key, high, low, state: fresh ? 'ready' : e ? 'stale' : 'todo' }
   }))
   const preflight = await preflightAlbum(album, ws, { ...s, phase: 'export' })
   for (const sp of spreads) {
@@ -198,7 +199,7 @@ async function assertSnapshot({ album, ws, projectText }, required) {
   if (await fs.promises.readFile(album.file, 'utf8') !== projectText) throw new Error('The album changed during export. Export again from the current revision.')
   for (const sp of required) {
     const model = album.spreads.find((item) => item.id === sp.id)
-    if (!model || await spreadHash(model, album, ws) !== sp.hash || await fileStamp(sp.psd) !== sp.stamp) {
+    if (!model || await spreadHash(model, album, ws) !== sp.hash || await fileDigest(sp.psd) !== sp.sheetDigest) {
       throw new Error(`Spread ${sp.n} or its source files changed during export. Render or export again.`)
     }
   }
@@ -226,7 +227,9 @@ async function runExport(job, prepared, emit) {
       }
       report('exporting')
       const targets = [{ file: path.join(stage, `${name}-high.jpg`), quality: s.highQuality }, { file: path.join(stage, `${name}-low.jpg`), quality: s.lowQuality }]
-      const size = await exportSheet(psd, targets, s)
+      const frozen = await snapshotFile(psd, stage, sp.sheetDigest)
+      let size
+      try { size = await exportSheet(frozen, targets, s) } finally { await fs.promises.unlink(frozen).catch(() => {}) }
       files.push({ source: targets[0].file, target: sp.high }, { source: targets[1].file, target: sp.low })
       review.set(id, targets[1].file)
       next.spreads[id] = { n, key, hash, psd, at: new Date().toISOString(), ...size, high: { path: sp.high }, low: { path: sp.low } }
@@ -258,10 +261,11 @@ async function runExport(job, prepared, emit) {
     if (pdfResult) next.pdf = { path: paths.pdf }
     // Cache bytes and ownership fingerprints are journaled together with the files. The
     // builder runs before publication, so it must use staged records rather than target stats.
-    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, makeCache: async () => {
+    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, validateSnapshot: () => assertSnapshot(prepared, required), makeCache: async () => {
       await assertSnapshot(prepared, required)
       return next
     } })
+    job.cancelled = false // Stop requested after the committed marker cannot roll back a final set.
     for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
   } catch (e) {
     preserveStage = !!(e.recoveryStage || e.recoveryJournal || e.recoveryLock)
@@ -269,6 +273,7 @@ async function runExport(job, prepared, emit) {
     else {
       error = e.message || String(e)
       if (e.deliveryCommitted) {
+        job.cancelled = false
         // The complete new set is final; retain recovery evidence for cleanup on restart.
         for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
         emit('export.progress', { jobId: job.id, total: job.total, n: null, state: 'warning', error })

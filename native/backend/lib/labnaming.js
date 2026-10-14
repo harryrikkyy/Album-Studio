@@ -7,7 +7,8 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { cacheRoot, fileKey } = require('./cache')
+const { cacheRoot, contentFileKey } = require('./cache')
+const { deriveCached, derivedKey, sourceIdentity, unchangedSource } = require('./raw')
 
 const SHEET = /\.(jpe?g|png|psd|psb)$/i
 const THUMB_EDGE = 480
@@ -15,9 +16,10 @@ const getSharp = () => require('../../../src/sharp_config').getSharp()
 
 /** The JPEG preview Photoshop stores in a PSD's image resources (id 1036, or 1033), if any. */
 function psdThumbnail(buf) {
-  if (buf.length < 30 || buf.toString('latin1', 0, 4) !== '8BPS') return null
+  if (buf.length < 34 || buf.toString('latin1', 0, 4) !== '8BPS') return null
   let at = 26
   at += 4 + buf.readUInt32BE(at) // colour mode data
+  if (at + 4 > buf.length) return null
   const end = at + 4 + buf.readUInt32BE(at)
   at += 4
   while (at + 12 <= end && at + 12 <= buf.length) {
@@ -26,8 +28,10 @@ function psdThumbnail(buf) {
     const nameLen = buf[at + 6]
     let p = at + 6 + 1 + nameLen
     if ((1 + nameLen) % 2) p++
+    if (p + 4 > buf.length || p + 4 > end) return null
     const size = buf.readUInt32BE(p)
     const data = p + 4
+    if (data + size > buf.length || data + size > end) return null
     if ((id === 1036 || id === 1033) && size > 28) return buf.subarray(data + 28, data + size)
     at = data + size + (size % 2)
   }
@@ -35,7 +39,7 @@ function psdThumbnail(buf) {
 }
 
 async function readHead(file, bytes) {
-  const fh = await fs.promises.open(file, 'r')
+  const fh = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
   try {
     const buf = Buffer.alloc(bytes)
     const { bytesRead } = await fh.read(buf, 0, bytes, 0)
@@ -46,31 +50,33 @@ async function readHead(file, bytes) {
 }
 
 /** A small cached thumbnail of a sheet, and its pixel size. */
-async function thumbFor(file, st) {
+async function thumbFor(file) {
   const ext = path.extname(file).toLowerCase()
   const dir = path.join(cacheRoot(), 'lab-thumbs')
-  const out = path.join(dir, `${fileKey(file, st)}.jpg`)
-  const metaFile = `${out}.json`
-  try {
-    return { thumb: out, ...JSON.parse(await fs.promises.readFile(metaFile, 'utf8')) }
-  } catch (_) { /* not made yet */ }
+  const sourceKey = await contentFileKey(file), recipe = 'lab-preview-sharp480-jpeg78-v1'
+  const identity = await sourceIdentity(file)
+  const out = path.join(dir, `${derivedKey(sourceKey, recipe)}.jpg`)
   const sharp = getSharp()
   let width = 0
   let height = 0
   let input = file
   if (ext === '.psd' || ext === '.psb') {
     const head = await readHead(file, 4 << 20)
-    if (head.length >= 26) { height = head.readUInt32BE(14); width = head.readUInt32BE(18) }
+    if (head.length < 26 || head.toString('latin1', 0, 4) !== '8BPS' || ![1, 2].includes(head.readUInt16BE(4))) throw new Error(`The PSD/PSB ${file} has an invalid header; its preview could not be verified.`)
+    height = head.readUInt32BE(14); width = head.readUInt32BE(18)
     input = psdThumbnail(head)
-    if (!input) return { thumb: null, width, height }
   } else {
-    const meta = await sharp(file, { failOn: 'none' }).metadata().catch(() => ({}))
-    width = meta.width || 0
-    height = meta.height || 0
+    const meta = await sharp(file, { failOn: 'error' }).metadata()
+    width = meta.width; height = meta.height
   }
-  await fs.promises.mkdir(dir, { recursive: true })
-  await sharp(input, { failOn: 'none' }).rotate().resize(THUMB_EDGE, THUMB_EDGE, { fit: 'inside' }).jpeg({ quality: 78 }).toFile(out)
-  await fs.promises.writeFile(metaFile, JSON.stringify({ width, height }))
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) throw new Error(`The sheet ${file} has invalid dimensions; its preview could not be verified.`)
+  if (!input) {
+    await unchangedSource(file, sourceKey, identity)
+    return { thumb: null, width, height, warning: 'A stored PSD/PSB JPEG preview could not be read within the first 4 MiB. The layered sheet has not been rendered or visually verified.' }
+  }
+  await unchangedSource(file, sourceKey, identity)
+  await deriveCached(file, out, sourceKey, recipe, (tmp) => sharp(input, { failOn: 'error' }).rotate().resize(THUMB_EDGE, THUMB_EDGE, { fit: 'inside' }).jpeg({ quality: 78 }).toFile(tmp), { width, height })
+  await unchangedSource(file, sourceKey, identity)
   return { thumb: out, width, height }
 }
 
@@ -92,8 +98,7 @@ async function listSheetsUnlocked(folder) {
   const out = []
   for (const name of files) {
     const file = path.join(folder, name)
-    const st = await fs.promises.stat(file)
-    const t = await thumbFor(file, st).catch(() => ({ thumb: null, width: 0, height: 0 }))
+    const t = await thumbFor(file).catch((error) => ({ thumb: null, width: 0, height: 0, error: `Preview unavailable: ${error.message}. The sheet and existing previews have been preserved.` }))
     out.push({ path: file, fileName: name, baseName: name.replace(/\.[^.]+$/, ''), ext: path.extname(name), ...t })
   }
   return { folder, name: path.basename(folder), sheets: out }

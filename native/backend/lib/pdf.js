@@ -124,7 +124,9 @@ async function writeJpegPdf(file, pages, opts = {}) {
       const content = `q ${w} 0 0 ${h} 0 0 cm /Im${i} Do Q`
       await obj(n + 1, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
       offsets[n + 2] = offset
-      await write(`${n + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${size.width} /Height ${size.height} /ColorSpace ${space} /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`)
+      // Match the source-to-sRGB proof policy. PDF's default relative colourimetric
+      // intent changes LUT-profile CMYK colours compared with perceptual conversion.
+      await write(`${n + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${size.width} /Height ${size.height} /ColorSpace ${space} /Intent /Perceptual /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`)
       await write(jpeg)
       await write('\nendstream\nendobj\n')
       if (opts.onPage) opts.onPage(i + 1)

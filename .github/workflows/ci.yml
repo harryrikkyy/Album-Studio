@@ -67,6 +67,11 @@ jobs:
       - name: Build pinned shell and real CLI
         run: node native/scripts/engine.mjs build
 
+      - name: Install independent PDF colour verifier
+        run: |
+          brew install poppler
+          pdftoppm -v
+
       - name: Test all Node suites; reject any skipped real-engine tests
         shell: bash
         run: |

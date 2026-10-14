@@ -8,7 +8,7 @@ process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 const { openAlbum } = require('../lib/album')
 const { updateAlbum, undo, redo, migrateAlbum } = require('../lib/project')
 const { spreadHash, renderPlan, startRender } = require('../lib/render')
-const { fileStamp } = require('../lib/cache')
+const { fileStamp, fileDigest } = require('../lib/cache')
 
 async function fixture() {
   const { root, proj } = makeProject()
@@ -19,7 +19,7 @@ async function fixture() {
   const one = path.join(output, 'Page_001.psd'), two = path.join(output, 'Page_002.psd')
   fs.writeFileSync(one, 'A rendered document'); fs.writeFileSync(two, 'B rendered document')
   const a = await openAlbum({ path: proj }), cache = {}
-  for (const s of a.spreads) cache[s.n] = { hash: await spreadHash(s, a, d.workspace), sheet: await fileStamp(s.n === 1 ? one : two) }
+  for (const s of a.spreads) cache[s.n] = { hash: await spreadHash(s, a, d.workspace), sheet: await fileStamp(s.n === 1 ? one : two), sheetDigest: await fileDigest(s.n === 1 ? one : two) }
   fs.mkdirSync(path.join(output, '.album-studio'), { recursive: true })
   fs.writeFileSync(path.join(output, '.album-studio', 'render-cache.json'), JSON.stringify(cache))
   fs.appendFileSync(one, ' + hand edits')

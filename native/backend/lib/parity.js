@@ -10,7 +10,6 @@
 'use strict'
 
 const fs = require('fs')
-const os = require('os')
 const path = require('path')
 const { PhotoCraftSession } = require('./photocraft')
 
@@ -218,24 +217,28 @@ async function addOverlays(pc, overlays, { width, height, tplIdx }) {
  * profile are kept, so the copy places exactly like the original. Cached by source and settings.
  */
 async function bakeAdjustments(file, adjust, cacheDir) {
-  if (!adjust || !Object.keys(adjust).some((k) => k !== 'vignette' && adjust[k])) return file
-  const crypto = require('crypto')
-  const st = await fs.promises.stat(file)
-  const key = crypto.createHash('sha1').update(JSON.stringify([file, st.size, st.mtimeMs, adjust])).digest('hex').slice(0, 16)
-  const out = path.join(cacheDir, `${path.basename(file).replace(/\.[^.]+$/, '')}-adj-${key}.jpg`)
-  if (await fs.promises.access(out).then(() => true, () => false)) return out
-  await fs.promises.mkdir(cacheDir, { recursive: true })
+  return (await bakeAdjustmentsEvidence(file, adjust, cacheDir)).file
+}
+async function bakeAdjustmentsEvidence(file, adjust, cacheDir) {
+  if (!adjust || !Object.keys(adjust).some((k) => k !== 'vignette' && adjust[k])) {
+    const { fileDigest, contentKey } = require('./cache'), digest = await fileDigest(file)
+    return { file, digest, sourceKey: contentKey(file, digest) }
+  }
+  const { contentFileKey } = require('./cache')
+  const { deriveCached, derivedKey, sourceBase } = require('./raw')
+  const sourceKey = await contentFileKey(file)
+  const recipe = `adjustments-jpeg95-v1:${JSON.stringify(adjust)}`
+  const key = derivedKey(sourceKey, recipe)
+  const out = path.join(cacheDir, `${sourceBase(file)}-adj-${key}.jpg`)
   const sharp = require('../../../src/sharp_config').getSharp()
   const { applyAdjust } = require('../../../src/proof_renderer')
-  const tmp = path.join(os.tmpdir(), `as-adj-${process.pid}-${key}.jpg`)
-  const meta = await sharp(file, { failOn: 'none' }).metadata()
-  await applyAdjust(sharp, sharp(file, { failOn: 'none' }), adjust, { width: meta.width, height: meta.height })
-    .withMetadata()
-    .jpeg({ quality: 95, chromaSubsampling: '4:4:4' })
-    .toFile(tmp)
-  await fs.promises.copyFile(tmp, out)
-  await fs.promises.unlink(tmp).catch(() => {})
-  return out
+  return deriveCached(file, out, sourceKey, recipe, async (tmp) => {
+    const meta = await sharp(file, { failOn: 'error' }).metadata()
+    await applyAdjust(sharp, sharp(file, { failOn: 'error' }), adjust, { width: meta.width, height: meta.height })
+      .withMetadata()
+      .jpeg({ quality: 95, chromaSubsampling: '4:4:4' })
+      .toFile(tmp)
+  })
 }
 
-module.exports = { applyLayerEdits, addOverlays, bakeAdjustments, pairLayers }
+module.exports = { applyLayerEdits, addOverlays, bakeAdjustments, bakeAdjustmentsEvidence, pairLayers }

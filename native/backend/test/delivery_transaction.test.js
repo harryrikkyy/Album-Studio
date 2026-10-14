@@ -9,6 +9,7 @@ const { execFile } = require('child_process')
 const { promisify } = require('util')
 const { tmpdir } = require('./fixtures')
 const { fileStamp } = require('../lib/cache')
+const exclusiveRename = require('../lib/exclusive_rename')
 const { publishDelivery, recoverDeliveries, verifyOwnedArtifact } = require('../lib/delivery_transaction')
 const runFile = promisify(execFile)
 
@@ -46,6 +47,12 @@ async function fixture(t, { existing = true, strong = true } = {}) {
 
 async function publish(f, extra = {}) { return publishDelivery(f.files, f.cache, f.stage, { paths: f.paths, albumFile: f.albumFile, makeCache: f.makeCache, ...extra }) }
 
+function injectCapture(t, hook) {
+  const rename = fs.promises.rename.bind(fs.promises), exclusive = exclusiveRename.renameExclusive.bind(exclusiveRename)
+  t.mock.method(fs.promises, 'rename', async (from, to) => { await hook(from, to); return rename(from, to) })
+  t.mock.method(exclusiveRename, 'renameExclusive', async (from, to) => { await hook(from, to); return exclusive(from, to) })
+}
+
 function assertPrevious(f) {
   f.targets.concat(f.paths.cache).forEach((file, index) => {
     if (f.previous[index] === null) assert.equal(fs.existsSync(file), false, `${file} stays absent`)
@@ -65,9 +72,13 @@ function assertNext(f) {
   assert.equal(cache.pdf.digest, digest(f.paths.pdf))
 }
 
+function historyOf(f) { return path.join(path.dirname(f.paths.cache), 'delivery-history', path.basename(f.stage)) }
+
 function assertClean(f) {
   assert.equal(fs.existsSync(f.stage), false)
-  assert.deepEqual(fs.readdirSync(path.dirname(f.paths.cache)), ['export-cache.json'])
+  assert.deepEqual(fs.readdirSync(path.dirname(f.paths.cache)).sort(), ['delivery-history', 'export-cache.json'])
+  assert.ok(fs.existsSync(path.join(historyOf(f), 'journal.json')), 'completed recovery data is retained outside the active stage scan')
+  for (const file of f.files) assert.ok(fs.existsSync(path.join(historyOf(f), path.basename(file.source))), 'prepared recovery bytes are never deleted automatically')
 }
 
 async function killedAt(f, boundary, operation = 'publish') {
@@ -77,6 +88,14 @@ const fs = require('fs'), path = require('path')
 const input = ${JSON.stringify(input)}, boundary = ${JSON.stringify(boundary)}
 const die = () => process.kill(process.pid, 'SIGKILL')
 const rename = fs.promises.rename.bind(fs.promises), link = fs.promises.link.bind(fs.promises), copy = fs.promises.copyFile.bind(fs.promises), unlink = fs.promises.unlink.bind(fs.promises), open = fs.promises.open.bind(fs.promises)
+const exclusive = require(${JSON.stringify(require.resolve('../lib/exclusive_rename'))}), atomic = exclusive.renameExclusive.bind(exclusive)
+exclusive.renameExclusive = async (from, to) => {
+  await atomic(from, to)
+  if (boundary === 'old-to-backup' && to === path.join(input.stage, 'backup-0')) die()
+  if (boundary === 'cache-to-backup' && to === path.join(input.stage, 'backup-3')) die()
+  if (boundary === 'rollback-discard' && to === path.join(input.stage, 'discard-0')) die()
+  if (boundary === 'committed-cleanup' && from === input.stage && path.dirname(to) === path.join(path.dirname(input.paths.cache), 'delivery-history')) die()
+}
 fs.promises.open = async (file, ...args) => {
   const handle = await open(file, ...args)
   if (boundary === 'reclaim-guard' && file === path.join(path.dirname(input.paths.cache), '.delivery.recovery.lock')) {
@@ -87,9 +106,6 @@ fs.promises.open = async (file, ...args) => {
 }
 fs.promises.rename = async (from, to) => {
   await rename(from, to)
-  if (boundary === 'old-to-backup' && to === path.join(input.stage, 'backup-0')) die()
-  if (boundary === 'cache-to-backup' && to === path.join(input.stage, 'backup-3')) die()
-  if (boundary === 'rollback-discard' && to === path.join(input.stage, 'discard-0')) die()
   if (boundary === 'committed-marker' && to === path.join(input.stage, 'journal.json') && JSON.parse(fs.readFileSync(to)).phase === 'committed') die()
 }
 fs.promises.link = async (from, to) => {
@@ -121,12 +137,18 @@ work.then(() => process.exit(0), (e) => { console.error(e.stack); process.exit(1
     assert.equal(error.signal, 'SIGKILL', error.stderr || error.message)
     return true
   })
-  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')), 'the killed process retains its recovery journal')
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')) || fs.existsSync(path.join(historyOf(f), 'journal.json')), 'the killed process retains its recovery journal or retired history')
 }
 
 test('complete delivery and its cache publish together with content ownership', async (t) => {
   const f = await fixture(t)
-  const records = await publish(f)
+  let validated = 0
+  const records = await publish(f, { validateSnapshot: async () => {
+    assert.equal(JSON.parse(fs.readFileSync(path.join(f.stage, 'journal.json'))).phase, 'pending')
+    assert.equal(JSON.parse(fs.readFileSync(path.join(f.stage, 'journal.json.new'))).phase, 'committed')
+    assertNext(f); validated++
+  } })
+  assert.equal(validated, 1, 'successful snapshot validation occurs before the atomic committed marker')
   assert.equal(records.length, 3)
   for (const record of records) { assert.equal(record.stamp, await fileStamp(record.target)); assert.equal(record.digest, digest(record.target)) }
   assertNext(f); assertClean(f)
@@ -157,10 +179,9 @@ test('first publication and legacy stamp ownership upgrade to digest ownership',
 
 test('caught data and cache failures restore every previous byte', async (t) => {
   for (const index of [1, 3]) await t.test(`backup-${index}`, async (tt) => {
-    const f = await fixture(tt), rename = fs.promises.rename.bind(fs.promises)
-    tt.mock.method(fs.promises, 'rename', async (from, to) => {
+    const f = await fixture(tt)
+    injectCapture(tt, (_from, to) => {
       if (to === path.join(f.stage, `backup-${index}`)) throw Object.assign(new Error('simulated full disk'), { code: 'ENOSPC' })
-      return rename(from, to)
     })
     await assert.rejects(publish(f), /simulated full disk/)
     assertPrevious(f); assertClean(f)
@@ -185,15 +206,67 @@ test('a cache or target edit while an asynchronous cache builder runs is rejecte
   })
 })
 
+test('source revision changes during final validation or marker flush restore the complete previous delivery', async (t) => {
+  for (const boundary of ['final-validation', 'commit-record-flush']) await t.test(boundary, async (tt) => {
+    const f = await fixture(tt), source = path.join(f.root, 'synthetic-render-source')
+    fs.writeFileSync(source, 'the captured source revision')
+    const expected = digest(source)
+    let changed = false, checks = 0
+    const mutate = () => { if (!changed) { changed = true; fs.writeFileSync(source, 'an externally changed source') } }
+    const lstat = fs.promises.lstat.bind(fs.promises)
+    tt.mock.method(fs.promises, 'lstat', async (file, ...args) => {
+      if (boundary === 'final-validation' && file === f.targets[0] && fs.existsSync(f.paths.cache) && JSON.parse(fs.readFileSync(f.paths.cache)).generation === 'next') mutate()
+      return lstat(file, ...args)
+    })
+    const open = fs.promises.open.bind(fs.promises)
+    tt.mock.method(fs.promises, 'open', async (file, ...args) => {
+      const handle = await open(file, ...args)
+      if (boundary === 'commit-record-flush' && file === path.join(f.stage, 'journal.json.new')) {
+        const sync = handle.sync.bind(handle)
+        tt.mock.method(handle, 'sync', async () => { await sync(); if (JSON.parse(fs.readFileSync(file)).phase === 'committed') mutate() })
+      }
+      return handle
+    })
+    await assert.rejects(publish(f, { validateSnapshot: async () => { checks++; if (digest(source) !== expected) throw new Error('captured source revision changed') } }), /captured source revision changed/)
+    assert.equal(checks, 1)
+    assert.equal(changed, true)
+    assertPrevious(f); assertClean(f)
+  })
+})
+
+test('a snapshot validator must be a function before publication can begin', async (t) => {
+  const f = await fixture(t)
+  await assert.rejects(publish(f, { validateSnapshot: 'invalid' }), /snapshot validator|validateSnapshot/)
+  assertPrevious(f)
+  assert.equal(fs.existsSync(path.join(f.stage, 'journal.json')), false)
+})
+
 test('cancellation before publication, between files and after cache publication restores the complete prior set', async (t) => {
-  for (const boundary of ['before', 'second-file', 'cache']) await t.test(boundary, async (tt) => {
+  for (const boundary of ['before', 'second-file', 'cache', 'final-validation', 'commit-record-flush', 'snapshot-validation']) await t.test(boundary, async (tt) => {
     const f = await fixture(tt), link = fs.promises.link.bind(fs.promises)
     let stop = boundary === 'before'
     tt.mock.method(fs.promises, 'link', async (from, to) => {
       await link(from, to)
       if (boundary === 'second-file' && to === f.targets[1] || boundary === 'cache' && to === f.paths.cache) stop = true
     })
-    await assert.rejects(publish(f, { isCancelled: () => stop }), (error) => error.code === 'DELIVERY_CANCELLED')
+    const lstat = fs.promises.lstat.bind(fs.promises)
+    tt.mock.method(fs.promises, 'lstat', async (file, ...args) => {
+      if (boundary === 'final-validation' && file === f.targets[0] && fs.existsSync(f.paths.cache) && JSON.parse(fs.readFileSync(f.paths.cache)).generation === 'next') stop = true
+      return lstat(file, ...args)
+    })
+    const open = fs.promises.open.bind(fs.promises)
+    tt.mock.method(fs.promises, 'open', async (file, ...args) => {
+      const handle = await open(file, ...args)
+      if (boundary === 'commit-record-flush' && file === path.join(f.stage, 'journal.json.new')) {
+        const sync = handle.sync.bind(handle)
+        tt.mock.method(handle, 'sync', async () => {
+          await sync()
+          if (JSON.parse(fs.readFileSync(file)).phase === 'committed') stop = true
+        })
+      }
+      return handle
+    })
+    await assert.rejects(publish(f, { isCancelled: () => stop, ...(boundary === 'snapshot-validation' ? { validateSnapshot: async () => { await new Promise((resolve) => setImmediate(resolve)); stop = true } } : {}) }), (error) => error.code === 'DELIVERY_CANCELLED')
     assertPrevious(f)
     if (boundary !== 'before') assertClean(f)
   })
@@ -253,6 +326,97 @@ test('a destination appearing at the exclusive install boundary survives with ba
   assertPrevious(f); assertClean(f)
 })
 
+test('an unrelated file appearing at a private backup destination is never overwritten', async (t) => {
+  const f = await fixture(t), backup = path.join(f.stage, 'backup-0')
+  let inserted = false
+  injectCapture(t, (_from, to) => { if (!inserted && to === backup) { inserted = true; fs.writeFileSync(to, 'unrelated private backup record') } })
+  const error = await publish(f).then(() => assert.fail('backup collision must reject publication'), (e) => e)
+  assert.equal(fs.readFileSync(backup, 'utf8'), 'unrelated private backup record')
+  assert.ok(fs.existsSync(error.recoveryJournal))
+  assertPrevious(f)
+})
+
+test('an unrelated file appearing at a private discard destination is never overwritten during rollback', async (t) => {
+  const f = await fixture(t), discard = path.join(f.stage, 'discard-0'), link = fs.promises.link.bind(fs.promises)
+  let failed = false, inserted = false
+  t.mock.method(fs.promises, 'link', async (from, to) => {
+    if (!failed && to === f.targets[1]) { failed = true; throw new Error('publication failure before rollback') }
+    return link(from, to)
+  })
+  injectCapture(t, (_from, to) => { if (!inserted && to === discard) { inserted = true; fs.writeFileSync(to, 'unrelated private discard record') } })
+  const error = await publish(f).then(() => assert.fail('publication must fail'), (e) => e)
+  assert.equal(fs.readFileSync(discard, 'utf8'), 'unrelated private discard record')
+  assert.deepEqual(fs.readFileSync(path.join(f.stage, 'backup-0')), f.previous[0])
+  assert.ok(fs.existsSync(error.recoveryJournal))
+})
+
+test('a recovery backup changed after enumeration is preserved with its journal', async (t) => {
+  const f = await fixture(t), backup = path.join(f.stage, 'backup-0'), readdir = fs.promises.readdir.bind(fs.promises)
+  let changed = false
+  t.mock.method(fs.promises, 'readdir', async (folder, ...args) => {
+    if (!changed && folder === f.stage && fs.existsSync(path.join(f.stage, 'journal.json')) && JSON.parse(fs.readFileSync(path.join(f.stage, 'journal.json'))).phase === 'committed') {
+      changed = true; fs.writeFileSync(backup, 'external recovery backup edit')
+    }
+    return readdir(folder, ...args)
+  })
+  const error = await publish(f).then(() => assert.fail('backup edit must retain recovery evidence'), (e) => e)
+  assert.equal(error.deliveryCommitted, true)
+  assert.equal(fs.readFileSync(backup, 'utf8'), 'external recovery backup edit')
+  assert.ok(fs.existsSync(error.recoveryJournal))
+  assertNext(f)
+})
+
+test('a history destination appearing during retirement is preserved without replacing either directory', async (t) => {
+  const f = await fixture(t), history = historyOf(f)
+  let inserted = false
+  injectCapture(t, (from, to) => {
+    if (!inserted && from === f.stage && to === history) { inserted = true; fs.mkdirSync(history); fs.writeFileSync(path.join(history, 'customer-record'), 'unrelated history') }
+  })
+  const error = await publish(f).then(() => assert.fail('history collision must retain the active stage'), (e) => e)
+  assert.equal(error.deliveryCommitted, true)
+  assert.equal(fs.readFileSync(path.join(history, 'customer-record'), 'utf8'), 'unrelated history')
+  assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
+  assert.ok(fs.existsSync(path.join(f.stage, 'backup-0')))
+  assertNext(f)
+})
+
+test('an edit racing history retirement is retained and reported at the actual history path', async (t) => {
+  const f = await fixture(t), history = historyOf(f)
+  let changed = false
+  injectCapture(t, (from, to) => {
+    if (!changed && from === f.stage && to === history) { changed = true; fs.writeFileSync(path.join(f.stage, 'backup-0'), 'edit racing atomic history move') }
+  })
+  const error = await publish(f).then(() => assert.fail('late history edit must be reported'), (e) => e)
+  assert.equal(error.deliveryCommitted, true)
+  assert.equal(error.recoveryStage, history)
+  assert.equal(error.recoveryJournal, path.join(history, 'journal.json'))
+  assert.equal(fs.existsSync(f.stage), false)
+  assert.equal(fs.readFileSync(path.join(history, 'backup-0'), 'utf8'), 'edit racing atomic history move')
+  assertNext(f)
+})
+
+test('a helper error after completed history movement reports the actual retained journal', async (t) => {
+  for (const rollback of [false, true]) await t.test(rollback ? 'restored' : 'committed', async (tt) => {
+    const f = await fixture(tt), history = historyOf(f), move = exclusiveRename.renameExclusive.bind(exclusiveRename), link = fs.promises.link.bind(fs.promises)
+    let failedPublication = false, failedRetirement = false
+    if (rollback) tt.mock.method(fs.promises, 'link', async (from, to) => {
+      if (!failedPublication && to === f.targets[1]) { failedPublication = true; throw new Error('publication failed before history retirement') }
+      return link(from, to)
+    })
+    tt.mock.method(exclusiveRename, 'renameExclusive', async (from, to) => {
+      await move(from, to)
+      if (!failedRetirement && from === f.stage && to === history) { failedRetirement = true; throw Object.assign(new Error('helper stopped after its atomic move'), { code: 'ETIMEDOUT' }) }
+    })
+    const error = await publish(f).then(() => assert.fail('helper uncertainty must report retained evidence'), (e) => e)
+    assert.equal(error.recoveryStage, history)
+    assert.equal(error.recoveryJournal, path.join(history, 'journal.json'))
+    assert.ok(fs.existsSync(error.recoveryJournal))
+    assert.equal(fs.existsSync(f.stage), false)
+    if (rollback) { assert.equal(error.deliveryCommitted, undefined); assertPrevious(f) }
+    else { assert.equal(error.deliveryCommitted, true); assertNext(f) }
+  })
+})
+
 test('the copy fallback is exclusive, content-checked and preserves timestamps', async (t) => {
   const f = await fixture(t)
   t.mock.method(fs.promises, 'link', async () => { throw Object.assign(new Error('unsupported'), { code: 'ENOTSUP' }) })
@@ -280,11 +444,10 @@ test('a synchronous commit-journal flush failure restores the old set before a m
   assertPrevious(f); assertClean(f)
 })
 
-test('a cleanup failure after commit reports committed status and restart keeps the new set', async (t) => {
-  const f = await fixture(t), unlink = fs.promises.unlink.bind(fs.promises)
-  t.mock.method(fs.promises, 'unlink', async (file) => {
-    if (file === path.join(f.stage, 'backup-0')) throw Object.assign(new Error('backup cleanup refused'), { code: 'EIO' })
-    return unlink(file)
+test('a history retirement failure after commit reports committed status and restart keeps the new set', async (t) => {
+  const f = await fixture(t)
+  injectCapture(t, (from, to) => {
+    if (from === f.stage && to === historyOf(f)) throw Object.assign(new Error('history retirement refused'), { code: 'EIO' })
   })
   const error = await publish(f).then(() => assert.fail('cleanup must fail'), (e) => e)
   assert.equal(error.deliveryCommitted, true)
@@ -297,11 +460,10 @@ test('a cleanup failure after commit reports committed status and restart keeps 
 })
 
 test('an edit racing the capture of an old target is preserved in its recovery backup', async (t) => {
-  const f = await fixture(t), rename = fs.promises.rename.bind(fs.promises)
+  const f = await fixture(t)
   let changed = false
-  t.mock.method(fs.promises, 'rename', async (from, to) => {
+  injectCapture(t, (from, to) => {
     if (!changed && to === path.join(f.stage, 'backup-0')) { changed = true; fs.writeFileSync(from, 'external edit racing capture') }
-    return rename(from, to)
   })
   const error = await publish(f).then(() => assert.fail('concurrent edit must fail'), (e) => e)
   assert.ok(error.recoveryJournal && fs.existsSync(error.recoveryJournal))
@@ -313,11 +475,9 @@ test('an edit racing the capture of an old target is preserved in its recovery b
 test('an edit racing rollback remains at its name and in a retained recovery copy', async (t) => {
   const f = await fixture(t)
   await killedAt(f, 'new-link')
-  const rename = fs.promises.rename.bind(fs.promises)
   let changed = false
-  t.mock.method(fs.promises, 'rename', async (from, to) => {
+  injectCapture(t, (from, to) => {
     if (!changed && to === path.join(f.stage, 'discard-0')) { changed = true; fs.writeFileSync(from, 'external edit racing rollback') }
-    return rename(from, to)
   })
   await assert.rejects(recoverDeliveries(f.paths, { albumFile: f.albumFile }), /rollback conflict/)
   assert.equal(fs.readFileSync(f.targets[0], 'utf8'), 'external edit racing rollback')
@@ -357,7 +517,9 @@ test('restart keeps the complete new set after committed marker and interrupted 
     const f = await fixture(tt)
     await killedAt(f, boundary)
     const recovery = await recoverDeliveries(f.paths, { albumFile: f.albumFile })
-    assert.equal(recovery.recovered[0].state, 'committed')
+    if (boundary === 'committed-marker') assert.equal(recovery.recovered[0].state, 'committed')
+    else assert.equal(recovery.recovered.length, 0, 'history is retained and never replayed as an active transaction')
+    assert.deepEqual(recovery.orphanStages, [], 'the durable history root is excluded from active recovery scanning')
     assertNext(f); assertClean(f)
   })
 })

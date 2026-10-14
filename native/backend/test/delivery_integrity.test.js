@@ -9,8 +9,8 @@ const { tmpdir } = require('./fixtures')
 process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 const { openAlbum } = require('../lib/album')
 const { updateAlbum } = require('../lib/project')
-const { fileStamp } = require('../lib/cache')
-const { spreadHash } = require('../lib/render')
+const { fileStamp, fileDigest } = require('../lib/cache')
+const { spreadHash, renderPlan, startRender } = require('../lib/render')
 const { startExport, exportPlan, cancelExport } = require('../lib/deliver')
 
 function writeSheet(file, rgb) {
@@ -33,7 +33,7 @@ async function fixture({ missing = false } = {}) {
   const ws = { imageTokens: [shoot], templateTokens: [templates], outputToken: out }
   fs.writeFileSync(path.join(proj, 'project.json'), JSON.stringify({ version: 1, workspace: ws, totalActivePages: 3, albumPages: pages }))
   const album = await openAlbum({ path: proj }), cache = {}
-  for (const spread of album.spreads) if (!(missing && spread.n === 3)) cache[spread.n] = { hash: await spreadHash(spread, album, ws), sheet: await fileStamp(spread.sheet) }
+  for (const spread of album.spreads) if (!(missing && spread.n === 3)) cache[spread.n] = { hash: await spreadHash(spread, album, ws), sheet: await fileStamp(spread.sheet), sheetDigest: await fileDigest(spread.sheet) }
   fs.mkdirSync(path.join(out, '.album-studio'))
   fs.writeFileSync(path.join(out, '.album-studio', 'render-cache.json'), JSON.stringify(cache))
   return { root, proj, out }
@@ -46,6 +46,12 @@ async function run(params, observe = () => {}) {
   await new Promise((resolve) => setImmediate(resolve))
   return result
 }
+async function render(params) {
+  let finish
+  const done = new Promise((resolve) => { finish = resolve })
+  await startRender(params, { emit: (event, data) => { if (event === 'render.finished') finish(data) } })
+  return done
+}
 
 test('a Plan edit invalidates export readiness and production export refuses the old sheet', async () => {
   const { proj } = await fixture()
@@ -54,6 +60,49 @@ test('a Plan edit invalidates export readiness and production export refuses the
   const plan = await exportPlan({ album: proj, heightInches: 0.5 })
   assert.equal(plan.spreads[0].state, 'blocked')
   await assert.rejects(run({ album: proj }), /changed|render|stale/i)
+})
+
+test('same-size/preserved-time original edits block old rendered-sheet delivery', async () => {
+  const { proj } = await fixture()
+  assert.equal((await run({ album: proj })).failed, 0)
+  const album = await openAlbum({ path: proj }), file = album.photos.img_Shoot_1_jpg.original
+  const bytes = fs.readFileSync(file), st = fs.statSync(file), stamp = await fileStamp(file)
+  const quantization = bytes.indexOf(Buffer.from([255, 219]))
+  assert.ok(quantization >= 0)
+  bytes[quantization + 5] = bytes[quantization + 5] === 1 ? 2 : 1
+  fs.writeFileSync(file, bytes); fs.utimesSync(file, st.atime, st.mtime)
+  await sharp(file, { failOn: 'warning' }).raw().toBuffer()
+  assert.equal(await fileStamp(file), stamp)
+  assert.equal((await exportPlan({ album: proj, heightInches: 0.5 })).spreads[0].state, 'blocked')
+  await assert.rejects(run({ album: proj }), /changed|content history|render/i)
+})
+
+test('same-size/preserved-time manual sheet changes invalidate delivery readiness and remain protected', async () => {
+  const { proj } = await fixture()
+  assert.equal((await run({ album: proj })).failed, 0)
+  const album = await openAlbum({ path: proj }), sheet = album.spreads[0].sheet, st = fs.statSync(sheet), stamp = await fileStamp(sheet)
+  writeSheet(sheet, [30, 230, 30]); assert.equal(fs.statSync(sheet).size, st.size)
+  fs.utimesSync(sheet, st.atime, st.mtime)
+  assert.equal(await fileStamp(sheet), stamp)
+  assert.equal((await exportPlan({ album: proj, heightInches: 0.5 })).spreads[0].state, 'stale')
+  assert.equal((await renderPlan({ album: proj })).spreads[0].edited, true)
+  const before = fs.readFileSync(sheet)
+  assert.equal((await render({ album: proj, spreads: [1], force: true })).skipped, 1)
+  assert.deepEqual(fs.readFileSync(sheet), before)
+  assert.equal((await run({ album: proj })).failed, 0)
+})
+
+test('historical stamp-only render records retain their files but cannot claim current production content', async () => {
+  const { proj, out } = await fixture(), file = path.join(out, '.album-studio', 'render-cache.json')
+  const cache = JSON.parse(fs.readFileSync(file, 'utf8'))
+  for (const e of Object.values(cache)) { e.hash = 'a'.repeat(64); delete e.sheetDigest }
+  fs.writeFileSync(file, JSON.stringify(cache))
+  const originals = [1, 2, 3].map((n) => path.join(out, `Page_00${n}.psd`)), bytes = originals.map((p) => fs.readFileSync(p))
+  const plan = await exportPlan({ album: proj, heightInches: 0.5 })
+  assert.ok(plan.spreads.every((s) => s.state === 'blocked'))
+  await assert.rejects(run({ album: proj }), /content history|render/i)
+  assert.equal((await render({ album: proj, force: true })).skipped, 3)
+  originals.forEach((p, i) => assert.deepEqual(fs.readFileSync(p), bytes[i]))
 })
 
 test('delivery follows stable spread ownership after reorder, including edited PSDs', async () => {

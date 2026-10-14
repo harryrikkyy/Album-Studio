@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-14T06:35:37.119Z",
+  "module": "native/backend/lib/jobs.js",
+  "scope": "Read-only acquisition diagnostic; no album files or engines opened.",
+  "owners": [
+    {
+      "pid": 8117,
+      "lease": {
+        "id": "6f1ebe7d-0915-4c03-a261-15b5d76c219f",
+        "kind": "render",
+        "requested": "/private/tmp/album-quality-isolation-diagnostic",
+        "album": null,
+        "file": null
+      },
+      "processAlive": true
+    },
+    {
+      "pid": 8118,
+      "lease": {
+        "id": "dfca1c83-cbdc-4118-8bb1-e315034ee975",
+        "kind": "render",
+        "requested": "/private/tmp/album-quality-isolation-diagnostic",
+        "album": null,
+        "file": null
+      },
+      "processAlive": true
+    }
+  ],
+  "expected": "Only one process may hold the same album; a second acquisition must fail.",
+  "actual": "Both independent Node processes held a lease concurrently. They release their in-memory leases and exit after this evidence is captured."
+}

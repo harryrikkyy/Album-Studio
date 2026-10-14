@@ -9,7 +9,8 @@
 
 const fs = require('fs')
 const path = require('path')
-const { cacheRoot, fileKey, writeAtomic } = require('./cache')
+const { cacheRoot, contentFileKey, writeAtomic } = require('./cache')
+const { readPsdBuffer } = require('./color')
 
 let agpsd = null
 function getAgPsd() {
@@ -44,7 +45,7 @@ const memo = new Map()
 async function offPageFrames(psdPath) {
   const st = await fs.promises.stat(psdPath).catch(() => null)
   if (!st) return []
-  const key = fileKey(psdPath, st)
+  const key = await contentFileKey(psdPath)
   if (memo.has(key)) return memo.get(key)
   const file = path.join(cacheRoot(), 'templates', key, 'frames-check-1.json')
   const job = (async () => {
@@ -53,8 +54,9 @@ async function offPageFrames(psdPath) {
     } catch (_) { /* not checked yet */ }
     try {
       const { collectFrames } = require('./psd_template')
-      const psd = getAgPsd().readPsd(await fs.promises.readFile(psdPath), { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
+      const psd = getAgPsd().readPsd(await readPsdBuffer(psdPath), { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
       const off = framesOffPage(psd.width, psd.height, collectFrames(psd.children))
+      if (await contentFileKey(psdPath) !== key) throw new Error('The template changed during its frame check.')
       await writeAtomic(file, JSON.stringify({ off }))
       return off
     } catch (_) {
@@ -62,7 +64,7 @@ async function offPageFrames(psdPath) {
     }
   })()
   memo.set(key, job)
-  return job
+  try { return await job } finally { memo.delete(key) }
 }
 
 /**

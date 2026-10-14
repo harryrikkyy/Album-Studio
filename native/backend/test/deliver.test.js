@@ -16,7 +16,7 @@ const { exportPlan, startExport, exportSheet } = require('../lib/deliver')
 const { writeJpegPdf, jpegComponents } = require('../lib/pdf')
 const { openAlbum } = require('../lib/album')
 const { spreadHash } = require('../lib/render')
-const { fileStamp } = require('../lib/cache')
+const { fileStamp, fileDigest } = require('../lib/cache')
 
 /** A "rendered sheet": a 600×200 PSD whose stored composite is a red left half, blue right half. */
 function writeSheet(file, right = [0, 0, 255], scale = 1) {
@@ -51,7 +51,7 @@ async function makeAlbum() {
   writeSheet(path.join(out, 'Page_002.psd'), [0, 255, 0], 3)
   writeSheet(path.join(out, 'Page_003.psd'), [0, 0, 255], 3)
   const album = await openAlbum({ path: proj }), cache = {}
-  for (const sp of album.spreads) cache[sp.n] = { hash: await spreadHash(sp, album, ws), sheet: await fileStamp(sp.sheet) }
+  for (const sp of album.spreads) cache[sp.n] = { hash: await spreadHash(sp, album, ws), sheet: await fileStamp(sp.sheet), sheetDigest: await fileDigest(sp.sheet) }
   fs.mkdirSync(path.join(out, '.album-studio'))
   fs.writeFileSync(path.join(out, '.album-studio', 'render-cache.json'), JSON.stringify(cache))
   return { root, proj, out }

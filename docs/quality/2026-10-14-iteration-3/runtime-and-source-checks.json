@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-14T06:38:39.640Z",
+  "rootHead": "0259580cec6cb6eb5fbb4d3986c94fc6bf7bd849",
+  "branch": "codex/album-quality-improvement",
+  "engine": {
+    "engine": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft",
+    "commit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+    "rustToolchain": "1.99.0",
+    "cargoLockSha256": "b05366471fba27616e6a59a2a1aece062d296a08e09930a197c1c743c2b49bbb",
+    "features": [
+      "heif"
+    ]
+  },
+  "reconstructedEngine": {
+    "engine": "/private/tmp/album-studio-pinned-20261013-bdb1f8f",
+    "commit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+    "rustToolchain": "1.99.0",
+    "cargoLockSha256": "b05366471fba27616e6a59a2a1aece062d296a08e09930a197c1c743c2b49bbb",
+    "features": [
+      "heif"
+    ]
+  },
+  "engineStatus": "?? .DS_Store\n?? apps/.DS_Store\n?? apps/photocraft/.DS_Store",
+  "node": "v22.22.3",
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cli": {
+    "path": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/photocraft-cli",
+    "version": "photocraft-cli 0.6.0 (bdb1f8f35, 2026-10-12)",
+    "sha256": "eeaadd9d862d477fb8666c61f0279a7a187cdfefe12b1813c712f18dcdd805fc"
+  },
+  "renameHelper": {
+    "path": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/album-studio-rename-exclusive",
+    "version": "album-studio-rename-exclusive 9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101",
+    "sha256": "dfb18cbb6e1316f5e6cf30aa8a9673fe0d7bce60497f982606112e1d2eb07355",
+    "sourceSha256": "9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101"
+  },
+  "sourceChecks": {
+    "shellParser": "zsh (script shebang); bash is not the supported parser",
+    "shellSyntax": "passed",
+    "engineScriptSyntax": "passed",
+    "trackedSourceWhitespace": "passed"
+  }
+}

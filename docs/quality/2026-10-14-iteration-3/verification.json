@@ -1,0 +1,633 @@
+{
+  "date": "2026-10-14",
+  "iteration": 3,
+  "branch": "codex/album-quality-improvement",
+  "sourceCheckpointParent": "0259580cec6cb6eb5fbb4d3986c94fc6bf7bd849",
+  "engineCommit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "engineTrackedChanges": false,
+  "nodeTests": {
+    "shared": 273,
+    "helper": 409,
+    "interface": 33,
+    "total": 715,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "nodeVersion": "v22.22.3",
+    "scope": "Strict application gate with previously fresh pinned provenance-tagged CLI and freshly compiled source-checksummed atomic helper. Native GUI/full workspace/Clippy/corpus/hosted CI excluded."
+  },
+  "enginePin": {
+    "engine": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft",
+    "commit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+    "rustToolchain": "1.99.0",
+    "cargoLockSha256": "b05366471fba27616e6a59a2a1aece062d296a08e09930a197c1c743c2b49bbb",
+    "features": [
+      "heif"
+    ],
+    "cli": {
+      "path": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/photocraft-cli",
+      "version": "photocraft-cli 0.6.0 (bdb1f8f35, 2026-10-12)",
+      "sha256": "eeaadd9d862d477fb8666c61f0279a7a187cdfefe12b1813c712f18dcdd805fc"
+    },
+    "renameHelper": {
+      "path": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/album-studio-rename-exclusive",
+      "version": "album-studio-rename-exclusive 9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101",
+      "sha256": "dfb18cbb6e1316f5e6cf30aa8a9673fe0d7bce60497f982606112e1d2eb07355",
+      "sourceSha256": "9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101"
+    },
+    "scope": "Engine reconstruction/build evidence retained from iteration 2; pin/lock/version/hash reverified this iteration. C helper rebuilt; no new full engine workspace build or package/install is claimed."
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "typecheck": "passed",
+  "uiBuild": {
+    "status": "passed",
+    "javascriptKiB": 167.2,
+    "cssKiB": 54.5
+  },
+  "packagingCollector": {
+    "files": 50,
+    "packages": 10,
+    "scope": "Static runtime closure; packaging script includes/signs atomic helper. Actual fresh root package/install unverified."
+  },
+  "coverage": {
+    "tests": 682,
+    "failed": 0,
+    "skipped": 0,
+    "scope": "Shared/helper per-source coverage. Report aggregate includes tests and is not product coverage; native/UI coverage unmeasured.",
+    "perSourceFile": {
+      "native/backend/lib/account.js": {
+        "lines": 95.96,
+        "branches": 86.43,
+        "functions": 89.36
+      },
+      "native/backend/lib/album.js": {
+        "lines": 99.13,
+        "branches": 88.08,
+        "functions": 100
+      },
+      "native/backend/lib/autofill.js": {
+        "lines": 98.94,
+        "branches": 73.68,
+        "functions": 88.89
+      },
+      "native/backend/lib/cache.js": {
+        "lines": 96.81,
+        "branches": 89.58,
+        "functions": 87.5
+      },
+      "native/backend/lib/color.js": {
+        "lines": 97.23,
+        "branches": 81.63,
+        "functions": 89.74
+      },
+      "native/backend/lib/deliver.js": {
+        "lines": 99.03,
+        "branches": 87.34,
+        "functions": 90.48
+      },
+      "native/backend/lib/delivery_transaction.js": {
+        "lines": 98.84,
+        "branches": 89.65,
+        "functions": 98.21
+      },
+      "native/backend/lib/exclusive_rename.js": {
+        "lines": 100,
+        "branches": 66.67,
+        "functions": 100
+      },
+      "native/backend/lib/identity.js": {
+        "lines": 97.37,
+        "branches": 84.21,
+        "functions": 100
+      },
+      "native/backend/lib/inputs.js": {
+        "lines": 100,
+        "branches": 88.24,
+        "functions": 100
+      },
+      "native/backend/lib/jobs.js": {
+        "lines": 96.88,
+        "branches": 96.43,
+        "functions": 90
+      },
+      "native/backend/lib/jpeg_size.js": {
+        "lines": 95.89,
+        "branches": 61.76,
+        "functions": 83.33
+      },
+      "native/backend/lib/labnaming.js": {
+        "lines": 97.91,
+        "branches": 85.51,
+        "functions": 97.44
+      },
+      "native/backend/lib/library.js": {
+        "lines": 100,
+        "branches": 69.44,
+        "functions": 94.12
+      },
+      "native/backend/lib/newalbum.js": {
+        "lines": 100,
+        "branches": 69.12,
+        "functions": 85.19
+      },
+      "native/backend/lib/parity.js": {
+        "lines": 84.43,
+        "branches": 64.37,
+        "functions": 62.5
+      },
+      "native/backend/lib/pdf.js": {
+        "lines": 100,
+        "branches": 91.21,
+        "functions": 83.33
+      },
+      "native/backend/lib/photocraft.js": {
+        "lines": 100,
+        "branches": 85.07,
+        "functions": 91.67
+      },
+      "native/backend/lib/picks.js": {
+        "lines": 96.67,
+        "branches": 84.42,
+        "functions": 92.59
+      },
+      "native/backend/lib/preflight.js": {
+        "lines": 100,
+        "branches": 91.36,
+        "functions": 97.3
+      },
+      "native/backend/lib/print_settings.js": {
+        "lines": 100,
+        "branches": 93.75,
+        "functions": 100
+      },
+      "native/backend/lib/project.js": {
+        "lines": 99.08,
+        "branches": 82.05,
+        "functions": 96.59
+      },
+      "native/backend/lib/proofs.js": {
+        "lines": 86.86,
+        "branches": 74.21,
+        "functions": 81.82
+      },
+      "native/backend/lib/psd_template.js": {
+        "lines": 93.8,
+        "branches": 78.52,
+        "functions": 93.1
+      },
+      "native/backend/lib/raw.js": {
+        "lines": 93.82,
+        "branches": 75.19,
+        "functions": 93.75
+      },
+      "native/backend/lib/recent.js": {
+        "lines": 100,
+        "branches": 93.33,
+        "functions": 100
+      },
+      "native/backend/lib/render.js": {
+        "lines": 97.2,
+        "branches": 74.79,
+        "functions": 84.38
+      },
+      "native/backend/lib/sheet.js": {
+        "lines": 94.42,
+        "branches": 81.13,
+        "functions": 88.89
+      },
+      "native/backend/lib/sheets.js": {
+        "lines": 100,
+        "branches": 89.06,
+        "functions": 100
+      },
+      "native/backend/lib/storage.js": {
+        "lines": 100,
+        "branches": 85.71,
+        "functions": 90.91
+      },
+      "native/backend/lib/template_check.js": {
+        "lines": 95.18,
+        "branches": 87.5,
+        "functions": 77.78
+      },
+      "native/backend/lib/templates.js": {
+        "lines": 99.18,
+        "branches": 87.5,
+        "functions": 85.71
+      },
+      "native/backend/lib/thumbs.js": {
+        "lines": 100,
+        "branches": 92.31,
+        "functions": 83.33
+      },
+      "native/backend/methods.js": {
+        "lines": 88.5,
+        "branches": 75,
+        "functions": 4.88
+      },
+      "native/backend/server.js": {
+        "lines": 72.15,
+        "branches": 75,
+        "functions": 25
+      },
+      "native/scripts/engine.mjs": {
+        "lines": 59.09,
+        "branches": 82.61,
+        "functions": 66.67
+      },
+      "native/scripts/publish-new-directory.mjs": {
+        "lines": 85.45,
+        "branches": 42.86,
+        "functions": 100
+      },
+      "src/curation.js": {
+        "lines": 91.16,
+        "branches": 90,
+        "functions": 90.91
+      },
+      "src/editor_geometry.js": {
+        "lines": 100,
+        "branches": 87.01,
+        "functions": 100
+      },
+      "src/firebase_auth.js": {
+        "lines": 100,
+        "branches": 82.05,
+        "functions": 95.65
+      },
+      "src/license_signing.js": {
+        "lines": 96.15,
+        "branches": 87.5,
+        "functions": 100
+      },
+      "src/license.js": {
+        "lines": 84.35,
+        "branches": 70,
+        "functions": 100
+      },
+      "src/main/firestore_rest.js": {
+        "lines": 94.64,
+        "branches": 64.29,
+        "functions": 85.71
+      },
+      "src/overlay_ps.js": {
+        "lines": 100,
+        "branches": 88.57,
+        "functions": 100
+      },
+      "src/overlay_render.js": {
+        "lines": 99.4,
+        "branches": 92.18,
+        "functions": 100
+      },
+      "src/proof_renderer.js": {
+        "lines": 48.46,
+        "branches": 66.25,
+        "functions": 52.63
+      },
+      "src/psd_layers.js": {
+        "lines": 91.58,
+        "branches": 85.16,
+        "functions": 91.3
+      },
+      "src/renderer_pure.js": {
+        "lines": 99.8,
+        "branches": 95.57,
+        "functions": 100
+      },
+      "src/sharp_config.js": {
+        "lines": 100,
+        "branches": 75,
+        "functions": 100
+      },
+      "src/shortcut_target.js": {
+        "lines": 100,
+        "branches": 92,
+        "functions": 100
+      },
+      "src/ui_icons.js": {
+        "lines": 95.58,
+        "branches": 50,
+        "functions": 66.67
+      }
+    }
+  },
+  "priorEvidence": {
+    "manifest": "docs/quality/2026-10-13-iteration-2/verification.json",
+    "sha256": "bc04f2ae7724547fb5bc5b5ba297d02a4406f9c8eab6decbc46a7bdc6e9c6eb6",
+    "verifiedChecksums": 184,
+    "scope": "Previous source hashes reverified from recorded Git checkpoint objects and previous artifact bytes from disk; current source legitimately differs."
+  },
+  "review": {
+    "status": "incomplete",
+    "workerExecutionLimit": "All three review workers terminal at provider usage limit; reported Oct 14th, 2026 2:45 AM without timezone. Not a verified future reset estimate.",
+    "parent": "Integrated changes, fixed the final transient snapshot failure, inspected priority paths, and completed final checks; independent final review remains required."
+  },
+  "scoring": {
+    "rubricVersion": 1,
+    "criteriaReassessed": 90,
+    "categories": [
+      {
+        "name": "Architecture",
+        "score": 6.5,
+        "certified": false
+      },
+      {
+        "name": "UI and workflow",
+        "score": 4.5,
+        "certified": false
+      },
+      {
+        "name": "Testing",
+        "score": 5,
+        "certified": false
+      },
+      {
+        "name": "Performance and scalability",
+        "score": 1.5,
+        "certified": false
+      },
+      {
+        "name": "Data integrity and recovery",
+        "score": 6.5,
+        "certified": false
+      },
+      {
+        "name": "Documentation",
+        "score": 4.5,
+        "certified": false
+      },
+      {
+        "name": "Security and licensing",
+        "score": 4,
+        "certified": false
+      },
+      {
+        "name": "Print and delivery correctness",
+        "score": 4,
+        "certified": false
+      },
+      {
+        "name": "Build and distribution",
+        "score": 4,
+        "certified": false
+      }
+    ],
+    "pointsChanged": false,
+    "missionComplete": false
+  },
+  "highestUnresolved": {
+    "issue": "Whole-album cross-process isolation",
+    "evidence": "job-isolation.json",
+    "actual": "Two live independent processes held a same-album render lease concurrently.",
+    "next": "Add canonical whole-album lease before migration/preparation/edit, stale-owner recovery, real process/alias regressions; then journal project/cache/render capture and publication."
+  },
+  "openRequirements": [
+    "Independent final integrated diff review",
+    "Durable project/cache/render journal, whole-app process isolation, drive/power-loss recovery",
+    "Remaining metadata/capture-order invalidation and real RAW/JPEG proxy equivalence",
+    "History retention/cleanup and realistic distinct-photo high-resolution hardware budgets",
+    "Native GUI, relink/ambiguity and accessibility with approved session",
+    "Framed high-depth/CMYK, broad real-file colour/layer/camera corpus, actual lab spec/printed sample",
+    "Issuer/Firestore test environment and device-bound customer-compatible licensing migration",
+    "Full native workspace/Clippy/corpus/hosted CI and current root package",
+    "Pinned packaged Node runtime, Developer ID/notarisation and clean customer Mac"
+  ],
+  "preserved": {
+    "userFolders": [
+      "docs/reviews/",
+      "invoice-template/"
+    ],
+    "engineUntracked": [
+      ".DS_Store",
+      "apps/.DS_Store",
+      "apps/photocraft/.DS_Store"
+    ],
+    "existingAppBundles": "Not overwritten or relabelled current",
+    "olderEvidence": "Unchanged"
+  },
+  "sourceFiles": {
+    ".github/actions/setup-album-engine/action.yml": "a64ece3273158fc59ad893d4d3fdf49c35142b40cb595c09f9bafc5fcd413de0",
+    ".github/dependabot.yml": "6ed1a622c3253947512b50ab4ccc2f141842e6145e6f2e542d1639ccadc8a9a0",
+    ".github/workflows/ci.yml": "feb3152f797953c23cee6813aec6b9296b598d8402ea140b83801e835404a135",
+    "QUALITY_IMPROVEMENT_LOG.md": "8c446e29c97c3255d498249598f1a79c3a99539fc48e9cad38e93ce80b8c468f",
+    "QUALITY_SCORECARD.json": "62aa18661ba3c9a695658051ca0a311b509faff4f81e9019eebfc4920eed30e2",
+    "README.md": "ea490b8b6ed0de7427dedeaf4cd6717b3191be43b46d391e8e664cb3b304dae0",
+    "docs/DEVELOPMENT.md": "f013aaf80431ce8fc391e1461dfdc26162070057aeec614ee51a4498781cdbe9",
+    "docs/quality/ENGINE_PIN_AND_CI.md": "598df5805a71df4c22500959e9b69149df46ed229b356a14a58540ab452c9326",
+    "docs/quality/RECOVERY_AND_VERIFICATION.md": "82e722f85ffd6eb3d4fbb2a4e3c869d107782a35e9b2ba2e5235afcccd9712dd",
+    "native/backend/lib/account.js": "bca06807f720b3b8f73414f6fdb3a248a0b41bf8e115d003f12f59e3d55d5aa9",
+    "native/backend/lib/album.js": "24376f7d5658d900b60307027e13d8f7fdf91e96a6eb14cd7c7cf39f2e2e48e5",
+    "native/backend/lib/autofill.js": "f07745a7f12e0f1d304a12aa003e068b9f25d2c3e732909ed5628b2b617a9cee",
+    "native/backend/lib/cache.js": "6e0771f9b0a5ebf056c81b11617d2e925ce7e0cd50e0534242387ecb4de6452b",
+    "native/backend/lib/color.js": "71c479eeb2c18a8b6f3edf185525240265e65e2aacc0e56e318c4e97e684773f",
+    "native/backend/lib/deliver.js": "cb4d38872e7de8dc3746642e2fc233f09c373cf33f759697b636a568105c9ba6",
+    "native/backend/lib/delivery_transaction.js": "4ddf293293739ff075b43e1c199ab1ce3e5c063e5ea46eb932380d1195291573",
+    "native/backend/lib/exclusive_rename.js": "4b6bf4d5c459f0b2327d47d7b5899d461c4f60cc117b5d45c901904264d059ee",
+    "native/backend/lib/identity.js": "571b291a4f01f108b150e4ddd138873e6c046cae2115ff770cce6adf71c9cbd7",
+    "native/backend/lib/inputs.js": "d357106425e229c57e21a23633a4b7001295765b47489f270756bb9a5033c194",
+    "native/backend/lib/jobs.js": "a464fc2ce904751e590223642e44c5c98f26194109a913ecb85a644d8f231094",
+    "native/backend/lib/jpeg_size.js": "cb5badd461bddbdb850d2adc9a1cdcb14492d1d2e417284366443884dbc70031",
+    "native/backend/lib/labnaming.js": "c45c7e23574c05a2d93df7ddda4962f9360f0f70567c3059e231c5259823a00a",
+    "native/backend/lib/library.js": "03690df30b18fbaa00207d829b31fa99ab5cf176353b98dfda3daaa2a2972a0c",
+    "native/backend/lib/newalbum.js": "6b0ed62a954c71bfb315aeb4a248dae87ac4c3624eeaa38551eda2ee0694ea4a",
+    "native/backend/lib/parity.js": "3da8c08b32c9f6a4740f375393b51b4f502e18f561421456505437a4d5b20cdb",
+    "native/backend/lib/pdf.js": "b091655899844e8c8b30e3678edd776d3acf13b9c8ebe3998be83c6dcba72dc2",
+    "native/backend/lib/photocraft.js": "213835ebd7a8c968b306fafa73f40b4e398fa2b589e8b80e6e280cd0a430eb28",
+    "native/backend/lib/picks.js": "ad378eaa4cbec5c35209d1f2a771730fb5639faa32bdca3c0b9cfee252bd5923",
+    "native/backend/lib/preflight.js": "f3d7d9ca43cf8cae7943e12282ef6bce602cbef0a2e2a0a426b5b270eabf56bd",
+    "native/backend/lib/print_settings.js": "c494060064a492178e13851be057ae1a487a200f62e3c800f476fb3a935f9e8d",
+    "native/backend/lib/project.js": "a2852bdab75b14fdb3886b3c9841ff711fe26a0354a12390452e78c22e82991a",
+    "native/backend/lib/proofs.js": "243c50c3b073a93b9c4779f3b9facc1f6c1f20f74173f9d40b5f2403037ae1c2",
+    "native/backend/lib/psd_template.js": "a6b14bf535893f778f8c0def9a80267f4cb06fcc99aa891f10382bf45be2c882",
+    "native/backend/lib/raw.js": "a50ca6a0685e822aa7c2c3e1f37c18c8d1b84f84ee5927bbdaf5d6922dda4833",
+    "native/backend/lib/recent.js": "6e9cee224c1a060940c06719e4aa7958fbfc7367d8dbb97c8c0b5d9ca1c55484",
+    "native/backend/lib/render.js": "31f0041a25d9cc0a0e709fa3dddcaeca925d83bc0c06f8bf89c8cb5c86791d89",
+    "native/backend/lib/sheet.js": "1eb02382b1652df688012cf2859671af669b8d0829feb09ac1ea411bd173eec7",
+    "native/backend/lib/sheets.js": "51d5a4b9654972fa570836f8d30da468a6a39676e8b3b82edbaa7f4bccbc19e3",
+    "native/backend/lib/storage.js": "091c042cc8387867a93866c35ed80e034a98157ee2c1f93ffa353c974728cf04",
+    "native/backend/lib/template_check.js": "2873246f50d06ef95165051a813e7de37ee452f8ada4ac5e1461d335f48c44db",
+    "native/backend/lib/templates.js": "2b982c77f4dbf7b3b7aef645d4cf8554a3c75bd7ffc65e8cc836238d2da6f6a6",
+    "native/backend/lib/thumbs.js": "894dcc09d40e1a1c883279834f7256b5922cd0fe7419cb60cf46b2c4ac256ee3",
+    "native/backend/methods.js": "44a2f2ab49fb1e80a468b6ec1e740ecea870507c3399e20bed9e53ae735dbab8",
+    "native/backend/package.json": "ce9e2dca32931370f42d62c120a5109d22510dd1de4cafd0c9079d73d5ac7282",
+    "native/backend/server.js": "c874333f0f7aeb6317dd329b0fb9fd6cc5702adda897d38f4cd4189ca0ffad56",
+    "native/backend/test/account.test.js": "680ab01d8eb880e4f558faa850cf9df79502e6783e90409cd82c1c2dba74bdf6",
+    "native/backend/test/album.test.js": "1690663a9b86539f24ad2782ab7bc793d4eada0541b607128530437925877e95",
+    "native/backend/test/color.test.js": "5c0d83ea6b76c278a9a1b7530e2dee0b7bbdb341e4354976af9cda7876db558d",
+    "native/backend/test/color_composite_boundaries.test.js": "87a896de7253e610b1babbb1770a07fa3ad639d517a3749a7762c9c7b6b1a2d3",
+    "native/backend/test/color_edge_fixtures.js": "5a096f1816bcee54166f3b52b09f625085970734c8b1813669ac87c86f2d14b9",
+    "native/backend/test/color_edges.test.js": "11ec6d836991d457145a0825dc3e6cb8e1c626a519b31754b56a916991220350",
+    "native/backend/test/consumption_snapshot.test.js": "8336b818ad07c7703cda2c1cf8e724409d369dc1c2c5b7e9bdf303255f6677d2",
+    "native/backend/test/deliver.test.js": "421e70fb252111068d7cdd084672cb35c95ac91f9df4df0475cc653a6bb9ab9f",
+    "native/backend/test/delivery_integrity.test.js": "8f3732247d5595a21d4d6a7749353f1fbe98544bee6bf750355dab43797d1ba8",
+    "native/backend/test/delivery_transaction.test.js": "56c63a89b1c148262b22bf8f7f1ff69fdf9a0db1ed441dd244ca2b6262456b82",
+    "native/backend/test/fixtures.js": "ee330b9aad6a52ce98fedf1f0a0cf0c162f2ab522901154355406dc1141ab0f4",
+    "native/backend/test/identity.test.js": "e3ccad72c1505ddfa5b3af23d4aa673d6d9121de3e27c010dff9741b62bdb560",
+    "native/backend/test/labnaming.test.js": "ef702c0205ee75eb60de41135cffd805b93bd8b00eec82f0180e157e62b5b57c",
+    "native/backend/test/labnaming_recovery.test.js": "228470d9d3d03a677c165addc0f6cde035767befb9ed36e0f98f5b16d82c98c8",
+    "native/backend/test/library.test.js": "330460b43bd3869e28cc40b8c34f637d49b504c67c72c6be3fe5d1d53a5920b3",
+    "native/backend/test/newalbum.test.js": "7f29280e1028c6bf806aae1466ff80d7454500ca4a36b18a9c9561f7d8f4fcae",
+    "native/backend/test/parity.test.js": "08340fdd26ed9d0191309b48d11d31757da33e366a4500508814a52e0ad8433a",
+    "native/backend/test/pdf_color.test.js": "e33a09a5224eddd87743bd8511b3f0a0b86616223ff36a38250a25cc32b21b81",
+    "native/backend/test/pdf_render_oracle.test.js": "2e4028c98fbddb3960de236cd8ee25f76efee0294a009a7f6408a51e57be369a",
+    "native/backend/test/photocraft.test.js": "7250aacca3330cb9af39ac0504efbd0b917aba933d9cd14cb8a85738016627c4",
+    "native/backend/test/picks.test.js": "04d02a52983b4e1299944969311fa5b0c16d90838eb0a65d5352d67a74cfc5ad",
+    "native/backend/test/picks_lab_freshness.test.js": "f907017f3b7e78699c55d6b2dea06539bf2f9fdbf83ca776c45d93144d47fb71",
+    "native/backend/test/preflight.test.js": "480fc43b2429f75b911caccee8f4a95b33bf5fdb250e5a84fd6da7599803d55f",
+    "native/backend/test/print_render.test.js": "ac69faa1a8294eb385bd0dd9598a2a1352091700171fbbdb916cd75a72181e34",
+    "native/backend/test/project.test.js": "0012c4c3340fd61b3990b29d81daf8f4de1a3884c09255bb893956e31413bad1",
+    "native/backend/test/proofs.test.js": "5d7e4b5503fad1d00cd488125c905b926a8f19583c969da73595fc47c423b5f8",
+    "native/backend/test/rgb_composite_formats.test.js": "9532cdf7f07aa06845dfd209b39234d5a15fa56fd8f880a58bea06626b14b9bc",
+    "native/backend/test/sheet.test.js": "3b51335edb9566f2784017ce3836889b5fc6a7223f524f3c0412381d0b05e795",
+    "native/backend/test/sheet_ownership.test.js": "cf525c21ba9fd73f7a450a6432363e2aed3b358cf9dee5f76ffeac60667f8e21",
+    "native/backend/test/source_cache_freshness.test.js": "e5d31876dfe47551a4f9f79c35ca995317cce2c5414f9ee291a0c728b57a06e8",
+    "native/backend/test/source_freshness.test.js": "51012994069197d110cf26608681b82e1acd10a419782222ba7cbcf534e14393",
+    "native/backend/test/template_color_edges.test.js": "4c37e9472b41028a7c41d98da5d2a2e2eee2793b6d946676e19a05f10becf92e",
+    "native/backend/test/template_freshness.test.js": "fac504cb15999f5a8e33ae9a27e67c505f0c6399e42a18f64a3f749942182325",
+    "native/scripts/collect-backend.mjs": "700b65e2b6a9cfb0c3559bf9c5a15a4fcd6585ab2bde9b1853c9b593d279b96c",
+    "native/scripts/engine.mjs": "ef8bd94889a326275bcd2670fec4b13ddaed45391c82bbdd28259577b77fb82e",
+    "native/scripts/engine/LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "native/scripts/engine/LICENSE-MIT": "1a8f66d8a86b146f5336fa0d4b1186576c8aa98e60823080c85c7811cfd810af",
+    "native/scripts/engine/NOTICE": "fb7d6f0e57c396b6c94f6315d3dba13048a296d81e7546d33e2b7c77c71ea147",
+    "native/scripts/engine/PROVENANCE.md": "0072587239d1c3ebf8577e3d62ac0056881d6294f3ffef6c956fe0dd8b6f16c9",
+    "native/scripts/engine/album-studio.bundle": "484638db77b391739bf38b763a05c592188713e7b397e98ac27a15e510b88f05",
+    "native/scripts/engine/pin.json": "9331a487321803d1bc01128b7809c460b0a31cb131cc782d7f0833f22ae8a08e",
+    "native/scripts/node.entitlements": "b8aa7838bb6e816e6dad0f73e7d2297087b4e18d6e64da603d7f2ca97e17511b",
+    "native/scripts/package-mac.sh": "5242884255e542a5c045a4c55a517616dc932f109316d34b370f0e49307d96d5",
+    "native/scripts/publish-new-directory.mjs": "01ae396bde19f9b6251e779824a3cf5e4aa2984b6ac8cbd7782556bc9d9f52de",
+    "native/scripts/rename-exclusive.c": "9bb6de2a49d1f15a1176917fb35e5277b316e203ba5c96d46fcec4c1db80e101",
+    "native/ui/package-lock.json": "f08496e03356fcb04a80b9187bc9bdda3e2b1fa5cf80eaf0a62c9c3b46d9a202",
+    "native/ui/package.json": "2ff7fda3410fd0f3b9092ba7e79e32c60814b497145edcdd2232f984e3e6c010",
+    "native/ui/src/account.ts": "abe692f454b961322ec1b37506a34a4e687e84cf403d5b42fc73966c205941d5",
+    "native/ui/src/account_logic.ts": "d0e78f18c35f56378a339933b9576aea527d5061b00a08c0c386c918e8b44f60",
+    "native/ui/src/album_queue.ts": "a22af518e7548b0d2146700fbd272232ee91dfda92c11b1d30deeef6c7c3490a",
+    "native/ui/src/app/About.tsx": "e946ce5531bd07ae3d1f350f445baad1d8125e1d693686e849af44a5ee4718b4",
+    "native/ui/src/app/AlbumSettings.tsx": "33b42a05059e7200c3251ee28100f3f9ca888804b209224c9a65c5f4ed60a298",
+    "native/ui/src/app/Frame.tsx": "de7d067849c0fce799cc9b39e2ccbbc3d1538456d3e6116ae1329c5a18d8aac5",
+    "native/ui/src/app/Settings.tsx": "d879f5eedf8408708cd4263546ddfa12c7135c84962a541db1659ef2a7fbb653",
+    "native/ui/src/app/SignIn.tsx": "4a2f42d28df5808e4787e811b9d2b200e605cc875b5fcc0b36b19e723d2210aa",
+    "native/ui/src/bridge.ts": "4e465eb6a23830602eb68195a215d1d541bd1f488e894cf740f37c3f4dc36224",
+    "native/ui/src/delivery_logic.ts": "495ca89c89e941ee50b5f33ace9fd399817ad611f9fa0a390d72fb786ae1cb2f",
+    "native/ui/src/dnd.ts": "28d732dceea4125a85cfc025c108501acbe48a256f19019293f3399c565ab632",
+    "native/ui/src/edit.ts": "51f796214a3b96bd74ebd9c43db97b1bd3cc9ed94db185df54a112ea1cfe346c",
+    "native/ui/src/env.d.ts": "fe1e417a55993be4a7c97d178f2f5f86b77c52dad3ec963d94070b869b568f00",
+    "native/ui/src/exporting.ts": "cb3b14be5372086424f0b717f63c2fa9304e0e8fd1f3ee964fe2d8719a50be2a",
+    "native/ui/src/format.ts": "1280fc58198bd05ea53bd3dfaab0de633f93f664744fdccd98cf91e950e5e076",
+    "native/ui/src/lab_naming.ts": "0c8bed99422c44536bd971ac05952aa48fbb79482dca7c281edf788efad6b33d",
+    "native/ui/src/main.tsx": "e7eaacb3290bf507f4bb1dbb91e9be3700614b2927388816421ed09dc0d24b84",
+    "native/ui/src/picks_logic.ts": "3099dbf4268ff822b49e4784f4178a8c47da1b8cd452938d99820932d9424633",
+    "native/ui/src/places/Albums.tsx": "add3ead3f7bb2d12d9716ffeb35d2fc3d67d654006f262aefe07f7869a0ee73a",
+    "native/ui/src/places/Deliver.tsx": "ada6047fe4989b406fe5542d650ea622770e3974e5a82f4fea22a162220242d2",
+    "native/ui/src/places/Library.tsx": "137d6f4f5520a63377c4de8f2ab53a3782caa6c4144a3a7c22a5ec83879ee38c",
+    "native/ui/src/places/Pending.tsx": "a63df56f42d8bf4095681c47e99a718cb59330a6dac14134754588d127befcb8",
+    "native/ui/src/places/Plan.tsx": "794e912480333847016d4fabc1f5965867afe786365aa92d562f4e459cf997f7",
+    "native/ui/src/places/Review.tsx": "9c475aac59e18ff9b5a255e49a1ba51c40f0f570f306326c4491ee740f108d1d",
+    "native/ui/src/places/Tools.tsx": "6b9e0f0bd2c370bc8cf1d40780dd7bbcefad6dae8ab7c8ba2dd1bb8e8a983f45",
+    "native/ui/src/places/albums/NewAlbum.tsx": "0d219244ceff958ef56080260a8f28761ee4b4861666fed40419bbe6bf34808f",
+    "native/ui/src/places/plan/AutoFill.tsx": "9c39a44baf4c983af8e99f64bd67479d2b2bc09dd47843c083ed22ee52cb741a",
+    "native/ui/src/places/plan/FrameAdjust.tsx": "3aaa81aea5857e2c72364f81d68fa116efe7f51f88d7ab14c615a30afd044782",
+    "native/ui/src/places/plan/Inspector.tsx": "34616452cd150762f9b8fa8b7556c30d84165bbbecba44113b665724e994583b",
+    "native/ui/src/places/plan/Pool.tsx": "6eb3ecaf7e89c5c8fb06aeab39e473bce64dfc55e039e4383f480d09265ee290",
+    "native/ui/src/places/plan/SpreadView.tsx": "92d8dd0c93b95375493f81af4904ed8716c8d3c259dfa837d86785d112547e7d",
+    "native/ui/src/places/plan/TemplateBrowser.tsx": "ee8f37ec820e1b41e596ff1259cca40674e6b592ad9ca10c60659173efba0081",
+    "native/ui/src/places/tools/BestPicks.tsx": "50fae9203c3ec970a4ca685eac40d64e4c90b374f547d08008bafc907c8e2a8a",
+    "native/ui/src/places/tools/LabNaming.tsx": "82f224bd79dccdca1cb802c3a9c6d1a9c3d29a17d444817e476a25dc6c70826e",
+    "native/ui/src/plan_actions.ts": "40095484df69657117c72178acea3a1314fc5cefccd0193d0bec194377f33ba8",
+    "native/ui/src/plan_logic.ts": "bde15220585d311d8e9019a890fd4353772b3508ef5256d85508783426d25b36",
+    "native/ui/src/render.ts": "d35932bbad1b0bedf055025f8b1f7f17cca6f0904bff74adc1a1aa6b915d43bc",
+    "native/ui/src/state.ts": "c1f85dccfc89b1087adb1eab55425e9e722c2c3b65510acb62479d02ae52f4d1",
+    "native/ui/src/styles/app.css": "1fada2ac5e24f3c27ab510ebb5272950dfd0a424a3484783920f89d3f216150a",
+    "native/ui/src/styles/base.css": "931a6329929bdb583771ac209701bf940d45eacf00615900d9a239174096581e",
+    "native/ui/src/styles/tokens.css": "943a327cc5eebb78704efca55a31f2f87a684bba9efd23442ce9b0c9010e1e93",
+    "native/ui/src/types.ts": "98ecf08ef9c827c9328fa2f4ce3f6e44fb4269cbefafb76da73b13762b0a6cf7",
+    "native/ui/src/ui/Menu.tsx": "fd65d68bdf2bd6bf29d577ea71b49b0f6cf13766e69e888079ea94be5b1985bf",
+    "native/ui/src/ui/Thumb.tsx": "d4078b735f995650cbfa4f30c72ea05d494cb55d806b18795bd3f508588c9f1c",
+    "native/ui/src/ui/controls.tsx": "735b41c0c377fc9eb5d09cbbbb88b4061019a32c926bd191ce393cc107c942cf",
+    "native/ui/test/account_logic.test.ts": "3674466af8322c086988b879848295b17cf3e7389324e96efc90c74b7d641867",
+    "native/ui/test/album_queue.test.ts": "dd84a4494c523f3ec4c2d7546d621fb7bc7622146ddb97dd2a17111c061f20f8",
+    "native/ui/test/delivery_logic.test.ts": "adb6d502ec589708364433f6540390a101310caeab1e71d03a5f11f46f7d12fc",
+    "native/ui/test/format.test.ts": "e1d5dc554a347b72bf7bc380def6976eb50bb2652629494d09c4fd8539f4d7b7",
+    "native/ui/test/lab_naming.test.ts": "8d708fe124a497edbcf0fd08e5ff4b923f1bda3b228abe426c69343fd38204ad",
+    "native/ui/test/picks_logic.test.ts": "bd27103d2840bdcc144fc7f48a5b736e90dbce15efe5e74e3a5e4095efe1c221",
+    "native/ui/test/plan_logic.test.ts": "2db134b79e42bede75b05f70a1fb146f47cd4a088413ac2a55f7951f4ce9fa61",
+    "package-lock.json": "086e977707cb77bc7fac98985be5ce568fd4e8a46fc14fcbd7c1bcb9bbb2ae06",
+    "package.json": "2a154a2ad0cb66122e31f845454be244b0b80dd9331cbf7ac035faafbb2ecbb3",
+    "src/curation.js": "950974e5ca9f9f163cd307fb1fbb31f77cb9977f9df467e53e971fb81172d064",
+    "src/editor_geometry.js": "12147312d951e75450716323b855f5cea0ab021a240d48d59c0ee817e69e8054",
+    "src/firebase_auth.js": "b4d45527fb9db12c49cdaf2268e55b007b619b22d99a219f2f661120dbb605ad",
+    "src/license.js": "113120f995fd0a02bece56f31b135776a31994b0bf2350020b241b8aed54d665",
+    "src/license_public_key.pem": "cef3e8152653883dcb3d8ecafea9fb6526f693fb18b87b57ccd4a1707d64d937",
+    "src/license_signing.js": "e0e26b7dabb4e4c94462e33b68d9c3370cbd89d6f311f19968077fa1585293a1",
+    "src/main/firestore_rest.js": "5b27a224a72d22caa1c8a5cca7e1e1b45d799ee986edc9d6cae6d514d8c65bc8",
+    "src/overlay_ps.js": "51c3c8ec43df079ce6e78fe594236fa4368319870b86a735ea7e356da60c3650",
+    "src/overlay_render.js": "0a838bb0b1c81ba1956e9cb85422a724b07efcd3f9766657351cfc8a1291163f",
+    "src/proof_renderer.js": "19786f76e538e8da16b27c9d4b07eeb0bc15685605b9eaea1896a6c00b6829ab",
+    "src/psd_layers.js": "7aacf7d7ced18de529992380348682adce3deb2e0acd768cbcc5ecfbfeb14ef3",
+    "src/renderer_pure.js": "81674afd9592a5b7f885e68d764f37360e44ea917c9ce79dc23b63fc0eff0f77",
+    "src/shared/domain.d.ts": "9502f8a1033d1f4680533c09e69004821f7483c6b3cdb3ea0500bfe520c5894d",
+    "src/sharp_config.js": "d88f420dde03a3468ac1a6d40423cbe533f314c54516e9e552b9a647928c6ed9",
+    "src/shortcut_target.js": "6576f02c4fb263b08f85d14453b8358c426825be9f8b3984b5e10e1ab8a4c52c",
+    "src/ui_icons.js": "f804fb9d1b8309af5b724da3db94314fcc59d7d04fec860b565c903a0d47c2ac",
+    "test/curation.test.js": "4ac43b324e23c15a2515f35750ab03ecbb06ea9d1592e5c9af7130c45529c419",
+    "test/editor_geometry.test.js": "c9b7defcb9f8eda7ba56826db4a752b614d3cb4131af59aa7f4d07129eb80671",
+    "test/engine_pin.test.js": "c86bc1a8f45d11b6dc2e43550157eb3f3bc514c5446f203f871e613c6ef763a3",
+    "test/firebase_auth.test.js": "2ea8fc867980448bcf48d20e6c768be17297383c4bf630b89e7ba0e4264f96bd",
+    "test/license.test.js": "82574ea8b5b84ec3eca4818f83773abbbc41780770b7212aaead4c55e0ce8492",
+    "test/license_activation_roundtrip.test.js": "fcb6f7e2c90df7807250bfcc638e3a6fa401e7f4bbf97509791b989039cf1bd5",
+    "test/license_signing.test.js": "540eede260be3aa9c53b9176248f73b6db6c4db4619dfc59704c50db33284589",
+    "test/overlay_ps.test.js": "a1a0b1102fa3c387d02497f0384d8ea6e3cfe01d8d9b2743e4c2a857a4280e3e",
+    "test/overlay_render.test.js": "224f8227c391ca33f0de1aec2d276b400eb6ed05758268db2de4a80cad23b344",
+    "test/proof_geometry.test.js": "cd812767fb9828fcaf7d66ca47999edbbbf3356e0589446a024c93a4acb63131",
+    "test/proof_renderer.test.js": "85637a24ac3dd1b571fb188ae2d59195baec91a669b911efb0336087843106f8",
+    "test/psd_layers.test.js": "a6c5de45be2b9eb26741d11bafe6ffc8254d55a684c2d44d5920f30a256a71e3",
+    "test/render_cache.test.js": "5e02c65bcad9a13178760580a0d7b3f4e409e29d809d9fb720c77a15e1df1dd2",
+    "test/renderer_pure.test.js": "f06697a363a525da325660e0bc35c4d8ec9d17a222736f0a380d27fd71a4e1a1",
+    "test/shortcut_target.test.js": "77de3adc26a6d55032fd6e56f1c0e5cc1d216acd8fd5645e2f4ee064f9737655"
+  },
+  "artifactFiles": {
+    "docs/quality/2026-10-14-iteration-3/atomic-build-focused.log": "5a4e30b31d0f672cd81dfa81a9339f8f1eb837028950177e22e0ec15989b045e",
+    "docs/quality/2026-10-14-iteration-3/collector.json": "fcbb07db77184c9227f2ada7b4801c38c267637e7b3c8c0bda53ccee9ad6c204",
+    "docs/quality/2026-10-14-iteration-3/colour-boundaries-before.log": "c175bacc7de6366e5328baa9ccbb59e80104048f190f2916656ffb669630a1b5",
+    "docs/quality/2026-10-14-iteration-3/colour-scoped-final.log": "5d9941f5cb150fa5cd6eab26d60a206e0db53d930cf07741845dad1a41103967",
+    "docs/quality/2026-10-14-iteration-3/coverage.log": "e24ef79e98da9e25683d027cce7bb87017fec99beb3f707d4fe27252b2806ce8",
+    "docs/quality/2026-10-14-iteration-3/delivery-cancellation-before.log": "4bcf706f71e3eae72d1c387cea969bc790b390a35af8e3ed8cc58a904d9b7201",
+    "docs/quality/2026-10-14-iteration-3/delivery-snapshot-before.log": "59c8fd9c6cf447c5038778e20e568f9ac603121b50c4013cfbb7b4d296291093",
+    "docs/quality/2026-10-14-iteration-3/delivery-stage-races-before.log": "8dec45cfc43ede8e6d63788dddffe3390749c356f5d6b8a049f9fa329300c3cd",
+    "docs/quality/2026-10-14-iteration-3/delivery-transaction-scoped.log": "80d3eeaae80b05bc5f0e366f269f61fbedca7c437719dac6ccfdd08efd2421a0",
+    "docs/quality/2026-10-14-iteration-3/job-isolation.json": "6c953ed2aed12d20ebbd63924ded5428596c1ab8ace6a7b59b9c2d6db1513581",
+    "docs/quality/2026-10-14-iteration-3/lint.log": "4aea5e24f1cb4fd0617a353c7153acb29a0d7ea4a0d28ec4c8fa2c0b2e8fab61",
+    "docs/quality/2026-10-14-iteration-3/node-gate-before-snapshot-fix.log": "d0d1ee61698158cea19824b0277f7ac255a53b8cc8a08b89b9c98099415c2f34",
+    "docs/quality/2026-10-14-iteration-3/node-gate.log": "1eb21446ce4df3cb6781b0dee4db2727a73f0d60470bbc542b50a7760b2a8152",
+    "docs/quality/2026-10-14-iteration-3/pdf-intent-after.log": "037d71b6a0dc0d73eb52929622a2996a18a393065e52a237b2dc442edc9a0655",
+    "docs/quality/2026-10-14-iteration-3/pdf-intent-before.log": "1215d77697414e76cfeda8cea542d9389aa224ad41c0c9176b4617175b6c92ea",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/cmyk.jpg": "32bad6d7126ffead5f6540789dc51e66020c529c6ba005a9d8e90e93c66db7ef",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/display-srgb.icc": "c56e1685d888f5edb92fe07f2750f387f8fe8e91b32ff8fb0b56bfbbb9458353",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/evidence.json": "d9616efaae6167f2146abd8c2124b76244a9c4b81bc7b2f755f550ecf8d25d3f",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/gray.jpg": "69b4ac7630b2b2f926ddf43dd594c6ffa41fbc7bf436b25ee5dff719ed242b40",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/p3.jpg": "9ee478ffe18b59c6549b8ca439037e6a05db32351b3d5079d88ac0e152f4655e",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/proof.pdf": "65b3dd996777b3095d2ef6e37c75991f8c99c42a14b8719180f40a221807bad0",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/README.md": "c3d73805de5f3412fca746261ca71a5cb070c2162fe2059ad4ae1adf4b938aee",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/render-1.png": "a00d1f214c19f05a78c3405147e9fccd6bfd6d1f94e83e13f0ee125458786788",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/render-2.png": "0c5812bdf690cb10dff4cc96061bb8c1541dfbdc7248427115c6a0ed32aeb634",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/render-3.png": "0bee3f7a06f9cc0860fe57e43788ed46bbb52c429c52aa205c93c6b09e11015d",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/render-4.png": "5b333dcf21e1ee6707af57155bf3400269cdbf0e976d5d926b8da88124f062ab",
+    "docs/quality/2026-10-14-iteration-3/pdf-oracle/srgb.jpg": "13f3bf51b17bb93a27dd3c1babecdc80fd9f889aab3c2d1817d424c6ce317cf8",
+    "docs/quality/2026-10-14-iteration-3/picks-snapshot-fixed.log": "1809d8ddb92bae004a3ee94254b6897741d8b321c12c054d0d9b31d79dc7f411",
+    "docs/quality/2026-10-14-iteration-3/private-snapshot-capture.log": "3461f2121708281bfb03dbc7c9829c623dee639f66e94e539e966632f626b650",
+    "docs/quality/2026-10-14-iteration-3/production-freshness.log": "8744e2b7f9cdc2f1adb50b47209cba9019962fa1e98475a89ba200872b6fb8a3",
+    "docs/quality/2026-10-14-iteration-3/proof-freshness.log": "f4821a961cdfb1f3a1cf3b5b6e446566562d47828ad7694964902690d4ae6010",
+    "docs/quality/2026-10-14-iteration-3/rgb-formats-before.log": "db1547ef6ea333d78fae61a9a48a39d654825ace8b7464ad7eba4de7e82bb19c",
+    "docs/quality/2026-10-14-iteration-3/runtime-and-source-checks.json": "3b18fbd63ddfd79e222da2fa696332e737d411afd0f2bb5127d2deaae05055e5",
+    "docs/quality/2026-10-14-iteration-3/source-freshness-after.log": "8f5e187dfd776c5c42035d49a01446b185214c3f597443a6f3f81f2af4a03598",
+    "docs/quality/2026-10-14-iteration-3/source-freshness-before.log": "56797ead6a5f2731c6a599bbbf4f92503a6533589f625a219c1fdbe59cd57bb1",
+    "docs/quality/2026-10-14-iteration-3/template-baseline-loader.cjs": "a801ed9e2a6267b7239e2f68157284ccec4efd59d5e15e5d0ca494b7aa778da2",
+    "docs/quality/2026-10-14-iteration-3/template-freshness-after.log": "9a744d3f328f3673f2b2e405cc891aed28d531b056f4c9de5aba2d91f80da5f3",
+    "docs/quality/2026-10-14-iteration-3/template-freshness-before.log": "8bf16d30abdc20afb3a438d15278653ef8ce5f408dedffbb483717d5b0abff51",
+    "docs/quality/2026-10-14-iteration-3/types.log": "aadd77e54fdc94331f087a47a6f67abb71f4c3dd5cbb78cfdff6105b7eaa2ae3",
+    "docs/quality/2026-10-14-iteration-3/ui-build.log": "39a325e96dd93fc774aeae6d06dae6ad8e8478d3285b1140e59774c5a54331cc"
+  }
+}

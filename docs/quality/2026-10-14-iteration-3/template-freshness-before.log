@@ -1,0 +1,31 @@
+TAP version 13
+# Subtest: template backdrops invalidate same-size/preserved-time source edits
+not ok 1 - template backdrops invalidate same-size/preserved-time source edits
+  ---
+  duration_ms: 21.483875
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/template_freshness.test.js:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected "actual" to be strictly unequal to:
+    
+    '/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-pFY9iX/templates/c7c3d5db5a1bfb6f/backdrop-2400.jpg'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: '/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-pFY9iX/templates/c7c3d5db5a1bfb6f/backdrop-2400.jpg'
+  actual: '/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-pFY9iX/templates/c7c3d5db5a1bfb6f/backdrop-2400.jpg'
+  operator: 'notStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/template_freshness.test.js:24:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 165.155125

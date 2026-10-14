@@ -108,3 +108,25 @@ test('print-sized rendering refuses insufficient original detail without publish
   assert.match(result.results[0].error, /PPI|resolution/i)
   assert.equal((await openAlbum({ path: f.album })).spreads[0].sheet, null)
 })
+
+test('a manual PSD edit at the atomic replacement boundary is captured and restored without overwrite', async (t) => {
+  const f = await fixture(t)
+  assert.equal((await render({ album: f.album })).failed, 0)
+  const album = await openAlbum({ path: f.album }), file = album.spreads[0].sheet
+  const cache = path.join(f.output, '.album-studio', 'render-cache.json'), cacheBytes = fs.readFileSync(cache)
+  const exclusive = require('../lib/exclusive_rename'), move = exclusive.renameExclusive
+  const edit = Buffer.from('An external manual sheet edit at the capture boundary')
+  let injected = false
+  exclusive.renameExclusive = async (from, to) => {
+    if (!injected && from === file && to.includes('render-history')) { injected = true; fs.writeFileSync(file, edit) }
+    return move(from, to)
+  }
+  let result
+  try { result = await render({ album: f.album, force: true }) }
+  finally { exclusive.renameExclusive = move }
+  assert.equal(injected, true)
+  assert.equal(result.failed, 1)
+  assert.equal(result.done, 0)
+  assert.deepEqual(fs.readFileSync(file), edit)
+  assert.deepEqual(fs.readFileSync(cache), cacheBytes)
+})

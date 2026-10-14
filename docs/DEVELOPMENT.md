@@ -5,23 +5,35 @@ How to build, run and test Album Studio. A fresh clone should be productive from
 ## Prerequisites
 
 - macOS 13+ on Apple silicon, with Xcode's command-line tools.
-- Node.js 22 and npm, for the helper's tests and the interface's build. The packaged app
+- Node.js 22.23.3 and npm, for the helper's tests and the interface's build. The packaged app
   carries its own Node.js.
-- Rust (rustup, stable), for the shell and the PhotoCraft engine.
-- The PhotoCraft fork, checked out at `native/photocraft` (branch `album-studio`). It's a
-  separate repository and is ignored by this one.
+- Rust/Cargo 1.99.0 through rustup, for the pinned shell and PhotoCraft engine.
+- Poppler (`brew install poppler`) for the required independent PDF colour test.
+- The exact PhotoCraft revision reconstructed at `native/photocraft`. It is a separate,
+  ignored repository. Setup verifies existing source and never resets it.
 
 ## Install
 
 ```bash
-npm install                  # the shared modules' and the helper's packages (sharp, ag-psd, …)
-npm --prefix native/ui install
+npm ci                       # the locked shared/helper packages
+npm ci --prefix native/ui
+brew install poppler
+rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component clippy
+rustup override set 1.99.0
+node native/scripts/engine.mjs setup
+node native/scripts/engine.mjs check
+node native/scripts/engine.mjs build
+node native/scripts/engine.mjs test-node
 cp .env.example .env         # sign-in settings: Firebase project, Google OAuth client, licence key
 ```
 
 `.env` is git-ignored, and by default it isn't built into the app. Each Mac supplies its own:
 the helper reads it from `~/Library/Application Support/Album Studio/.env`, then from the
 repository root (when run from source), then from the Album Toolkit's folder.
+Configure a private development environment; test fixtures do not require real account secrets.
+See [engine setup and CI](quality/ENGINE_PIN_AND_CI.md) for pin checks, alternate targets and
+fresh reconstruction. Local iteration-3 checks used Node 22.22.3; packaged 22.23.3 runtime
+verification remains separate.
 
 ## Build and run
 
@@ -30,8 +42,17 @@ npm run build                # native/scripts/package-mac.sh → native/dist/Alb
 npm start                    # open it
 ```
 
+Packaging refuses an existing destination. To preserve an existing app, choose a new one:
+
+```sh
+ALBUM_STUDIO_PACKAGE_PATH="$PWD/native/dist/Album Studio - review.app" npm run build
+open "native/dist/Album Studio - review.app"
+```
+
+`npm start` always opens the default bundle. A successful test/build does not update that bundle.
+
 The package script does the following:
-- builds the release shell and engine;
+- builds the pinned release shell, engine and source-checksummed atomic file helper;
 - bundles the interface and the helper, with exactly the modules and packages it needs
   (`native/scripts/collect-backend.mjs`);
 - bundles Node.js 22.23.3 from nodejs.org, pinned by SHA-256 and downloaded once into
@@ -49,8 +70,10 @@ node native/ui/dev/serve.mjs               # the interface in a browser (no help
 ```
 
 A debug build of the shell (`cargo build -p album-studio` in `native/photocraft`) loads the
-interface from `native/ui/dist` and the helper from `native/backend`. With
-`ALBUM_STUDIO_DEBUG_SOCKET=dbg.sock`, it also runs scripts in the page for automated checks.
+interface from `native/ui/dist` and the helper from `native/backend`. Runtime captures require
+the compiled `album-studio-rename-exclusive` beside the CLI; use the engine build command above
+or set `ALBUM_STUDIO_RENAME_CLI` to the current compiled helper. Native UI/accessibility checks
+require an authorised GUI session and disposable albums; a debug socket is not approval.
 
 Two environment settings help with testing:
 - `ALBUM_STUDIO_DATA_DIR` and `ALBUM_STUDIO_CACHE_DIR` keep a test run's data out of the real
@@ -64,11 +87,17 @@ Two environment settings help with testing:
 |---|---|
 | `npm run lint` | ESLint over `src/`, `test/` and `native/backend/` |
 | `npm run typecheck` | `tsc` over the shared modules (opt-in `// @ts-check`) and the interface |
-| `npm test` | Shared modules (`test/`), the helper (`native/backend/test`), the interface (`native/ui/test`) |
-| `cargo fmt --check`, `cargo clippy -p album-studio`, `cargo test -p album-studio` | The shell (in `native/photocraft`) |
+| `node native/scripts/engine.mjs test-node` | All three application suites against the pinned CLI/helper; rejects skips |
+| `npm --prefix native/ui run build` | Production interface assets |
+| `cargo fmt --all -- --check`, `cargo test --workspace --locked --features heif` | Native workspace (in `native/photocraft`) |
+| `cargo clippy --workspace --all-targets --locked --features heif -- -D warnings`, `cargo xtask layers` | Native lint and dependency boundaries |
+| `cargo xtask test-corpus` | Checksum-verified real-file engine corpus |
 
-The helper's tests that build real sheets need the engine (`photocraft-cli` in the build
-cache). Without it they say they skip.
+`npm test` alone permits some missing-engine skips and is insufficient for acceptance. The
+strict gate requires a provenance-tagged CLI and the current atomic helper. Poppler is required
+and absence fails its PDF test. A successful Node gate does not imply full native workspace,
+corpus, hosted CI or installed-app checks passed. Exact evidence and open requirements are in
+[the quality log](../QUALITY_IMPROVEMENT_LOG.md) and [recovery guidance](quality/RECOVERY_AND_VERIFICATION.md).
 
 ## Accounts
 

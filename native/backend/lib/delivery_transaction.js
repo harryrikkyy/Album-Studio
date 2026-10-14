@@ -6,8 +6,10 @@ const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
 const { isDeepStrictEqual } = require('util')
+const exclusiveRename = require('./exclusive_rename')
 
 const STAGE = /^delivery-[A-Za-z0-9-]{6,80}$/
+const HISTORY = 'delivery-history'
 const JOURNAL = 'journal.json'
 const LOCK = '.delivery.lock'
 const RECLAIM = '.delivery.recovery.lock'
@@ -193,12 +195,19 @@ async function locked(context, work) {
   return result
 }
 
-async function saveJournal(stage, journal, initial = false) {
+async function saveJournal(stage, journal, initial = false, isCancelled, validateSnapshot) {
   const file = path.join(stage, JOURNAL), temporary = path.join(stage, `${JOURNAL}.new`)
   if (!initial) await checkTemporaryJournal(temporary, journal)
   const flags = fs.constants.O_WRONLY | fs.constants.O_CREAT | (initial ? fs.constants.O_EXCL : fs.constants.O_TRUNC) | (fs.constants.O_NOFOLLOW || 0)
   const handle = await fs.promises.open(temporary, flags, 0o600)
   try { await handle.writeFile(JSON.stringify(journal) + '\n'); await handle.sync() } finally { await handle.close() }
+  // Before this atomic marker replacement the pending journal still authorises rollback.
+  // A stop request during the record write/flush must be honoured at that last boundary.
+  if (!initial && journal.phase === 'committed') {
+    cancelled(isCancelled)
+    if (validateSnapshot) await validateSnapshot()
+    cancelled(isCancelled)
+  }
   if (initial) {
     try { await fs.promises.link(temporary, file) } catch (error) {
       if (!unsupportedLinks.has(error.code)) throw error
@@ -231,8 +240,9 @@ async function checkTemporaryJournal(file, journal) {
 }
 
 function recoveryError(stage, error) {
-  const out = new Error(`Delivery needs recovery. Keep ${stage} and its journal/backups; reconnect the drive or resolve the file conflict before exporting again. ${error.message}`, { cause: error })
-  out.recoveryJournal = path.join(stage, JOURNAL); out.recoveryStage = stage
+  const recoveryStage = error.recoveryStage || stage
+  const out = new Error(`Delivery needs recovery. Keep ${recoveryStage} and its journal/backups; reconnect the drive or resolve the file conflict before exporting again. ${error.message}`, { cause: error })
+  out.recoveryJournal = error.recoveryJournal || path.join(recoveryStage, JOURNAL); out.recoveryStage = recoveryStage
   if (error.code) out.code = error.code
   return out
 }
@@ -286,25 +296,48 @@ async function inspectEntries(context, stage, journal) {
   return inspected
 }
 
-async function cleanup(context, stage, journal) {
-  // Only remove a fully validated private stage. An unexpected file could be a customer's
-  // recovery copy; never recursively discard it simply because its parent has our name.
+async function validateStage(stage, journal) {
+  if (!isDeepStrictEqual(await readJournalFile(path.join(stage, JOURNAL)), journal)) throw new Error(`Edited delivery journal in ${stage}; it was preserved.`)
   const allowed = new Set([JOURNAL, `${JOURNAL}.new`])
+  for (const entry of journal.entries) for (const name of [entry.source, entry.backup, entry.discard]) allowed.add(name)
+  const names = await fs.promises.readdir(stage)
+  if (names.some((name) => !allowed.has(name))) throw new Error(`Unexpected files in ${stage}; the delivery journal and backups were preserved.`)
   await checkTemporaryJournal(path.join(stage, `${JOURNAL}.new`), journal)
   for (const entry of journal.entries) {
     for (const [name, expected] of [[entry.source, entry.after], [entry.backup, entry.before], [entry.discard, entry.after]]) {
-      allowed.add(name)
       const actual = await fingerprint(path.join(stage, name))
       if (actual && !(name === entry.discard ? matchesContent(actual, expected) : matches(actual, expected))) throw new Error(`Unknown or edited recovery file ${path.join(stage, name)}; the delivery journal was preserved.`)
     }
   }
-  const names = await fs.promises.readdir(stage)
-  if (names.some((name) => !allowed.has(name))) throw new Error(`Unexpected files in ${stage}; the delivery journal and backups were preserved.`)
-  for (const name of names.filter((name) => name !== JOURNAL && name !== `${JOURNAL}.new`)) await fs.promises.unlink(path.join(stage, name))
-  await syncDirectory(stage)
-  await fs.promises.unlink(path.join(stage, `${JOURNAL}.new`)).catch((error) => { if (error.code !== 'ENOENT') throw error })
-  await fs.promises.unlink(path.join(stage, JOURNAL)); await syncDirectory(stage)
-  await fs.promises.rmdir(stage); await syncDirectory(context.metadata)
+  if (!isDeepStrictEqual((await fs.promises.readdir(stage)).sort(), names.sort())) throw new Error(`Delivery recovery files in ${stage} changed during validation; they were preserved.`)
+}
+
+async function cleanup(context, stage, journal) {
+  // Retire the entire stage intact. A customer can still have a backup open for editing;
+  // checksum-then-unlink cannot safely destroy that mutable recovery data. History grows
+  // until an explicit, bounded cleanup workflow is implemented; never prune it here.
+  await validateStage(stage, journal)
+  const historyRoot = path.join(context.metadata, HISTORY)
+  await realDirectory(historyRoot, true); await syncDirectory(context.metadata)
+  await validateStage(stage, journal)
+  const history = path.join(historyRoot, path.basename(stage))
+  let retired = false
+  try {
+    await exclusiveRename.renameExclusive(stage, history)
+    retired = true
+    await syncDirectory(context.metadata); await syncDirectory(historyRoot)
+    await validateStage(history, journal)
+  } catch (error) {
+    // A timed-out helper may already have completed its syscall. Locate the retained
+    // directory rather than reporting a journal at its now-vacant original path.
+    if (!retired) {
+      const exists = (file) => fs.promises.lstat(file).then(() => true, (e) => { if (e.code === 'ENOENT') return false; throw e })
+      try { retired = !await exists(stage) && await exists(history) } catch (_) { error.message += ` Check both ${stage} and ${history} after reconnecting the drive.` }
+    }
+    if (retired) throw recoveryError(history, error)
+    throw error
+  }
+  return history
 }
 
 async function recoverStage(context, stage, albumFile) {
@@ -323,7 +356,7 @@ async function recoverStage(context, stage, albumFile) {
         // recovery. A later checksum mismatch keeps the captured file and journal.
         if (state.next && !state.old) {
           if (state.discard) throw new Error(`Duplicate publication copies at ${entry.target}; inspect the recovery stage.`)
-          await fs.promises.rename(entry.target, path.join(stage, entry.discard))
+          await exclusiveRename.renameExclusive(entry.target, path.join(stage, entry.discard))
           await syncDirectory(path.dirname(entry.target)); await syncDirectory(stage)
           const captured = await fingerprint(path.join(stage, entry.discard))
           if (!matchesContent(captured, entry.after)) {
@@ -335,8 +368,8 @@ async function recoverStage(context, stage, albumFile) {
       }
       await inspectEntries(context, stage, journal)
     }
-    await cleanup(context, stage, journal)
-    return journal.phase === 'committed' ? 'committed' : 'restored'
+    const history = await cleanup(context, stage, journal)
+    return { state: journal.phase === 'committed' ? 'committed' : 'restored', history }
   } catch (error) {
     const failure = recoveryError(stage, error)
     if (validated && journal.phase === 'committed') failure.deliveryCommitted = true
@@ -346,11 +379,11 @@ async function recoverStage(context, stage, albumFile) {
 
 async function recoverUnlocked(context, albumFile) {
   const recovered = [], orphanStages = []
-  for (const name of (await fs.promises.readdir(context.metadata)).filter((name) => STAGE.test(name)).sort()) {
+  for (const name of (await fs.promises.readdir(context.metadata)).filter((name) => name !== HISTORY && STAGE.test(name)).sort()) {
     const stage = path.join(context.metadata, name)
     await realDirectory(stage)
     const hasJournal = await fs.promises.lstat(path.join(stage, JOURNAL)).then(() => true, (error) => { if (error.code === 'ENOENT') return false; throw error })
-    if (hasJournal) recovered.push({ stage, state: await recoverStage(context, stage, albumFile) })
+    if (hasJournal) recovered.push({ stage, ...await recoverStage(context, stage, albumFile) })
     else orphanStages.push(stage) // No publication began; preserve unfinished preparation.
   }
   return { recovered, orphanStages }
@@ -386,10 +419,11 @@ function cancelled(isCancelled) {
 }
 
 /** makeCache(records) builds the next cache from staged stamps, before exposing any file. */
-async function publishDelivery(files, cache, suppliedStage, { paths, makeCache, isCancelled, albumFile = cache && cache.albumFile } = {}) {
+async function publishDelivery(files, cache, suppliedStage, { paths, makeCache, isCancelled, validateSnapshot, albumFile = cache && cache.albumFile } = {}) {
   if (!cache || typeof albumFile !== 'string' || !path.isAbsolute(albumFile) || cache.albumFile !== albumFile || typeof makeCache !== 'function' || !Array.isArray(files)) throw new Error('Delivery publication requires matching album identity, files, and a cache builder.')
+  if (validateSnapshot !== undefined && typeof validateSnapshot !== 'function') throw new Error('The delivery snapshot validator must be a function.')
   const context = await contextOf(paths), stage = context.translate(suppliedStage)
-  if (path.dirname(stage) !== context.metadata || !STAGE.test(path.basename(stage))) throw new Error('Delivery staging must be a private delivery folder beside the export cache.')
+  if (path.dirname(stage) !== context.metadata || path.basename(stage) === HISTORY || !STAGE.test(path.basename(stage))) throw new Error('Delivery staging must be a private delivery folder beside the export cache.')
   await realDirectory(stage)
   return locked(context, async () => {
     await recoverUnlocked(context, albumFile)
@@ -449,7 +483,7 @@ async function publishDelivery(files, cache, suppliedStage, { paths, makeCache, 
         const actual = await fingerprint(entry.target)
         if (entry.before ? !matches(actual, entry.before) : actual) throw new Error(`Delivery file ${entry.target} changed during export.`)
         if (entry.before) {
-          await fs.promises.rename(entry.target, path.join(stage, entry.backup))
+          await exclusiveRename.renameExclusive(entry.target, path.join(stage, entry.backup))
           await syncDirectory(path.dirname(entry.target)); await syncDirectory(stage)
           const captured = await fingerprint(path.join(stage, entry.backup), true)
           if (!matches(captured, entry.before)) {
@@ -462,12 +496,13 @@ async function publishDelivery(files, cache, suppliedStage, { paths, makeCache, 
       }
       cancelled(isCancelled)
       await inspectEntries(context, stage, { ...journal, phase: 'committed' })
-      journal.phase = 'committed'; await saveJournal(stage, journal)
+      cancelled(isCancelled)
+      journal.phase = 'committed'; await saveJournal(stage, journal, false, isCancelled, validateSnapshot)
     } catch (error) {
       try {
-        if (await recoverStage(context, stage, albumFile) === 'committed') error.deliveryCommitted = true
+        if ((await recoverStage(context, stage, albumFile)).state === 'committed') error.deliveryCommitted = true
       } catch (recovery) {
-        const failure = recoveryError(stage, new Error(`${error.message} ${recovery.message}`, { cause: error }))
+        const failure = recoveryError(recovery.recoveryStage || stage, new Error(`${error.message} ${recovery.message}`, { cause: error }))
         if (recovery.deliveryCommitted) failure.deliveryCommitted = true
         throw failure
       }

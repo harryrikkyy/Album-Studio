@@ -210,7 +210,7 @@ test('a sheet saved from the editor: marked edited, its preview redrawn from it,
   const { openAlbum } = require('../lib/album')
   const { renderPlan, spreadHash, startRender } = require('../lib/render')
   const { recordSheetProof } = require('../lib/proofs')
-  const { fileStamp } = require('../lib/cache')
+  const { fileStamp, fileDigest } = require('../lib/cache')
   await refresh(proj)
   // As a render leaves it: the sheet, its cache entry, and the proof recorded as the sheet's.
   const sheet = path.join(root, 'out', 'Page_001.psd')
@@ -219,14 +219,17 @@ test('a sheet saved from the editor: marked edited, its preview redrawn from it,
   const ws = JSON.parse(fs.readFileSync(path.join(proj, 'project.json'), 'utf8')).workspace
   const hash = await spreadHash(album.spreads[0], album, ws)
   fs.mkdirSync(path.join(root, 'out', '.album-studio'), { recursive: true })
-  fs.writeFileSync(path.join(root, 'out', '.album-studio', 'render-cache.json'), JSON.stringify({ 1: { hash, sheet: await fileStamp(sheet) } }))
+  fs.writeFileSync(path.join(root, 'out', '.album-studio', 'render-cache.json'), JSON.stringify({ 1: { hash, sheet: await fileStamp(sheet), sheetDigest: await fileDigest(sheet) } }))
   await recordSheetProof(album, ws, album.spreads[0], sheet)
   let plan = await renderPlan({ album: proj })
   assert.deepEqual([plan.spreads[0].state, plan.spreads[0].edited], ['current', false])
 
-  // Edited in the editor and saved.
-  await new Promise((r) => setTimeout(r, 20))
+  // Edited in the editor, with both the old length and timestamp preserved.
+  const beforeEdit = fs.statSync(sheet), oldStamp = await fileStamp(sheet)
   writeFlatPsd(sheet, [30, 30, 200])
+  assert.equal(fs.statSync(sheet).size, beforeEdit.size)
+  fs.utimesSync(sheet, beforeEdit.atime, beforeEdit.mtime)
+  assert.equal(await fileStamp(sheet), oldStamp)
   plan = await renderPlan({ album: proj })
   assert.deepEqual([plan.spreads[0].state, plan.spreads[0].edited], ['current', true], 'the plan still matches; the sheet was edited by hand')
 
@@ -244,7 +247,7 @@ test('a sheet saved from the editor: marked edited, its preview redrawn from it,
   assert.ok(near(await pixel(upd.proof, 300, 100), [30, 30, 200]), 'and the sheet is untouched')
 })
 
-test('proofs made elsewhere are trusted once, not redrawn', async () => {
+test('proofs without source evidence are preserved in history and regenerated from current sources', async () => {
   const { proj } = await makeAlbum()
   await refresh(proj)
   fs.unlinkSync(path.join(proj, 'proofs', 'pages', '.album-studio-proofs.json'))
@@ -254,7 +257,9 @@ test('proofs made elsewhere are trusted once, not redrawn', async () => {
   const events = []
   fresh.refreshProofs(proj, (event, data) => events.push({ event, ...data }))
   await fresh.proofsSettled(proj)
-  assert.deepEqual(events, [{ event: 'proofs.idle', album: proj, rendered: 0, failed: 0 }])
+  assert.ok(events.some((e) => e.event === 'proofs.updated'))
+  assert.ok(fs.readdirSync(path.join(proj, 'proofs', '.album-studio-history')).length > 0)
+  assert.equal(events.at(-1).failed, 0)
 })
 
 test('identical Plan spreads retain their distinct hand-edited sheet proofs after swapping', async () => {
@@ -264,12 +269,12 @@ test('identical Plan spreads retain their distinct hand-edited sheet proofs afte
   fs.writeFileSync(file, JSON.stringify(data))
   const colors = [[210, 30, 30], [30, 30, 210]], out = path.join(root, 'out'), cache = {}
   const { openAlbum } = require('../lib/album'), { spreadHash } = require('../lib/render')
-  const { fileStamp } = require('../lib/cache'), { recordSheetProof } = require('../lib/proofs')
+  const { fileStamp, fileDigest } = require('../lib/cache'), { recordSheetProof } = require('../lib/proofs')
   fs.mkdirSync(path.join(proj, 'proofs', 'pages'), { recursive: true })
   for (let n = 1; n <= 2; n++) writeFlatPsd(path.join(out, `Page_00${n}.psd`), colors[n - 1])
   const album = await openAlbum({ path: proj })
   for (const sp of album.spreads.slice(0, 2)) {
-    cache[sp.n] = { hash: await spreadHash(sp, album, data.workspace), sheet: await fileStamp(sp.sheet) }
+    cache[sp.n] = { hash: await spreadHash(sp, album, data.workspace), sheet: await fileStamp(sp.sheet), sheetDigest: await fileDigest(sp.sheet) }
     await sharp({ create: { width: W, height: H, channels: 3, background: { r: colors[sp.n - 1][0], g: colors[sp.n - 1][1], b: colors[sp.n - 1][2] } } }).jpeg().toFile(path.join(proj, 'proofs', 'pages', `live_page_00${sp.n}.jpg`))
     await recordSheetProof(album, data.workspace, sp, sp.sheet)
   }

@@ -4,6 +4,11 @@
 
 Target: all nine categories must independently score strictly above 9.5/10 with verification. Mission remains active; no category is certified.
 
+Latest checkpoint: iteration 3 on 14 October 2026; evidence is in
+`docs/quality/2026-10-14-iteration-3/verification.json`. The sections below preserve the earlier
+baseline and iterations. Current unresolved priority is whole-album cross-process isolation
+and durable project/cache/render publication. Independent final review hit the provider limit.
+
 Continuation verified on 13 October 2026 (Asia/Kolkata). No earlier `QUALITY_IMPROVEMENT_LOG.md` or objective scorecard exists in this checkout. The last persisted state is the audit in `docs/reviews/2026-10-13-project-review.md`, root commit `81bd5b4`, engine commit `bdb1f8f`. This continuation preserves that audit and does not restart it.
 
 Recovery branch: `codex/album-quality-improvement`. Pre-existing user files: untracked `docs/reviews/` and `invoice-template/`; the engine has untracked `.DS_Store` files. None are discarded or committed as part of the implementation work. All regression fixtures are disposable and separate from real albums.
@@ -239,3 +244,148 @@ Developer ID/notarisation access and a clean customer Mac. These remain unverifi
 Root user folders and the engine's three existing `.DS_Store` files remain untouched.
 
 Diagnostic stdout logs retain their original trailing whitespace; only those raw evidence logs are excluded from the source whitespace check. Their recorded checksums are verified without normalisation.
+
+## Iteration 3 — content freshness, private inputs, bounded decoding and capture races
+
+Resumed `0259580cec6cb6eb5fbb4d3986c94fc6bf7bd849` on the existing recovery branch. The
+previous 184 source/artifact checksums, pinned engine and untracked user folders were verified
+before implementation. No audit restart, user-file cleanup or existing-bundle replacement
+occurred. The engine source remains unchanged at `bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9`.
+
+### Diagnosed, implemented and tested
+
+- Preserved-size/time originals and templates reused obsolete render and template results.
+  Bounded SHA-256 reads now check no-follow file handles and before/after identity. Hashing is
+  limited to four open readers and 1 MiB read buffers; no global size/time digest cache hides
+  changes. Versioned input hashes distinguish verified content evidence from historical
+  stamp-derived hashes. New render records include the actual PSD digest. Old unknown/manual
+  sheets remain protected and cannot silently acquire a new claim of production ownership.
+- RAW, adjustment, thumbnail, template, proof, scoring and lab-preview caches now bind source
+  contents, recipe and output digests. Edited/unrecognised cached images remain intact with
+  actionable errors or retained history. Embedded RAW previews use bounded header/preview
+  reads. Tests cover source edits/restoration during decoding, same-size/stamp mutations,
+  malformed preview offsets, failed thumbnail refresh and orphan proxies. Fake RAW converters
+  in these tests are not evidence of real-camera decoding or RAW/JPEG proxy equivalence.
+- Rendering, proof generation and delivery consume private copies tied to verified digests.
+  Template artifacts have their own digests; corrupting a backdrop after verification cannot
+  produce a proof. Exact project JSON and source revisions are checked before publication.
+  Final integration found a scoring snapshot could change to black during analysis and be
+  restored before the final hash; its inode/size/mtime/ctime identity is now checked too.
+  Both persistent and changed-then-restored snapshots reject scores and preserve their bytes.
+- Replacing an existing PSD captures it using an atomic no-replace OS primitive before
+  validating the captured digest. A real-engine regression inserts a manual edit at that
+  boundary and verifies the exact bytes and old cache survive. Old PSD/proof versions are
+  retained in history. This does not provide a complete restart journal for render/cache/project
+  updates, nor a hardware-atomic snapshot of all source files.
+- Delivery now checks cancellation after final hashing and source/project validity after
+  flushing the committed journal record but immediately before its marker rename. A late stop
+  cannot falsely label an already committed set as rolled back. Backup/discard capture refuses
+  existing destinations. Retirement moves the entire validated stage into delivery history
+  instead of checksum-then-unlinking mutable recovery bytes. Real SIGKILL, conflict, helper
+  post-syscall failure and competing-process delivery regressions pass. History is excluded
+  from active recovery scans; unexpected bytes and conflicting paths remain preserved.
+- RGB auxiliary selection channels were incorrectly interpreted as alpha; some 16-bit RGB RLE
+  composites decoded to black through ag-psd. RGB and CMYK now share a bounded planar
+  PSD/PSB raw/RLE/ZIP/ZIP-prediction route, preserving 8/16-bit samples. Transparency requires
+  actual negative layer-count provenance, including global Lr16/Layr/Lr32 records. Malformed
+  planes/unknown channels fail explicitly. PSD/PSB source reads reject files over 512 MiB before
+  allocation; composite allocation has a separate 512 MiB bound. These limits reject some
+  legitimate large documents and are not performance certification.
+- The independent Poppler PDF oracle initially exposed CMYK intent differences up to 15
+  channel values. PDF image objects now explicitly request perceptual intent. Final actual
+  ICCBased PDF rendering with an explicit sRGB display profile matches sRGB/P3/Gray patches
+  exactly and CMYK patches within the unchanged tolerance of 3. Exact streams, page geometry,
+  source JPEGs, ICC and rendered PNGs are retained. This synthetic oracle does not certify
+  arbitrary PDFs, editor layers or lab output.
+- The tiny atomic helper is now compiled with its source SHA-256, required by the strict gate,
+  bundled and signed beside the CLI. Missing helpers fail with recovery instructions. CI
+  installs Poppler; developer/recovery instructions now describe the mandatory helper/verifier,
+  pinned setup, safe package destination, content evidence and retained history. Full new app
+  packaging, hosted CI and clean-Mac installation remain unverified.
+
+The original template freshness fixture did not initially preserve exact mtime precision.
+Its corrected fixture normalises timestamps to integral seconds and fails against the prior
+module (0/1), then passes against the fix. The pinned baseline loader and raw failing log are
+retained. The original source freshness regression fails 0/3 before the new API; the final
+expanded suite covers four bounded/content/identity/concurrency cases. No requirement or PDF
+colour tolerance was weakened to make tests pass. A syntax check initially used Bash on a
+Zsh script; the supported Zsh parser passes and that diagnostic is not an application failure.
+
+### Final verification and limits
+
+Strict real-engine application gate: **273 shared + 409 helper + 33 interface = 715 passed**,
+zero failed/skipped/cancelled. Separate shared/helper source coverage: **682 passed**, zero
+failures or skips. The immediately preceding full run is retained with its one scoring
+snapshot failure; final logs are separate. Representative source line/branch coverage:
+colour 97.23/81.63, cache 96.81/89.58, delivery transaction 98.84/89.65, delivery 99.03/87.34,
+RAW 93.82/75.19, template 93.80/78.52, proofs 86.86/74.21, render 97.20/74.79. The report's
+aggregate includes tests and must not be presented as product coverage.
+
+Lint has zero errors/warnings; shared/interface types and interface production build pass
+(167.2 KiB JS, 54.5 KiB CSS). Static runtime closure: 50 files and 10 installed packages,
+including the new atomic wrapper. Current helper source checksum/version, engine pin and
+source/shell syntax/whitespace checks pass. Local Node is 22.22.3; package/CI pin is 22.23.3.
+Rust/Cargo are 1.99.0; the CLI is the previously freshly reconstructed pinned build, not a new
+whole-workspace build in this iteration. The C helper was freshly compiled. The historical
+96 native tests, prior dependency audits and old app bundle are not relabelled current checks.
+
+### All nine categories reassessed using the same ten criteria each
+
+| Category | Iteration 2 /10 | Iteration 3 /10 | Remaining acceptance gap |
+|---|---:|---:|---|
+| Architecture | 6.5 | 6.5 | Whole-app state ownership, runtime contracts, complete invalidation |
+| UI and workflow | 4.5 | 4.5 | Native workflows, ambiguity/relink, focus/accessibility, large grids |
+| Testing | 5.0 | 5.0 | Final independent review, native GUI/workspace/corpus and hosted gates |
+| Performance and scalability | 1.5 | 1.5 | Distinct high-resolution album timing, memory, latency, retention budgets |
+| Data integrity and recovery | 6.5 | 6.5 | Whole-app leases, durable project/cache/render journal and drive tests |
+| Documentation | 4.5 | 4.5 | Verified customer/release procedures and missing real workflows |
+| Security and licensing | 4.0 | 4.0 | Device-bound issuer migration, real rules, hardened distribution |
+| Print and delivery correctness | 4.0 | 4.0 | Framed high-depth/CMYK, broad corpus, actual bleed/gutter/lab evidence |
+| Build and distribution | 4.0 | 4.0 | Full root package, hosted native gates, signing/notarisation/clean Mac |
+
+All 90 criteria were reassessed. Stronger evidence within a partial criterion is insufficient
+for its ten verified points. Source freshness is substantially stronger, but catalogue/photo
+metadata timestamp caches remain; full invalidation is not certified. PDF synthetic verification
+does not complete colour/corpus/lab criteria. Unmeasured full-hash cost and retained histories
+prevent performance claims. No points were raised or requirements removed, and no category is
+certified. The mission remains incomplete.
+
+### Execution limit, highest unresolved defect and executable continuation
+
+All three workers are terminal at the provider account limit: **"You've hit your usage limit"**,
+reporting **"Oct 14th, 2026 2:45 AM"** without a timezone. This is the verbatim provider message,
+not a verified future reset estimate. The parent completed the drafted integrations, repaired
+the final failed regression and obtained green final checks. Independent final review of the
+integrated changes did not finish; it remains a required check. Work is checkpointed at this
+actual review execution limit. The goal is active, not completed or certified.
+
+The highest unresolved defect is **whole-album cross-process isolation**: two live independent
+Node processes acquired and held a render lease for the same path concurrently. The read-only
+diagnostic and both PIDs/leases are retained in `job-isolation.json`. Delivery's publication
+lock does not protect render preparation, project migration or edits.
+
+Next executable steps:
+
+1. Verify this manifest, branch/HEAD and engine pin; preserve user folders and existing app
+   bundles. Run final independent review of source/derived snapshots, colour planes, capture
+   recovery/history and shipped helper integration when execution capacity is available.
+2. Add a whole-album cross-process lease before migration/preparation and every project edit.
+   Canonicalise aliases, retain owner token/PID, fail closed on uncertain ownership, and test
+   two live processes, stale owners, interrupted reclamation, stop/release and alias paths.
+   Add a failing subprocess regression first; do not mistake the delivery-only lock for a fix.
+3. Journal render capture/install/cache and project revisions durably; test kills at each
+   boundary, source/manual edits and ENOSPC. Recovery must expose the exact retained history
+   path. Keep existing sheets, ambiguity and weak legacy evidence protected. Add a reviewed
+   history-cleanup workflow and retention/disk budgets before any automatic pruning.
+4. Close remaining metadata/capture-order invalidation, real camera RAW/JPEG equivalence,
+   framed high-depth/CMYK, actual native ambiguity/relink/accessibility workflows and realistic
+   unique-photo benchmarks. Re-run the strict pinned-engine/helper/Poppler gate after changes.
+5. Run full native workspace/Clippy/layering/corpus, hosted CI and a new staged root package.
+   The previously reported `block 0.1.6` future-compiler incompatibility remains unresolved.
+   Obtain an approved GUI/accessibility session, real lab spec/sample, issuer/Firestore test
+   environment and migration inputs, drive/power-loss setup, Developer ID/notarisation access
+   and a clean customer Mac. Keep externally unverified criteria at zero.
+
+New evidence and source/artifact checksums are in
+`docs/quality/2026-10-14-iteration-3/verification.json`. Older evidence is unchanged. User
+`docs/reviews/`, `invoice-template/` and the three engine `.DS_Store` files remain untouched.

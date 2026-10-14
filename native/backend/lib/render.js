@@ -11,15 +11,16 @@ const { execFile } = require('child_process')
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { fileStamp, writeAtomic } = require('./cache')
-const { inputsHash } = require('./inputs')
+const { fileStamp, fileDigest, contentKey, snapshotFile, writeAtomic } = require('./cache')
+const { inputsHash, spreadInputs, hashInputValues } = require('./inputs')
+const exclusiveRename = require('./exclusive_rename')
 const { PhotoCraftSession } = require('./photocraft')
-const { recordSheetProof } = require('./proofs')
-const { bakeAdjustments } = require('./parity')
-const { placeable } = require('./raw')
+const { recordSheetProof, proofInputHash } = require('./proofs')
+const { bakeAdjustmentsEvidence } = require('./parity')
+const { placeableEvidence } = require('./raw')
 const { buildSheet, closeAll, outputName, HEADROOM } = require('./sheet')
 const { migrateAlbum } = require('./project')
-const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache } = require('./sheets')
+const { canonicalSheetPath, outputFolder: outputOf, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
 const { preflightAlbum } = require('./preflight')
 const { printSettings, meetsPrintResolution } = require('./print_settings')
@@ -48,7 +49,7 @@ function cachePaths(outputFolder) {
  * then (`sheet`), which tells a sheet saved later from the editor. Older entries are the hash alone.
  */
 const entryHash = (e) => (typeof e === 'string' ? e : e && e.hash)
-const editedSince = async (e, psd) => !!(e && typeof e === 'object' && e.sheet && e.sheet !== (await fileStamp(psd)))
+const editedSince = async (e, psd) => !!(e && typeof e === 'object' && (e.sheetDigest ? e.sheetDigest !== await fileDigest(psd) : e.sheet && e.sheet !== await fileStamp(psd)))
 
 async function writeCache(file, cache) {
   await writeAtomic(file, JSON.stringify(cache, null, 1))
@@ -85,9 +86,11 @@ async function startRender(p, { emit }) {
   const settings = printSettings(p)
   const lease = reserveJob('render', p.album)
   try {
-    const album = await migrateAlbum({ album: p.album })
+    let album = await migrateAlbum({ album: p.album })
+    const projectText = await fs.promises.readFile(album.file, 'utf8')
+    const data = JSON.parse(projectText)
+    album = await require('./album').openAlbum({ path: album.path }, { data })
     identifyJob(lease, album)
-    const data = await readProject(album.file)
     const ws = data.workspace || data
     const outputFolder = ws.outputToken || path.join(album.path, 'exports')
     await fs.promises.mkdir(outputFolder, { recursive: true })
@@ -98,7 +101,7 @@ async function startRender(p, { emit }) {
     emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
     void (async () => {
       let results = [], error = null
-      try { results = await runJob(job, { album, ws, spreads, settings, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
+      try { results = await runJob(job, { album, ws, projectText, spreads, settings, force: !!p.force, overwriteEdited: !!p.overwriteEdited }, emit) }
       catch (e) { error = e.message; job.failed = Math.max(1, job.failed) }
       finally {
         if (current === job) current = null
@@ -110,7 +113,7 @@ async function startRender(p, { emit }) {
   } catch (e) { releaseJob(lease); throw e }
 }
 
-async function runJob(job, { album, ws, spreads, settings, force, overwriteEdited }, emit) {
+async function runJob(job, { album, ws, projectText, spreads, settings, force, overwriteEdited }, emit) {
   const paths = cachePaths(job.outputFolder)
   const previous = await readRenderCache(job.outputFolder)
   const cache = previous.version === 2 ? previous : { version: 2, spreads: {} }
@@ -130,18 +133,20 @@ async function runJob(job, { album, ws, spreads, settings, force, overwriteEdite
       const report = (state, extra = {}) => emit('render.progress', { jobId: job.id, index: i + 1, total: job.total, n: s.n, state, ...extra })
       const t0 = Date.now()
       const stagedPsd = `${outPsd}.${crypto.randomUUID()}.part.psd`
+      let sourceStage = null, captured = null, previousDigest = null, published = false, preserveSources = false
       try {
         if (!s.template || !s.template.file) throw new Error(s.template ? `the template ${s.template.name} isn't on disk` : 'the spread has no template')
         if (!s.photoIds.length) throw new Error('the spread has no photos')
-        const hash = await spreadHash(s, album, ws)
         const exists = existingPath && await fs.promises.access(existingPath).then(() => true, () => false)
-        if (exists && !overwriteEdited && (record.unverified || await editedSince(record, existingPath))) {
+        if (exists && !overwriteEdited && (!verifiedSheetRecord(record) || await editedSince(record, existingPath))) {
           // Edited by hand in the editor: never replaced without being asked.
           job.skipped++
           report('skipped', { reason: 'edited' })
           results.push({ n: s.n, state: 'skipped', reason: 'edited' })
           continue
         }
+        const inputValues = await spreadInputs(s, album, ws)
+        const hash = hashInputValues([BUILDER_VERSION, HEADROOM], inputValues)
         if (!force && exists && entryHash(record) === hash && await meetsPrintResolution(existingPath, settings)) {
           job.skipped++
           report('skipped')
@@ -152,16 +157,24 @@ async function runJob(job, { album, ws, spreads, settings, force, overwriteEdite
         const preflight = await preflightAlbum(album, ws, { ...settings, phase: 'render' }, [s.n])
         if (preflight.errors.length) throw new Error(preflight.errors.map((e) => e.message).join(' '))
         const previousStamp = await fileStamp(outPsd)
+        previousDigest = previousStamp === 'missing' ? null : await fileDigest(outPsd)
         if (previousStamp !== 'missing' && existingPath !== outPsd) throw new Error(`An unowned sheet exists at ${outPsd}. Preserve it before rendering.`)
         await fs.promises.mkdir(path.dirname(outPsd), { recursive: true })
+        sourceStage = await fs.promises.mkdtemp(path.join(paths.dir, 'render-sources-'))
+        const template = await snapshotFile(s.template.file, sourceStage, inputValues[1])
         const photos = []
         const warnings = unsupportedEdits(s, ws)
         for (const id of s.photoIds) {
           const ph = album.photos[id]
           if (!ph || !ph.original) throw new Error(`The original photo ${id} is missing; thumbnails cannot be rendered for print.`)
           const src = ph.original
+          const expectedSource = inputValues[2].find((v) => v[0] === id)[2]
+          const developed = await placeableEvidence(src, paths.raw)
+          if (developed.sourceKey !== contentKey(src, expectedSource)) throw new Error('The original changed before its render snapshot was made.')
+          const adjusted = await bakeAdjustmentsEvidence(developed.file, (ws.imageAdjustments || {})[id], paths.adjusted)
+          if (adjusted.sourceKey !== contentKey(developed.file, developed.digest)) throw new Error('The developed image changed before its adjustment snapshot was made.')
           photos.push({
-            file: await bakeAdjustments(await placeable(src, paths.raw), (ws.imageAdjustments || {})[id], paths.adjusted),
+            file: await snapshotFile(adjusted.file, sourceStage, adjusted.digest), digest: adjusted.digest,
             orient: ph.orient === 'v' ? 'v' : 'h',
             name: ph.base,
             edit: { rotation: (ws.imageRotations || {})[id] || 0, ...((ws.imagePlacements || {})[id] || {}) },
@@ -171,7 +184,7 @@ async function runJob(job, { album, ws, spreads, settings, force, overwriteEdite
         if (!pc) pc = new PhotoCraftSession({ writeRoot: job.outputFolder })
         const preview = path.join(paths.previews, `${name}.jpg`)
         const built = await buildSheet(pc, {
-          template: s.template.file,
+          template,
           photos,
           layerEdits: (ws.pageLayerEdits || {})[s.n] || null,
           overlays: (ws.pageOverlays || {})[s.n] || null,
@@ -180,24 +193,38 @@ async function runJob(job, { album, ws, spreads, settings, force, overwriteEdite
           printSettings: settings,
         })
         if (built.warnings.length) throw new Error(`Sheet construction left edits or photos unapplied: ${built.warnings.join('; ')}`)
-        if (await spreadHash(s, album, ws) !== hash || await fileStamp(outPsd) !== previousStamp) throw new Error('The source files or existing sheet changed during rendering. Retry from the current revision.')
-        if (previousStamp === 'missing') {
-          // Exclusive publication also protects against an unrelated document appearing mid-job.
-          await fs.promises.copyFile(stagedPsd, outPsd, fs.constants.COPYFILE_EXCL)
-          await fs.promises.unlink(stagedPsd)
-        } else await fs.promises.rename(stagedPsd, outPsd)
-        cache.spreads[s.id] = { path: outPsd, outputFolder: job.outputFolder, hash, sheet: await fileStamp(outPsd), settings, resolutionEvidence: preflight.info.filter((e) => e.code === 'effective_ppi') }
+        const stagedDigest = await fileDigest(stagedPsd)
+        if (await fs.promises.readFile(album.file, 'utf8') !== projectText || await spreadHash(s, album, ws) !== hash || await fileStamp(outPsd) !== previousStamp || previousDigest && await fileDigest(outPsd) !== previousDigest) throw new Error('The project, source files or existing sheet changed during rendering. Retry from the current revision.')
+        if (await fileDigest(template) !== inputValues[1] || (await Promise.all(photos.map(async (ph) => await fileDigest(ph.file) === ph.digest))).some((ok) => !ok)) {
+          preserveSources = true
+          throw new Error(`A private render source changed during construction. Preserve ${sourceStage} before retrying.`)
+        }
+        if (previousDigest) {
+          const history = path.join(paths.dir, 'render-history')
+          await fs.promises.mkdir(history, { recursive: true, mode: 0o700 })
+          captured = path.join(history, `${s.id}-${crypto.randomUUID()}.psd`)
+          await exclusiveRename.renameExclusive(outPsd, captured)
+          if (await fileDigest(captured) !== previousDigest) throw new Error(`The sheet changed during replacement. Its exact bytes were preserved at ${captured}.`)
+        }
+        await exclusiveRename.renameExclusive(stagedPsd, outPsd)
+        published = true
+        if (await fileDigest(outPsd) !== stagedDigest) throw new Error('The published sheet changed before its ownership was recorded. Preserve the sheet and retry after reviewing it.')
+        cache.spreads[s.id] = { path: outPsd, outputFolder: job.outputFolder, hash, sheet: await fileStamp(outPsd), sheetDigest: stagedDigest, settings, resolutionEvidence: preflight.info.filter((e) => e.code === 'effective_ppi') }
         await writeCache(paths.file, cache)
         // The sheet's own render becomes the spread's preview in Plan and Review.
-        await sipsResize(preview, path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), 2400)
+        const stagedProof = `${stagedPsd}.proof.jpg`
+        await sipsResize(preview, stagedProof, 2400)
         await fs.promises.unlink(preview).catch(() => {})
-        await recordSheetProof(album, ws, s, outPsd)
+        await recordSheetProof(album, ws, s, outPsd, { proof: stagedProof, expectedHash: proofInputHash(inputValues), projectText })
         emit('proofs.updated', { album: album.path, n: s.n, proof: path.join(proofDir, `live_page_${String(s.n).padStart(3, '0')}.jpg`), source: 'sheet' })
         job.done++
         const r = { n: s.n, state: 'done', ms: Date.now() - t0, path: outPsd, warnings: [...warnings, ...built.warnings] }
         results.push(r)
         report('done', { ms: r.ms, warnings: r.warnings })
       } catch (e) {
+        if (captured && !published) {
+          try { await exclusiveRename.renameExclusive(captured, outPsd) } catch (restore) { e.message += ` Recovery copy retained at ${captured}; destination preserved: ${restore.message}` }
+        }
         job.failed++
         const error = e && e.message ? e.message : String(e)
         results.push({ n: s.n, state: 'failed', error })
@@ -205,7 +232,10 @@ async function runJob(job, { album, ws, spreads, settings, force, overwriteEdite
         // A dead engine is replaced for the next sheet; a live one is cleaned up.
         if (pc && pc.proc.exitCode !== null) pc = null
         else if (pc) await closeAll(pc)
-      } finally { await fs.promises.unlink(stagedPsd).catch(() => {}) }
+      } finally {
+        await fs.promises.unlink(stagedPsd).catch(() => {})
+        if (sourceStage && !preserveSources) await fs.promises.rm(sourceStage, { recursive: true, force: true }).catch(() => {})
+      }
     }
   } finally {
     if (pc) await pc.close()
@@ -237,7 +267,8 @@ async function renderPlan({ album: albumPath, ...p }) {
     if (!exists) return { n: s.n, state: 'missing' }
     const hash = await spreadHash(s, album, ws)
     const resolutionReady = await meetsPrintResolution(out, settings)
-    return { n: s.n, id: s.id, state: !record.unverified && entryHash(record) === hash && resolutionReady ? 'current' : 'stale', reason: resolutionReady ? undefined : 'Render at the configured print resolution', edited: !!record.unverified || await editedSince(record, out), unverified: !!record.unverified, unsupported: unsupportedEdits(s, ws) }
+    const verified = verifiedSheetRecord(record)
+    return { n: s.n, id: s.id, state: verified && entryHash(record) === hash && resolutionReady ? 'current' : 'stale', reason: !verified ? 'This older sheet has no verified content history. Preserve manual work before explicitly rendering a replacement.' : resolutionReady ? undefined : 'Render at the configured print resolution', edited: !verified || await editedSince(record, out), unverified: !verified, unsupported: unsupportedEdits(s, ws) }
   }))
   return { outputFolder, spreads, running: renderStatus() }
 }

@@ -11,7 +11,7 @@ process.env.ALBUM_STUDIO_DATA_DIR = tmpdir()
 process.env.ALBUM_STUDIO_CACHE_DIR = tmpdir()
 
 const sharp = require('sharp')
-const { surveyFolder, ensureThumbnails } = require('../lib/thumbs')
+const { surveyFolder, ensureThumbnails, makeThumb } = require('../lib/thumbs')
 const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('../lib/newalbum')
 const { undo } = require('../lib/project')
 
@@ -47,7 +47,7 @@ test('a folder survey counts each photo once and lists the thumbnails still to m
   const root = tmpdir()
   const dir = await makeShoot(root)
   fs.mkdirSync(path.join(dir, '_Thumbnails'))
-  await noise(400, 266).jpeg().toFile(path.join(dir, '_Thumbnails', 'A.jpg'))
+  await makeThumb(path.join(dir, 'A.jpg'), path.join(dir, '_Thumbnails', 'A.jpg'))
   const s = await surveyFolder(dir)
   assert.equal(s.exists, true)
   assert.equal(s.photos, 4, 'A, B, C, and D (its RAW and JPEG are one photo)')
@@ -68,7 +68,8 @@ test('thumbnails are made upright at 400 px, RAWs from their embedded preview, a
   assert.deepEqual(await size(t('C.jpg')), [267, 400], 'the RAW’s orientation 8 turns its preview upright')
   assert.deepEqual(await size(t('D.jpg')), [400, 267])
   assert.deepEqual(progress.at(-1), { done: 4, total: 4, current: progress.at(-1).current })
-  assert.deepEqual(fs.readdirSync(path.join(dir, '_Thumbnails')).sort(), ['A.jpg', 'B.jpg', 'C.jpg', 'D.jpg'], 'no leftovers')
+  assert.deepEqual(fs.readdirSync(path.join(dir, '_Thumbnails')).filter((n) => !n.startsWith('.')).sort(), ['A.jpg', 'B.jpg', 'C.jpg', 'D.jpg'], 'only photo proxies appear in the catalogue')
+  assert.ok(fs.statSync(path.join(dir, '_Thumbnails', '.album-studio-thumbs')).isDirectory(), 'provenance is hidden from photo enumeration')
 
   const again = await ensureThumbnails(dir)
   assert.equal(again.made, 0, 'nothing to do the second time')

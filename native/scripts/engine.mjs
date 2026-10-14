@@ -95,10 +95,20 @@ export function buildEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   const args = ['build', '--release', '--locked', '-p', 'album-studio', '-p', 'photocraft-cli']
   if (pin.features.length) args.push('--features', pin.features.join(','))
   command('cargo', args, { cwd: engine, env, stdio: 'inherit', timeout: 60 * 60 * 1000 })
+  const rename = buildRenameHelper(target)
   const cli = join(target, 'release/photocraft-cli')
   const version = command(cli, ['--version'])
   if (!version.includes(pin.commit.slice(0, 9))) throw new Error('The compiled engine did not report the pinned source revision.')
-  return { ...state, ...tools, cli, shell: join(target, 'release/album-studio'), version }
+  return { ...state, ...tools, cli, shell: join(target, 'release/album-studio'), version, rename }
+}
+
+export function buildRenameHelper(target) {
+  const source = join(ROOT, 'native/scripts/rename-exclusive.c'), digest = sha256(source)
+  const binary = join(resolve(target), 'release/album-studio-rename-exclusive')
+  mkdirSync(dirname(binary), { recursive: true })
+  command('cc', ['-O2', '-Wall', '-Wextra', '-Werror', `-DALBUM_STUDIO_RENAME_SHA="${digest}"`, source, '-o', binary])
+  if (!command(binary, ['--version']).includes(digest)) throw new Error('Atomic helper build does not report its source checksum.')
+  return binary
 }
 
 export function assertNoSkippedTap(text, { expectedSuites = 1 } = {}) {
@@ -114,8 +124,10 @@ export function runNodeGate({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   const cli = join(target, 'release/photocraft-cli')
   const version = command(cli, ['--version'])
   if (!version.includes(pin.commit.slice(0, 9))) throw new Error('Node integration gate requires a freshly built, provenance-tagged pinned engine.')
+  const rename = join(target, 'release/album-studio-rename-exclusive')
+  if (!command(rename, ['--version']).includes(sha256(join(ROOT, 'native/scripts/rename-exclusive.c')))) throw new Error('Node integration gate requires the current atomic file helper.')
   const result = spawnSync('npm', ['test'], { cwd: ROOT, encoding: 'utf8', timeout: 30 * 60 * 1000, maxBuffer: 128 * 1024 * 1024,
-    env: { ...process.env, ALBUM_STUDIO_PHOTOCRAFT_CLI: cli } })
+    env: { ...process.env, ALBUM_STUDIO_PHOTOCRAFT_CLI: cli, ALBUM_STUDIO_RENAME_CLI: rename } })
   process.stdout.write(result.stdout || '')
   process.stderr.write(result.stderr || '')
   if (result.error || result.status !== 0) throw new Error(`Node test gate failed: ${result.error?.message || `exit ${result.status}`}`)
@@ -132,7 +144,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       if (!value || !['--engine', '--manifest', '--target-dir', '--base-repository'].includes(flag)) throw new Error(`Unknown or incomplete option ${flag}.`)
       options[{ '--engine': 'engine', '--manifest': 'manifest', '--target-dir': 'targetDir', '--base-repository': 'baseRepository' }[flag]] = flag === '--base-repository' ? value : resolve(value)
     }
-    const operations = { check: validateEngine, setup: setupEngine, build: buildEngine, 'test-node': runNodeGate, pin: () => readPin(options.manifest) }
+    const operations = { check: validateEngine, setup: setupEngine, build: buildEngine, 'build-rename': () => buildRenameHelper(options.targetDir || process.env.CARGO_TARGET_DIR || join(options.engine || DEFAULT_ENGINE, 'target/album-studio-pinned')), 'test-node': runNodeGate, pin: () => readPin(options.manifest) }
     if (!operations[operation]) throw new Error('Use engine.mjs check, setup, build, test-node or pin.')
     process.stdout.write(JSON.stringify(operations[operation](options), null, 2) + '\n')
   } catch (error) {

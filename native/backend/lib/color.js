@@ -1,5 +1,5 @@
-// ag-psd exposes composite values without their ICC resource. Retain it in a lossless,
-// uncompressed TIFF container so libvips performs the source-to-sRGB conversion normally.
+// Read bounded native compatibility samples with their source ICC resource. A lossless
+// TIFF retains source precision and lets libvips verify the source-to-sRGB conversion.
 'use strict'
 
 const fs = require('fs')
@@ -11,7 +11,203 @@ const zlib = require('zlib')
 const MAX_PROFILE = 16 * 1024 * 1024
 const verifiedProfiles = new Map()
 const SRGB_POLICY = Object.freeze({ profile: 'srgb', intent: 'perceptual', bpc: false })
+const MAX_PSD_SOURCE_BYTES = 512 * 1024 * 1024
 const MAX_COMPOSITE_BYTES = 512 * 1024 * 1024
+const LONG_LAYER_KEYS = new Set(['LMsk', 'Lr16', 'Lr32', 'Layr', 'Mt16', 'Mt32', 'Mtrn', 'Alph', 'FMsk', 'lnk2', 'FEid', 'FXid', 'PxSD'])
+
+function compositeError(detail) {
+  return new Error(`The sheet composite cannot be delivered safely (${detail}). Save a real compatibility composite, or convert and save an 8-bit RGB sheet in the editor.`)
+}
+
+/** Explicit source-file policy, separate from decoded plane limits. Hold a no-follow
+ * descriptor, allocate only its verified bounded size, and refuse growth/replacement.
+ * This does not promise support for arbitrary multi-gigabyte layered PSB documents.
+ */
+async function readPsdBuffer(file) {
+  const same = (a, b) => ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
+  const changed = () => Object.assign(compositeError('the source changed during reading; retry from a stable original'), { code: 'SOURCE_CHANGED' })
+  const before = await fs.promises.lstat(file, { bigint: true })
+  if (!before.isFile()) throw compositeError('the source is not a regular file; resolve its symlink or restore the original')
+  const handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
+  try {
+    const opened = await handle.stat({ bigint: true })
+    if (!opened.isFile() || !same(before, opened)) throw changed()
+    if (opened.size > BigInt(MAX_PSD_SOURCE_BYTES)) throw compositeError('source file exceeds the 512 MiB source-reading policy; save a smaller compatibility sheet or template in the editor')
+    const buf = Buffer.allocUnsafe(Number(opened.size))
+    let at = 0
+    while (at < buf.length) {
+      const { bytesRead } = await handle.read(buf, at, Math.min(1024 * 1024, buf.length - at), at)
+      if (!bytesRead) throw changed()
+      at += bytesRead
+    }
+    const after = await handle.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
+    if (!same(opened, after) || !same(after, named)) throw changed()
+    return buf
+  } finally { await handle.close() }
+}
+
+/** Read allocation bounds and merged transparency independently of ag-psd's RGBA preview.
+ * Adobe's signed layer count identifies transparency; a saved selection is an auxiliary
+ * channel even though ag-psd exposes it in the fourth RGBA component. High-depth files may
+ * carry the same declaration in global Layr/Lr16/Lr32 blocks rather than the primary info.
+ */
+function compositeMetadata(buf) {
+  const need = (at, size, end = buf.length) => {
+    if (!Number.isSafeInteger(at) || !Number.isSafeInteger(size) || at < 0 || size < 0 || at > end - size) throw compositeError('truncated document data')
+  }
+  need(0, 30)
+  if (buf.toString('ascii', 0, 4) !== '8BPS') throw compositeError('not a PSD/PSB document')
+  const version = buf.readUInt16BE(4), channels = buf.readUInt16BE(12), height = buf.readUInt32BE(14), width = buf.readUInt32BE(18), depth = buf.readUInt16BE(22), mode = buf.readUInt16BE(24)
+  if (![1, 2].includes(version) || ![1, 8, 16, 32].includes(depth) || !channels || channels > 56 || !width || !height) throw compositeError('invalid header')
+  const limit = version === 2 ? 300000 : 30000
+  if (width > limit || height > limit) throw compositeError('dimensions exceed the PSD/PSB format limit')
+  // Bound both the source planes and the four-channel output before decoding a tiny
+  // or malformed source. An oversized document must not be retried in the engine.
+  const decodedBytes = width * height * Math.max(4, channels) * Math.max(1, depth / 8)
+  if (!Number.isSafeInteger(decodedBytes) || decodedBytes > MAX_COMPOSITE_BYTES) throw compositeError('compatibility composite exceeds the 512 MiB decoding limit')
+  let at = 30 + buf.readUInt32BE(26)
+  need(at, 4)
+  const resourceLength = buf.readUInt32BE(at)
+  at += 4; need(at, resourceLength)
+  const resourceEnd = at + resourceLength
+  let realMerged = null
+  while (at < resourceEnd) {
+    need(at, 7, resourceEnd)
+    if (buf.toString('ascii', at, at + 4) !== '8BIM') throw compositeError('invalid image resource')
+    const id = buf.readUInt16BE(at + 4), nameSize = 1 + buf[at + 6], sizeAt = at + 6 + nameSize + nameSize % 2
+    need(sizeAt, 4, resourceEnd)
+    const size = buf.readUInt32BE(sizeAt), dataAt = sizeAt + 4
+    need(dataAt, size, resourceEnd)
+    if (id === 1057) {
+      if (size < 5 || buf.readUInt32BE(dataAt) !== 1 || realMerged !== null) throw compositeError('invalid merged-composite declaration')
+      realMerged = !!buf[dataAt + 4]
+    }
+    at = dataAt + size + size % 2
+    if (at > resourceEnd) throw compositeError('truncated image resource padding')
+  }
+  const lengthBytes = version === 2 ? 8 : 4
+  const lengthAt = (where, bytes, end = buf.length) => {
+    need(where, bytes, end)
+    const value = bytes === 8 ? buf.readBigUInt64BE(where) : BigInt(buf.readUInt32BE(where))
+    if (value > BigInt(end)) throw compositeError('invalid layer section length')
+    return Number(value)
+  }
+  const layerLength = lengthAt(at, lengthBytes), layerAt = at + lengthBytes, layerEnd = layerAt + layerLength
+  need(layerAt, layerLength)
+  let alpha = null
+  const declare = (where, size) => {
+    if (size < 2) throw compositeError('truncated layer count')
+    const value = buf.readInt16BE(where) < 0
+    if (alpha !== null && value !== alpha) throw compositeError('conflicting merged transparency declarations')
+    alpha = value
+  }
+  if (layerLength && [3, 4].includes(mode)) {
+    const infoLength = lengthAt(layerAt, lengthBytes, layerEnd), infoAt = layerAt + lengthBytes
+    need(infoAt, infoLength, layerEnd)
+    if (infoLength) declare(infoAt, infoLength)
+    at = infoAt + infoLength
+    const maskLength = lengthAt(at, 4, layerEnd)
+    at += 4; need(at, maskLength, layerEnd); at += maskLength
+    while (at < layerEnd) {
+      // Global blocks are padded to two or four bytes by different writers.
+      let padding = 0
+      while (padding < 3 && at + padding < layerEnd && buf[at + padding] === 0) padding++
+      if (at + padding === layerEnd) break
+      at += padding
+      need(at, 12, layerEnd)
+      const signature = buf.toString('ascii', at, at + 4), key = buf.toString('ascii', at + 4, at + 8)
+      if (!['8BIM', '8B64'].includes(signature)) throw compositeError('invalid global layer block')
+      const bytes = signature === '8B64' || version === 2 && LONG_LAYER_KEYS.has(key) ? 8 : 4
+      const size = lengthAt(at + 8, bytes, layerEnd), dataAt = at + 8 + bytes
+      need(dataAt, size, layerEnd)
+      if (key === 'Layr' || key === (depth === 16 ? 'Lr16' : depth === 32 ? 'Lr32' : 'Layr')) declare(dataAt, size)
+      at = dataAt + size
+    }
+  }
+  need(layerEnd, 2)
+  if (mode === 3) {
+    if (channels < 3 || channels > 4) throw compositeError('unsupported RGB extra channels')
+    if (alpha === true && channels !== 4) throw compositeError('merged transparency channel is missing')
+    if (channels === 4 && alpha === null) throw compositeError('fourth-channel transparency provenance is unknown')
+    if (buf.readUInt16BE(layerEnd) === 0 && depth >= 8) need(layerEnd + 2, width * height * channels * (depth / 8))
+  }
+  return { width, height, channels, depth, mode, alpha, realMerged, compositeAt: layerEnd }
+}
+
+/** Strict PackBits/ZIP planes shared by RGB and CMYK; no preview or colour conversion. */
+function compositePlanes(buf, { width, height, channels, depth }, compressionAt, error = compositeError) {
+  const need = (at, size) => { if (!Number.isSafeInteger(at) || !Number.isSafeInteger(size) || at < 0 || size < 0 || at > buf.length - size) throw error('truncated document data') }
+  const sample = depth / 8, rowBytes = width * sample, rows = channels * height, expected = rowBytes * rows
+  if (![8, 16].includes(depth) || !Number.isSafeInteger(expected) || expected > MAX_COMPOSITE_BYTES) throw error('unsupported or oversized compatibility composite')
+  need(compressionAt, 2)
+  const compression = buf.readUInt16BE(compressionAt)
+  let at = compressionAt + 2, planar
+  if (compression === 0) {
+    need(at, expected); return buf.subarray(at, at + expected)
+  }
+  if (compression === 1) {
+    const countBytes = buf.readUInt16BE(4) === 2 ? 4 : 2, tableSize = rows * countBytes
+    need(at, tableSize)
+    const tableAt = at; at += tableSize
+    let encodedTotal = 0
+    for (let row = 0; row < rows; row++) encodedTotal += countBytes === 4 ? buf.readUInt32BE(tableAt + row * countBytes) : buf.readUInt16BE(tableAt + row * countBytes)
+    need(at, encodedTotal)
+    planar = Buffer.allocUnsafe(expected)
+    for (let row = 0; row < rows; row++) {
+      const length = countBytes === 4 ? buf.readUInt32BE(tableAt + row * countBytes) : buf.readUInt16BE(tableAt + row * countBytes)
+      const end = at + length, destination = row * rowBytes
+      let decoded = 0
+      while (at < end) {
+        const control = buf[at++]
+        if (control === 128) continue
+        const count = control < 128 ? control + 1 : 257 - control
+        if (decoded + count > rowBytes) throw error('an RLE row exceeds its width')
+        if (control < 128) {
+          if (at + count > end) throw error('truncated RLE literal')
+          buf.copy(planar, destination + decoded, at, at + count); at += count
+        } else {
+          if (at >= end) throw error('truncated RLE repeat')
+          planar.fill(buf[at++], destination + decoded, destination + decoded + count)
+        }
+        decoded += count
+      }
+      if (decoded !== rowBytes) throw error('truncated RLE row')
+    }
+  } else if (compression === 2 || compression === 3) {
+    try { planar = zlib.inflateSync(buf.subarray(at), { maxOutputLength: expected }) } catch (_) { throw error('invalid or oversized ZIP composite') }
+    if (planar.length !== expected) throw error('ZIP composite length does not match its planes')
+    if (compression === 3) for (let row = 0; row < rows; row++) {
+      const start = row * rowBytes
+      for (let x = 1; x < width; x++) {
+        const pos = start + x * sample
+        if (depth === 8) planar[pos] = (planar[pos] + planar[pos - 1]) & 255
+        else planar.writeUInt16BE((planar.readUInt16BE(pos) + planar.readUInt16BE(pos - 2)) & 65535, pos)
+      }
+    }
+  } else throw error('unsupported composite compression')
+  return planar
+}
+
+/** RGB compatibility samples, including white-matted merged alpha at original precision. */
+function decodeRgbComposite(buf, source = compositeMetadata(buf)) {
+  if (source.mode !== 3 || ![8, 16].includes(source.depth)) throw compositeError('unsupported RGB source depth')
+  if (source.realMerged === false) throw compositeError('the document declares no real merged composite')
+  const { width, height, depth } = source, sample = depth / 8, pixels = width * height, maximum = depth === 8 ? 255 : 65535
+  const planar = compositePlanes(buf, source, source.compositeAt), alpha = source.alpha === true
+  const data = Buffer.allocUnsafe(pixels * 4 * sample)
+  const read = (position) => depth === 8 ? planar[position] : planar.readUInt16BE(position)
+  const write = (position, value) => { if (depth === 8) data[position] = value; else data.writeUInt16LE(value, position) }
+  for (let i = 0; i < pixels; i++) {
+    const a = alpha ? read((3 * pixels + i) * sample) : maximum
+    for (let c = 0; c < 3; c++) {
+      const value = read((c * pixels + i) * sample)
+      const straight = alpha ? (a ? Math.max(0, Math.min(maximum, Math.round((value - maximum + a) * maximum / a))) : 0) : value
+      write((i * 4 + c) * sample, straight)
+    }
+    write((i * 4 + 3) * sample, a)
+  }
+  return { data, width, height, depth, channels: 4, alpha }
+}
 
 function profileError(detail) {
   return new Error(`The sheet colour profile is invalid or unsupported (${detail}). Assign a valid source profile before exporting.`)
@@ -213,65 +409,12 @@ function decodeCmykComposite(buf) {
   }
   const layerLength = sectionLength(at), layerAt = at + lengthBytes
   need(layerAt, layerLength)
-  let alpha = false
-  if (layerLength) {
-    if (layerLength < lengthBytes) throw cmykError('truncated layer section')
-    const infoLength = sectionLength(layerAt)
-    if (infoLength > layerLength - lengthBytes) throw cmykError('invalid layer information length')
-    if (infoLength) {
-      if (infoLength < 2) throw cmykError('truncated layer count')
-      const hasAlpha = buf.readInt16BE(layerAt + lengthBytes) < 0
-      if (hasAlpha && channels < 5) throw cmykError('transparency plane is missing')
-      alpha = channels === 5 && hasAlpha
-    }
-  }
+  const hasAlpha = compositeMetadata(buf).alpha === true
+  if (hasAlpha && channels < 5) throw cmykError('transparency plane is missing')
+  const alpha = channels === 5 && hasAlpha
   if (channels === 5 && !alpha) throw cmykError('an extra channel is not identified as transparency')
   at = layerAt + layerLength
-  need(at, 2)
-  const compression = buf.readUInt16BE(at); at += 2
-  let planar
-  if (compression === 0) {
-    need(at, expected); planar = buf.subarray(at, at + expected)
-  } else if (compression === 1) {
-    const countBytes = version === 2 ? 4 : 2, tableSize = rows * countBytes
-    need(at, tableSize)
-    const tableAt = at; at += tableSize
-    let encodedTotal = 0
-    for (let row = 0; row < rows; row++) encodedTotal += countBytes === 4 ? buf.readUInt32BE(tableAt + row * countBytes) : buf.readUInt16BE(tableAt + row * countBytes)
-    need(at, encodedTotal)
-    planar = Buffer.allocUnsafe(expected)
-    for (let row = 0; row < rows; row++) {
-      const length = countBytes === 4 ? buf.readUInt32BE(tableAt + row * countBytes) : buf.readUInt16BE(tableAt + row * countBytes)
-      const end = at + length, destination = row * rowBytes
-      let decoded = 0
-      while (at < end) {
-        const control = buf[at++]
-        if (control === 128) continue
-        const count = control < 128 ? control + 1 : 257 - control
-        if (decoded + count > rowBytes) throw cmykError('an RLE row exceeds its width')
-        if (control < 128) {
-          if (at + count > end) throw cmykError('truncated RLE literal')
-          buf.copy(planar, destination + decoded, at, at + count); at += count
-        } else {
-          if (at >= end) throw cmykError('truncated RLE repeat')
-          planar.fill(buf[at++], destination + decoded, destination + decoded + count)
-        }
-        decoded += count
-      }
-      if (decoded !== rowBytes) throw cmykError('truncated RLE row')
-    }
-  } else if (compression === 2 || compression === 3) {
-    try { planar = zlib.inflateSync(buf.subarray(at), { maxOutputLength: expected }) } catch (_) { throw cmykError('invalid or oversized ZIP composite') }
-    if (planar.length !== expected) throw cmykError('ZIP composite length does not match its planes')
-    if (compression === 3) for (let row = 0; row < rows; row++) {
-      const start = row * rowBytes
-      for (let x = 1; x < width; x++) {
-        const pos = start + x * sample
-        if (depth === 8) planar[pos] = (planar[pos] + planar[pos - 1]) & 255
-        else planar.writeUInt16BE((planar.readUInt16BE(pos) + planar.readUInt16BE(pos - 2)) & 65535, pos)
-      }
-    }
-  } else throw cmykError('unsupported composite compression')
+  const planar = compositePlanes(buf, { width, height, channels, depth }, at, cmykError)
   const data = Buffer.allocUnsafe(expected), pixels = width * height, maximum = depth === 8 ? 255 : 65535
   const read = (position) => depth === 8 ? planar[position] : planar.readUInt16BE(position)
   const write = (position, value) => { if (depth === 8) data[position] = value; else data.writeUInt16LE(value, position) }
@@ -311,14 +454,7 @@ async function profiledCmyk(composite, profile) {
   } catch (error) { if (handle) await handle.close().catch(() => {}); await cleanup(); throw error }
 }
 
-let agpsd = null, defaultRgbProfile = null
-function compositeReader() {
-  if (!agpsd) {
-    agpsd = require('ag-psd')
-    agpsd.initializeCanvas((w, h) => ({ width: w, height: h, getContext: () => ({ createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }) }) }))
-  }
-  return agpsd
-}
+let defaultRgbProfile = null
 async function untaggedRgbProfile() {
   if (!defaultRgbProfile) defaultRgbProfile = (async () => {
     const sharp = require('../../../src/sharp_config').getSharp()
@@ -330,23 +466,24 @@ async function untaggedRgbProfile() {
 
 /** Shared verified PSD pixels for production sheets and original template backdrops. */
 async function psdPixels(psdPath, { buffer } = {}) {
-  const buf = buffer || await fs.promises.readFile(psdPath), profile = psdProfile(buf)
+  const buf = buffer || await readPsdBuffer(psdPath)
+  if (buf.length > MAX_PSD_SOURCE_BYTES) throw compositeError('source file exceeds the 512 MiB source-reading policy; save a smaller compatibility sheet or template in the editor')
+  const source = compositeMetadata(buf), profile = psdProfile(buf)
   if (profile) await assertProfileUsable(profile)
   if (buf.length >= 26 && buf.toString('ascii', 0, 4) === '8BPS' && buf.readUInt16BE(24) === 4) {
     if (!profile) throw cmykError('the actual source profile is absent')
     return profiledCmyk(decodeCmykComposite(buf), profile)
   }
-  let psd = null
-  try { psd = compositeReader().readPsd(buf, { skipLayerImageData: true, skipCompositeImageData: false, skipThumbnail: true, useImageData: true }) } catch (_) { /* the engine tries unsupported RGB encodings */ }
-  const img = psd && psd.imageData
-  const realMerged = psd && psd.imageResources && psd.imageResources.versionInfo && psd.imageResources.versionInfo.hasRealMergedData
-  if (img && realMerged !== false && [8, 16].includes(psd.bitsPerChannel) && psd.colorMode === 3 && img.data.length === img.width * img.height * 4) {
+  if (source.mode === 3 && profile && profile.toString('ascii', 16, 20) !== 'RGB ') throw compositeError('the RGB source profile does not match its channels')
+  if (source.mode === 3 && source.realMerged !== false && [8, 16].includes(source.depth)) {
+    const img = decodeRgbComposite(buf, source), sample = source.depth / 8
     let nonBlack = false
-    for (let i = 0; i < img.data.length && !nonBlack; i += 4) nonBlack = !!(img.data[i] || img.data[i + 1] || img.data[i + 2])
-    if (realMerged === true || nonBlack) {
-      const input = Buffer.from(img.data.buffer, img.data.byteOffset, img.data.byteLength)
-      if (profile || psd.bitsPerChannel === 16) return profiledRgba(input, img.width, img.height, profile || await untaggedRgbProfile(), psd.bitsPerChannel)
-      return { input, raw: { width: img.width, height: img.height, channels: 4 }, width: img.width, height: img.height }
+    for (let i = 0; i < img.data.length && !nonBlack; i += 4 * sample) {
+      for (let c = 0; c < 3 && !nonBlack; c++) nonBlack = source.depth === 8 ? !!img.data[i + c] : !!img.data.readUInt16LE(i + c * 2)
+    }
+    if (source.realMerged === true || nonBlack) {
+      if (profile || source.depth === 16) return profiledRgba(img.data, img.width, img.height, profile || await untaggedRgbProfile(), source.depth)
+      return { input: img.data, raw: { width: img.width, height: img.height, channels: 4 }, width: img.width, height: img.height }
     }
   }
   const { PhotoCraftSession } = require('./photocraft')
@@ -365,4 +502,4 @@ async function psdPixels(psdPath, { buffer } = {}) {
   } catch (error) { await cleanup(); throw error }
 }
 
-module.exports = { psdPixels, profiledRgba, profiledCmyk, decodeCmykComposite, psdProfile, rgbaTiffHeader, validateProfile, assertProfileUsable, SRGB_POLICY, MAX_COMPOSITE_BYTES }
+module.exports = { readPsdBuffer, psdPixels, profiledRgba, profiledCmyk, decodeRgbComposite, decodeCmykComposite, psdProfile, rgbaTiffHeader, validateProfile, assertProfileUsable, SRGB_POLICY, MAX_PSD_SOURCE_BYTES, MAX_COMPOSITE_BYTES }

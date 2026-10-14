@@ -1,0 +1,164 @@
+{
+  "pdf": "/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-6g4bS4/proof.pdf",
+  "renderer": "pdftoppm version 26.05.0\nCopyright 2005-2026 The Poppler Developers - http://poppler.freedesktop.org\nCopyright 1996-2011, 2022 Glyph & Cog, LLC",
+  "displayProfile": "/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-6g4bS4/display-srgb.icc",
+  "pixels": [
+    192,
+    96
+  ],
+  "policy": "perceptual source ICC to explicit sRGB display",
+  "patches": [
+    {
+      "source": "srgb",
+      "x": 40,
+      "actual": [
+        179,
+        50,
+        19
+      ],
+      "expected": [
+        179,
+        50,
+        19
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "srgb",
+      "x": 150,
+      "actual": [
+        20,
+        150,
+        210
+      ],
+      "expected": [
+        20,
+        150,
+        210
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "p3",
+      "x": 40,
+      "actual": [
+        180,
+        49,
+        20
+      ],
+      "expected": [
+        180,
+        49,
+        20
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "p3",
+      "x": 150,
+      "actual": [
+        19,
+        150,
+        210
+      ],
+      "expected": [
+        19,
+        150,
+        210
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "gray",
+      "x": 40,
+      "actual": [
+        97,
+        97,
+        97
+      ],
+      "expected": [
+        97,
+        97,
+        97
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "gray",
+      "x": 150,
+      "actual": [
+        142,
+        142,
+        142
+      ],
+      "expected": [
+        142,
+        142,
+        142
+      ],
+      "delta": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "source": "cmyk",
+      "x": 40,
+      "actual": [
+        177,
+        57,
+        5
+      ],
+      "expected": [
+        177,
+        57,
+        8
+      ],
+      "delta": [
+        0,
+        0,
+        3
+      ]
+    },
+    {
+      "source": "cmyk",
+      "x": 150,
+      "actual": [
+        22,
+        139,
+        185
+      ],
+      "expected": [
+        25,
+        139,
+        185
+      ],
+      "delta": [
+        3,
+        0,
+        0
+      ]
+    }
+  ]
+}

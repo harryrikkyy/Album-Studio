@@ -26,6 +26,7 @@
 #   Contents/Resources/app/native/backend/      the background helper
 #   Contents/Resources/app/src/, node_modules/  the shared modules it uses, and packages
 #   Contents/Resources/bin/photocraft-cli       the PhotoCraft engine for sheets
+#   Contents/Resources/bin/album-studio-rename-exclusive  atomic no-replace file capture
 #   Contents/Resources/node/bin/node            Node.js (unless ALBUM_STUDIO_NODE_RUNTIME=none)
 #   Contents/Resources/NOTICE, licenses/        open-source notices and licence texts
 
@@ -68,6 +69,7 @@ step "Bundle"
 mkdir -p "$APP/Contents/MacOS" "$RES/bin" "$RES/ui/dist" "$RES/app" "$RES/licenses"
 cp "$CARGO_TARGET_DIR/release/album-studio" "$APP/Contents/MacOS/album-studio"
 cp "$CARGO_TARGET_DIR/release/photocraft-cli" "$RES/bin/photocraft-cli"
+cp "$CARGO_TARGET_DIR/release/album-studio-rename-exclusive" "$RES/bin/album-studio-rename-exclusive"
 cp "$NATIVE/ui/index.html" "$RES/ui/"
 cp "$NATIVE/ui/dist/app.js" "$NATIVE/ui/dist/app.css" "$RES/ui/dist/"
 cp "$NATIVE/scripts/engine/pin.json" "$RES/engine-pin.json"
@@ -168,6 +170,7 @@ step "Sign ($([ "$IDENTITY" = "-" ] && echo "ad-hoc, for this Mac" || echo "$IDE
 # Inside out: native modules and helpers first, the app last.
 find "$RES" -type f \( -name '*.node' -o -name '*.dylib' \) -print0 | xargs -0 -I{} codesign --force --sign "$IDENTITY" {} 2>/dev/null
 codesign --force --sign "$IDENTITY" "$RES/bin/photocraft-cli"
+codesign --force --sign "$IDENTITY" "$RES/bin/album-studio-rename-exclusive"
 # Node.js keeps the Node.js Foundation's own signature on an ad-hoc build; with a real identity it
 # is signed again with the hardened runtime and the entitlements Node needs (JIT, native modules).
 if [ -f "$RES/node/bin/node" ] && [ "$IDENTITY" != "-" ]; then

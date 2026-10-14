@@ -8,12 +8,15 @@ source, inspection scope and dual licences.
 ## Fresh developer setup
 
 Use macOS 13+ on Apple silicon, Xcode command-line tools (including the C compiler), Node.js
-22.23.3/npm, Git, and Rust/Cargo 1.99.0. The C compiler is used only for the tiny atomic
-no-replace publication helper. It is not shipped in the app.
+22.23.3/npm, Git, and Rust/Cargo 1.99.0. The C compiler builds the tiny atomic no-replace
+publication helper. That executable is shipped beside the engine and is required for runtime
+capture of existing sheets, proofs and delivery files. The compiler itself is not shipped.
+Tests also require Poppler's `pdftoppm` for independent PDF colour verification:
 
 ```sh
 npm ci
 npm ci --prefix native/ui
+brew install poppler
 node native/scripts/engine.mjs setup
 rustup toolchain install 1.99.0 --profile minimal --component rustfmt --component clippy
 rustup override set 1.99.0
@@ -39,8 +42,13 @@ inspect it before deleting it. No command resets or discards engine work.
 Build defaults to a separate `native/photocraft/target/album-studio-pinned` directory, uses
 `--locked`, includes the pinned HEIF feature, checks compiler versions, and stamps the source
 SHA/date into the binaries. `--target-dir` can select another build cache. The Node gate requires
-that freshly tagged CLI, runs the three application test suites, and rejects incomplete
+that freshly tagged CLI and the atomic helper reporting its current source SHA-256, runs the three application test suites, and rejects incomplete
 summaries or any skipped tests. An old binary reporting `dev build` is insufficient evidence.
+To refresh only the C helper in an already verified target, run
+`node native/scripts/engine.mjs build-rename --target-dir /absolute/build/target`.
+The PDF test fails if Poppler is missing. `ALBUM_STUDIO_PDFTOPPM` may name its executable;
+`ALBUM_STUDIO_RENAME_CLI` may select the atomic helper for direct test commands. The strict gate
+sets the latter automatically. These overrides do not certify an old installed application.
 
 ## Safe package output
 
@@ -58,7 +66,8 @@ An interrupted publication lock names the source/destination and process; inspec
 and the paths before retrying. Packaging was not run during this pin/setup change.
 The existing `npm start` command still opens `native/dist/Album Studio.app`; open the new review
 bundle explicitly when you choose another destination. Its resources include the full engine
-pin manifest beside the compiled engine.
+pin manifest beside the compiled engine and the signed atomic helper. New runtime capture
+paths fail with recovery instructions if that helper is missing; there is no overwriting fallback.
 
 The existing README quick-start predates this prerequisite/setup requirement. Run these
 commands first; a successful interface build is not a substitute for engine setup or packaging.
@@ -70,12 +79,16 @@ are pinned. `macos-15` selects a standard arm64 runner according to
 [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 Separate jobs reduce the disk pressure of combined release/dev/corpus targets:
 
-- Lint, types, both npm audits, exact engine reconstruction and shell/CLI release build, all
+- Lint, types, both npm audits, exact engine reconstruction and shell/CLI/atomic-helper build, all
   Node suites with zero skipped tests, interface production build, retained integration logs.
 - Rust workspace tests, the explicitly ignored adversarial registry suite, formatting, Clippy
   and dependency layering.
 - The engine's checksum-pinned real-file decoder/compositor corpus, fetched and tested through
   its existing `cargo xtask test-corpus` gate.
+
+The integration job installs Poppler and records its version. It independently renders real
+ICCBased PDF streams with an explicit sRGB display profile. This is a synthetic pixel oracle;
+an actual print-lab specification, printed sample and broader document corpus remain required.
 
 This is an enforced workflow definition, not a claim that hosted CI has run. Optional-font,
 hardware/GPU, RAW corpus, native GUI, complete signing/notarisation and clean-customer-Mac
@@ -84,6 +97,13 @@ byte-identical builds across different Xcode/SDKs or optional font inputs. No cr
 signing identities or real customer settings were used or changed.
 
 ## Evidence from this continuation
+
+Latest verification is `2026-10-14-iteration-3/verification.json`: 715 application tests pass
+(273 shared, 409 helper, 33 interface), with no failures or skips. Shared/helper coverage runs
+682 tests separately. Local Node was 22.22.3; the package/CI Node pin is 22.23.3. Do not relabel
+the local checks as tests of that packaged runtime. The atomic helper was freshly compiled and
+its source checksum verified. Root packaging, hosted CI and final independent review remain
+unverified. The entries below retain the earlier engine reconstruction/build history.
 
 - Existing engine: exact pinned HEAD and lockfile, no tracked changes; three pre-existing
   untracked `.DS_Store` files preserved.
