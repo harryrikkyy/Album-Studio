@@ -72,3 +72,12 @@ replay paths disappeared before parent verification, so the parent recreated and
 own replay here. Current source and retained logs, not bare worker messages, are authoritative.
 No native GUI/accessibility session, real account migration or physical storage/print/release
 certification is claimed. Those are not substituted for the remaining architecture work.
+
+## Checkpoint source inventory correction
+
+The three root generated-type regressions in `test/contract_types.test.js` ran in the final
+289-test shared suite but were left untracked by the first checkpoint staging list. The
+follow-up source checkpoint includes that exact executed test source and its hash. It also
+retains the late, unapplied native-layer candidate at
+`native/scripts/engine/architecture-candidate.patch`; its own tests are not claimed from the
+Node gate. No application source or test result changed during this inventory correction.

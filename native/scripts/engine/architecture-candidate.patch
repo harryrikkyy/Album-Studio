@@ -1,0 +1,34 @@
+--- a/xtask/src/layers.rs
++++ b/xtask/src/layers.rs
+@@ -67,6 +67,7 @@
+     ("testkit", Class::Testkit),
+     // L7 apps and tooling
+     ("photocraft", Class::Exempt),
++    ("album-studio", Class::Exempt),
+     ("cli", Class::Exempt),
+     ("web", Class::Exempt),
+     ("xtask", Class::Exempt),
+@@ -372,7 +373,7 @@
+ 
+     #[test]
+     fn apps_and_xtask_exempt() {
+-        for app in ["photocraft", "photocraft-cli", "photocraft-web", "xtask"] {
++        for app in ["photocraft", "album-studio", "photocraft-cli", "photocraft-web", "xtask"] {
+             assert!(check(&[c(app, &[("egui", Normal, false), ("photocraft-ui-egui", Normal, true)])]).is_empty());
+         }
+     }
+@@ -396,4 +397,13 @@
+         assert_eq!(doc.deps[2].kind, Dev);
+         assert!(check(&g).is_empty());
+     }
+-}
++
++    #[test]
++    fn album_studio_is_a_registered_composition_root() {
++        assert_eq!(classify("album-studio"), Some(Class::Exempt));
++        assert!(check(&[c("album-studio", &[("photocraft-ui-egui", Normal, true), ("egui", Normal, false)])]).is_empty());
++        let violations = check(&[c("photocraft-ui-egui", &[("album-studio", Normal, true)])]);
++        assert!(matches!(violations[..], [Violation::Upward { from: 6, to: 7, .. }]));
++        assert!(matches!(check(&[c("album-studio-unregistered", &[])])[..], [Violation::Unregistered { .. }]));
++    }
++}

@@ -106,7 +106,7 @@
     ".github/actions/setup-album-engine/action.yml": "a64ece3273158fc59ad893d4d3fdf49c35142b40cb595c09f9bafc5fcd413de0",
     ".github/dependabot.yml": "6ed1a622c3253947512b50ab4ccc2f141842e6145e6f2e542d1639ccadc8a9a0",
     ".github/workflows/ci.yml": "2dcbdd5c627e2026e91efb68d90d5c89135bfb97cef1063510e2c7c5054e2252",
-    "QUALITY_IMPROVEMENT_LOG.md": "bcd70fc4cec7bab23ac3bb9b7f7a56585c6f3bbd114f39da899cd71617c75ee9",
+    "QUALITY_IMPROVEMENT_LOG.md": "263fdae876e3d380290a25b1e6ec4c9a284a2ea4b6847fe84cbf4e747ae32173",
     "QUALITY_SCORECARD.json": "b655cfb5a4e297d1a12aa6d5c6604fab81bb7c7635dd73145d515496fa22628a",
     "README.md": "ea490b8b6ed0de7427dedeaf4cd6717b3191be43b46d391e8e664cb3b304dae0",
     "bench/native_pipeline_bench.js": "e32ee881c1df3d6985cd5b670b34a94dc39b7e3eb0555c7e725a9c20f61d1208",
@@ -236,6 +236,7 @@
     "native/scripts/engine/NOTICE": "fb7d6f0e57c396b6c94f6315d3dba13048a296d81e7546d33e2b7c77c71ea147",
     "native/scripts/engine/PROVENANCE.md": "0072587239d1c3ebf8577e3d62ac0056881d6294f3ffef6c956fe0dd8b6f16c9",
     "native/scripts/engine/album-studio.bundle": "484638db77b391739bf38b763a05c592188713e7b397e98ac27a15e510b88f05",
+    "native/scripts/engine/architecture-candidate.patch": "47b708e114b712c23fb2d88b50418e302c1504fdabe6b8ab9aa8a28a6c775090",
     "native/scripts/engine/pin.json": "9331a487321803d1bc01128b7809c460b0a31cb131cc782d7f0833f22ae8a08e",
     "native/scripts/generate-contract-types.mjs": "851f41f1ee9bb6a287dbee238e96b52a93d8f0845f9ba784d00bcaecde0e72a2",
     "native/scripts/node.entitlements": "b8aa7838bb6e816e6dad0f73e7d2297087b4e18d6e64da603d7f2ca97e17511b",
@@ -319,6 +320,7 @@
     "src/shortcut_target.js": "6576f02c4fb263b08f85d14453b8358c426825be9f8b3984b5e10e1ab8a4c52c",
     "src/ui_icons.js": "f804fb9d1b8309af5b724da3db94314fcc59d7d04fec860b565c903a0d47c2ac",
     "test/architecture_boundaries.test.js": "ccb34bca3c0746a75ed1d1bf5418de85c8429993b049fce16bf9e806f27dae71",
+    "test/contract_types.test.js": "1bca80ea31996a77de054b34ec0ce2b8f6132554fb725bfeef9d61240e97cd0f",
     "test/curation.test.js": "4ac43b324e23c15a2515f35750ab03ecbb06ea9d1592e5c9af7130c45529c419",
     "test/editor_geometry.test.js": "c9b7defcb9f8eda7ba56826db4a752b614d3cb4131af59aa7f4d07129eb80671",
     "test/engine_pin.test.js": "c86bc1a8f45d11b6dc2e43550157eb3f3bc514c5446f203f871e613c6ef763a3",
@@ -336,7 +338,7 @@
     "test/shortcut_target.test.js": "77de3adc26a6d55032fd6e56f1c0e5cc1d216acd8fd5645e2f4ee064f9737655"
   },
   "artifactFiles": {
-    "docs/quality/2026-10-15-iteration-7/README.md": "4a85796957888451191e1c67d1c46881fa1f1ede88c6e4842b5affac32e64cad",
+    "docs/quality/2026-10-15-iteration-7/README.md": "374fa21b3ff1f17ad1beb312d4b347fc3c9f432eed0b5f4f241f1bd9d8281f24",
     "docs/quality/2026-10-15-iteration-7/album-architecture-closure.json": "ee075b8b5a7d2403be7c133f9a2cd2422112c91b96ac027888b50df9fc512935",
     "docs/quality/2026-10-15-iteration-7/album-architecture-gate-first.log": "c8602648611756fc5db02a3307539296432a68d9de71b1775a8923270cb335d1",
     "docs/quality/2026-10-15-iteration-7/album-architecture-gate-second.log": "50bb7efc5cf0773532ea94a9f7e99ef6200d587751ae16344f949edf19f2fc91",
@@ -765,5 +767,9 @@
     "bench/fixture/native-pipeline-PdgWy1/Shoot/photo_0024.jpg": "08f2a05d7593806404d36f39d4cb03cad064d3791aebfa8a5fe47676bf4f1951",
     "bench/fixture/native-pipeline-PdgWy1/Templates/3h0v.psd": "cbad6d86990411c792c4b7d14ffbfffa90542c1e803b78816f0af3032614965a",
     "bench/fixture/native-pipeline-PdgWy1/worker-result.json": "74d5263d551653d0160114c7ae761a0e714fe01054a8a6dce51c4f2343c36e24"
+  },
+  "checkpointCorrection": {
+    "initialCheckpoint": "10cee1b44b4fec56ce4b449fe7be5a12ebfa5c4d",
+    "reason": "The generated-type regression source was executed in the1133-test gate but remained untracked at the first checkpoint. A late native-layer candidate patch is retained unapplied. Both are now included with source hashes; no production behavior or executed result changed."
   }
 }

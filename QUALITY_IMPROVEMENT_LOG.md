@@ -994,3 +994,10 @@ error/invalidation semantics and supported migration rollout before closing part
 These are unfinished implementation requirements, not external blockers or completed work.
 `docs/ARCHITECTURE.md` and the iteration README document exact boundary scope and limits.
 The goal remains active; this is a verified source checkpoint for continuing native work.
+
+Checkpoint inventory correction: `test/contract_types.test.js` supplied three of the289 passing
+shared tests but remained untracked in initial commit `10cee1b`; its exact source is included
+in the follow-up checkpoint and manifest. The late native-layer candidate patch is retained
+unapplied. The correction changes no application code or test result. Native work continues
+in ignored candidate checkout `bench/fixture/native-architecture-engine-10cee1b` on
+`codex/architecture-native`, based on exact engine `bdb1f8f`; the original checkout is unchanged.
