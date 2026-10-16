@@ -1001,3 +1001,83 @@ in the follow-up checkpoint and manifest. The late native-layer candidate patch 
 unapplied. The correction changes no application code or test result. Native work continues
 in ignored candidate checkout `bench/fixture/native-architecture-engine-10cee1b` on
 `codex/architecture-native`, based on exact engine `bdb1f8f`; the original checkout is unchanged.
+
+## Iteration8 — native lifecycle prerequisites (in progress)
+
+Verified all658 iteration7 hashes at `0167e72`. The candidate engine at
+`bench/fixture/native-architecture-engine-10cee1b` is isolated from the original checkout and
+binaries. Generation-scoped pending/reader events and explicit app layer registration are
+being integrated with actual native module tests and a disposable Node child. The native-app
+test build is recorded directly in `docs/quality/2026-10-16-iteration-8/`; it is not yet claimed
+passed. Native bounded/typed transport and editor/standalone ownership remain required work.
+No architecture score or shipping engine pin has been raised/changed. Continue from the current
+execution handle and candidate Git state, preserving all previous evidence and user folders.
+
+Iteration8 continuation checkpoint (build in progress): isolated native source commits
+`591c5b47da2dd086c47f4d9d64fc0b41722df0c7` and compatibility follow-up
+`41a0f464405a1e4e20629de928727815679f5906` are saved on `codex/architecture-native`.
+Both source bundles are retained under `native/scripts/engine/`. The latest candidate passes
+119 native-app tests (real disposable helpers and actual Node dispatcher ping/sign-in-denial
+round trips), strict app Clippy across all targets, workspace formatting, 15 layer regression
+tests and the actual 30-crate layer graph. Authored 53-method/17-event examples also execute
+against embedded native schema validation; they do not execute every native GUI method.
+Native ingress/pending/frame/aggregate/writer queues are bounded, pipe writes leave the UI
+thread, helper generations isolate EOF and replies, deadlines preserve uncertainty, and
+structured recovery replies survive. Unicode scalar validation now agrees across JS/Rust.
+Rust method-specific DTOs and the opaque editor diagnostic remain incomplete.
+
+Fresh reconstruction of 591c5b4 passed after a real relative-mirror-path defect was repaired;
+the failed attempt and passing regression remain retained. The root build gate now rechecks
+source/pin after compilation to reject concurrent source edits; its injected-source-edit
+regression passes. The first cold release build is still running as terminal session84701,
+from immutable `bench/fixture/native-architecture-reconstructed-591c5b4`, with a new target at
+`native/photocraft/target/architecture-20261016`, Rust1.99.0 and HEIF. It began before the last
+wire-ID fix/post-build guard and is intermediate evidence only. Do not mutate that source
+checkout during compilation. The original engine remains clean at bdb1f8f with exactly three
+preserved untracked metadata files; six original metadata/binary hashes are recorded in
+`engine-preservation-before.json`. User folders and prior release binaries remain untouched.
+
+Next executable steps: finish the current build; advance the root pin and reconstructed
+checkout to 41a0f46 using its retained bundle, then rebuild with the final post-build guard;
+verify native/root gates against those provenance-tagged outputs; explicitly advance the
+original clean checkout only after preserving metadata and historical source/binaries;
+retain hashes and a root source checkpoint. The working root pin currently still names the
+intermediate591c5b4 and intentionally cannot certify the advanced canonical runtime yet.
+Continue with editor/standalone save ownership/publication and whole-application invalidation,
+permanent/legacy/global reconciliation, and migration acceptance. Architecture remains6.5;
+no category has been inflated and there is no external blocker for this ongoing local work.
+
+Iteration8 integrated checkpoint supersedes the preceding in-progress state. Final engine pin
+41a0f464405a1e4e20629de928727815679f5906 reconstructs from the retained bundle and passes canonical
+copy parity. Its provenance-checked HEIF release rebuild passes (4m10s after the6m53s cold
+intermediate build). The actual original checkout is now deliberately at that pin, tracked
+clean, with old commit/three metadata files/three old release binaries preserved and hashes
+verified before/after. Intermediate591c binaries were copied to a separate retained fixture.
+
+The final strict gate passes **297 shared +799 backend +46 UI =1142**, zero fail/cancel/skip.
+Native app119, real/disposable-child transport17, layer regression15, native app Clippy all
+targets with warnings denied, workspace format, actual default30-crate layer graph, root
+lint/types/build, native drift and architecture graph gates pass. No GUI, full native workspace,
+corpus, hosted CI or packaged-app acceptance is inferred. Root UI build is248.6KiB JS/54.5KiB CSS;
+no performance-neutrality claim is made. Executed Node22.22.3 differs from unverified configured
+22.23.3. The block0.1.6 future-compiler warning was retained without disabling a warning.
+
+Architecture is reassessed **7.0/10**, gaining5 points only for criterion9's integrated verified
+layer/dependency gates. All90 criterion names/weights remain unchanged; other category scores
+are retained historical context. Native canonical runtime/method enum, asynchronous capacity,
+generation isolation, Unicode/integral-ID consistency, structured Node error forwarding,
+source/pin mutation guards and method-owner drift tests are implemented. Method-specific Rust
+DTOs/editor diagnostics, native save/publication errors, whole-application invalidation and
+ownership/migration completion remain partial. The exact raw failures and passing results are
+retained in the iteration8 README and verification manifest.
+
+Continue implementation next with native editor/standalone save ownership. Background opens
+use engine jobs with OpenSource::Path/Bytes; synchronous opens use Services::import, so recording
+only the synchronous importer misses the default path. Save workers use Services::save_file;
+synchronous saves use Services::export/write; authorized automation and document-saved image
+assets have separate writers. Bind consumed source revisions to document identity and route
+all relevant publications through shared album/output capability/journal rules, with explicit
+invalidation after commit. Do not serialize an entire edit session under a permanent lock or
+silently reduce supported save features. Global/permanent/legacy ownership and migration still
+need executable acceptance. There is no current local execution limit or external blocker;
+the goal remains active and unachieved.

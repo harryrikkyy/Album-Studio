@@ -112,3 +112,11 @@ each criterion's complete relevant scope. Current source tests, synthetic vector
 CI job or a source inventory alone cannot establish native or whole-application completion.
 The quality log records the latest executed checks, failed attempts, exact blockers and the
 remaining executable steps.
+
+## Native architecture continuation
+
+The architecture candidate adds generation-scoped, bounded native transport and generated
+canonical method/runtime validation. See [the native contract and transport decision](architecture/native-contract-and-transport.md)
+for exact ownership, limits, compatibility and remaining acceptance gaps. The iteration8 log
+records the source pin/reconstruction/build state; candidate implementation is not shipping
+or GUI verification, and opaque Rust DTO/save-ownership requirements remain open.

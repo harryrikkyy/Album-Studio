@@ -1,7 +1,7 @@
 # Reconstructing and checking Album Studio's engine
 
 The engine is now pinned by `native/scripts/engine/pin.json`. The root includes a checksum-pinned
-122 KB incremental Git bundle for the eleven local Album Studio commits, so a fresh machine
+incremental Git bundles for the reviewed local Album Studio commits, so a fresh machine
 does not need an unpublished fork remote. `native/scripts/engine/PROVENANCE.md` records its
 source, inspection scope and dual licences.
 
@@ -41,7 +41,8 @@ inspect it before deleting it. No command resets or discards engine work.
 
 Build defaults to a separate `native/photocraft/target/album-studio-pinned` directory, uses
 `--locked`, includes the pinned HEIF feature, checks compiler versions, and stamps the source
-SHA/date into the binaries. `--target-dir` can select another build cache. The Node gate requires
+SHA/date into the binaries. It verifies the unchanged pin and source again after compilation
+before returning a provenance result. `--target-dir` can select another build cache. The Node gate requires
 that freshly tagged CLI and the atomic helper reporting its current source SHA-256, runs the three application test suites, and rejects incomplete
 summaries or any skipped tests. An old binary reporting `dev build` is insufficient evidence.
 To refresh only the C helper in an already verified target, run
@@ -129,3 +130,21 @@ unverified. The entries below retain the earlier engine reconstruction/build his
 - Hosted CI, full Rust workspace/Clippy/corpus and a packaged application installation remain
   unverified in this continuation. The workflow defines those gates, but configuration is
   not evidence of their completion.
+
+## Architecture engine update, 16 October 2026
+
+The current pin is `41a0f464405a1e4e20629de928727815679f5906`, reconstructed locally from the
+unchanged upstream prerequisite and `architecture-20261016-wire-id.bundle`. `bundleRef` selects
+`refs/heads/codex/architecture-native` for discovery; the exact commit/checksums remain binding.
+`contractsVersion: 1` additionally verifies the embedded native contracts against the canonical
+root inputs. Manifests without `bundleRef` retain the historical branch lookup.
+
+The original checkout was deliberately advanced only after a successful final HEIF release
+build. Its old commit, three untracked metadata files and three old release executables remain
+preserved. New outputs are in `native/photocraft/target/architecture-20261016`. The final strict
+Node gate passed297 shared,799 helper and46 interface tests:1142 total, zero failed/skipped.
+Native app119 tests, app Clippy across all targets, workspace format,15 layer regression tests
+and the actual default30-crate layer graph pass. This is not hosted CI, whole-workspace/corpus,
+packaged-app installation or native GUI acceptance. Current executed Node is22.22.3; the
+configured22.23.3 packaging/CI runtime has not been verified here. Earlier evidence above is
+historical and does not substitute for the latest iteration8 verification manifest.

@@ -1,0 +1,12 @@
+{
+  "engineHead": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "status": "?? .DS_Store\n?? apps/.DS_Store\n?? apps/photocraft/.DS_Store\n",
+  "files": {
+    "native/photocraft/.DS_Store": "01175a1eb27ffb9d0a8f6bb0a5fe6dbff1b854cbb387188d221d68a029fc6729",
+    "native/photocraft/apps/.DS_Store": "6dd91a121c3841aea4a315dcbff26eb86a584276089910e5b89dbbbbc6b2aa6c",
+    "native/photocraft/apps/photocraft/.DS_Store": "3abf75bd329a0a1ce6883a3c91963987c5d2422cd270cde9b84e829e813b8446",
+    "native/photocraft/target/pinned-reconstruction/release/photocraft-cli": "eeaadd9d862d477fb8666c61f0279a7a187cdfefe12b1813c712f18dcdd805fc",
+    "native/photocraft/target/pinned-reconstruction/release/album-studio": "5446f7f0de94185dc716a0fe22e12b8367f7205f65a8218e7b8b0795c8729376",
+    "native/photocraft/target/pinned-reconstruction/release/album-studio-rename-exclusive": "dfb18cbb6e1316f5e6cf30aa8a9673fe0d7bce60497f982606112e1d2eb07355"
+  }
+}

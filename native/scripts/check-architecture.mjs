@@ -279,6 +279,9 @@ export function checkArchitecture(root = ROOT, { policy = defaultPolicy, package
         for (const use of used.dynamicEvents) add('DYNAMIC_PROTOCOL_EVENT', 'A protocol event needs a statically bounded literal inventory.', use)
       }
       for (const name of allMethods) if (!Object.hasOwn(methods, name)) add('METHOD_CONTRACT_MISSING', 'An actual backend/native method has no canonical contract.', { method: name })
+      for (const [owner, names] of [['backend', registered], ['shell', shell]]) for (const name of names) {
+        if (Object.hasOwn(methods, name) && methods[name].owner !== owner) add('METHOD_OWNER_MISMATCH', 'Canonical method ownership must match its actual registered executor.', { method: name, expectedOwner: owner })
+      }
       for (const name of Object.keys(methods)) if (!allMethods.has(name)) add('METHOD_HANDLER_MISSING', 'A canonical contract has no actual backend/native handler.', { method: name })
       for (const name of uiCalls) if (!allMethods.has(name) || !Object.hasOwn(methods, name)) add('UI_METHOD_UNDECLARED', 'A UI call has no matching canonical handler contract.', { method: name })
       for (const name of usedEvents) if (!Object.hasOwn(eventContracts, name)) add('EVENT_CONTRACT_MISSING', 'An actual backend/native/UI event has no canonical contract.', { event: name })

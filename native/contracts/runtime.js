@@ -21,6 +21,18 @@ function issue(list, path, message, keyword) {
   if (list.length < MAX_ISSUES) list.push({ path, message, keyword })
   return false
 }
+// Native JSON decoders and filesystem paths require Unicode scalar text. Refuse
+// lone UTF-16 surrogates consistently before serializing across either boundary.
+function scalarText(value) {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i)
+    if (code >= 0xd800 && code <= 0xdbff) {
+      const low = value.charCodeAt(++i)
+      if (!(low >= 0xdc00 && low <= 0xdfff)) return false
+    } else if (code >= 0xdc00 && code <= 0xdfff) return false
+  }
+  return true
+}
 function jsonSafe(value) {
   let nodes = 0, characters = 0
   const active = new WeakSet(), issues = []
@@ -31,6 +43,7 @@ function jsonSafe(value) {
     if (item === null || typeof item === 'boolean') return true
     if (typeof item === 'number') return Number.isFinite(item) || issue(issues, path, 'Numbers must be finite JSON values.', 'finite')
     if (typeof item === 'string') {
+      if (!scalarText(item)) return issue(issues, path, 'Text must contain valid Unicode scalar values.', 'unicode')
       characters += item.length
       return (item.length <= MAX_STRING && characters <= MAX_TOTAL_STRING) || issue(issues, path, 'The strings exceed the bounded JSON string limit.', 'maxLength')
     }
@@ -48,6 +61,7 @@ function jsonSafe(value) {
       const descriptor = descriptors[key]
       if (!descriptor.enumerable && !Array.isArray(item)) continue
       characters += key.length
+      if (!scalarText(key)) { issue(issues, path, 'JSON keys must contain valid Unicode scalar values.', 'unicode'); continue }
       if (characters > MAX_TOTAL_STRING) { issue(issues, path, 'The JSON keys exceed the bounded string limit.', 'maxLength'); break }
       if (Array.isArray(item) && !/^(?:0|[1-9]\d*)$/.test(key)) { issue(issues, at(path, key), 'Arrays may only contain indexed JSON entries.', 'json'); continue }
       if (forbiddenKeys.has(key)) { issue(issues, at(path, key), 'Prototype-control keys are not valid contract data.', 'propertyNames'); continue }

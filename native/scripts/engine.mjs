@@ -5,6 +5,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { publishNewDirectory } from './publish-new-directory.mjs'
+import { nativeContracts } from './generate-native-contracts.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const DEFAULT_PIN = join(ROOT, 'native/scripts/engine/pin.json')
@@ -30,9 +31,13 @@ export function readPin(file = DEFAULT_PIN) {
   const remote = new URL(pin.upstreamRepository)
   if (remote.protocol !== 'https:' || remote.username || remote.password || remote.search || remote.hash) throw new Error('Engine source must use a credential-free HTTPS URL.')
   if (typeof pin.bundle !== 'string' || ['.', '..'].includes(pin.bundle) || isAbsolute(pin.bundle) || pin.bundle.includes('/') || pin.bundle.includes('\\')) throw new Error('Engine bundle must be beside its manifest.')
+  const bundleRef = pin.bundleRef ?? 'refs/heads/album-studio'
+  if (typeof bundleRef !== 'string' || !bundleRef.startsWith('refs/heads/')) throw new Error('Engine bundle ref must name a fully qualified branch.')
+  command('git', ['check-ref-format', bundleRef])
+  if (pin.contractsVersion !== undefined && pin.contractsVersion !== 1) throw new Error('The native contracts version is unsupported.')
   const bundle = resolve(dirname(file), pin.bundle)
   if (sha256(bundle) !== pin.bundleSha256) throw new Error('The pinned engine bundle checksum does not match. Restore the tracked bundle before setup.')
-  return { ...pin, bundle }
+  return { ...pin, bundle, bundleRef }
 }
 
 export function validateEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN } = {}) {
@@ -46,6 +51,12 @@ export function validateEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN
   if (sha256(join(engine, 'Cargo.lock')) !== pin.cargoLockSha256) throw new Error('Engine Cargo.lock does not match the root pin.')
   if (!existsSync(join(engine, 'apps/album-studio/Cargo.toml'))) throw new Error('The pinned checkout does not contain Album Studio.')
   git(['bundle', 'verify', pin.bundle], engine)
+  if (pin.contractsVersion === 1) {
+    for (const [name, expected] of nativeContracts(ROOT)) {
+      const file = join(engine, 'apps/album-studio/src/contracts', name)
+      if (!existsSync(file) || !readFileSync(file).equals(Buffer.from(expected))) throw new Error(`Native canonical contract drift: ${name}. Regenerate and review a new engine pin; the current checkout was preserved.`)
+    }
+  }
   return { engine: root, commit: head, rustToolchain: pin.rustToolchain, cargoLockSha256: pin.cargoLockSha256, features: pin.features }
 }
 
@@ -57,6 +68,8 @@ export function setupEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, b
     const remote = new URL(baseRepository)
     if (remote.protocol !== 'https:' || remote.username || remote.password || remote.search || remote.hash) throw new Error('Base mirror must use a credential-free HTTPS URL or a local checkout.')
   }
+  // Fetch runs inside staging; resolve local mirrors before changing its working folder.
+  const repository = baseRepository && !/^[a-z][a-z0-9+.-]*:\/\//i.test(baseRepository) ? resolve(baseRepository) : baseRepository || pin.upstreamRepository
   const parent = dirname(resolve(engine))
   mkdirSync(parent, { recursive: true })
   const staging = mkdtempSync(join(parent, '.photocraft-setup-'))
@@ -64,10 +77,10 @@ export function setupEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, b
   for (const key of Object.keys(fetchEnv)) if (/^GIT_CONFIG_(COUNT|PARAMETERS|KEY_\d+|VALUE_\d+)$/.test(key)) delete fetchEnv[key]
   try {
     git(['init', '--quiet'], staging)
-    git(['-c', 'credential.helper=', '-c', 'http.extraheader=', 'fetch', '--depth=1', '--no-tags', baseRepository || pin.upstreamRepository, pin.baseCommit], staging, { env: fetchEnv })
+    git(['-c', 'credential.helper=', '-c', 'http.extraheader=', 'fetch', '--depth=1', '--no-tags', repository, pin.baseCommit], staging, { env: fetchEnv })
     if (git(['rev-parse', 'FETCH_HEAD'], staging) !== pin.baseCommit) throw new Error('The fetched upstream base does not match the pin.')
     git(['bundle', 'verify', pin.bundle], staging)
-    git(['fetch', '--no-tags', pin.bundle, 'refs/heads/album-studio'], staging)
+    git(['fetch', '--no-tags', pin.bundle, pin.bundleRef], staging)
     git(['checkout', '--quiet', '--detach', pin.commit], staging)
     validateEngine({ engine: staging, manifest })
     publishNewDirectory(staging, engine)
@@ -87,6 +100,7 @@ export function validateToolchain(pin) {
 }
 
 export function buildEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, targetDir } = {}) {
+  const pinDigest = sha256(manifest)
   const pin = readPin(manifest)
   const state = validateEngine({ engine, manifest })
   const tools = validateToolchain(pin)
@@ -95,6 +109,8 @@ export function buildEngine({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   const args = ['build', '--release', '--locked', '-p', 'album-studio', '-p', 'photocraft-cli']
   if (pin.features.length) args.push('--features', pin.features.join(','))
   command('cargo', args, { cwd: engine, env, stdio: 'inherit', timeout: 60 * 60 * 1000 })
+  if (sha256(manifest) !== pinDigest) throw new Error('The engine pin changed during compilation. Outputs were preserved but are not verified; rebuild from a stable pin.')
+  validateEngine({ engine, manifest })
   const rename = buildRenameHelper(target)
   const cli = join(target, 'release/photocraft-cli')
   const version = command(cli, ['--version'])

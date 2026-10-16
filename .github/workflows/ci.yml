@@ -116,6 +116,10 @@ jobs:
             ~/.cargo/git
             native/photocraft/target/ci-native
           key: album-native-${{ runner.arch }}-${{ hashFiles('native/scripts/engine/pin.json') }}
+      - name: Install helper dependencies for the actual native bridge test
+        run: npm ci
+      - name: Canonical native contract drift
+        run: node native/scripts/generate-native-contracts.mjs --engine native/photocraft --check
       - name: Format
         working-directory: native/photocraft
         run: cargo fmt --all -- --check

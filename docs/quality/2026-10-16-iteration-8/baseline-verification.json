@@ -1,0 +1,10 @@
+{
+  "checkpoint": "0167e72319285669c5038375f83095362168eff4",
+  "manifest": "docs/quality/2026-10-15-iteration-7/verification.json",
+  "checked": 658,
+  "bad": [],
+  "engineCommit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "candidateCheckout": "bench/fixture/native-architecture-engine-10cee1b",
+  "candidateBranch": "codex/architecture-native",
+  "candidateChanges": "generation/layering candidate only; not pinned, not deployed"
+}

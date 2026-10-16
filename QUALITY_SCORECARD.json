@@ -3,13 +3,13 @@
   "target": "Architecture strictly >95/100 with evidence, as updated by the user; other category scores retained as historical context.",
   "scoring": "10 criteria x 10 points. Verified complete =10, verified partial=5, failed/unverified/blocked=0. Critical unresolved defects prohibit certification. No criterion may be removed to increase scores. Scores are acceptance evidence, not the prior subjective audit ratings.",
   "baselineCommit": "81bd5b4",
-  "engineCommit": "bdb1f8f",
+  "engineCommit": "41a0f464405a1e4e20629de928727815679f5906",
   "categories": [
     {
       "name": "Architecture",
       "historicalScore": 8,
       "baselineVerifiedScore": 6.5,
-      "currentScore": 6.5,
+      "currentScore": 7.0,
       "criteria": [
         {
           "id": "1",
@@ -17,7 +17,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "Source-layer boundaries remain enforced; the final graph has 108 files, 603 edges and zero cycles. Native entry-point registration is separately incomplete. See docs/quality/2026-10-15-iteration-7/architecture-current.json."
+          "evidence": "The JS/TS graph passes with108 files,603 edges and zero cycles. The actual default pinned native workspace passes30-crate layering after composition-root registration; forbidden upward dependencies remain tested. See iteration8 architecture-final.log/default-native-layers-final.log."
         },
         {
           "id": "2",
@@ -25,7 +25,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "Render recipe/input domains replace render/proof/delivery coordinator cycles; project validation, private-stage capabilities and bounded transport are separate tested modules. Final full gate passes1133. See docs/ARCHITECTURE.md."
+          "evidence": "Project, recipe/input and private-stage domains retain their boundaries. Native ingress, bounded pipe transport and canonical contract validation are separate modules. Complete Node gate1142 and native-app119 tests pass; significant native transport decisions are documented."
         },
         {
           "id": "3",
@@ -33,7 +33,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Canonical53methods/17events, generated interface types, actual39 backend dispatch handlers and13 producer events verified. Fourteen native method vectors are authored examples; native Value/String adapters are not complete typed runtime execution."
+          "evidence": "The pinned rebuilt native engine consumes generated method enums and bounded canonical JSON request/result/event validation. Authored53-method/17-event examples and actual Rust-to-Node ping/sign-in-denial boundaries pass. Method-specific Rust DTOs, the editor.inspect diagnostic shape and actual native GUI execution remain incomplete."
         },
         {
           "id": "4",
@@ -41,7 +41,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Private-stage capabilities, physical source aliases and reserved historical identities pass final real-host cases. Native editor saves still bypass project/output ownership, and permanent/legacy/global reconciliation and reclamation remain incomplete."
+          "evidence": "Existing capability and identity protections pass the full real-engine gate. Native editor/standalone document publication still bypasses album/output ownership; permanent/legacy/global reconciliation and approved reclamation remain incomplete."
         },
         {
           "id": "5",
@@ -49,7 +49,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Central project/version/operation safety bounds and shared verified-byte print policy pass real dispatcher and pipeline tests. Native save/transport admission and complete global ownership invariants remain outside this verified boundary."
+          "evidence": "Native request ownership/admission, project/version/operation safety and shared print/input policies are checked. Native save/publication and producer-wide ownership invariants are not complete."
         },
         {
           "id": "6",
@@ -57,7 +57,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Structured commit/recovery/error fields survive Node and bundled browser boundaries; finishing warnings preserve successful sheet counts. Native string errors and obsolete helper-generation teardown remain incomplete; isolated native candidate is not integrated."
+          "evidence": "Generation-specific EOF/replies, bounded asynchronous writer failures and deadlines now preserve uncertainty; real-child tests verify structured Node recovery metadata survives native forwarding. Native engine string errors and native save/publication finishing metadata remain incomplete."
         },
         {
           "id": "7",
@@ -65,7 +65,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "Pure project, identity, recipe and policy domains; injectable real dispatcher; bundled browser bridge tests; bounded writer/framing faults and real-child native replay strengthen testable seams. Final Node gate1133 passes."
+          "evidence": "Pure/injectable domains, real dispatcher/browser bridge tests, bounded reader/writer faults, actual native child tests and source/pin mutation regressions pass. Complete Node gate1142; native app119; layer regressions15. No new GUI or whole-workspace execution is inferred."
         },
         {
           "id": "8",
@@ -73,15 +73,15 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Consumed photo/template/sheet metadata, nested template inventory, EXIF order and thumbnail dimensions follow verified content revisions. Whole-application native/editor invalidation and legacy/shared cache scope are not certified."
+          "evidence": "Verified-byte Node metadata/preflight/cache behavior remains covered by the complete gate. Whole-application native/editor invalidation and remaining legacy/shared cache scope are not certified."
         },
         {
           "id": "9",
           "criterion": "Dependency and layering gates",
           "weight": 10,
-          "points": 5,
-          "status": "partial",
-          "evidence": "JS/TS AST layer, cycle, registry/schema/type drift and packaged-closure gates plus mutation tests pass and are wired in CI/pretest. Actual pinned cargo xtask layers fails missing album-studio registration; candidate patch16/16 is isolated and not applied."
+          "points": 10,
+          "status": "verified",
+          "evidence": "Architecture pretest/CI gates enforce JS/TS layers/cycles, registry/schema/type parity, actual method ownership and packaged closure. The contractsVersion1 engine pin enforces generated native copy parity. The actual pinned30-crate native layering gate and15 negative/positive layer tests pass; source/pin mutation tests reject false build provenance. Hosted CI/full workspace/corpus execution remains separately unverified."
         },
         {
           "id": "10",
@@ -89,11 +89,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Explicit legacy0/1/digit-string normalization, future-version refusal, unknown-field preservation, source alias/conflict and historical reservation tests pass. Complete native/permanent ownership migration and supported rollout acceptance remain unverified."
+          "evidence": "Legacy project/source-identity migration coverage remains passing. Native integral JSON ID spelling and scalar text policies now agree, and old bundle-ref manifests still reconstruct exactly. Complete native/permanent ownership migration and rollout acceptance remain unverified."
         }
       ],
       "certified": false,
-      "assessment": "Architecture remains65/100 on the unchanged rubric. Verified Node/interface boundaries substantially improve partial criteria; unresolved native transport/save ownership and native layering prevent completion. No score is inferred from a static inventory or isolated candidate."
+      "assessment": "Architecture70/100 on the unchanged rubric. Native layering/generation/bounded contract work is integrated, pinned and rebuilt; save ownership, typed local DTOs, native error/invalidation and migration requirements remain open."
     },
     {
       "name": "UI and workflow",
@@ -818,9 +818,9 @@
   ],
   "latestAssessment": {
     "date": "2026-10-16",
-    "iteration": 7,
-    "scope": "Architecture only; updated user goal supersedes the earlier all-nine-category completion objective.",
-    "evidence": "docs/quality/2026-10-15-iteration-7/verification.json",
+    "iteration": 8,
+    "scope": "Architecture only; other category scores retained without new certification.",
+    "evidence": "docs/quality/2026-10-16-iteration-8/verification.json",
     "previousScores": {
       "Architecture": 6.5,
       "UI and workflow": 4.5,
@@ -833,9 +833,9 @@
       "Build and distribution": 4
     },
     "missionComplete": false,
-    "independentReview": "Scoped reviewers reproduced snapshot/journal/private-cleanup/alias/transport defects. Final parent host gate86 and complete Node gate1133 pass. Native generation/layering baseline replay fails2/16; isolated candidate16/16 is not integrated. Broader native/editor/global review remains open.",
-    "highestPriority": "Integrate generation-safe bounded native transport and canonical local DTOs; bring native editor and standalone saves under explicit ownership/publication contracts. Register the native app in the pinned layering table through a reviewed new pin/build.",
-    "executionLimit": "Some prior worker checks were rejected by usage-limited automatic approval review and did not run. Parent later obtained approval and completed final host/full gates. One native-design worker subsequently reported provider reset Oct16,2026 4:20AM without timezone; no native completion inferred. Parent continues local work.",
-    "scoringDecision": "All90 criterion names, weights and points remain unchanged. Architecture ten criteria reassessed; other categories are historical context and not newly certified. Architecture remains6.5 with actual unresolved native defects."
+    "independentReview": "No new independent agent review. Parent review and executed mutation/real-child/full application regressions are retained; GUI and whole-workspace acceptance are not inferred.",
+    "highestPriority": "Bring native editor/standalone saves and related producers under shared revision/ownership/publication rules; complete typed local DTOs, native invalidation and permanent/legacy/global migration.",
+    "executionLimit": "No current local execution limit or external blocker; implementation continues. Hosted CI, full native workspace/corpus and supported GUI/migration acceptance remain unverified.",
+    "scoringDecision": "All90 criterion names and weights unchanged. Architecture dependency/layering criterion9 gains5 verified points; architecture rises6.5 to7.0. Other scores are retained historical context."
   }
 }

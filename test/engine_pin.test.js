@@ -157,7 +157,7 @@ test('the native publication primitive refuses even an empty existing destinatio
 test('pin schema refuses credentials, moving refs and escaping bundle paths', async (t) => {
   const f = fixture(t)
   const { readPin } = await scripts()
-  for (const change of [{ commit: 'main' }, { upstreamRepository: 'https://user:secret@example.invalid/source' }, { bundle: '../fork.bundle' }, { rustToolchain: 'stable' }]) {
+  for (const change of [{ commit: 'main' }, { upstreamRepository: 'https://user:secret@example.invalid/source' }, { bundle: '../fork.bundle' }, { rustToolchain: 'stable' }, { bundleRef: 'HEAD' }, { bundleRef: 'refs/heads/../main' }, { bundleRef: '--upload-pack=bad' }, { contractsVersion: 2 }]) {
     fs.writeFileSync(f.manifest, JSON.stringify({ ...f.pin, ...change }))
     assert.throws(() => readPin(f.manifest))
   }
@@ -168,4 +168,67 @@ test('packaging refuses dependency drift and never removes a pre-existing app bu
   assert.match(script, /engine\.mjs.*build/)
   assert.match(script, /publish-new-directory\.mjs/)
   assert.doesNotMatch(script, /rm\s+-rf\s+"\$APP"/)
+})
+
+test('a named architecture branch reconstructs the exact commit without relying on the legacy bundle branch', async t => {
+  const f = fixture(t), ref = 'refs/heads/codex/native-contracts'
+  f.git('branch', 'codex/native-contracts')
+  f.git('bundle', 'create', f.bundle, ref, `^${f.pin.baseCommit}`)
+  fs.writeFileSync(f.manifest, JSON.stringify({ ...f.pin, bundleRef: ref, bundleSha256: hash(f.bundle) }))
+  const { setupEngine } = await scripts(), engine = path.join(f.root, 'named-branch')
+  assert.equal(setupEngine({ manifest: f.manifest, engine, baseRepository: f.engine }).commit, f.pin.commit)
+})
+
+test('a contract-bearing engine pin rejects copied runtime drift even at a clean exact revision', async t => {
+  const f = fixture(t), { nativeContracts } = await import('../native/scripts/generate-native-contracts.mjs')
+  const target = path.join(f.engine, 'apps/album-studio/src/contracts')
+  fs.mkdirSync(target, { recursive: true })
+  for (const [name, bytes] of nativeContracts()) fs.writeFileSync(path.join(target, name), bytes)
+  f.git('add', 'apps/album-studio/src/contracts'); f.git('commit', '--quiet', '-m', 'native contracts')
+  const commit = f.git('rev-parse', 'HEAD')
+  f.git('bundle', 'create', f.bundle, 'album-studio', `^${f.pin.baseCommit}`)
+  const pin = { ...f.pin, contractsVersion: 1, commit, bundleSha256: hash(f.bundle) }
+  fs.writeFileSync(f.manifest, JSON.stringify(pin))
+  const { validateEngine } = await scripts()
+  assert.equal(validateEngine(f).commit, commit)
+  fs.appendFileSync(path.join(target, 'mod.rs'), '\n// changed runtime\n')
+  f.git('add', 'apps/album-studio/src/contracts/mod.rs'); f.git('commit', '--quiet', '-m', 'diverge runtime')
+  f.git('bundle', 'create', f.bundle, 'album-studio', `^${f.pin.baseCommit}`)
+  fs.writeFileSync(f.manifest, JSON.stringify({ ...pin, commit: f.git('rev-parse', 'HEAD'), bundleSha256: hash(f.bundle) }))
+  assert.throws(() => validateEngine(f), /canonical contract drift/)
+  assert.match(fs.readFileSync(path.join(target, 'mod.rs'), 'utf8'), /changed runtime/)
+})
+
+test('a relative local base mirror resolves against the caller before reconstruction enters staging', async t => {
+  const f = fixture(t), { setupEngine } = await scripts(), engine = path.join(f.root, 'relative-mirror')
+  const result = setupEngine({ manifest: f.manifest, engine, baseRepository: path.relative(process.cwd(), f.engine) })
+  assert.equal(result.commit, f.pin.commit)
+})
+
+test('a source edit made during compilation cannot receive a successful provenance result', async t => {
+  const f = fixture(t), { buildEngine } = await scripts(), bin = path.join(f.root, 'bin')
+  fs.mkdirSync(bin)
+  const cargo = path.join(bin, 'cargo'), rustc = path.join(bin, 'rustc')
+  fs.writeFileSync(cargo, `#!${process.execPath}\nif(process.argv.includes('--version'))console.log('cargo 1.99.0 (fixture)');else require('node:fs').writeFileSync(${JSON.stringify(path.join(f.engine, 'Cargo.lock'))},'concurrent source edit\\n');\n`, { mode: 0o700 })
+  fs.writeFileSync(rustc, `#!${process.execPath}\nconsole.log('rustc 1.99.0 (fixture)');\n`, { mode: 0o700 })
+  const previous = process.env.PATH
+  process.env.PATH = bin + path.delimiter + previous
+  try {
+    assert.throws(() => buildEngine({ engine: f.engine, manifest: f.manifest, targetDir: path.join(f.root, 'output') }), /tracked changes/)
+    assert.equal(fs.readFileSync(path.join(f.engine, 'Cargo.lock'), 'utf8'), 'concurrent source edit\n')
+  } finally { process.env.PATH = previous }
+})
+
+test('a build pin changed during compilation cannot be certified even if its source commit stays the same', async t => {
+  const f = fixture(t), { buildEngine } = await scripts(), bin = path.join(f.root, 'bin')
+  fs.mkdirSync(bin)
+  fs.writeFileSync(path.join(bin, 'cargo'), `#!${process.execPath}\nif(process.argv.includes('--version'))console.log('cargo 1.99.0 (fixture)');else {const fs=require('node:fs'),p=${JSON.stringify(f.manifest)},m=JSON.parse(fs.readFileSync(p));m.features=[];fs.writeFileSync(p,JSON.stringify(m));}\n`, { mode: 0o700 })
+  fs.writeFileSync(path.join(bin, 'rustc'), `#!${process.execPath}\nconsole.log('rustc 1.99.0 (fixture)');\n`, { mode: 0o700 })
+  const previous = process.env.PATH
+  process.env.PATH = bin + path.delimiter + previous
+  try {
+    assert.throws(() => buildEngine({ engine: f.engine, manifest: f.manifest, targetDir: path.join(f.root, 'output') }), /pin changed during compilation/)
+    assert.deepEqual(JSON.parse(fs.readFileSync(f.manifest)).features, [])
+    assert.equal(f.git('rev-parse', 'HEAD'), f.pin.commit)
+  } finally { process.env.PATH = previous }
 })

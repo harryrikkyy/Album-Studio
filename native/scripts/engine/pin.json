@@ -3,11 +3,15 @@
   "name": "PhotoCraft Album Studio fork",
   "upstreamRepository": "https://github.com/storytold/photocraft.git",
   "baseCommit": "0c72d95425dece90ef9a1cceb49e3315c96e22d5",
-  "commit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
-  "bundle": "album-studio.bundle",
-  "bundleSha256": "484638db77b391739bf38b763a05c592188713e7b397e98ac27a15e510b88f05",
-  "cargoLockSha256": "b05366471fba27616e6a59a2a1aece062d296a08e09930a197c1c743c2b49bbb",
+  "commit": "41a0f464405a1e4e20629de928727815679f5906",
+  "bundle": "architecture-20261016-wire-id.bundle",
+  "bundleSha256": "f2234f91cc5f407f8f440179abe0eb571af18e1cfcf332592c16ab1d789d8b54",
+  "cargoLockSha256": "1f0ee0881214592d3a2ad51c5974a4a31a3f72e4590ecba4cd8862492d24c8d6",
   "rustToolchain": "1.99.0",
-  "sourceDate": "2026-10-12",
-  "features": ["heif"]
+  "sourceDate": "2026-10-16",
+  "features": [
+    "heif"
+  ],
+  "bundleRef": "refs/heads/codex/architecture-native",
+  "contractsVersion": 1
 }

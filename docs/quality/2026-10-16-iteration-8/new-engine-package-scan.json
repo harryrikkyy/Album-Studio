@@ -1,0 +1,31 @@
+{
+  "scope": "Added lines in the15 changed source/manifest/fixture files; focused heuristic scan only",
+  "base": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "commit": "41a0f464405a1e4e20629de928727815679f5906",
+  "changedFiles": [
+    "Cargo.lock",
+    "apps/album-studio/Cargo.toml",
+    "apps/album-studio/src/backend.rs",
+    "apps/album-studio/src/backend/tests.rs",
+    "apps/album-studio/src/backend/transport.rs",
+    "apps/album-studio/src/contracts/examples.json",
+    "apps/album-studio/src/contracts/generated.rs",
+    "apps/album-studio/src/contracts/manifest.json",
+    "apps/album-studio/src/contracts/mod.rs",
+    "apps/album-studio/src/contracts/schema.json",
+    "apps/album-studio/src/main.rs",
+    "apps/album-studio/src/shell.rs",
+    "apps/album-studio/src/shell/ingress.rs",
+    "apps/album-studio/tests/fixtures/backend-helper.cjs",
+    "xtask/src/layers.rs"
+  ],
+  "matchCounts": {
+    "privateKeyHeaders": 0,
+    "literalLongCredentialAssignments": 0,
+    "developerAbsolutePaths": 0
+  },
+  "limitations": [
+    "Not a whole-engine or complete credential/security audit.",
+    "No customer files or environment-file contents were read by this scan."
+  ]
+}

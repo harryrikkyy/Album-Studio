@@ -659,5 +659,5 @@
     },
     "normalization": "project_domain.migrateProject validates and preserves supported unknown fields; runtime validator never mutates"
   },
-  "nativeVerification": "Source inventory plus boundary JSON validation only; native Rust DTO/runtime adapter verification remains unverified."
+  "nativeVerification": "Generated native method enums and bounded canonical JSON validation are implemented; method-specific Rust DTOs, native GUI execution and the editor.inspect result type remain incomplete."
 }

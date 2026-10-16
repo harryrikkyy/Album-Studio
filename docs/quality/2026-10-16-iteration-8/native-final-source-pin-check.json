@@ -1,0 +1,9 @@
+{
+  "engine": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4",
+  "commit": "41a0f464405a1e4e20629de928727815679f5906",
+  "rustToolchain": "1.99.0",
+  "cargoLockSha256": "1f0ee0881214592d3a2ad51c5974a4a31a3f72e4590ecba4cd8862492d24c8d6",
+  "features": [
+    "heif"
+  ]
+}

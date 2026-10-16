@@ -13,7 +13,7 @@ async function fixture(t) {
   const write = (file, text) => { fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), text) }
   const policy = JSON.parse(JSON.stringify(defaultPolicy))
   const manifest = {
-    methods: { alpha: { params: '#/$defs/Params', result: '#/$defs/Result' }, 'shell.fixture': { params: '#/$defs/Params', result: '#/$defs/Result' } },
+    methods: { alpha: { owner: 'backend', params: '#/$defs/Params', result: '#/$defs/Result' }, 'shell.fixture': { owner: 'shell', params: '#/$defs/Params', result: '#/$defs/Result' } },
     events: { 'alpha.done': { data: '#/$defs/Result' }, 'shell.fixtureEvent': { data: '#/$defs/Result' } },
     dto: { Result: '#/$defs/Result' }, errors: { Error: '#/$defs/Error' }, persistedProject: { v1: '#/$defs/Project' }, schemaVersions: { project: [1] },
   }
@@ -147,4 +147,13 @@ test('native helper exit events are inventoried and canonical orphan events fail
   f.manifest.events['backend.exited'] = { data: '#/$defs/Result' }
   f.manifest.events['orphan.event'] = { data: '#/$defs/Result' }; f.saveManifest()
   assert.ok(f.check().violations.some(item => item.code === 'EVENT_SOURCE_MISSING' && item.event === 'orphan.event'))
+})
+
+test('changing canonical method ownership cannot redirect an existing executor across the native boundary', async t => {
+  const f = await fixture(t)
+  f.manifest.methods.alpha.owner = 'shell'
+  f.manifest.methods['shell.fixture'].owner = 'backend'
+  f.saveManifest()
+  const bad = f.check().violations.filter(item => item.code === 'METHOD_OWNER_MISMATCH')
+  assert.deepEqual(bad.map(item => [item.method, item.expectedOwner]), [['alpha', 'backend'], ['shell.fixture', 'shell']])
 })

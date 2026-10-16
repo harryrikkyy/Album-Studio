@@ -1,0 +1,9 @@
+{
+  "commit": "591c5b47da2dd086c47f4d9d64fc0b41722df0c7",
+  "status": "superseded intermediate build; retained, not final certification",
+  "files": {
+    "bench/fixture/native-architecture-release-591c5b4/album-studio": "666abfaf0bfe094f6e1c9da60c822f43ef5b726211f93520796745950e47f435",
+    "bench/fixture/native-architecture-release-591c5b4/photocraft-cli": "2412d89079e9070de43335ab7ca7b27e2a8619559e284bb5d9df6dee2843024e",
+    "bench/fixture/native-architecture-release-591c5b4/album-studio-rename-exclusive": "dfb18cbb6e1316f5e6cf30aa8a9673fe0d7bce60497f982606112e1d2eb07355"
+  }
+}

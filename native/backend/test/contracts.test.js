@@ -13,58 +13,8 @@ test.after(() => fs.rmSync(root, { recursive: true, force: true }))
 
 // Deliberately authored protocol examples, not samples generated from the schema.
 // Native examples verify the declared contract only; they do not execute the native shell.
-const album = { path: '/album', file: '/album/project.json', name: 'Album', savedAt: null, outputFolder: '/out', photoFolders: [], templateCollections: [], spreads: [], photos: {}, pool: [], stats: { spreads: 0, photos: 0, used: 0, planned: 0 } }
-const updated = { album, canUndo: true, canRedo: false, changed: true, report: { noTemplate: [] } }
-const account = { state: 'signedOut', configured: false, reason: 'not_activated' }
-const collections = { collections: [{ path: '/templates', name: 'Templates', exists: true, templates: 1, albums: ['Album'], isDefault: true }], defaultsChosen: true }
-const template = { id: 'tpl-one', name: '1h0v.psd', file: '/templates/1h0v.psd', preview: null, collection: 'Templates', sourceRoot: '/templates', h: 1, v: 0, width: 200, height: 100 }
-const paths = { sheets: '/out', high: '/out/JPEG-High-Res', low: '/out/JPEG-Low-Res', pdf: '/out/Album.pdf', cache: '/out/.album-studio/export-cache.json' }
-const renderStarted = { jobId: 'render-1', total: 1, outputFolder: '/out', album: '/album' }
-const exportStarted = { jobId: 'export-1', total: 1, paths, missingSheets: [] }
-const storage = { root: '/cache', caches: [{ id: 'raw', label: 'RAW', scope: 'album', bytes: 1, files: 1 }], retention: { historyPath: '/cache/.history', bytes: 1, stages: 1, limits: { maxHistoryBytes: 8589934592, maxHistoryStages: 256, minFreeBytes: 268435456 }, automaticPruning: false } }
-const vectors = {
-  'system.ping': [{ n: 7 }, { pong: 7, node: 'v22.22.3' }],
-  'account.status': [{ refresh: false }, account], 'account.signIn': [{}, account], 'account.cancelSignIn': [{}, null], 'account.retry': [{}, account], 'account.signOut': [{}, account],
-  'album.open': [{ path: '/album' }, album], 'album.recent': [{}, [{ path: '/album', name: 'Album', openedAt: '2026-10-15', spreads: 1, photos: 1, cover: null, available: true }]],
-  'folders.inspect': [{ paths: ['/shoot'] }, [{ path: '/shoot', name: 'Shoot', exists: true, photos: 1, raws: 0, thumbs: 1, missing: 0, samples: ['one.jpg'] }]],
-  'templates.collections': [{}, collections.collections], 'templates.inspect': [{ paths: ['/templates'] }, collections.collections],
-  'album.suggest': [{ photoFolders: ['/shoot'] }, { name: 'Shoot', parent: '/' }],
-  'album.create': [{ name: 'Album', parent: '/albums', photoFolders: ['/shoot'], autoFill: { desiredSheets: 1 } }, { album, report: null, thumbFailures: [], thumbFailed: 0 }],
-  'album.setFolders': [{ album: '/album', photoFolders: ['/shoot'], templateCollections: ['/templates'] }, updated],
-  'album.update': [{ album: '/album', ops: [{ op: 'addPhoto', n: 1, ids: ['photo-one'] }] }, updated],
-  'album.undo': [{ album: '/album' }, updated], 'album.redo': [{ album: '/album' }, updated],
-  'templates.list': [{ album: '/album' }, [template]],
-  'spread.layout': [{ album: '/album', n: 1 }, { n: 1, template: 'tpl-one', width: 200, height: 100, backdrop: null, frames: [{ name: 'Frame', orient: 'h', x: 0, y: 0, w: 200, h: 100, z: 0, photoId: 'photo-one' }], unplaced: [] }],
-  'library.collections': [{}, collections], 'library.add': [{ paths: ['/templates'] }, collections], 'library.remove': [{ path: '/templates' }, collections], 'library.setDefaults': [{ paths: ['/templates'] }, collections], 'library.templates': [{ path: '/templates' }, [template]],
-  'storage.usage': [{ album: '/album' }, storage], 'storage.clear': [{ album: '/album', ids: ['raw'] }, storage],
-  'lab.list': [{ folder: '/out' }, { folder: '/out', name: 'out', sheets: [{ path: '/out/001.psd', fileName: '001.psd', baseName: '001', ext: '.psd', thumb: null, width: 200, height: 100 }] }],
-  'lab.rename': [{ folder: '/out', ops: [{ fromPath: '/out/001.psd', toBaseName: '002' }] }, { renamed: 1, undo: [{ fromPath: '/out/002.psd', toBaseName: '001' }] }],
-  'picks.analyze': [{ folders: ['/shoot'] }, { photos: [{ thumb: '/shoot/_Thumbnails/one.jpg', base: 'one', folder: '/shoot', orient: 'h', sharpness: 10, exposure: 0.5, blackPct: 0, whitePct: 0, hash: 'abcd' }] }],
-  'picks.copy': [{ picks: [{ folder: '/shoot', base: 'one' }] }, { folders: [{ folder: '/shoot', dest: '/shoot/Selected', copied: 1, skipped: 0 }], copied: 1, skipped: 0 }],
-  'proofs.refresh': [{ album: '/album' }, { queued: true }],
-  'render.start': [{ album: '/album', spreads: [1] }, renderStarted], 'render.cancel': [{ jobId: 'render-1' }, { cancelled: true }], 'render.status': [{}, { running: false }],
-  'render.plan': [{ album: '/album' }, { outputFolder: '/out', spreads: [{ n: 1, id: 'spread-one', state: 'current' }], running: { running: false } }],
-  'export.plan': [{ album: '/album', pdf: true }, { paths, settings: { size: 'print', heightInches: 12, ppi: 300, highQuality: 95, lowQuality: 75 }, spreads: [{ n: 1, id: 'spread-one', psd: '/out/001.psd', stamp: '123', state: 'todo' }], preflight: { errors: [], warnings: [], info: [] }, pdf: null, running: { running: false } }],
-  'export.start': [{ album: '/album', jpegs: true }, exportStarted], 'export.cancel': [{}, { cancelled: false }], 'export.status': [{}, { running: true, jobId: 'export-1', total: 1, done: 0, skipped: 0, failed: 0 }],
-  'shell.ping': [{ n: 3 }, { pong: 3 }], 'shell.info': [{}, { photocraft: '/cli', mode: 'native' }],
-  'editor.open': [{ path: '/album/project.json' }, null], 'editor.inspect': [{}, { open: true, geometry: [1, 2] }],
-  'dialog.pickFolder': [{ title: 'Folder', multiple: true }, ['/shoot']], 'shell.reveal': [{ path: '/out' }, null],
-  'shell.showAlbum': [{}, null], 'shell.dragWindow': [{}, null], 'shell.zoomWindow': [{}, null], 'shell.activate': [{}, null],
-  'shell.log': [{ level: 'warn', message: 'A warning' }, null], 'shell.selftestReturnAfter': [{ ms: 10 }, null],
-  'debug.queuePicks': [{ answers: ['/shoot', ['/one', '/two'], null] }, null], 'debug.result': [{ key: 1, result: { passed: true } }, null],
-}
-const finished = { jobId: 'render-1', total: 1, done: 1, skipped: 0, failed: 0, cancelled: false, ms: 100, finishingError: 'Engine close warning', warnings: ['Engine close warning'] }
-const events = {
-  'backend.ready': { pid: 123, node: 'v22.22.3' }, 'backend.exited': {}, 'account.signIn': { stage: 'browser' },
-  'album.creating': { stage: 'project', spreads: 1 }, 'album.folders': { stage: 'thumbs', current: 'one.jpg', done: 1, total: 1 },
-  'picks.progress': { stage: 'score', folder: '/shoot', done: 1, total: 1 },
-  'render.started': renderStarted, 'render.progress': { jobId: 'render-1', total: 1, n: 1, state: 'done', index: 0, ms: 100 },
-  'render.finished': { ...finished, outputFolder: '/out', results: [{ n: 1, state: 'done', committed: true, path: '/out/001.psd' }] },
-  'export.started': exportStarted, 'export.progress': { jobId: 'export-1', total: 1, state: 'pdf', pages: 1 },
-  'export.finished': { ...finished, jobId: 'export-1', paths, results: [{ n: 1, state: 'done', width: 200, height: 100 }], pdf: { path: '/out/Album.pdf', pages: 1, bytes: 100 }, missingSheets: [] },
-  'proofs.updated': { album: '/album', n: 1, proof: '/album/proofs/pages/one.jpg', source: 'sheet' }, 'proofs.failed': { album: '/album', n: 1, error: 'Source unavailable' }, 'proofs.idle': { album: '/album', rendered: 1, failed: 0 },
-  'shell.albumShown': {}, menu: { command: 'save' },
-}
+const { methods: vectors, events } = require('../../contracts/examples.json')
+const album = vectors['album.open'][1], collections = vectors['library.collections'][1]
 test('every registered method has authored valid request/result/reply examples', async t => {
   assert.equal(Object.keys(vectors).length, 53)
   assert.deepEqual(Object.keys(vectors).sort(), Object.keys(c.manifest.methods).sort())
@@ -105,6 +55,13 @@ test('optional object undefined matches JSON omission; non-JSON data and executa
   const namedArray = []; namedArray.extra = 1
   assert.throws(() => c.validateParams('system.ping', { n: namedArray }), c.ContractError)
   assert.throws(() => c.validateParams('system.ping', { n: JSON.parse('{"__proto__":1}') }), c.ContractError)
+})
+test('Unicode scalar text agrees with the native decoder without changing valid emoji or non-Latin text', () => {
+  for (const invalid of ['\ud800', '\udfff', 'a\ud800x', '\udfff\ud800']) {
+    assert.throws(() => c.validateParams('system.ping', { n: invalid }), error => error.issues[0].keyword === 'unicode')
+    assert.throws(() => c.validateParams('system.ping', { n: { [invalid]: 1 } }), c.ContractError)
+  }
+  for (const valid of ['Album 😀', 'தமிழ்', 'हिन्दी', 'a\ud800\udc00z']) assert.equal(c.validateParams('system.ping', { n: valid }).n, valid)
 })
 test('global traversal bounds fail closed before schema work and cap diagnostic counts', () => {
   let deep = 1; for (let i = 0; i <= c.limits.maxDepth; i++) deep = [deep]

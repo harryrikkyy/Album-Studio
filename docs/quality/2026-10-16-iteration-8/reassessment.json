@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-16",
+  "rubricVersion": 1,
+  "scope": "Architecture",
+  "criteriaCount": 10,
+  "target": "strictly >95/100; discrete scoring requires100/100",
+  "previousScore": 6.5,
+  "currentScore": 7.0,
+  "certified": false,
+  "criteria": [
+    {
+      "id": "1",
+      "criterion": "Layer boundaries",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "The JS/TS graph passes with108 files,603 edges and zero cycles. The actual default pinned native workspace passes30-crate layering after composition-root registration; forbidden upward dependencies remain tested. See iteration8 architecture-final.log/default-native-layers-final.log."
+    },
+    {
+      "id": "2",
+      "criterion": "Module cohesion",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Project, recipe/input and private-stage domains retain their boundaries. Native ingress, bounded pipe transport and canonical contract validation are separate modules. Complete Node gate1142 and native-app119 tests pass; significant native transport decisions are documented."
+    },
+    {
+      "id": "3",
+      "criterion": "Typed runtime interfaces",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "The pinned rebuilt native engine consumes generated method enums and bounded canonical JSON request/result/event validation. Authored53-method/17-event examples and actual Rust-to-Node ping/sign-in-denial boundaries pass. Method-specific Rust DTOs, the editor.inspect diagnostic shape and actual native GUI execution remain incomplete."
+    },
+    {
+      "id": "4",
+      "criterion": "State ownership",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Existing capability and identity protections pass the full real-engine gate. Native editor/standalone document publication still bypasses album/output ownership; permanent/legacy/global reconciliation and approved reclamation remain incomplete."
+    },
+    {
+      "id": "5",
+      "criterion": "Central business invariants",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Native request ownership/admission, project/version/operation safety and shared print/input policies are checked. Native save/publication and producer-wide ownership invariants are not complete."
+    },
+    {
+      "id": "6",
+      "criterion": "Error contracts",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Generation-specific EOF/replies, bounded asynchronous writer failures and deadlines now preserve uncertainty; real-child tests verify structured Node recovery metadata survives native forwarding. Native engine string errors and native save/publication finishing metadata remain incomplete."
+    },
+    {
+      "id": "7",
+      "criterion": "Testable domains",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Pure/injectable domains, real dispatcher/browser bridge tests, bounded reader/writer faults, actual native child tests and source/pin mutation regressions pass. Complete Node gate1142; native app119; layer regressions15. No new GUI or whole-workspace execution is inferred."
+    },
+    {
+      "id": "8",
+      "criterion": "Explicit invalidation",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Verified-byte Node metadata/preflight/cache behavior remains covered by the complete gate. Whole-application native/editor invalidation and remaining legacy/shared cache scope are not certified."
+    },
+    {
+      "id": "9",
+      "criterion": "Dependency and layering gates",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Architecture pretest/CI gates enforce JS/TS layers/cycles, registry/schema/type parity, actual method ownership and packaged closure. The contractsVersion1 engine pin enforces generated native copy parity. The actual pinned30-crate native layering gate and15 negative/positive layer tests pass; source/pin mutation tests reject false build provenance. Hosted CI/full workspace/corpus execution remains separately unverified."
+    },
+    {
+      "id": "10",
+      "criterion": "Compatibility migration design",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Legacy project/source-identity migration coverage remains passing. Native integral JSON ID spelling and scalar text policies now agree, and old bundle-ref manifests still reconstruct exactly. Complete native/permanent ownership migration and rollout acceptance remain unverified."
+    }
+  ],
+  "otherCategoryScores": [
+    {
+      "category": "UI and workflow",
+      "previousScore": 4.5,
+      "currentScore": 4.5,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Testing",
+      "previousScore": 5,
+      "currentScore": 5,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Performance and scalability",
+      "previousScore": 3,
+      "currentScore": 3,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Data integrity and recovery",
+      "previousScore": 6.5,
+      "currentScore": 6.5,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Documentation",
+      "previousScore": 4.5,
+      "currentScore": 4.5,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Security and licensing",
+      "previousScore": 4,
+      "currentScore": 4,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Print and delivery correctness",
+      "previousScore": 4,
+      "currentScore": 4,
+      "status": "retained historical score; not newly certified"
+    },
+    {
+      "category": "Build and distribution",
+      "previousScore": 4,
+      "currentScore": 4,
+      "status": "retained historical score; not newly certified"
+    }
+  ]
+}
