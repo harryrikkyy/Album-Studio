@@ -66,7 +66,7 @@ test('recent albums: newest first, de-duplicated, availability checked', async (
 test('the protocol answers unknown methods with an error, not a crash', async () => {
   const out = []
   const orig = process.stdout.write.bind(process.stdout)
-  process.stdout.write = (s) => { out.push(String(s)); return true }
+  process.stdout.write = (s, callback) => { out.push(String(s)); if (callback) queueMicrotask(callback); return true }
   try {
     await dispatch(JSON.stringify({ id: 9, method: 'nope' }))
     await dispatch(JSON.stringify({ id: 10, method: 'system.ping', params: { n: 3 } }))
@@ -75,7 +75,7 @@ test('the protocol answers unknown methods with an error, not a crash', async ()
     process.stdout.write = orig
   }
   const replies = out.map((l) => JSON.parse(l))
-  assert.deepEqual(replies[0], { id: 9, ok: false, error: 'unknown method `nope`' })
+  assert.deepEqual(replies[0], { id: 9, ok: false, error: 'unknown method `nope`', code: 'METHOD_UNKNOWN', details: { issues: [{ path: '/method', message: 'Unknown method.', keyword: 'enum' }] } })
   assert.equal(replies[1].result.pong, 3)
   assert.equal(replies.length, 2, 'a line that is not JSON gets no reply')
 })

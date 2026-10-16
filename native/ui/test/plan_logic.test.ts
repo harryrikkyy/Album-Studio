@@ -6,6 +6,7 @@ import type { Album, Photo, Spread } from '../src/types.ts'
 const photo = (id: string, orient: 'h' | 'v'): Photo => ({ id, base: id, folder: '/f', thumb: `/f/${id}.jpg`, original: null, orient, width: null, height: null, rotation: 0, usedOn: [] })
 const spread = (n: number, photoIds: string[], tpl: { id: string; h: number; v: number } | null): Spread => ({
   n,
+  id: `spread-${n}`,
   photoIds,
   missingPhotos: 0,
   template: tpl ? { ...tpl, name: `${tpl.id}.psd`, file: null, preview: null } : null,
@@ -112,6 +113,7 @@ test('a photo covers its frame, zooms on that, and pans across what is cropped, 
   // Dragging the picture right shows more of its left side: ox goes down.
   assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, 10, 0, 50, 0), { scale: 1, ox: -0.4, oy: 0 })
   assert.deepEqual(panBy({ scale: 1, ox: 0, oy: 0 }, -500, 30, 50, 0), { scale: 1, ox: 1, oy: 0 }, 'stops at the edge; no overflow, no pan')
+  assert.deepEqual(panBy({}, 10, 10, 50, 50), { scale: 1, ox: -0.4, oy: -0.4 }, 'partial legacy placement defaults to a centred fit')
 })
 
 test('the live colour look follows the sliders', () => {

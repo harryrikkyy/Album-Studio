@@ -14,7 +14,8 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { openAlbum } = require('./album')
-const { cacheRoot, fileDigest, contentKey, snapshotFile, writeAtomic } = require('./cache')
+const { cacheRoot, fileDigest, contentKey, writeAtomic } = require('./cache')
+const { withPrivateStage } = require('./private_stage')
 const { renameExclusive } = require('./exclusive_rename')
 const { inputsHash, spreadInputs, hashInputValues } = require('./inputs')
 const { templateArt, framesByName } = require('./psd_template')
@@ -117,25 +118,22 @@ async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedH
 
 /** A proof from a sheet's own flattened image (after it was edited in the editor). */
 async function proofFromSheet(sheetPath, out, digest) {
-  await fs.promises.mkdir(cacheRoot(), { recursive: true })
-  const stage = await fs.promises.mkdtemp(path.join(cacheRoot(), 'proof-sheet-'))
-  let px, preserveStage = false
-  try {
-  const frozen = await snapshotFile(sheetPath, stage, digest || await fileDigest(sheetPath))
+  return withPrivateStage(cacheRoot(), 'proof-sheet-', async stage => {
+  const frozen = await stage.snapshot(sheetPath, digest || await fileDigest(sheetPath))
   const sharp = getSharp()
-  px = await require('./deliver').sheetPixels(frozen)
+  const px = await require('./color').psdPixels(frozen)
   try {
     let p = sharp(px.input, px.raw ? { raw: px.raw } : { failOn: 'none' })
     p = p.withIccProfile('srgb')
     p = p.flatten({ background: '#ffffff' })
-    const tmp = `${out}.tmp-${process.pid}.jpg`
+    const tmp = path.join(stage.path, 'proof.jpg')
     await p.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' }).jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
-    await fs.promises.rename(tmp, out)
+    await stage.register(tmp)
+    await renameExclusive(tmp, out); stage.forget(tmp)
   } finally {
     if (px.cleanup) await px.cleanup()
   }
-  } catch (error) { preserveStage = !!(error.snapshotPath || error.retainedPath); throw error }
-  finally { if (!preserveStage) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {}) }
+  })
 }
 
 // ── drawing ─────────────────────────────────────────────────────────────────
@@ -247,20 +245,17 @@ async function spreadLayout({ album: albumPath, n }) {
  * @returns {Promise<{ skipped: string[] }>}
  */
 async function drawProof(spread, album, ws, out) {
-  await fs.promises.mkdir(cacheRoot(), { recursive: true })
-  const sourceStage = await fs.promises.mkdtemp(path.join(cacheRoot(), 'proof-sources-'))
-  let preserveStage = false
-  try {
+  return withPrivateStage(cacheRoot(), 'proof-sources-', async sourceStage => {
   const inputValues = await spreadInputs(spread, album, ws)
-  const template = await snapshotFile(spread.template.file, sourceStage, inputValues[1])
+  const template = await sourceStage.snapshot(spread.template.file, inputValues[1])
   const sharp = getSharp()
   const pr = proofRenderer()
   const n = spread.n
   const originalArt = await templateArt(spread.template.file, MAX_EDGE)
   if (originalArt.sourceKey !== contentKey(spread.template.file, inputValues[1])) throw new Error('The template changed before its proof snapshot was made.')
   const art = { ...originalArt, frames: originalArt.frames.map((f) => ({ ...f })) }
-  if (art.backdrop) art.backdrop = await snapshotFile(art.backdrop, sourceStage, originalArt.artifactDigests[art.backdrop])
-  for (const f of art.frames) if (f.mask) f.mask = await snapshotFile(f.mask, sourceStage, originalArt.artifactDigests[f.mask])
+  if (art.backdrop) art.backdrop = await sourceStage.snapshot(art.backdrop, originalArt.artifactDigests[art.backdrop])
+  for (const f of art.frames) if (f.mask) f.mask = await sourceStage.snapshot(f.mask, originalArt.artifactDigests[f.mask])
   const dims = pr.proofDims(art.width, art.height, MAX_EDGE)
   const dirs = {
     developedDir: path.join(ws.outputToken || path.join(album.path, 'exports'), '.album-studio', 'raw'),
@@ -274,7 +269,7 @@ async function drawProof(spread, album, ws, out) {
     const src = await photoSource(ph, dirs)
     const expected = inputValues[2].find((v) => v[0] === id)[2]
     if (src.sourceKey && src.sourceKey !== contentKey(ph.original || ph.thumb, expected)) throw new Error('The photo changed before its proof snapshot was made.')
-    const frozen = await snapshotFile(src.file, sourceStage, src.digest || expected)
+    const frozen = await sourceStage.snapshot(src.file, src.digest || expected)
     photos.push({
       filePath: frozen,
       fallbackPath: null,
@@ -299,7 +294,7 @@ async function drawProof(spread, album, ws, out) {
       canvasWidth: art.width,
       canvasHeight: art.height,
       photos,
-      outputPath: out,
+      outputPath: path.join(sourceStage.path, 'proof.jpg'),
       maxEdge: MAX_EDGE,
       smartCrop: false,
       overlays,
@@ -308,6 +303,9 @@ async function drawProof(spread, album, ws, out) {
       psdLayers: tree && tree.ok ? tree.layers : null,
     })
     if (!r.ok) throw new Error(r.error)
+    const generated = path.join(sourceStage.path, 'proof.jpg')
+    await sourceStage.register(generated)
+    await renameExclusive(generated, out); sourceStage.forget(generated)
     return { skipped: (r.skipped || []).map((s) => s.error) }
   }
 
@@ -342,14 +340,14 @@ async function drawProof(spread, album, ws, out) {
   const svg = require('../../../src/overlay_render').buildOverlaySvg(overlays, W, H)
   if (svg) layers.push({ input: Buffer.from(svg), top: 0, left: 0 })
 
-  const tmp = `${out}.tmp-${process.pid}.jpg`
+  const tmp = path.join(sourceStage.path, 'proof.jpg')
   await fs.promises.mkdir(path.dirname(out), { recursive: true })
   if (layers.length) base = sharp(await base.toBuffer()).composite(layers)
   await base.jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
-  await fs.promises.rename(tmp, out)
+  await sourceStage.register(tmp)
+  await renameExclusive(tmp, out); sourceStage.forget(tmp)
   return { skipped }
-  } catch (error) { preserveStage = !!(error.snapshotPath || error.retainedPath); throw error }
-  finally { if (!preserveStage) await fs.promises.rm(sourceStage, { recursive: true, force: true }).catch(() => {}) }
+  })
 }
 
 // ── refreshing ──────────────────────────────────────────────────────────────
@@ -457,7 +455,7 @@ async function refreshUnderLease(albumPath, r, lease) {
       if (buf && known[from].digest === crypto.createHash('sha256').update(buf).digest('hex')) reuse.set(t.s.n, { buf, source: known[from].source, sheetDigest: known[from].sheetDigest, sheetPath: known[from].sheetPath })
     } else if (t.s.sheet) {
       const record = await require('./sheets').ownedSheetRecord(ws, album.path, t.s.id)
-      if (require('./sheets').verifiedSheetRecord(record) && record.hash === await require('./render').spreadHash(t.s, album, ws)) {
+      if (require('./sheets').verifiedSheetRecord(record) && record.hash === await require('./render_inputs').spreadHash(t.s, album, ws)) {
         t.fromSheet = t.s.sheet; t.sheetDigest = await optionalDigest(t.s.sheet)
       }
     }
@@ -491,18 +489,20 @@ async function refreshUnderLease(albumPath, r, lease) {
       }
       const re = reuse.get(n)
       let skipped = []
-      const staging = `${out}.${crypto.randomUUID()}.part.jpg`
-      try {
+      await withPrivateStage(path.dirname(out), '.proof-publication-', async publicationStage => {
+      const staging = path.join(publicationStage.path, 'proof.jpg')
       if (t.fromSheet) await proofFromSheet(t.fromSheet, staging, t.sheetDigest)
-      else if (re) await writeAtomic(staging, re.buf)
+      else if (re) await fs.promises.writeFile(staging, re.buf, { flag: 'wx' })
       else ({ skipped } = await drawProof(t.s, album, ws, staging))
+      await publicationStage.register(staging)
       if (await fs.promises.readFile(album.file, 'utf8') !== projectText || await proofHash(t.s, album, ws) !== t.hash || t.fromSheet && await optionalDigest(t.fromSheet) !== t.sheetDigest) throw new Error('The project or proof sources changed while drawing. Retry from the current revision.')
       const digest = await fileDigest(staging)
       await lease.assertOwned()
       await preserveProof(album.path, out)
       await renameExclusive(staging, out)
+      publicationStage.forget(staging)
       known[n] = t.fromSheet ? { id: t.s.id, hash: t.hash, digest, source: 'sheet', sheetPath: t.fromSheet, sheetDigest: t.sheetDigest } : { id: t.s.id, hash: t.hash, digest, source: re ? re.source : 'live', ...(re && re.source === 'sheet' ? { sheetDigest: re.sheetDigest, sheetPath: re.sheetPath } : {}) }
-      } finally { await fs.promises.unlink(staging).catch(() => {}) }
+      })
       await saveManifest(m)
       rendered++
       r.emit('proofs.updated', { album: album.path, n, proof: out, source: known[n].source, ms: Date.now() - t0, skipped })

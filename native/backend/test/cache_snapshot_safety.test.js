@@ -89,3 +89,70 @@ test('snapshot copies stream bounded allocations and start read-only before the 
   const target = await snapshotFile(f.file, f.stage, sha(bytes))
   assert.equal(sha(fs.readFileSync(target)), sha(bytes)); assert.ok(written >= 4)
 })
+
+test('a retention helper timeout after a completed move reports the exact existing retained inode', async t => {
+  const f = fixture(t), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  let retained
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => { await rename(from, to); retained = to; throw Object.assign(new Error('ETIMEDOUT after completed snapshot move'), { code: 'ETIMEDOUT' }) })
+  const error = await snapshotFile(f.file, f.stage, '0'.repeat(64)).then(() => null, e => e)
+  assert.equal(error.code, 'SNAPSHOT_PRESERVED'); assert.equal(error.snapshotPath, retained); assert.equal(error.retainedPath, retained)
+  assert.equal(fs.existsSync(error.snapshotPath), true); assert.equal(fs.existsSync(f.target), false)
+  assert.equal(fs.readFileSync(error.retainedPath, 'utf8'), 'original verified source'); assert.equal(fs.readFileSync(f.file, 'utf8'), 'original verified source')
+})
+
+test('an occupied original name after a timed-out retention move preserves both current and retained files', async t => {
+  const f = fixture(t), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive, manual = Buffer.from('new manual snapshot name')
+  let retained
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => { await rename(from, to); retained = to; fs.writeFileSync(from, manual, { flag: 'wx' }); throw Object.assign(new Error('ETIMEDOUT with occupied original name'), { code: 'ETIMEDOUT' }) })
+  const error = await snapshotFile(f.file, f.stage, '0'.repeat(64)).then(() => null, e => e)
+  assert.equal(error.snapshotPath, retained); assert.equal(error.retainedPath, retained); assert.match(error.message, /Check both/)
+  assert.deepEqual(fs.readFileSync(f.target), manual); assert.equal(fs.readFileSync(retained, 'utf8'), 'original verified source')
+})
+
+test('an unrelated file captured at retention is returned exclusively with its actual evidence path', async t => {
+  const f = fixture(t), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  const displaced = path.join(f.root, 'displaced-owned-copy.jpg'), manual = Buffer.from('external replacement at retention capture')
+  let swapped = false
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    if (!swapped && from === f.target) { swapped = true; fs.renameSync(from, displaced); fs.writeFileSync(from, manual) }
+    return rename(from, to)
+  })
+  const error = await snapshotFile(f.file, f.stage, '0'.repeat(64)).then(() => null, e => e)
+  assert.ok(swapped); assert.equal(error.snapshotPath, f.target); assert.equal(error.retainedPath, f.target)
+  assert.deepEqual(fs.readFileSync(error.snapshotPath), manual); assert.equal(fs.readFileSync(displaced, 'utf8'), 'original verified source'); assert.equal(fs.readFileSync(f.file, 'utf8'), 'original verified source')
+})
+
+test('both close failures preserve the primary write error and its concrete recovery path', async t => {
+  const f = fixture(t), open = fs.promises.open.bind(fs.promises); let sourceCloses = 0, destinationCloses = 0
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (file === f.file) { const close = handle.close.bind(handle); handle.close = async () => { sourceCloses++; await close(); throw Object.assign(new Error('EIO source descriptor close'), { code: 'EIO' }) } }
+    if (file === f.target && typeof args[0] === 'number' && args[0] & fs.constants.O_CREAT) {
+      const close = handle.close.bind(handle), write = handle.write.bind(handle)
+      handle.close = async () => { destinationCloses++; await close(); throw Object.assign(new Error('EBADF destination descriptor close'), { code: 'EBADF' }) }
+      handle.write = async (buffer, offset, length, position) => { await write(buffer, offset, 1, position); throw Object.assign(new Error('ENOSPC primary partial snapshot'), { code: 'ENOSPC' }) }
+    }
+    return handle
+  })
+  const error = await snapshotFile(f.file, f.stage, f.digest).then(() => null, e => e)
+  assert.equal(sourceCloses, 1); assert.equal(destinationCloses, 1, 'every opened descriptor receives its close attempt')
+  assert.equal(error.code, 'SNAPSHOT_PRESERVED'); assert.equal(error.sourceCode, 'ENOSPC'); assert.equal(error.cause.code, 'ENOSPC')
+  assert.match(error.message, /ENOSPC primary/); assert.match(error.message, /EIO source/); assert.match(error.message, /EBADF destination/)
+  assert.equal(fs.readFileSync(error.snapshotPath, 'utf8'), 'o'); assert.equal(fs.readFileSync(f.file, 'utf8'), 'original verified source')
+})
+
+for (const which of ['source', 'destination', 'both']) test(`a verified copy with ${which} close failure reports its existing protected snapshot`, async t => {
+  const f = fixture(t), open = fs.promises.open.bind(fs.promises); let sourceCloses = 0, destinationCloses = 0
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (file === f.file) { const close = handle.close.bind(handle); handle.close = async () => { sourceCloses++; await close(); if (which !== 'destination') throw Object.assign(new Error('EIO source close after successful copy'), { code: 'EIO' }) } }
+    if (file === f.target && typeof args[0] === 'number' && args[0] & fs.constants.O_CREAT) { const close = handle.close.bind(handle); handle.close = async () => { destinationCloses++; await close(); if (which !== 'source') throw Object.assign(new Error('EBADF destination close after successful copy'), { code: 'EBADF' }) } }
+    return handle
+  })
+  const error = await snapshotFile(f.file, f.stage, f.digest).then(() => null, e => e)
+  assert.ok(error); assert.equal(sourceCloses, 1); assert.equal(destinationCloses, 1)
+  assert.equal(error.code, 'SNAPSHOT_PRESERVED'); assert.equal(error.snapshotPath, f.target); assert.equal(fs.existsSync(error.snapshotPath), true)
+  assert.equal(sha(fs.readFileSync(error.snapshotPath)), f.digest); assert.equal(fs.statSync(error.snapshotPath).mode & 0o222, 0)
+  assert.equal(error.sourceCode, which === 'destination' ? 'EBADF' : 'EIO')
+  if (which === 'both') { assert.match(error.message, /EIO source/); assert.match(error.message, /EBADF destination/) }
+})

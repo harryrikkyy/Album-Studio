@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: template canvas changes invalidate the catalogue despite preserved file and directory timestamps
+ok 1 - template canvas changes invalidate the catalogue despite preserved file and directory timestamps
+  ---
+  duration_ms: 7.129542
+  type: 'test'
+  ...
+# Subtest: nested collection additions and removals invalidate without waiting for the top directory timestamp
+not ok 2 - nested collection additions and removals invalidate without waiting for the top directory timestamp
+  ---
+  duration_ms: 11.280459
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   '1h0v_a.psd',
+        '1h0v_b.psd'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: '1h0v_b.psd'
+  actual:
+    0: '1h0v_a.psd'
+    1: '1h0v_b.psd'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:33:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: capture order rereads EXIF content rather than caching a filename forever
+not ok 3 - capture order rereads EXIF content rather than caching a filename forever
+  ---
+  duration_ms: 2.351083
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:35:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   'a',
+        'b',
+    -   'a'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'b'
+    1: 'a'
+  actual:
+    0: 'a'
+    1: 'b'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:41:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: capture metadata refuses a transient prefix from a different revision
+not ok 4 - capture metadata refuses a transient prefix from a different revision
+  ---
+  duration_ms: 1.065666
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:43:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    code: 'SOURCE_CHANGED'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/catalogue_invalidation.test.js:56:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: album photo dimensions refresh after in-place thumbnail edits with unchanged directory timestamps
+ok 5 - album photo dimensions refresh after in-place thumbnail edits with unchanged directory timestamps
+  ---
+  duration_ms: 10.100833
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 2
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 99.767458

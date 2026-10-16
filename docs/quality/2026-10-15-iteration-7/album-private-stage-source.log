@@ -1,0 +1,238 @@
+TAP version 13
+# Subtest: a cache changed after verification cannot supply pixels to a newly accepted proof
+ok 1 - a cache changed after verification cannot supply pixels to a newly accepted proof
+  ---
+  duration_ms: 51.925083
+  type: 'test'
+  ...
+# Subtest: a temporary source mutation during copy cannot hide behind content restored before validation
+ok 2 - a temporary source mutation during copy cannot hide behind content restored before validation
+  ---
+  duration_ms: 18.001458
+  type: 'test'
+  ...
+# Subtest: unchanged read-only snapshots are independently retained with metrics
+ok 3 - unchanged read-only snapshots are independently retained with metrics
+  ---
+  duration_ms: 29.099125
+  type: 'test'
+  ...
+# Subtest: empty cleanup cannot remove files appearing at the rmdir boundary
+ok 4 - empty cleanup cannot remove files appearing at the rmdir boundary
+  ---
+  duration_ms: 12.0635
+  type: 'test'
+  ...
+# Subtest: unknown files arriving at atomic capture survive the complete directory move
+ok 5 - unknown files arriving at atomic capture survive the complete directory move
+  ---
+  duration_ms: 14.37225
+  type: 'test'
+  ...
+# Subtest: a colliding history destination is never replaced or removed
+ok 6 - a colliding history destination is never replaced or removed
+  ---
+  duration_ms: 12.189375
+  type: 'test'
+  ...
+# Subtest: an uncertain completed native move is reconciled without a second mutation
+ok 7 - an uncertain completed native move is reconciled without a second mutation
+  ---
+  duration_ms: 9.761084
+  type: 'test'
+  ...
+# Subtest: a completed capture followed by a new source name reports both retained paths
+ok 8 - a completed capture followed by a new source name reports both retained paths
+  ---
+  duration_ms: 6.838125
+  type: 'test'
+  ...
+# Subtest: a substituted stage is preserved without following its customer symlink
+ok 9 - a substituted stage is preserved without following its customer symlink
+  ---
+  duration_ms: 2.704167
+  type: 'test'
+  ...
+# Subtest: history and free-space caps refuse before creating another stage or source copy
+ok 10 - history and free-space caps refuse before creating another stage or source copy
+  ---
+  duration_ms: 15.138834
+  type: 'test'
+  ...
+# Subtest: retention caps apply through aliases in a separate real process
+ok 11 - retention caps apply through aliases in a separate real process
+  ---
+  duration_ms: 84.159208
+  type: 'test'
+  ...
+# Subtest: primary decoder errors retain their identity and recovery evidence
+ok 12 - primary decoder errors retain their identity and recovery evidence
+  ---
+  duration_ms: 8.9295
+  type: 'test'
+  ...
+# Subtest: global clearing preserves retained histories and unknown manual files
+ok 13 - global clearing preserves retained histories and unknown manual files
+  ---
+  duration_ms: 9.127417
+  type: 'test'
+  ...
+# Subtest: global clearing cannot delete an active source snapshot
+ok 14 - global clearing cannot delete an active source snapshot
+  ---
+  duration_ms: 31.180667
+  type: 'test'
+  ...
+# Subtest: another real process cannot clear active snapshots through a cache-root alias
+ok 15 - another real process cannot clear active snapshots through a cache-root alias
+  ---
+  duration_ms: 84.796125
+  type: 'test'
+  ...
+# Subtest: source cleanup retains a complete stage when an unknown file appears
+ok 16 - source cleanup retains a complete stage when an unknown file appears
+  ---
+  duration_ms: 14.210625
+  type: 'test'
+  ...
+# Subtest: derived evidence EEXIST preserves the exact unowned record
+ok 17 - derived evidence EEXIST preserves the exact unowned record
+  ---
+  duration_ms: 31.016166
+  type: 'test'
+  ...
+# Subtest: a decoder failure preserves a substituted temporary image and primary error
+ok 18 - a decoder failure preserves a substituted temporary image and primary error
+  ---
+  duration_ms: 33.024708
+  type: 'test'
+  ...
+# Subtest: proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+ok 19 - proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+  ---
+  duration_ms: 71.84725
+  type: 'test'
+  ...
+# Subtest: thumbnails refresh after a same-size, preserved-mtime original mutation
+ok 20 - thumbnails refresh after a same-size, preserved-mtime original mutation
+  ---
+  duration_ms: 130.369917
+  type: 'test'
+  ...
+# Subtest: an unverified legacy thumbnail is refreshed only while preserving its old bytes
+ok 21 - an unverified legacy thumbnail is refreshed only while preserving its old bytes
+  ---
+  duration_ms: 76.172667
+  type: 'test'
+  ...
+# Subtest: a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+ok 22 - a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+  ---
+  duration_ms: 38.22375
+  type: 'test'
+  ...
+# Subtest: a source change during thumbnail decoding cannot publish a stale proxy
+ok 23 - a source change during thumbnail decoding cannot publish a stale proxy
+  ---
+  duration_ms: 35.318792
+  type: 'test'
+  ...
+# Subtest: RAW development uses source content, retains previous derived copies and rejects symlinks
+ok 24 - RAW development uses source content, retains previous derived copies and rejects symlinks
+  ---
+  duration_ms: 94.60925
+  type: 'test'
+  ...
+# Subtest: embedded RAW preview content and orientation refresh under a preserved stamp
+ok 25 - embedded RAW preview content and orientation refresh under a preserved stamp
+  ---
+  duration_ms: 84.084125
+  type: 'test'
+  ...
+# Subtest: adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+ok 26 - adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+  ---
+  duration_ms: 94.96575
+  type: 'test'
+  ...
+# Subtest: source changes during adjustment decoding reject publication and preserve prior cache data
+ok 27 - source changes during adjustment decoding reject publication and preserve prior cache data
+  ---
+  duration_ms: 29.963917
+  type: 'test'
+  ...
+# Subtest: an edit racing the thumbnail capture is restored exclusively and retained in history
+ok 28 - an edit racing the thumbnail capture is restored exclusively and retained in history
+  ---
+  duration_ms: 85.83225
+  type: 'test'
+  ...
+# Subtest: a new target appearing during thumbnail publication is never replaced
+ok 29 - a new target appearing during thumbnail publication is never replaced
+  ---
+  duration_ms: 96.418542
+  type: 'test'
+  ...
+# Subtest: RAW development detects a source mutation during the converter and publishes no stale image
+ok 30 - RAW development detects a source mutation during the converter and publishes no stale image
+  ---
+  duration_ms: 37.512083
+  type: 'test'
+  ...
+# Subtest: manually changed development and adjustment outputs are rejected without replacement
+ok 31 - manually changed development and adjustment outputs are rejected without replacement
+  ---
+  duration_ms: 80.550916
+  type: 'test'
+  ...
+# Subtest: old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+ok 32 - old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+  ---
+  duration_ms: 30.564167
+  type: 'test'
+  ...
+# Subtest: embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+ok 33 - embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+  ---
+  duration_ms: 2.2025
+  type: 'test'
+  ...
+# Subtest: different sources targeting the same thumbnail name are serialized and independently verified
+ok 34 - different sources targeting the same thumbnail name are serialized and independently verified
+  ---
+  duration_ms: 84.577208
+  type: 'test'
+  ...
+# Subtest: a racing unrelated image.jpg in thumbnail history cannot be overwritten
+ok 35 - a racing unrelated image.jpg in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 67.837334
+  type: 'test'
+  ...
+# Subtest: a racing unrelated evidence.json in thumbnail history cannot be overwritten
+ok 36 - a racing unrelated evidence.json in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 71.2565
+  type: 'test'
+  ...
+# Subtest: cache publication uses atomic exclusive moves when the filesystem refuses hard links
+ok 37 - cache publication uses atomic exclusive moves when the filesystem refuses hard links
+  ---
+  duration_ms: 125.918709
+  type: 'test'
+  ...
+# Subtest: a source changed and restored during RAW decoding cannot change the verified pixels consumed
+ok 38 - a source changed and restored during RAW decoding cannot change the verified pixels consumed
+  ---
+  duration_ms: 28.66225
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1397.220709

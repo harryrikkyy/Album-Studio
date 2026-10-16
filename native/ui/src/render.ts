@@ -6,12 +6,14 @@ import { call, onEvent } from './bridge'
 import { plural } from './format'
 import { exportSettings } from './exporting'
 import { album, assetVersion, currentSpread, openAlbumQuietly, toast } from './state'
+import { jobIssues, mayOpenRenderedSheet, type JobReport } from './job_report'
+import type { RenderPlan as ContractRenderPlan, RenderPlanEntry, RenderResult } from '../../contracts/types'
 
-export type SheetState = 'current' | 'stale' | 'missing' | 'blocked'
-export interface PlanEntry { n: number; state: SheetState; edited?: boolean; reason?: string; unsupported?: string[] }
-export interface Plan { outputFolder: string; spreads: PlanEntry[] }
+export type SheetState = RenderPlanEntry['state']
+export type PlanEntry = RenderPlanEntry
+export type Plan = ContractRenderPlan
 
-export interface SheetResult { n: number; state: 'done' | 'failed' | 'skipped' | 'cancelled'; ms?: number; error?: string; warnings?: string[] }
+export type SheetResult = RenderResult
 export interface Job {
   jobId: string
   album: string
@@ -21,7 +23,7 @@ export interface Job {
   phase: string
   startedAt: number
   results: SheetResult[]
-  finished: null | { done: number; skipped: number; failed: number; cancelled: boolean; ms: number }
+  finished: null | JobReport
 }
 
 export const plan = signal<Plan | null>(null)
@@ -37,7 +39,7 @@ export async function loadPlan() {
   planError.value = null
   if (!a) return
   try {
-    const result = await call<Plan>('render.plan', { album: a.path, ...settings })
+    const result = await call('render.plan', { album: a.path, ...settings })
     if (request === planRequest && album.value?.path === a.path) plan.value = result
   } catch (e) {
     if (request === planRequest && album.value?.path === a.path) planError.value = (e as Error).message
@@ -101,7 +103,7 @@ export async function editCurrentSpread() {
 }
 
 onEvent('render.started', (d) => {
-  const data = d as { jobId: string; total: number; album: string }
+  const data = d
   job.value = { jobId: data.jobId, album: data.album, total: data.total, index: 0, current: null, phase: 'Starting', startedAt: Date.now(), results: [], finished: null }
 })
 
@@ -113,17 +115,22 @@ onEvent('shell.albumShown', () => {
 })
 
 onEvent('render.progress', (d) => {
-  const p = d as { jobId: string; index: number; n: number; state: string; ms?: number; error?: string; warnings?: string[] }
+  const p = d
   const j = job.value
   if (!j || j.jobId !== p.jobId) return
   const phase = p.state === 'preparing' ? 'Preparing photos' : p.state === 'building' ? 'Building in PhotoCraft' : ''
   const settled = p.state === 'done' || p.state === 'failed' || p.state === 'skipped' || p.state === 'cancelled'
+  const results = [...j.results]
+  if (p.state === 'done' || p.state === 'failed' || p.state === 'skipped' || p.state === 'cancelled') {
+    if (typeof p.n !== 'number') { toast('error', p.error ?? 'The render returned a sheet result without its spread number.', 10000); return }
+    results.push({ n: p.n, state: p.state, ms: p.ms, error: p.error, warnings: p.warnings })
+  }
   job.value = {
     ...j,
-    current: settled ? null : p.n,
+    current: settled ? null : p.n ?? j.current,
     phase: phase || j.phase,
-    index: settled ? p.index : j.index,
-    results: settled ? [...j.results, { n: p.n, state: p.state as SheetResult['state'], ms: p.ms, error: p.error, warnings: p.warnings }] : j.results,
+    index: settled ? p.index ?? j.index : j.index,
+    results,
   }
   if (settled && plan.value) {
     const state: SheetState | null = p.state === 'done' || p.state === 'skipped' ? 'current' : null
@@ -132,23 +139,24 @@ onEvent('render.progress', (d) => {
 })
 
 onEvent('render.finished', (d) => {
-  const f = d as { jobId: string; done: number; skipped: number; failed: number; cancelled: boolean; ms: number }
+  const f = d
   const j = job.value
   if (!j || j.jobId !== f.jobId) return
   batch(() => {
-    job.value = { ...j, current: null, finished: { done: f.done, skipped: f.skipped, failed: f.failed, cancelled: f.cancelled, ms: f.ms } }
+    job.value = { ...j, current: null, results: f.results, finished: { done: f.done, skipped: f.skipped, failed: f.failed, cancelled: f.cancelled, ms: f.ms, error: f.error, finishingError: f.finishingError, warnings: f.warnings } }
     assetVersion.value++
   })
   const parts = [f.done ? `${plural(f.done, 'sheet')} rendered` : null, f.skipped ? `${f.skipped} unchanged` : null, f.failed ? `${f.failed} failed` : null].filter(Boolean)
   const verb = f.cancelled ? 'Render stopped' : 'Render finished'
-  toast(f.failed ? 'error' : 'ok', `${verb}: ${parts.join(', ') || 'nothing to do'} · ${duration(f.ms)}`, 9000)
+  const issues = jobIssues(f)
+  toast(f.failed || issues.length ? 'error' : 'ok', `${verb}: ${parts.join(', ') || 'nothing to do'} · ${duration(f.ms)}${issues.length ? ` · ${issues.join(' ')}` : ''}`, issues.length ? 15000 : 9000)
   // Pick up the new sheets and previews, then open the spread waiting for the editor.
   const wanted = editAfterRender && editAfterRender.album === j.album ? editAfterRender : null
   editAfterRender = null
   if (album.value && album.value.path === j.album) {
     void openAlbumQuietly(j.album).then(async () => {
       await loadPlan()
-      const done = wanted && j.results.some((r) => r.n === wanted.n && r.state !== 'failed') && !f.cancelled
+      const done = wanted && mayOpenRenderedSheet(f.results, wanted.n, f.cancelled)
       const sheet = wanted ? album.value?.spreads[wanted.n - 1]?.sheet : null
       if (done && sheet) await openSheet(sheet)
     })
@@ -163,7 +171,7 @@ function refreshPlanSoon() {
   planTimer = window.setTimeout(() => { if (!running.value) void loadPlan() }, 250)
 }
 onEvent('proofs.idle', (d) => {
-  if (album.value && (d as { album: string }).album === album.value.path) refreshPlanSoon()
+  if (album.value && d.album === album.value.path) refreshPlanSoon()
 })
 let planFor: string | null = null
 let planSettings = exportSettings.value

@@ -120,6 +120,7 @@ function attachOutputLease(project, outputs) {
 async function acquireProjectOutputs(project, options = {}) {
   await project.assertOwned()
   const { data } = await readProjectSnapshot(project.file), ws = data.workspace || data
+  require('./project_domain').validateProject(data)
   const output = ws.outputToken || path.join(project.folder, 'exports')
   const group = await acquireOutputLease(output, options)
   try {
@@ -137,6 +138,7 @@ async function acquireProjectOutputs(project, options = {}) {
 async function withProjectOutputs(project, work, options = {}) {
   if (project.outputNamespace) {
     const { data } = await readProjectSnapshot(project.file), ws = data.workspace || data
+    require('./project_domain').validateProject(data)
     await project.outputNamespace.assertFor(ws.outputToken || path.join(project.folder, 'exports'), !!options.delivery)
     return work(project.outputNamespace)
   }

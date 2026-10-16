@@ -43,6 +43,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Canonical contracts, dependency boundaries and packaged closure
+        run: |
+          mkdir -p ci-evidence
+          npm run check:architecture > ci-evidence/architecture.json
+
       - name: Typecheck
         run: npm run typecheck
 

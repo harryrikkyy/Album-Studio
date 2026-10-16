@@ -12,8 +12,9 @@ import { plural, shortPath, signature, templateLabel } from '../format'
 import type { Template } from '../plan_logic'
 import { album, toast } from '../state'
 import { Button, IconButton } from '../ui/controls'
+import type { MethodResult } from '../../../contracts/types'
 
-interface Coll { path: string; name: string; exists: boolean; templates: number; albums: string[]; isDefault: boolean }
+type Coll = MethodResult<'library.collections'>['collections'][number]
 
 const PAGE = 160
 
@@ -34,7 +35,7 @@ export function Library() {
 
   const reload = async () => {
     try {
-      const r = await call<{ collections: Coll[] }>('library.collections')
+      const r = await call('library.collections')
       setColls(r.collections)
       if (!current && r.collections[0]) setCurrent(r.collections[0].path)
     } catch (e) {
@@ -44,7 +45,7 @@ export function Library() {
   useEffect(() => { void reload() }, [])
   useEffect(() => {
     setTemplates(null); setFrames(null); setLayout(null); setText(''); setLimit(PAGE)
-    if (current) void call<Template[]>('library.templates', { path: current }, 60_000).then(setTemplates).catch(() => setTemplates([]))
+    if (current) void call('library.templates', { path: current }, 60_000).then(setTemplates).catch(() => setTemplates([]))
   }, [current])
   useEffect(() => setLimit(PAGE), [frames, layout, text])
 
@@ -70,22 +71,22 @@ export function Library() {
   const pickFrames = (n: number | null) => { setFrames(n); setLayout(null) }
 
   const add = async () => {
-    const r = await call<string | string[] | null>('dialog.pickFolder', { title: 'Add template collections', multiple: true }).catch(() => null)
+    const r = await call('dialog.pickFolder', { title: 'Add template collections', multiple: true }).catch(() => null)
     const paths = r === null ? [] : Array.isArray(r) ? r : [r]
     if (!paths.length) return
-    const next = await call<{ collections: Coll[] }>('library.add', { paths })
+    const next = await call('library.add', { paths })
     setColls(next.collections)
     setCurrent(paths[0]!)
   }
   const remove = async (c: Coll) => {
-    const next = await call<{ collections: Coll[] }>('library.remove', { path: c.path })
+    const next = await call('library.remove', { path: c.path })
     setColls(next.collections)
     if (current === c.path) setCurrent(next.collections[0]?.path ?? null)
     toast('info', `${c.name} is out of the library. Its folder is untouched; add it again any time.`)
   }
   const toggleDefault = async (c: Coll) => {
     const paths = (colls ?? []).filter((x) => (x.path === c.path ? !x.isDefault : x.isDefault)).map((x) => x.path)
-    const next = await call<{ collections: Coll[] }>('library.setDefaults', { paths })
+    const next = await call('library.setDefaults', { paths })
     setColls(next.collections)
   }
   const inAlbum = (p: string) => !!a?.templateCollections.some((c) => c.path === p)
@@ -93,7 +94,7 @@ export function Library() {
     if (!a) return
     const paths = inAlbum(c.path) ? a.templateCollections.map((x) => x.path).filter((p) => p !== c.path) : [...a.templateCollections.map((x) => x.path), c.path]
     try {
-      const r = await call<UpdateResult>('album.setFolders', { album: a.path, templateCollections: paths })
+      const r = await call('album.setFolders', { album: a.path, templateCollections: paths })
       forgetTemplateCatalogue()
       applyUpdate(r)
       toast('info', `${c.name} ${inAlbum(c.path) ? 'is no longer' : 'is now'} one of ${a.name}’s collections. ⌘Z undoes it.`)

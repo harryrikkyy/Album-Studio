@@ -1,0 +1,47 @@
+TAP version 13
+# /Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:70
+#     if (!schema || typeof schema !== 'object' || !own(schema, key)) throw new ContractError('The canonical schema has an unresolved reference.', [{ path: '', message: `Missing schema reference ${ref}.`, keyword: '$ref' }], 'CONTRACT_SCHEMA_INVALID')
+#                                                                     ^
+# ContractError: The canonical schema has an unresolved reference.
+#     at resolve (/Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:70:75)
+#     at auditSchema (/Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:212:5)
+#     at auditSchema (/Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:222:63)
+#     at auditSchema (/Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:221:58)
+#     at Object.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/contracts/runtime.js:230:1)
+#     at Module._compile (node:internal/modules/cjs/loader:1781:14)
+#     at Module._extensions..js (node:internal/modules/cjs/loader:1913:10)
+#     at Module.load (node:internal/modules/cjs/loader:1505:32)
+#     at Module._load (node:internal/modules/cjs/loader:1309:12)
+#     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) {
+#   code: 'CONTRACT_SCHEMA_INVALID',
+#   issues: [
+#     {
+#       path: '',
+#       message: 'Missing schema reference \#/$defs/Id.',
+#       keyword: '$ref'
+#     }
+#   ],
+#   path: ''
+# }
+# Node.js v22.22.3
+# Subtest: native/backend/test/contracts.test.js
+not ok 1 - native/backend/test/contracts.test.js
+  ---
+  duration_ms: 56.319125
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/contracts.test.js:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 1
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 60.38225

@@ -21,7 +21,7 @@ const content = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.si
 const matches = (a, b) => content(a, b) && a.stamp === b.stamp
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => new Error(`The ${what} changed during rendering. Existing files and detached recovery snapshots were preserved; review them before retrying.`)
-function stopped(check) { if (check && check()) { const error = new Error('Rendering was cancelled before commit; the previous sheet and cache were restored.'); error.code = 'RENDER_CANCELLED'; throw error } }
+function stopped(check) { if (check && check()) { const error = new Error('Rendering was cancelled before commit.'); error.code = 'RENDER_CANCELLED'; throw error } }
 
 /** Fixed allocation, declared-length reads, no-follow handle, identity/growth checks. */
 async function readRecord(file, maximum = MAX_SHEET_BYTES, retain = false, sink) {
@@ -93,7 +93,16 @@ async function assertContext(c) {
 }
 async function writeNew(file, bytes, mode = 0o600) {
   const handle = await fs.promises.open(file, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0), mode)
-  try { await handle.writeFile(bytes); await handle.sync() } finally { await handle.close() }
+  try { const identity = node(await handle.stat({ bigint: true })); await handle.writeFile(bytes); await handle.sync(); return identity } finally { await handle.close() }
+}
+async function writeCommitPart(stage, bytes, expectedNode) {
+  const file = path.join(stage, 'commit.part.json'), before = await stat(file)
+  if (!before || !before.isFile() || before.nlink !== 1n || before.size !== 0n || !sameNode(before, expectedNode)) throw changed('reserved render commit identity')
+  const handle = await fs.promises.open(file, fs.constants.O_WRONLY | (fs.constants.O_NOFOLLOW || 0))
+  try {
+    if (!sameRead(before, await handle.stat({ bigint: true }))) throw changed('reserved render commit identity')
+    await handle.writeFile(bytes); await handle.chmod(0o400); await handle.sync()
+  } finally { await handle.close() }
 }
 /** Copy into an exclusive private name, never a hard link or a partially visible public file. */
 async function copyDetached(source, target, expected, mode = expected.mode) {
@@ -116,9 +125,10 @@ async function copyDetached(source, target, expected, mode = expected.mode) {
   if (!matches(actual, expected)) throw changed('detached render snapshot bytes')
   return actual
 }
-async function move(from, to) {
+async function move(from, to, expectedNode) {
   const before = await stat(from)
   if (!before) throw new Error(`The render recovery source ${from} is missing.`)
+  if (expectedNode && !sameNode(before, expectedNode)) throw changed('render commit identity before atomic capture')
   try { await exclusive.renameExclusive(from, to) } catch (error) {
     // Reconcile a helper timeout only if the exact node has moved and source disappeared.
     if (await stat(from) || !sameNode(before, await stat(to))) throw error
@@ -131,6 +141,8 @@ function failureAt(stage, error, committed = false, result) {
   const failure = new Error(`${error.message} Render recovery evidence is retained at ${retained}. Preserve that folder and the current sheet/cache before retrying.`, { cause: error })
   failure.recoveryStage = retained; failure.recoveryJournal = path.join(retained, 'journal.json')
   if (error.code) failure.code = error.code
+  if (error.renderRestored !== undefined) failure.renderRestored = error.renderRestored
+  if (error.recoveryRequired) failure.recoveryRequired = true
   if (committed || error.renderCommitted) { failure.renderCommitted = true; if (result) Object.assign(failure, result) }
   return failure
 }
@@ -142,7 +154,7 @@ async function journalOf(c, stage) {
   if (raw.mode & 0o222) throw changed('immutable render journal permissions')
   let journal
   try { journal = JSON.parse(raw.bytes) } catch (_) { throw new Error('The render recovery journal is invalid JSON.') }
-  if (!journal || journal.version !== 1 || journal.albumFile !== c.albumFile || journal.output !== c.output || journal.name !== path.basename(stage) || !STAGE.test(journal.name) || !sameNode(journal.stageNode, stageNode) || !SHA.test(journal.projectRevision || '') || typeof journal.spreadId !== 'string' || !/^spread_[a-zA-Z0-9_-]+$/.test(journal.spreadId) || journal.spreadId.length > 200 || !Array.isArray(journal.entries) || journal.entries.length !== 2) throw new Error('Invalid render recovery identity; no public files were changed.')
+  if (!journal || journal.version !== 1 || journal.albumFile !== c.albumFile || journal.output !== c.output || journal.name !== path.basename(stage) || !STAGE.test(journal.name) || !sameNode(journal.stageNode, stageNode) || journal.commitNode !== undefined && !validNode(journal.commitNode) || !SHA.test(journal.projectRevision || '') || typeof journal.spreadId !== 'string' || !/^spread_[a-zA-Z0-9_-]+$/.test(journal.spreadId) || journal.spreadId.length > 200 || !Array.isArray(journal.entries) || journal.entries.length !== 2) throw new Error('Invalid render recovery identity; no public files were changed.')
   const targets = [path.join(c.sheets, `${journal.spreadId}.psd`), path.join(c.metadata, 'render-cache.json')]
   const allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
   for (const [i, entry] of journal.entries.entries()) {
@@ -164,6 +176,7 @@ async function journalOf(c, stage) {
   }
   const marker = await readRecord(path.join(stage, 'commit.json'), MAX_JOURNAL_BYTES, true)
   if (marker) {
+    if (journal.commitNode && !sameNode(marker.node, journal.commitNode)) throw changed('durable render commit identity')
     if (marker.mode & 0o222) throw changed('immutable render commit permissions')
     let value
     try { value = JSON.parse(marker.bytes) } catch (_) { throw new Error('The render commit marker is invalid JSON.') }
@@ -300,13 +313,20 @@ async function publishRender(p, capabilities) {
     const nextCacheRecord = await readRecord(path.join(prepared, 'next-cache.json'), MAX_CACHE_BYTES)
     const installCache = await copyDetached(path.join(prepared, 'next-cache.json'), path.join(prepared, 'install-cache.json'), { ...nextCacheRecord, mode: beforeCache ? beforeCache.mode : 0o600 })
     const entries = [['sheet', sheet, beforeSheet, installSheet], ['cache', cacheFile, beforeCache, installCache]].map(([kind, target, before, after]) => ({ kind, target, before: description(before), after: description(after), old: `old-${kind}${kind === 'sheet' ? '.psd' : '.json'}`, next: `next-${kind}${kind === 'sheet' ? '.psd' : '.json'}`, install: `install-${kind}${kind === 'sheet' ? '.psd' : '.json'}`, capture: `captured-${kind}`, discard: `discard-${kind}` }))
-    const journal = { version: 1, albumFile: c.albumFile, output: c.output, name, stageNode: await directory(prepared), spreadId: p.spreadId, projectRevision: p.expectedProjectRevision, entries }
-    await writeNew(path.join(prepared, 'journal.json'), JSON.stringify(journal), 0o400); await syncDirectory(prepared)
+    // Reserve the marker's independent inode before sealing the journal. Its contents
+    // are filled only after both public files pass verification; an identical-byte
+    // substituted marker can never acquire this transaction's restart authority.
+    const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
+    const journal = { version: 1, albumFile: c.albumFile, output: c.output, name, stageNode: await directory(prepared), spreadId: p.spreadId, projectRevision: p.expectedProjectRevision, entries, commitNode }
+    const journalBytes = Buffer.from(JSON.stringify(journal)), journalRevision = crypto.createHash('sha256').update(journalBytes).digest('hex')
+    await writeNew(path.join(prepared, 'journal.json'), journalBytes, 0o400); await syncDirectory(prepared)
+    const exactJournal = async () => { const state = await journalOf(c, stage); if (state.digest !== journalRevision) throw changed('durable render journal revision'); return state }
     await checkSnapshot(c, p); await move(prepared, stage); exposed = true
-    const state = await journalOf(c, stage)
+    await exactJournal()
     result = { committed: true, sheetRecord: { ...description(installSheet), path: logicalSheet, outputFolder: c.logicalOutput }, cacheRevision: installCache.digest, cache: nextCache, cacheData: nextCache }
     for (const entry of entries) {
       await checkSnapshot(c, p)
+      await exactJournal()
       const current = await readRecord(entry.target, entry.kind === 'cache' ? MAX_CACHE_BYTES : MAX_SHEET_BYTES)
       if (entry.before ? !owned(current, entry.before) : current) throw changed(`existing ${entry.kind} at publication`)
       if (entry.before) {
@@ -317,19 +337,27 @@ async function publishRender(p, capabilities) {
       await checkSnapshot(c, p); await move(path.join(stage, entry.install), entry.target)
       if (!owned(await readRecord(entry.target), entry.after)) throw changed(`installed ${entry.kind}`)
     }
-    await journalOf(c, stage)
+    await exactJournal()
     const publicEntries = await inspect(c, journal, true)
     if (publicEntries.some(({ next }) => !next)) throw changed('published sheet/cache ownership')
     await checkSnapshot(c, p)
-    await writeNew(path.join(stage, 'commit.part.json'), JSON.stringify({ version: 1, journal: state.digest }), 0o400)
+    const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: journalRevision })), markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
+    await writeCommitPart(stage, markerBytes, commitNode)
     // Honour stop/source changes even if they occur during the commit record's write/fsync.
-    await checkSnapshot(c, p); await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json')); committed = true
+    await checkSnapshot(c, p); await exactJournal()
+    const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL_BYTES)
+    if (!marker || marker.digest !== markerDigest || marker.size !== String(markerBytes.length) || !sameNode(marker.node, commitNode) || marker.mode & 0o222) throw changed('exact render commit preparation bytes or identity')
+    await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
+    await exactJournal(); committed = true
     return { ...result, historyPath: await retire(c, stage) }
   } catch (error) {
     if (!exposed && !await stat(prepared) && await stat(stage)) exposed = true
     if (exposed && await stat(stage)) {
-      try { const state = await journalOf(c, stage); committed = state.committed; await recoverStage(c, stage) }
-      catch (recovery) { error.message += ` ${recovery.message}`; error.recoveryStage = recovery.recoveryStage || stage; if (recovery.renderCommitted) committed = true }
+      try {
+        const state = await journalOf(c, stage); committed = state.committed
+        const recovery = await recoverStage(c, stage); error.recoveryStage = recovery.historyPath
+        if (!state.committed) error.renderRestored = true
+      } catch (recovery) { error.message += ` ${recovery.message}`; error.recoveryStage = recovery.recoveryStage || stage; error.recoveryRequired = true; if (recovery.renderCommitted) committed = true }
     }
     throw failureAt(exposed ? stage : prepared, error, committed, result)
   }

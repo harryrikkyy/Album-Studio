@@ -1,0 +1,61 @@
+
+> album-studio-ui@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
+
+src/app/AlbumSettings.tsx(54,80): error TS18048: 'p' is possibly 'undefined'.
+src/app/AlbumSettings.tsx(54,103): error TS18048: 'p' is possibly 'undefined'.
+src/app/Settings.tsx(41,47): error TS2322: Type 'string[]' is not assignable to type '("adjusted" | "lab-thumbs" | "picks" | "raw" | "raw-previews" | "templates")[]'.
+  Type 'string' is not assignable to type '"adjusted" | "lab-thumbs" | "picks" | "raw" | "raw-previews" | "templates"'.
+src/edit.ts(12,31): error TS2724: '"../../contracts/types"' has no exported member named 'UpdateAlbumResult'. Did you mean 'UpdateResult'?
+src/exporting.ts(57,66): error TS2322: Type '{ paths: { cache: string; high: string; low: string; pdf: string; sheets: string; }; pdf: { at: string; bytes: number; path: string; } | null; preflight: { errors: { code: string; effectivePpi?: number | undefined; ... 5 more ...; sourcePpi?: number | undefined; }[]; info: { ...; }[]; warnings: { ...; }[]; }; runnin...' is not assignable to type 'ExportPlan'.
+  Types of property 'settings' are incompatible.
+    Type '{ heightInches: number; highQuality?: number | undefined; lowQuality?: number | undefined; ppi: number; size: "original" | "print"; }' is not assignable to type 'ExportSettings & { highQuality: number; lowQuality: number; }'.
+      Type '{ heightInches: number; highQuality?: number | undefined; lowQuality?: number | undefined; ppi: number; size: "original" | "print"; }' is not assignable to type '{ highQuality: number; lowQuality: number; }'.
+        Types of property 'highQuality' are incompatible.
+          Type 'number | undefined' is not assignable to type 'number'.
+            Type 'undefined' is not assignable to type 'number'.
+src/places/Library.tsx(38,16): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(77,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(82,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(89,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/albums/NewAlbum.tsx(145,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/places/albums/NewAlbum.tsx(149,11): error TS2322: Type '{ desiredSheets: number; chronological: true; } | null' is not assignable to type '{ chronological?: boolean | undefined; desiredSheets?: number | undefined; ids?: string[] | undefined; max?: number | undefined; min?: number | undefined; mode: "desired" | "range"; } | null | undefined'.
+  Property '"mode"' is missing in type '{ desiredSheets: number; chronological: true; }' but required in type '{ chronological?: boolean | undefined; desiredSheets?: number | undefined; ids?: string[] | undefined; max?: number | undefined; min?: number | undefined; mode: "desired" | "range"; }'.
+src/places/plan/FrameAdjust.tsx(56,55): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/places/plan/FrameAdjust.tsx(91,16): error TS18048: 'pl.scale' is possibly 'undefined'.
+src/places/tools/BestPicks.tsx(49,32): error TS2339: Property 'split' does not exist on type 'string | string[]'.
+  Property 'split' does not exist on type 'string[]'.
+src/places/tools/BestPicks.tsx(49,58): error TS2322: Type 'string | string[]' is not assignable to type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/places/tools/BestPicks.tsx(83,66): error TS18048: 'ph' is possibly 'undefined'.
+src/places/tools/BestPicks.tsx(83,76): error TS18048: 'ph' is possibly 'undefined'.
+src/plan_actions.ts(20,3): error TS2322: Type '({ at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { by: -270 | -180 | -90 | 90 | 180 | 270; ids: string[]; op: "rotatePhotos"; } | { id: string; op: "placePhoto"; ox?: number | undefined; oy?: number | undefined; scale?: number | undefined; } | ... 6 more ... | { ....' is not assignable to type '({ n: number; op: "clearSpread"; } | { n: number; op: "removeSpread"; } | { at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { n: number; op: "setPhotos"; photoIds: string[]; } | ... 14 more ... | { ...; })[]'.
+  Type '{ at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { by: -270 | -180 | -90 | 90 | 180 | 270; ids: string[]; op: "rotatePhotos"; } | { id: string; op: "placePhoto"; ox?: number | undefined; oy?: number | undefined; scale?: number | undefined; } | ... 6 more ... | { .....' is not assignable to type '{ n: number; op: "clearSpread"; } | { n: number; op: "removeSpread"; } | { at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { n: number; op: "setPhotos"; photoIds: string[]; } | ... 14 more ... | { ...; }'.
+    Type '{ op: string; n: number; }' is not assignable to type '{ n: number; op: "clearSpread"; } | { n: number; op: "removeSpread"; } | { at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { n: number; op: "setPhotos"; photoIds: string[]; } | ... 14 more ... | { ...; }'.
+      Type '{ op: string; n: number; }' is not assignable to type '{ another?: boolean | undefined; n: number; op: "fitTemplate"; }'.
+        Types of property '"op"' are incompatible.
+          Type 'string' is not assignable to type '"fitTemplate"'.
+src/plan_logic.ts(143,33): error TS18048: 'start.ox' is possibly 'undefined'.
+src/plan_logic.ts(144,33): error TS18048: 'start.oy' is possibly 'undefined'.

@@ -1,5 +1,5 @@
 // Settings.tsx — Album Studio's preferences: appearance, how plans are made, the print size for
-// exports, and the space the caches take (all of it can be made again, so clearing loses nothing).
+// exports, and cache space, including files that need review before clearing.
 
 import { signal } from '@preact/signals'
 import { HardDrive, LogOut, Settings as SettingsIcon, UserRound, X } from 'lucide-preact'
@@ -7,13 +7,15 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { account, signOut } from '../account'
 import { expiryNote, subscriptionLine } from '../account_logic'
 import { call } from '../bridge'
+import { validateDefinition } from '../../../contracts/runtime.js'
 import { autoTemplate, setAutoTemplate } from '../edit'
 import { exportSettings, megabytes, setExportSettings } from '../exporting'
 import { running } from '../render'
 import { album, setTheme, stored, store, theme, toast } from '../state'
 import { Button, IconButton, Segmented } from '../ui/controls'
+import type { StorageUsage } from '../../../contracts/types'
 
-interface Cache { id: string; label: string; scope: 'app' | 'album'; bytes: number; files: number }
+type Cache = StorageUsage['caches'][number]
 
 const open = signal(false)
 export const openSettings = () => { open.value = true }
@@ -25,7 +27,7 @@ export function SettingsDialog() {
   const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
   const [clearing, setClearing] = useState(false)
 
-  const load = () => call<{ caches: Cache[] }>('storage.usage', { album: a?.path }, 120_000).then((r) => setCaches(r.caches)).catch(() => setCaches([]))
+  const load = () => call('storage.usage', { album: a?.path }, 120_000).then((r) => setCaches(r.caches)).catch(() => setCaches([]))
   useEffect(() => {
     const d = ref.current
     if (!d) return
@@ -38,9 +40,10 @@ export function SettingsDialog() {
   const clear = async (ids: string[]) => {
     setClearing(true)
     try {
-      const r = await call<{ caches: Cache[] }>('storage.clear', { ids, album: a?.path }, 300_000)
+      const params = validateDefinition('StorageClearParams', { ids, ...(a ? { album: a.path } : {}) })
+      const r = await call('storage.clear', params, 300_000)
       setCaches(r.caches)
-      toast('ok', 'Cleared. It is made again the next time it’s needed.')
+      toast('ok', 'No cache files needed clearing.')
     } catch (e) {
       toast('error', (e as Error).message)
     } finally {
@@ -105,7 +108,7 @@ export function SettingsDialog() {
               ))}
             </ul>
           )}
-          <p class="set-hint">All of these are made again from your photos and templates when needed; clearing only costs time. Albums, photos, templates and print files are never touched.</p>
+          <p class="set-hint">Recovery copies and edited files are kept. Album Studio will show any cache that needs review before it can be cleared.</p>
         </section>
       </div>
     </dialog>

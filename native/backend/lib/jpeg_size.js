@@ -7,7 +7,7 @@
 
 'use strict'
 
-const fs = require('fs')
+const { fileEvidence } = require('./cache')
 
 const SOF = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf])
 
@@ -57,16 +57,12 @@ function jpegSizeFromBuffer(b, { stored = false } = {}) {
 
 /** @param {string} file @returns {Promise<{width:number,height:number}|null>} */
 async function jpegSize(file) {
-  let fh
   try {
-    fh = await fs.promises.open(file, 'r')
-    const buf = Buffer.alloc(128 * 1024)
-    const { bytesRead } = await fh.read(buf, 0, buf.length, 0)
-    return jpegSizeFromBuffer(buf.subarray(0, bytesRead))
-  } catch (_) {
-    return null
-  } finally {
-    if (fh) await fh.close().catch(() => {})
+    const { prefix } = await fileEvidence(file, { prefixBytes: 128 * 1024 })
+    return jpegSizeFromBuffer(prefix)
+  } catch (error) {
+    if (error.code === 'ENOENT') return null
+    throw error
   }
 }
 

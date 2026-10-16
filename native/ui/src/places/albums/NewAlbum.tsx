@@ -10,10 +10,9 @@ import { plural, shortPath } from '../../format'
 import { suggestSpreads } from '../../plan_logic'
 import { loadRecent, openAlbum, stored, store, toast } from '../../state'
 import { Button, IconButton } from '../../ui/controls'
+import type { Collection, EventData, FolderInfo } from '../../../../contracts/types'
 
-interface FolderInfo { path: string; name: string; exists: boolean; photos: number; raws: number; thumbs: number; missing: number; samples: string[] }
-interface Collection { path: string; name: string; exists: boolean; templates: number; albums: string[] }
-interface Progress { stage: 'thumbs' | 'project' | 'plan'; folder?: string; index?: number; folders?: number; done?: number; total?: number; spreads?: number }
+type Progress = EventData<'album.creating'>
 
 const open = signal(false)
 export const openNewAlbum = () => { open.value = true }
@@ -22,7 +21,7 @@ const BAD_NAME = /[/:\\]/
 
 async function pickFolders(title: string, directory: string | null, multiple: boolean): Promise<string[]> {
   try {
-    const r = await call<string | string[] | null>('dialog.pickFolder', { title, directory, multiple }, 30 * 60_000)
+    const r = await call('dialog.pickFolder', { title, directory, multiple }, 30 * 60_000)
     return r === null ? [] : Array.isArray(r) ? r : [r]
   } catch (e) {
     toast('error', (e as Error).message)
@@ -78,7 +77,7 @@ export function NewAlbumDialog() {
       setFolders([]); setName(''); setNameTouched(false); setParent(null); setOutput(null); setError(null); setProgress(null)
       setSpreads(usual); setSpreadsTouched(false)
       d.showModal()
-      void call<{ collections: (Collection & { isDefault: boolean })[] }>('library.collections').then(({ collections: list }) => {
+      void call('library.collections').then(({ collections: list }) => {
         setCollections(list)
         // The Library's defaults for new albums (until chosen there: every collection in use).
         setChosen(new Set(list.filter((c) => c.exists && c.templates && c.isDefault).map((c) => c.path)))
@@ -86,17 +85,17 @@ export function NewAlbumDialog() {
     } else if (!open.value && d.open) d.close()
   }, [open.value])
 
-  useEffect(() => onEvent('album.creating', (d) => setProgress(d as Progress)), [])
+  useEffect(() => onEvent('album.creating', setProgress), [])
 
   const addFolders = async () => {
     const start = folders.at(-1)?.path.replace(/\/[^/]+$/, '') ?? parent
     const picked = (await pickFolders('Choose photo folders', start, true)).filter((p) => !folders.some((f) => f.path === p))
     if (!picked.length) return
-    const info = await call<FolderInfo[]>('folders.inspect', { paths: picked }, 5 * 60_000).catch((e) => { toast('error', (e as Error).message); return [] })
+    const info = await call('folders.inspect', { paths: picked }, 5 * 60_000).catch((e) => { toast('error', (e as Error).message); return [] })
     const next = [...folders, ...info]
     setFolders(next)
     if (!folders.length && info[0]) {
-      const s = await call<{ name: string; parent: string | null }>('album.suggest', { photoFolders: [info[0].path] }).catch(() => null)
+      const s = await call('album.suggest', { photoFolders: [info[0].path] }).catch(() => null)
       if (s) {
         if (!nameTouched) setName(s.name)
         if (!parent) setParent(s.parent)
@@ -107,7 +106,7 @@ export function NewAlbumDialog() {
   const addCollection = async () => {
     const picked = await pickFolders('Choose a template collection', collections?.[0]?.path.replace(/\/[^/]+$/, '') ?? null, true)
     if (!picked.length) return
-    const info = await call<Collection[]>('templates.inspect', { paths: picked }).catch(() => [])
+    const info = await call('templates.inspect', { paths: picked }).catch(() => [])
     const known = new Set((collections ?? []).map((c) => c.path))
     setCollections([...(collections ?? []), ...info.filter((c) => !known.has(c.path))])
     setChosen(new Set([...chosen, ...info.filter((c) => c.templates).map((c) => c.path)]))
@@ -132,13 +131,13 @@ export function NewAlbumDialog() {
 
   const create = async (e: Event) => {
     e.preventDefault()
-    if (problems.length || busy) return
+    if (problems.length || busy || !parent) return
     setBusy(true)
     setError(null)
     setProgress(null)
     store('as.newAlbum.plan', plan)
     try {
-      const r = await call<{ album: { path: string; name: string; stats: { spreads: number } }; thumbFailed: number; thumbFailures: string[] }>(
+      const r = await call(
         'album.create',
         {
           name: name.trim(),
@@ -146,7 +145,7 @@ export function NewAlbumDialog() {
           photoFolders: folders.map((f) => f.path),
           templateCollections: chosenList.map((c) => c.path),
           outputFolder: output,
-          autoFill: plan ? { desiredSheets: spreads, chronological: true } : null,
+          autoFill: plan ? { mode: 'desired', desiredSheets: spreads, chronological: true } : null,
         },
         6 * 60 * 60_000,
       )

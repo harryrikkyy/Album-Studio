@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-16",
+  "rubricVersion": 1,
+  "scope": "Architecture",
+  "criteriaCount": 10,
+  "target": "strictly >95/100; discrete scoring requires100/100",
+  "previousScore": 6.5,
+  "currentScore": 6.5,
+  "certified": false,
+  "criteria": [
+    {
+      "id": "1",
+      "criterion": "Layer boundaries",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Source-layer boundaries remain enforced; the final graph has 108 files, 603 edges and zero cycles. Native entry-point registration is separately incomplete. See docs/quality/2026-10-15-iteration-7/architecture-current.json."
+    },
+    {
+      "id": "2",
+      "criterion": "Module cohesion",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Render recipe/input domains replace render/proof/delivery coordinator cycles; project validation, private-stage capabilities and bounded transport are separate tested modules. Final full gate passes1133. See docs/ARCHITECTURE.md."
+    },
+    {
+      "id": "3",
+      "criterion": "Typed runtime interfaces",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Canonical53methods/17events, generated interface types, actual39 backend dispatch handlers and13 producer events verified. Fourteen native method vectors are authored examples; native Value/String adapters are not complete typed runtime execution."
+    },
+    {
+      "id": "4",
+      "criterion": "State ownership",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Private-stage capabilities, physical source aliases and reserved historical identities pass final real-host cases. Native editor saves still bypass project/output ownership, and permanent/legacy/global reconciliation and reclamation remain incomplete."
+    },
+    {
+      "id": "5",
+      "criterion": "Central business invariants",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Central project/version/operation safety bounds and shared verified-byte print policy pass real dispatcher and pipeline tests. Native save/transport admission and complete global ownership invariants remain outside this verified boundary."
+    },
+    {
+      "id": "6",
+      "criterion": "Error contracts",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Structured commit/recovery/error fields survive Node and bundled browser boundaries; finishing warnings preserve successful sheet counts. Native string errors and obsolete helper-generation teardown remain incomplete; isolated native candidate is not integrated."
+    },
+    {
+      "id": "7",
+      "criterion": "Testable domains",
+      "weight": 10,
+      "previousPoints": 10,
+      "currentPoints": 10,
+      "status": "verified",
+      "currentEvidence": "Pure project, identity, recipe and policy domains; injectable real dispatcher; bundled browser bridge tests; bounded writer/framing faults and real-child native replay strengthen testable seams. Final Node gate1133 passes."
+    },
+    {
+      "id": "8",
+      "criterion": "Explicit invalidation",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Consumed photo/template/sheet metadata, nested template inventory, EXIF order and thumbnail dimensions follow verified content revisions. Whole-application native/editor invalidation and legacy/shared cache scope are not certified."
+    },
+    {
+      "id": "9",
+      "criterion": "Dependency and layering gates",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "JS/TS AST layer, cycle, registry/schema/type drift and packaged-closure gates plus mutation tests pass and are wired in CI/pretest. Actual pinned cargo xtask layers fails missing album-studio registration; candidate patch16/16 is isolated and not applied."
+    },
+    {
+      "id": "10",
+      "criterion": "Compatibility migration design",
+      "weight": 10,
+      "previousPoints": 5,
+      "currentPoints": 5,
+      "status": "partial",
+      "currentEvidence": "Explicit legacy0/1/digit-string normalization, future-version refusal, unknown-field preservation, source alias/conflict and historical reservation tests pass. Complete native/permanent ownership migration and supported rollout acceptance remain unverified."
+    }
+  ],
+  "otherCategoryScores": "Retained without new certification; current goal is Architecture only."
+}

@@ -1,0 +1,94 @@
+
+> album-studio-ui@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
+
+src/app/AlbumSettings.tsx(80,19): error TS2345: Argument of type '{ album: { file: string; identityConflicts?: { candidates?: string[] | undefined; field?: string | undefined; id: string; kind: "photo" | "template"; n?: number | undefined; reason: string; }[] | undefined; ... 9 more ...; templateCollections: { ...; }[]; }; canRedo: boolean; canUndo: boolean; changed?: boolean | un...' is not assignable to parameter of type 'UpdateResult'.
+  The types of 'album.photos' are incompatible between these types.
+    Type '{ [key: string]: { adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined; }' is not assignable to type 'Record<string, Photo>'.
+      'string' index signatures are incompatible.
+        Type '{ adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined' is not assignable to type 'Photo'.
+          Type 'undefined' is not assignable to type 'Photo'.
+src/app/Settings.tsx(41,47): error TS2322: Type 'string[]' is not assignable to type '("adjusted" | "lab-thumbs" | "picks" | "raw" | "raw-previews" | "templates")[]'.
+  Type 'string' is not assignable to type '"adjusted" | "lab-thumbs" | "picks" | "raw" | "raw-previews" | "templates"'.
+src/edit.ts(76,61): error TS2322: Type 'Op[]' is not assignable to type '({ n: number; op: "clearSpread"; } | { n: number; op: "removeSpread"; } | { at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { n: number; op: "setPhotos"; photoIds: string[]; } | ... 14 more ... | { ...; })[]'.
+  Type 'Op' is not assignable to type '{ n: number; op: "clearSpread"; } | { n: number; op: "removeSpread"; } | { at?: number | undefined; op: "insertSpread"; } | { from: number; op: "moveSpread"; to: number; } | { n: number; op: "setPhotos"; photoIds: string[]; } | ... 14 more ... | { ...; }'.
+    Type 'Op' is not assignable to type '{ chronological?: boolean | undefined; desiredSheets?: number | undefined; ids?: string[] | undefined; max?: number | undefined; min?: number | undefined; mode?: "desired" | "range" | undefined; op: "autoFill"; }'.
+      Types of property '"op"' are incompatible.
+        Type 'string' is not assignable to type '"autoFill"'.
+src/edit.ts(77,16): error TS2345: Argument of type '{ album: { file: string; identityConflicts?: { candidates?: string[] | undefined; field?: string | undefined; id: string; kind: "photo" | "template"; n?: number | undefined; reason: string; }[] | undefined; ... 9 more ...; templateCollections: { ...; }[]; }; canRedo: boolean; canUndo: boolean; changed?: boolean | un...' is not assignable to parameter of type 'UpdateResult'.
+  The types of 'album.photos' are incompatible between these types.
+    Type '{ [key: string]: { adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined; }' is not assignable to type 'Record<string, Photo>'.
+      'string' index signatures are incompatible.
+        Type '{ adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined' is not assignable to type 'Photo'.
+          Type 'undefined' is not assignable to type 'Photo'.
+src/edit.ts(106,28): error TS2345: Argument of type 'string' is not assignable to parameter of type 'keyof MethodContracts'.
+src/edit.ts(107,11): error TS18047: 'r' is possibly 'null'.
+src/edit.ts(107,13): error TS2339: Property 'changed' does not exist on type 'string | string[] | { albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[] | { exists: boolean; missing: number; name: string; path: string; photos: number; raws: number; samples: string[]; thumbs: number; }[] | ... 26 more ... | { ...; }'.
+  Property 'changed' does not exist on type 'string'.
+src/edit.ts(108,16): error TS2345: Argument of type 'string | string[] | { albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[] | { exists: boolean; missing: number; name: string; path: string; photos: number; raws: number; samples: string[]; thumbs: number; }[] | ... 27 more ... | null' is not assignable to parameter of type 'UpdateResult'.
+  Type 'null' is not assignable to type 'UpdateResult'.
+src/exporting.ts(57,66): error TS2322: Type '{ paths: { cache: string; high: string; low: string; pdf: string; sheets: string; }; pdf: { at: string; bytes: number; path: string; } | null; preflight: { errors: { code: string; effectivePpi?: number | undefined; ... 5 more ...; sourcePpi?: number | undefined; }[]; info: { ...; }[]; warnings: { ...; }[]; }; runnin...' is not assignable to type 'ExportPlan'.
+  Types of property 'settings' are incompatible.
+    Type '{ heightInches: number; highQuality?: number | undefined; lowQuality?: number | undefined; ppi: number; size: "original" | "print"; }' is not assignable to type 'ExportSettings & { highQuality: number; lowQuality: number; }'.
+      Type '{ heightInches: number; highQuality?: number | undefined; lowQuality?: number | undefined; ppi: number; size: "original" | "print"; }' is not assignable to type '{ highQuality: number; lowQuality: number; }'.
+        Types of property 'highQuality' are incompatible.
+          Type 'number | undefined' is not assignable to type 'number'.
+            Type 'undefined' is not assignable to type 'number'.
+src/main.tsx(156,31): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/places/Albums.tsx(15,31): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/places/Deliver.tsx(194,57): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string | null | undefined'.
+  Type 'string[]' is not assignable to type 'string'.
+src/places/Library.tsx(38,16): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(77,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(82,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(89,14): error TS2345: Argument of type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to parameter of type 'StateUpdater<Coll[] | null>'.
+  Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }[]' is not assignable to type 'Coll[]'.
+    Type '{ albums: string[]; exists: boolean; isDefault?: boolean | undefined; name: string; path: string; templates: number; }' is not assignable to type 'Coll'.
+      Types of property 'isDefault' are incompatible.
+        Type 'boolean | undefined' is not assignable to type 'boolean'.
+          Type 'undefined' is not assignable to type 'boolean'.
+src/places/Library.tsx(98,19): error TS2345: Argument of type '{ album: { file: string; identityConflicts?: { candidates?: string[] | undefined; field?: string | undefined; id: string; kind: "photo" | "template"; n?: number | undefined; reason: string; }[] | undefined; ... 9 more ...; templateCollections: { ...; }[]; }; canRedo: boolean; canUndo: boolean; changed?: boolean | un...' is not assignable to parameter of type 'UpdateResult'.
+  The types of 'album.photos' are incompatible between these types.
+    Type '{ [key: string]: { adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined; }' is not assignable to type 'Record<string, Photo>'.
+      'string' index signatures are incompatible.
+        Type '{ adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined' is not assignable to type 'Photo'.
+          Type 'undefined' is not assignable to type 'Photo'.
+src/places/albums/NewAlbum.tsx(145,11): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/places/albums/NewAlbum.tsx(149,11): error TS2322: Type '{ desiredSheets: number; chronological: true; } | null' is not assignable to type '{ chronological?: boolean | undefined; desiredSheets?: number | undefined; ids?: string[] | undefined; max?: number | undefined; min?: number | undefined; mode: "desired" | "range"; } | null | undefined'.
+  Property '"mode"' is missing in type '{ desiredSheets: number; chronological: true; }' but required in type '{ chronological?: boolean | undefined; desiredSheets?: number | undefined; ids?: string[] | undefined; max?: number | undefined; min?: number | undefined; mode: "desired" | "range"; }'.
+src/places/tools/BestPicks.tsx(49,32): error TS2339: Property 'split' does not exist on type 'string | string[]'.
+  Property 'split' does not exist on type 'string[]'.
+src/places/tools/BestPicks.tsx(49,58): error TS2322: Type 'string | string[]' is not assignable to type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/places/tools/LabNaming.tsx(70,25): error TS2345: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
+  Type 'string[]' is not assignable to type 'string'.
+src/state.ts(145,7): error TS2322: Type '{ file: string; identityConflicts?: { candidates?: string[] | undefined; field?: string | undefined; id: string; kind: "photo" | "template"; n?: number | undefined; reason: string; }[] | undefined; ... 9 more ...; templateCollections: { ...; }[]; }' is not assignable to type 'Album'.
+  Types of property 'photos' are incompatible.
+    Type '{ [key: string]: { adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined; }' is not assignable to type 'Record<string, Photo>'.
+      'string' index signatures are incompatible.
+        Type '{ adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined' is not assignable to type 'Photo'.
+          Type 'undefined' is not assignable to type 'Photo'.
+src/state.ts(165,37): error TS2322: Type '{ file: string; identityConflicts?: { candidates?: string[] | undefined; field?: string | undefined; id: string; kind: "photo" | "template"; n?: number | undefined; reason: string; }[] | undefined; ... 9 more ...; templateCollections: { ...; }[]; }' is not assignable to type 'Album'.
+  Types of property 'photos' are incompatible.
+    Type '{ [key: string]: { adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined; }' is not assignable to type 'Record<string, Photo>'.
+      'string' index signatures are incompatible.
+        Type '{ adjust?: { [key: string]: JsonValue | undefined; blur?: number | undefined; bw?: boolean | undefined; clarity?: number | undefined; contrast?: number | undefined; ... 6 more ...; warmth?: number | undefined; } | null | undefined; ... 13 more ...; width: number | null; } | undefined' is not assignable to type 'Photo'.
+          Type 'undefined' is not assignable to type 'Photo'.

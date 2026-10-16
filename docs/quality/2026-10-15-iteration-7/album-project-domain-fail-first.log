@@ -1,0 +1,363 @@
+TAP version 13
+# Subtest: ordinary album open rejects unsafe count Infinity within a bounded subprocess
+not ok 1 - ordinary album open rejects unsafe count Infinity within a bounded subprocess
+  ---
+  duration_ms: 399.653041
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:15:69'
+  failureType: 'testCodeFailure'
+  error: |-
+    loader did not reject before its bounded process limit: nonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    16: 0x10377c9e4 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    17: 0x1037a30fc v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    18: 0x1033ab8ec node::InternalCallbackScope::Close() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    19: 0x1033ab768 node::InternalCallbackScope::~InternalCallbackScope() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    20: 0x103480f20 node::fs::FileHandle::CloseReq::Resolve() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    21: 0x1034818f4 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    22: 0x10347193c node::MakeLibuvRequestCallback<uv_fs_s, void (*)(uv_fs_s*)>::Wrapper(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    23: 0x1005d6e64 uv__work_done [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    24: 0x1005da3cc uv__async_io [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    25: 0x1005e91b0 uv__io_poll [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    26: 0x1005dab64 uv_run [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    27: 0x1033ac6cc node::SpinEventLoopInternal(node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    28: 0x1034bf9e8 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    29: 0x1034bf760 node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    30: 0x10343c158 node::Start(int, char**) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    31: 0x18295fe80 start [/usr/lib/dyld]
+    
+    
+    'SIGABRT' !== null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: 'SIGABRT'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:20:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: ordinary album open rejects unsafe count 1e309 within a bounded subprocess
+not ok 2 - ordinary album open rejects unsafe count 1e309 within a bounded subprocess
+  ---
+  duration_ms: 414.421792
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:15:69'
+  failureType: 'testCodeFailure'
+  error: |-
+    loader did not reject before its bounded process limit: nonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    16: 0x1059fc9e4 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    17: 0x105a230fc v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    18: 0x10562b8ec node::InternalCallbackScope::Close() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    19: 0x10562b768 node::InternalCallbackScope::~InternalCallbackScope() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    20: 0x105700f20 node::fs::FileHandle::CloseReq::Resolve() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    21: 0x1057018f4 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    22: 0x1056f193c node::MakeLibuvRequestCallback<uv_fs_s, void (*)(uv_fs_s*)>::Wrapper(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    23: 0x102972e64 uv__work_done [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    24: 0x1029763cc uv__async_io [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    25: 0x1029851b0 uv__io_poll [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    26: 0x102976b64 uv_run [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    27: 0x10562c6cc node::SpinEventLoopInternal(node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    28: 0x10573f9e8 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    29: 0x10573f760 node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    30: 0x1056bc158 node::Start(int, char**) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    31: 0x18295fe80 start [/usr/lib/dyld]
+    
+    
+    'SIGABRT' !== null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: 'SIGABRT'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:20:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: ordinary album open rejects unsafe count 9007199254740991 within a bounded subprocess
+not ok 3 - ordinary album open rejects unsafe count 9007199254740991 within a bounded subprocess
+  ---
+  duration_ms: 442.288625
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:15:69'
+  failureType: 'testCodeFailure'
+  error: |-
+    loader did not reject before its bounded process limit: nonymous namespace)::Invoke(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    17: 0x1073909e4 v8::internal::(anonymous namespace)::InvokeWithTryCatch(v8::internal::Isolate*, v8::internal::(anonymous namespace)::InvokeParams const&) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    18: 0x1073b70fc v8::internal::MicrotaskQueue::PerformCheckpointInternal(v8::Isolate*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    19: 0x106fbf8ec node::InternalCallbackScope::Close() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    20: 0x106fbf768 node::InternalCallbackScope::~InternalCallbackScope() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    21: 0x107094f20 node::fs::FileHandle::CloseReq::Resolve() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    22: 0x1070958f4 node::fs::FileHandle::ClosePromise()::$_0::__invoke(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    23: 0x10708593c node::MakeLibuvRequestCallback<uv_fs_s, void (*)(uv_fs_s*)>::Wrapper(uv_fs_s*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    24: 0x1042bae64 uv__work_done [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    25: 0x1042be3cc uv__async_io [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    26: 0x1042cd1b0 uv__io_poll [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    27: 0x1042beb64 uv_run [/opt/homebrew/Cellar/libuv/1.52.1/lib/libuv.1.0.0.dylib]
+    28: 0x106fc06cc node::SpinEventLoopInternal(node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    29: 0x1070d39e8 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    30: 0x1070d3760 node::NodeMainInstance::Run() [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    31: 0x107050158 node::Start(int, char**) [/opt/homebrew/Cellar/node@22/22.22.3/lib/libnode.127.dylib]
+    32: 0x18295fe80 start [/usr/lib/dyld]
+    
+    
+    'SIGABRT' !== null
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: ~
+  actual: 'SIGABRT'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:20:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: ordinary album open rejects unsafe count 2.5 within a bounded subprocess
+not ok 4 - ordinary album open rejects unsafe count 2.5 within a bounded subprocess
+  ---
+  duration_ms: 60.440334
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:15:69'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"accepted":true,"spreads":2}
+    + actual - expected
+    
+    + undefined
+    - true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:21:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: pure validation rejects unsafe project counts, malformed arrays and future versions without mutation
+not ok 5 - pure validation rejects unsafe project counts, malformed arrays and future versions without mutation
+  ---
+  duration_ms: 0.810917
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:25:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:26:39)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: legacy migration is explicit, idempotent, in-place and preserves unknown extension fields
+not ok 6 - legacy migration is explicit, idempotent, in-place and preserves unknown extension fields
+  ---
+  duration_ms: 0.301292
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:33:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:34:47)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: rejected migration leaves even supported pending normalizations untouched
+not ok 7 - rejected migration leaves even supported pending normalizations untouched
+  ---
+  duration_ms: 0.234834
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:42:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:43:30)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: missing count preserves sparse page positions and bounded inactive data is never silently discarded
+not ok 8 - missing count preserves sparse page positions and bounded inactive data is never silently discarded
+  ---
+  duration_ms: 0.151875
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:47:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:48:47)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: ordinary open normalizes the supplied owned data object without cloning it
+not ok 9 - ordinary open normalizes the supplied owned data object without cloning it
+  ---
+  duration_ms: 10.04825
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:53:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    '1' !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: '1'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:56:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a future version is refused before identity mutation or source-folder scans
+not ok 10 - a future version is refused before identity mutation or source-folder scans
+  ---
+  duration_ms: 2.125834
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:59:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:63:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: direct spread identity materialization shares the finite page guard
+not ok 11 - direct spread identity materialization shares the finite page guard
+  ---
+  duration_ms: 195.3475
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:67:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    identity entry point must reject before a loop
+    
+    null !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:71:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: operation and creation boundaries reject malformed/unbounded inputs before filesystem work
+not ok 12 - operation and creation boundaries reject malformed/unbounded inputs before filesystem work
+  ---
+  duration_ms: 0.25275
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:74:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:75:63)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+# Subtest: finite limits reject oversized folder/photo/page collections with recoverable errors
+not ok 13 - finite limits reject oversized folder/photo/page collections with recoverable errors
+  ---
+  duration_ms: 0.063917
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:84:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Cannot find module '/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/project_domain'
+    Require stack:
+    - /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js
+  code: 'MODULE_NOT_FOUND'
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1430:15)
+    defaultResolveImpl (node:internal/modules/cjs/loader:1040:19)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1045:22)
+    Module._load (node:internal/modules/cjs/loader:1216:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:254:19)
+    Module.require (node:internal/modules/cjs/loader:1527:12)
+    require (node:internal/modules/helpers:147:16)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/project_domain.test.js:85:39)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 0
+# fail 13
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1585.37375

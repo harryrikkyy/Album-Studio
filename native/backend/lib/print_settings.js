@@ -1,6 +1,6 @@
 // A single print canvas contract shared by planning, rendering and delivery.
 'use strict'
-const fs = require('fs')
+const { fileEvidence } = require('./cache')
 const MAX_CANVAS_PIXELS = 64 * 1024 * 1024
 
 function printSettings(p = {}, defaultSize = 'original') {
@@ -19,20 +19,24 @@ function printCanvas(width, height, settings) {
   return { width: targetWidth, height: targetHeight, scale: targetHeight / height, ppi: settings.ppi }
 }
 
-async function psdDimensions(file) {
-  const handle = await fs.promises.open(file, 'r'), header = Buffer.alloc(26)
-  try {
-    const { bytesRead } = await handle.read(header, 0, header.length, 0)
-    if (bytesRead !== 26 || header.toString('ascii', 0, 4) !== '8BPS' || ![1, 2].includes(header.readUInt16BE(4))) throw new Error('The sheet has an invalid PSD header.')
-    const width = header.readUInt32BE(18), height = header.readUInt32BE(14)
-    if (!width || !height) throw new Error('The sheet has invalid dimensions.')
-    return { width, height }
-  } finally { await handle.close() }
+async function psdDimensions(file, expectedDigest) {
+  const { prefix: header } = await fileEvidence(file, { prefixBytes: 26, expectedDigest })
+  if (header.length !== 26 || header.toString('ascii', 0, 4) !== '8BPS' || ![1, 2].includes(header.readUInt16BE(4))) throw new Error('The sheet has an invalid PSD header.')
+  const width = header.readUInt32BE(18), height = header.readUInt32BE(14)
+  if (!width || !height) throw new Error('The sheet has invalid dimensions.')
+  return { width, height }
 }
 
-async function meetsPrintResolution(file, settings) {
+/** Apply the same production policy to planned headers and actually decoded pixels. */
+function validateSheetPrint({ width, height }, settings, spec, n) {
+  if (![width, height].every(v => Number.isSafeInteger(v) && v > 0)) throw new Error('The sheet has invalid dimensions.')
+  if (settings.size === 'print' && height / settings.heightInches + 1e-7 < settings.ppi) throw new Error(`Spread ${n}'s sheet supplies ${(height / settings.heightInches).toFixed(1)} PPI at this print size, below the configured ${settings.ppi} PPI policy. Render a larger sheet or choose a smaller physical print size.`)
+  if (spec && spec.widthInches > 0 && spec.heightInches > 0 && Math.abs(width / height - spec.widthInches / spec.heightInches) > 0.001) throw new Error(`Spread ${n}'s actual sheet proportions differ from the configured lab dimensions.`)
+}
+
+async function meetsPrintResolution(file, settings, expectedDigest) {
   if (settings.size === 'original') return true
-  return (await psdDimensions(file)).height / settings.heightInches + 1e-7 >= settings.ppi
+  return (await psdDimensions(file, expectedDigest)).height / settings.heightInches + 1e-7 >= settings.ppi
 }
 
-module.exports = { printSettings, printCanvas, psdDimensions, meetsPrintResolution, MAX_CANVAS_PIXELS }
+module.exports = { printSettings, printCanvas, psdDimensions, meetsPrintResolution, validateSheetPrint, MAX_CANVAS_PIXELS }

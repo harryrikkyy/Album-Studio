@@ -1,0 +1,121 @@
+TAP version 13
+# Subtest: low-level JPEG export preserves an existing unrelated destination
+not ok 1 - low-level JPEG export preserves an existing unrelated destination
+  ---
+  duration_ms: 47.054667
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:41:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:43:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: JPEG publication failure retains a substituted private image
+not ok 2 - JPEG publication failure retains a substituted private image
+  ---
+  duration_ms: 16.271209
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:46:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(error.retainedPath)
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:53:93)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: pipeline print guard blocks decoded dimensions before low-resolution upsampling
+not ok 3 - pipeline print guard blocks decoded dimensions before low-resolution upsampling
+  ---
+  duration_ms: 11.663583
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:57:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:59:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: guarded export decodes verified immutable bytes even if its input name changes afterward
+not ok 4 - guarded export decodes verified immutable bytes even if its input name changes afterward
+  ---
+  duration_ms: 4.180166
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:62:1'
+  failureType: 'testCodeFailure'
+  error: 'The sheet composite cannot be delivered safely (truncated document data). Save a real compatibility composite, or convert and save an 8-bit RGB sheet in the editor.'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    compositeError (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/color.js:19:10)
+    need (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/color.js:56:114)
+    compositeMetadata (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/color.js:58:3)
+    psdPixels (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/color.js:471:18)
+    async /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:65:176
+    async Object.exportSheet (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/deliver.js:72:14)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:66:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: publication handoff retains the transaction stage even before journal creation fails
+not ok 5 - publication handoff retains the transaction stage even before journal creation fails
+  ---
+  duration_ms: 330.818084
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:69:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-IESQT6/Album/exports/.album-studio/delivery-QbELV2/customer.txt'"
+  code: 'ENOENT'
+  stack: |-
+    Object.readFileSync (node:fs:440:20)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:74:76)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+not ok 6 - lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+  ---
+  duration_ms: 402.32325
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:76:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/delivery_cleanup.test.js:80:40)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 0
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 904.38775

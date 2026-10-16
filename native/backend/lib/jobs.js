@@ -3,7 +3,8 @@
 const crypto = require('crypto')
 const path = require('path')
 const { canonicalProject, acquireProjectLease, serializeProject } = require('./project_lock')
-const { recoverProject } = require('./project_transaction')
+const { recoverProject, readProjectSnapshot } = require('./project_transaction')
+const { validateProject } = require('./project_domain')
 const { acquireProjectOutputs, attachOutputLease } = require('./output_lock')
 let active = null
 
@@ -13,9 +14,11 @@ async function reserveJob(kind, album) {
   active = lease
   try {
     const location = await canonicalProject(album)
+    try { validateProject((await readProjectSnapshot(location.file)).data) } catch (error) { if (error.code !== 'ENOENT') throw error }
     lease.project = await serializeProject(location.file, () => acquireProjectLease(location, { kind }))
     lease.album = location.folder; lease.file = location.file
     await recoverProject(lease.file, { assertOwned: () => lease.project.assertOwned() })
+    validateProject((await readProjectSnapshot(lease.file)).data)
     lease.outputs = await acquireProjectOutputs(lease.project, { kind, delivery: kind === 'export' })
     lease.restoreOutput = attachOutputLease(lease.project, lease.outputs)
     return lease

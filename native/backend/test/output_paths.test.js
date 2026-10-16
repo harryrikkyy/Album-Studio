@@ -136,12 +136,16 @@ test('proof validation accepts canonical root aliases and rejects each intermedi
   assert.equal(result.root, fs.realpathSync(f.projects[0])); assert.equal(result.pages, path.join(result.root, 'proofs', 'pages'))
 })
 
-test('ordinary cache clearing preserves retained recovery directories and clears only plain caches', async t => {
+test('cache clearing preserves retained directories and loose files without ownership evidence', async t => {
   const f = fixture(t), raw = path.join(f.outputs[0], '.album-studio', 'raw'), stage = path.join(raw, '.album-studio-derived-retained'), manual = path.join(stage, 'captured-customer.jpg')
   fs.mkdirSync(stage, { recursive: true }); fs.writeFileSync(manual, 'keep recovery bytes')
   await assert.rejects(require('../lib/storage').clearStorage({ album: f.projects[0], ids: ['raw'] }), /retained recovery|unknown directories|histories/i)
   assert.equal(fs.readFileSync(manual, 'utf8'), 'keep recovery bytes')
   const adjusted = path.join(f.outputs[0], '.album-studio', 'adjusted'); fs.mkdirSync(adjusted); fs.writeFileSync(path.join(adjusted, 'ordinary.jpg'), 'regenerable cache')
-  await require('../lib/storage').clearStorage({ album: f.projects[0], ids: ['adjusted'] })
-  assert.equal(fs.existsSync(adjusted), false); assert.equal(fs.readFileSync(manual, 'utf8'), 'keep recovery bytes')
+  await assert.rejects(require('../lib/storage').clearStorage({ album: f.projects[0], ids: ['adjusted'] }), error => error.code === 'CACHE_CLEAR_PRESERVED')
+  assert.equal(fs.readFileSync(path.join(adjusted, 'ordinary.jpg'), 'utf8'), 'regenerable cache'); assert.equal(fs.readFileSync(manual, 'utf8'), 'keep recovery bytes')
+  const emptyFixture = fixture(t), empty = path.join(emptyFixture.outputs[0], '.album-studio', 'raw')
+  fs.mkdirSync(empty, { recursive: true })
+  await require('../lib/storage').clearStorage({ album: emptyFixture.projects[0], ids: ['raw'] })
+  assert.equal(fs.existsSync(empty), true); assert.deepEqual(fs.readdirSync(empty), [])
 })

@@ -1,0 +1,6 @@
+{
+  "engineCommit": "bdb1f8f35767700033ec9cd7b8fc0b80e182b0e9",
+  "backendSourceSha256": "d58364da2d299b5ae3c5496f34cc5ed4cf73b6ac5c169b4d9b29bfca7019c072",
+  "layersSourceSha256": "d72ac7da5e8216a8ccbe3455a7a62a8aa7e96295d4df67e137c0e677c1f10c8d",
+  "scope": "Exact pinned source copied, then isolated regression modules appended; no ignored engine edits. Actual disposable Node child used."
+}

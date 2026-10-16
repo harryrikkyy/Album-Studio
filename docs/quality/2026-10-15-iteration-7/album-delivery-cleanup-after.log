@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: low-level JPEG export preserves an existing unrelated destination
+ok 1 - low-level JPEG export preserves an existing unrelated destination
+  ---
+  duration_ms: 38.822917
+  type: 'test'
+  ...
+# Subtest: JPEG publication failure retains a substituted private image
+ok 2 - JPEG publication failure retains a substituted private image
+  ---
+  duration_ms: 14.406625
+  type: 'test'
+  ...
+# Subtest: pipeline print guard blocks decoded dimensions before low-resolution upsampling
+ok 3 - pipeline print guard blocks decoded dimensions before low-resolution upsampling
+  ---
+  duration_ms: 6.014667
+  type: 'test'
+  ...
+# Subtest: guarded export decodes verified immutable bytes even if its input name changes afterward
+ok 4 - guarded export decodes verified immutable bytes even if its input name changes afterward
+  ---
+  duration_ms: 11.802875
+  type: 'test'
+  ...
+# Subtest: publication handoff retains the transaction stage even before journal creation fails
+ok 5 - publication handoff retains the transaction stage even before journal creation fails
+  ---
+  duration_ms: 321.274417
+  type: 'test'
+  ...
+# Subtest: lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+ok 6 - lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+  ---
+  duration_ms: 383.986083
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 872.570958

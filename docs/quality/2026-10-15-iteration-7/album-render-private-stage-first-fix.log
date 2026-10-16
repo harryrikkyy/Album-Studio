@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: delivery cannot validate a transient taller PSD header then upsample the restored low-resolution sheet
+ok 1 - delivery cannot validate a transient taller PSD header then upsample the restored low-resolution sheet
+  ---
+  duration_ms: 502.593416
+  type: 'test'
+  ...
+# Subtest: photo metadata and full-decode checks consume the same verified low-resolution original bytes
+ok 2 - photo metadata and full-decode checks consume the same verified low-resolution original bytes
+  ---
+  duration_ms: 15.782834
+  type: 'test'
+  ...
+# Subtest: template geometry cannot come from a transient easier frame while the original PSD is restored
+ok 3 - template geometry cannot come from a transient easier frame while the original PSD is restored
+  ---
+  duration_ms: 11.564625
+  type: 'test'
+  ...
+# Subtest: a print-sized sheet has the requested canvas and full-detail photos on scaled frames
+ok 4 - a print-sized sheet has the requested canvas and full-detail photos on scaled frames
+  ---
+  duration_ms: 785.078917
+  type: 'test'
+  ...
+# Subtest: unreasonable canvas requests are rejected before allocating pixels
+ok 5 - unreasonable canvas requests are rejected before allocating pixels
+  ---
+  duration_ms: 0.248375
+  type: 'test'
+  ...
+# Subtest: render and delivery agree on print intent, rerender for higher resolution and preserve adequate sheets
+ok 6 - render and delivery agree on print intent, rerender for higher resolution and preserve adequate sheets
+  ---
+  duration_ms: 1790.545834
+  type: 'test'
+  ...
+# Subtest: print-sized rendering refuses insufficient original detail without publishing a sheet
+ok 7 - print-sized rendering refuses insufficient original detail without publishing a sheet
+  ---
+  duration_ms: 297.10525
+  type: 'test'
+  ...
+# Subtest: a manual PSD edit at the atomic replacement boundary is captured and restored without overwrite
+ok 8 - a manual PSD edit at the atomic replacement boundary is captured and restored without overwrite
+  ---
+  duration_ms: 1041.454667
+  type: 'test'
+  ...
+# Subtest: engine close errors retain committed results and exact per-sheet counts after success, partial failure and cancellation
+    # Subtest: saved
+    ok 1 - saved
+      ---
+      duration_ms: 1475.625083
+      type: 'test'
+      ...
+    # Subtest: partial-failure
+    ok 2 - partial-failure
+      ---
+      duration_ms: 1003.882125
+      type: 'test'
+      ...
+    # Subtest: cancelled-after-save
+    ok 3 - cancelled-after-save
+      ---
+      duration_ms: 897.094375
+      type: 'test'
+      ...
+    1..3
+ok 9 - engine close errors retain committed results and exact per-sheet counts after success, partial failure and cancellation
+  ---
+  duration_ms: 3377.689083
+  type: 'test'
+  ...
+# Subtest: lease release errors retain saved-sheet results without inventing a failed sheet and attempt every release
+    # Subtest: outputs
+    ok 1 - outputs
+      ---
+      duration_ms: 795.819541
+      type: 'test'
+      ...
+    # Subtest: project
+    ok 2 - project
+      ---
+      duration_ms: 671.715542
+      type: 'test'
+      ...
+    # Subtest: outputs+project
+    ok 3 - outputs+project
+      ---
+      duration_ms: 668.128584
+      type: 'test'
+      ...
+    1..3
+ok 10 - lease release errors retain saved-sheet results without inventing a failed sheet and attempt every release
+  ---
+  duration_ms: 2136.7835
+  type: 'test'
+  ...
+# Subtest: engine and release finishing errors combine while a committed sheet stays successful
+not ok 11 - engine and release finishing errors combine while a committed sheet stays successful
+  ---
+  duration_ms: 496.401041
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_finish.test.js:102:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    3 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_finish.test.js:107:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a release error after stopping before work preserves cancellation without reporting a failed sheet
+ok 12 - a release error after stopping before work preserves cancellation without reporting a failed sheet
+  ---
+  duration_ms: 276.231709
+  type: 'test'
+  ...
+# Subtest: render retains the complete private stage after unknown-file without losing its committed sheet
+ok 13 - render retains the complete private stage after unknown-file without losing its committed sheet
+  ---
+  duration_ms: 1133.510917
+  type: 'test'
+  ...
+# Subtest: render retains the complete private stage after edited-snapshot without losing its committed sheet
+ok 14 - render retains the complete private stage after edited-snapshot without losing its committed sheet
+  ---
+  duration_ms: 766.819041
+  type: 'test'
+  ...
+1..14
+# tests 20
+# suites 0
+# pass 19
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6393.952792

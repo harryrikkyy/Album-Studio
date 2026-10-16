@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: a real Writable is serialized and waits for native backpressure before the next frame
+ok 1 - a real Writable is serialized and waits for native backpressure before the next frame
+  ---
+  duration_ms: 2.432792
+  type: 'test'
+  ...
+# Subtest: a successful callback does not bypass an outstanding drain
+ok 2 - a successful callback does not bypass an outstanding drain
+  ---
+  duration_ms: 0.228125
+  type: 'test'
+  ...
+# Subtest: drain does not bypass an outstanding write callback
+ok 3 - drain does not bypass an outstanding write callback
+  ---
+  duration_ms: 0.176
+  type: 'test'
+  ...
+# Subtest: nonbackpressured writes still await their callbacks
+ok 4 - nonbackpressured writes still await their callbacks
+  ---
+  duration_ms: 0.271042
+  type: 'test'
+  ...
+# Subtest: synchronous callback and drain before a false return do not deadlock
+ok 5 - synchronous callback and drain before a false return do not deadlock
+  ---
+  duration_ms: 0.48475
+  type: 'test'
+  ...
+# Subtest: queued byte and message limits include the active frame and reject without submission
+ok 6 - queued byte and message limits include the active frame and reject without submission
+  ---
+  duration_ms: 0.449958
+  type: 'test'
+  ...
+# Subtest: frame limits measure UTF-8 plus newline before admission
+ok 7 - frame limits measure UTF-8 plus newline before admission
+  ---
+  duration_ms: 0.139959
+  type: 'test'
+  ...
+# Subtest: byte-pressure rejection reports the exact capacity needed to avoid a busy retry loop
+ok 8 - byte-pressure rejection reports the exact capacity needed to avoid a busy retry loop
+  ---
+  duration_ms: 0.135916
+  type: 'test'
+  ...
+# Subtest: serialization failures do not poison the channel or create queued bytes
+ok 9 - serialization failures do not poison the channel or create queued bytes
+  ---
+  duration_ms: 0.337042
+  type: 'test'
+  ...
+# Subtest: stream errors distinguish an uncertain submitted frame from accepted but unsent frames
+ok 10 - stream errors distinguish an uncertain submitted frame from accepted but unsent frames
+  ---
+  duration_ms: 0.368917
+  type: 'test'
+  ...
+# Subtest: write callback failures settle every accepted frame exactly once
+ok 11 - write callback failures settle every accepted frame exactly once
+  ---
+  duration_ms: 0.106583
+  type: 'test'
+  ...
+# Subtest: a synchronous write exception has uncertain submission and fails queued work closed
+ok 12 - a synchronous write exception has uncertain submission and fails queued work closed
+  ---
+  duration_ms: 0.184958
+  type: 'test'
+  ...
+# Subtest: a blocked pipe reaches a bounded deadline without resubmitting or leaking its queue
+ok 13 - a blocked pipe reaches a bounded deadline without resubmitting or leaking its queue
+  ---
+  duration_ms: 21.749625
+  type: 'test'
+  ...
+# Subtest: capacity and flush waiter metadata is bounded independently of frame bytes
+ok 14 - capacity and flush waiter metadata is bounded independently of frame bytes
+  ---
+  duration_ms: 0.185667
+  type: 'test'
+  ...
+# Subtest: an unexpectedly closed stream rejects pending terminal messages instead of silently dropping them
+ok 15 - an unexpectedly closed stream rejects pending terminal messages instead of silently dropping them
+  ---
+  duration_ms: 0.09625
+  type: 'test'
+  ...
+# Subtest: invalid queue configuration and impossible capacity requests fail explicitly
+ok 16 - invalid queue configuration and impossible capacity requests fail explicitly
+  ---
+  duration_ms: 0.136
+  type: 'test'
+  ...
+# backend: ignored malformed request without a valid reply id
+# backend: ignored malformed request without a valid reply id
+# backend: ignored malformed request without a valid reply id
+# backend: ignored malformed request without a valid reply id
+# backend: ignored invalid JSON protocol input
+# backend: ignored malformed request without a valid reply id
+# Subtest: null, primitive and malformed envelopes cannot crash dispatch or invoke business logic
+ok 17 - null, primitive and malformed envelopes cannot crash dispatch or invoke business logic
+  ---
+  duration_ms: 1.548417
+  type: 'test'
+  ...
+# Subtest: valid method parameters and results are enforced at the dispatcher, with unsupported results reported after completion
+ok 18 - valid method parameters and results are enforced at the dispatcher, with unsupported results reported after completion
+  ---
+  duration_ms: 0.265
+  type: 'test'
+  ...
+# Subtest: domain recovery metadata and commit state reach the protocol error reply
+ok 19 - domain recovery metadata and commit state reach the protocol error reply
+  ---
+  duration_ms: 0.725959
+  type: 'test'
+  ...
+# Subtest: bounded dispatcher refuses duplicate and excess requests and releases slots after failure
+ok 20 - bounded dispatcher refuses duplicate and excess requests and releases slots after failure
+  ---
+  duration_ms: 0.528959
+  type: 'test'
+  ...
+# Subtest: UTF-8 lines are framed across chunks, CRLF and final unterminated input
+ok 21 - UTF-8 lines are framed across chunks, CRLF and final unterminated input
+  ---
+  duration_ms: 0.563833
+  type: 'test'
+  ...
+# Subtest: oversized unterminated protocol lines never retain more than their budget and resynchronise at newline
+ok 22 - oversized unterminated protocol lines never retain more than their budget and resynchronise at newline
+  ---
+  duration_ms: 0.859583
+  type: 'test'
+  ...
+# Subtest: invalid UTF-8 cannot be silently converted into a different JSON string or path
+ok 23 - invalid UTF-8 cannot be silently converted into a different JSON string or path
+  ---
+  duration_ms: 0.200708
+  type: 'test'
+  ...
+# Subtest: fragmented input coalesces into bounded slabs rather than retaining a buffer per byte
+ok 24 - fragmented input coalesces into bounded slabs rather than retaining a buffer per byte
+  ---
+  duration_ms: 66.319708
+  type: 'test'
+  ...
+# Subtest: the real stdio server survives malformed and oversized requests and flushes its final replies
+ok 25 - the real stdio server survives malformed and oversized requests and flushes its final replies
+  ---
+  duration_ms: 76.409334
+  type: 'test'
+  ...
+# Subtest: a broken output channel stops admission and terminates visibly instead of reporting successful delivery
+ok 26 - a broken output channel stops admission and terminates visibly instead of reporting successful delivery
+  ---
+  duration_ms: 68.826291
+  type: 'test'
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 354.079875

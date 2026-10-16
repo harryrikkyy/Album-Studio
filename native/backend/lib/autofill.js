@@ -6,29 +6,26 @@
 
 'use strict'
 
-const fs = require('fs')
+const { fileEvidence, contentKey } = require('./cache')
 const { planAutoFillCounts, _parseExifDateFromBuffer } = require('../../../src/renderer_pure')
 
 const exifCache = new Map()
+const MAX_EXIF_CACHE = 4096
 
 /** Capture time (ms) from a JPEG's EXIF, or null. Reads the first 256 KB only. */
 async function captureTime(file) {
   if (!file) return null
-  if (exifCache.has(file)) return exifCache.get(file)
-  let ts = null
-  let fh
   try {
-    fh = await fs.promises.open(file, 'r')
-    const buf = Buffer.alloc(256 * 1024)
-    const { bytesRead } = await fh.read(buf, 0, buf.length, 0)
-    ts = _parseExifDateFromBuffer(buf.subarray(0, bytesRead))
-  } catch (_) {
-    ts = null
-  } finally {
-    if (fh) await fh.close().catch(() => {})
+    const evidence = await fileEvidence(file, { prefixBytes: 256 * 1024 }), key = contentKey(file, evidence.digest)
+    if (exifCache.has(key)) { const hit = exifCache.get(key); exifCache.delete(key); exifCache.set(key, hit); return hit }
+    const parsed = _parseExifDateFromBuffer(evidence.prefix), ts = Number.isFinite(parsed) ? parsed : null
+    exifCache.set(key, ts)
+    if (exifCache.size > MAX_EXIF_CACHE) exifCache.delete(exifCache.keys().next().value)
+    return ts
+  } catch (error) {
+    if (error.code === 'ENOENT') return null
+    throw error
   }
-  exifCache.set(file, ts)
-  return ts
 }
 
 /**

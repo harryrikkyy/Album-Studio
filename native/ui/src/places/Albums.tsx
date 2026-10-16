@@ -11,8 +11,8 @@ import { NewAlbumDialog, openNewAlbum } from './albums/NewAlbum'
 
 async function pickAndOpen() {
   try {
-    const path = await call<string | null>('dialog.pickFolder', { title: 'Open an album project folder' })
-    if (path) await openAlbum(path)
+    const path = await call('dialog.pickFolder', { title: 'Open an album project folder' })
+    if (typeof path === 'string') await openAlbum(path)
   } catch (e) {
     toast('error', (e as Error).message)
   }

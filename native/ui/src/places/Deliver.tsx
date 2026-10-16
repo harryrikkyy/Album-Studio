@@ -5,6 +5,7 @@ import { CircleAlert, CircleCheck, FileText, FolderOpen, FolderOutput, Images, P
 import { useEffect, useState } from 'preact/hooks'
 import { call } from '../bridge'
 import { canDeliver } from '../delivery_logic'
+import { jobIssues } from '../job_report'
 import { edit, proofUrl } from '../edit'
 import {
   cancelExport, exportJob, exportKinds, exportPlanSig, exportSettings, exporting, loadExportPlan, megabytes, reveal,
@@ -55,6 +56,7 @@ function RenderPanel() {
   const done = j.results.filter((r) => r.state === 'done')
   const failed = j.results.filter((r) => r.state === 'failed')
   const warned = j.results.filter((r) => r.warnings && r.warnings.length)
+  const finishingIssues = jobIssues(j.finished)
   const avg = done.length ? done.reduce((a, r) => a + (r.ms || 0), 0) / done.length : 0
   const left = j.total - j.index
   const elapsed = j.finished ? j.finished.ms : now - j.startedAt
@@ -75,10 +77,11 @@ function RenderPanel() {
         <div><dt>Unchanged</dt><dd>{j.results.filter((r) => r.state === 'skipped').length}</dd></div>
         <div><dt>Failed</dt><dd class={failed.length ? 'is-bad' : ''}>{failed.length}</dd></div>
       </dl>
-      {failed.length || warned.length ? (
+      {failed.length || warned.length || finishingIssues.length ? (
         <ul class="job__issues">
           {failed.map((r) => <li class="is-bad"><CircleAlert size={14} /> <span><b>Spread {r.n}</b> failed: {r.error}</span></li>)}
           {warned.map((r) => <li><CircleAlert size={14} /> <span><b>Spread {r.n}</b>: {r.warnings!.join('; ')}</span></li>)}
+          {finishingIssues.map(issue => <li class="is-warn" key={issue}><CircleAlert size={14} /> <span>{issue}</span></li>)}
         </ul>
       ) : j.finished && !failed.length ? (
         <p class="job__ok"><CircleCheck size={14} /> Every sheet built cleanly.</p>
@@ -94,6 +97,7 @@ function ExportPanel() {
   const j = exportJob.value
   const busy = exporting.value
   const now = useClock(busy)
+  const finishingIssues = [...new Set([...(j?.issues ?? []), ...jobIssues(j?.finished ?? null), ...(j?.finished?.pdf?.error ? [j.finished.pdf.error] : [])])]
   const counts = { ready: 0, todo: 0, stale: 0, nosheet: 0, blocked: 0 }
   for (const x of p?.spreads ?? []) counts[x.state]++
   const pxH = Math.round(s.heightInches * s.ppi)
@@ -143,9 +147,10 @@ function ExportPanel() {
             {j.phase === 'pdf' ? 'Writing the PDF…' : <><b>{j.index}</b> of {j.total}{j.current ? ` · spread ${j.current}` : ''}</>}
             {' · '}{duration(j.finished ? j.finished.ms : now - j.startedAt)}
           </p>
-          {j.results.some((r) => r.state === 'failed') ? (
+          {j.results.some((r) => r.state === 'failed') || finishingIssues.length ? (
             <ul class="job__issues">
               {j.results.filter((r) => r.state === 'failed').map((r) => <li class="is-bad"><CircleAlert size={14} /> <span><b>Spread {r.n}</b>: {r.error}</span></li>)}
+              {finishingIssues.map(issue => <li class="is-warn" key={issue}><CircleAlert size={14} /> <span>{issue}</span></li>)}
             </ul>
           ) : null}
         </div>
@@ -184,8 +189,8 @@ function ExportPanel() {
 
 async function changeOutputFolder(current: string | undefined) {
   try {
-    const folder = await call<string | null>('dialog.pickFolder', { title: 'Where print sheets are saved', directory: current ?? null })
-    if (!folder) return
+    const folder = await call('dialog.pickFolder', { title: 'Where print sheets are saved', directory: current ?? null })
+    if (typeof folder !== 'string') return
     const r = await edit([{ op: 'setOutputFolder', folder }])
     if (r) {
       toast('info', `Print sheets now go to ${shortPath(folder, 3)}. The JPEG folders and the PDF go next to it.`)

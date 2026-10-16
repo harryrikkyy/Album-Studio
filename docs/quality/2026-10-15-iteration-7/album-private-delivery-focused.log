@@ -1,0 +1,1132 @@
+TAP version 13
+# Subtest: a cache changed after verification cannot supply pixels to a newly accepted proof
+ok 1 - a cache changed after verification cannot supply pixels to a newly accepted proof
+  ---
+  duration_ms: 41.273958
+  type: 'test'
+  ...
+# Subtest: a temporary source mutation during copy cannot hide behind content restored before validation
+ok 2 - a temporary source mutation during copy cannot hide behind content restored before validation
+  ---
+  duration_ms: 4.498417
+  type: 'test'
+  ...
+# Subtest: a sheet exports at the print size and resolution, from the PSD’s own flattened image
+ok 3 - a sheet exports at the print size and resolution, from the PSD’s own flattened image
+  ---
+  duration_ms: 49.814375
+  type: 'test'
+  ...
+# Subtest: export: JPEG folders and the PDF beside the sheets, unchanged sheets skipped, changed ones redone
+ok 4 - export: JPEG folders and the PDF beside the sheets, unchanged sheets skipped, changed ones redone
+  ---
+  duration_ms: 3498.812542
+  type: 'test'
+  ...
+# Subtest: export refuses without rendered sheets
+ok 5 - export refuses without rendered sheets
+  ---
+  duration_ms: 393.023166
+  type: 'test'
+  ...
+# Subtest: the PDF: one page per JPEG, sized by resolution, offsets that point where they should
+ok 6 - the PDF: one page per JPEG, sized by resolution, offsets that point where they should
+  ---
+  duration_ms: 21.405959
+  type: 'test'
+  ...
+# Subtest: low-level JPEG export preserves an existing unrelated destination
+ok 7 - low-level JPEG export preserves an existing unrelated destination
+  ---
+  duration_ms: 43.457166
+  type: 'test'
+  ...
+# Subtest: JPEG publication failure retains a substituted private image
+ok 8 - JPEG publication failure retains a substituted private image
+  ---
+  duration_ms: 20.230958
+  type: 'test'
+  ...
+# Subtest: pipeline print guard blocks decoded dimensions before low-resolution upsampling
+ok 9 - pipeline print guard blocks decoded dimensions before low-resolution upsampling
+  ---
+  duration_ms: 9.04125
+  type: 'test'
+  ...
+# Subtest: guarded export decodes verified immutable bytes even if its input name changes afterward
+ok 10 - guarded export decodes verified immutable bytes even if its input name changes afterward
+  ---
+  duration_ms: 24.708375
+  type: 'test'
+  ...
+# Subtest: publication handoff retains the transaction stage even before journal creation fails
+ok 11 - publication handoff retains the transaction stage even before journal creation fails
+  ---
+  duration_ms: 447.001666
+  type: 'test'
+  ...
+# Subtest: lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+ok 12 - lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+  ---
+  duration_ms: 609.974708
+  type: 'test'
+  ...
+# Subtest: a Plan edit invalidates export readiness and production export refuses the old sheet
+ok 13 - a Plan edit invalidates export readiness and production export refuses the old sheet
+  ---
+  duration_ms: 1575.160333
+  type: 'test'
+  ...
+# Subtest: same-size/preserved-time original edits block old rendered-sheet delivery
+ok 14 - same-size/preserved-time original edits block old rendered-sheet delivery
+  ---
+  duration_ms: 1368.941958
+  type: 'test'
+  ...
+# Subtest: same-size/preserved-time manual sheet changes invalidate delivery readiness and remain protected
+ok 15 - same-size/preserved-time manual sheet changes invalidate delivery readiness and remain protected
+  ---
+  duration_ms: 2243.106625
+  type: 'test'
+  ...
+# Subtest: historical stamp-only render records retain their files but cannot claim current production content
+ok 16 - historical stamp-only render records retain their files but cannot claim current production content
+  ---
+  duration_ms: 980.15275
+  type: 'test'
+  ...
+# Subtest: delivery follows stable spread ownership after reorder, including edited PSDs
+ok 17 - delivery follows stable spread ownership after reorder, including edited PSDs
+  ---
+  duration_ms: 945.249083
+  type: 'test'
+  ...
+# Subtest: PDF-only export refuses stale review JPEGs and preserves the previous PDF
+ok 18 - PDF-only export refuses stale review JPEGs and preserves the previous PDF
+  ---
+  duration_ms: 1312.872459
+  type: 'test'
+  ...
+# Subtest: preserved-size and timestamp JPEG edits invalidate readiness and cannot be overwritten as owned output
+ok 19 - preserved-size and timestamp JPEG edits invalidate readiness and cannot be overwritten as owned output
+  ---
+  duration_ms: 1826.706334
+  type: 'test'
+  ...
+# Subtest: production delivery refuses incomplete albums instead of silently omitting missing sheets
+ok 20 - production delivery refuses incomplete albums instead of silently omitting missing sheets
+  ---
+  duration_ms: 417.477958
+  type: 'test'
+  ...
+# Subtest: simultaneous exports reserve one job before asynchronous preparation
+ok 21 - simultaneous exports reserve one job before asynchronous preparation
+  ---
+  duration_ms: 768.229166
+  type: 'test'
+  ...
+# Subtest: production refuses upsampling a low-resolution sheet to the configured PPI
+ok 22 - production refuses upsampling a low-resolution sheet to the configured PPI
+  ---
+  duration_ms: 458.385583
+  type: 'test'
+  ...
+# Subtest: failed publication restores all prior JPEGs, PDF and cache, and the next export can retry
+ok 23 - failed publication restores all prior JPEGs, PDF and cache, and the next export can retry
+  ---
+  duration_ms: 2093.171166
+  type: 'test'
+  ...
+# Subtest: cancellation and source revision changes leave an existing complete delivery untouched
+ok 24 - cancellation and source revision changes leave an existing complete delivery untouched
+  ---
+  duration_ms: 1489.143459
+  type: 'test'
+  ...
+# Subtest: unrelated or externally edited delivery files are preserved
+ok 25 - unrelated or externally edited delivery files are preserved
+  ---
+  duration_ms: 503.648125
+  type: 'test'
+  ...
+# Subtest: empty, duplicate, invalid and unknown selections cannot accidentally export every spread
+ok 26 - empty, duplicate, invalid and unknown selections cannot accidentally export every spread
+  ---
+  duration_ms: 1393.700083
+  type: 'test'
+  ...
+# Subtest: a missing spread renders through the real engine into its persistent canonical sheet
+ok 27 - a missing spread renders through the real engine into its persistent canonical sheet
+  ---
+  duration_ms: 1205.658625
+  type: 'test'
+  ...
+# Subtest: complete delivery and its cache publish together with content ownership
+ok 28 - complete delivery and its cache publish together with content ownership
+  ---
+  duration_ms: 205.662375
+  type: 'test'
+  ...
+# Subtest: later public-file edits cannot change any retained delivery source, backup or discard
+    # Subtest: committed delivery
+    ok 1 - committed delivery
+      ---
+      duration_ms: 218.865166
+      type: 'test'
+      ...
+    # Subtest: restored delivery
+    ok 2 - restored delivery
+      ---
+      duration_ms: 322.065958
+      type: 'test'
+      ...
+    1..2
+ok 29 - later public-file edits cannot change any retained delivery source, backup or discard
+  ---
+  duration_ms: 541.172042
+  type: 'test'
+  ...
+# Subtest: readiness verifies digest ownership and rejects same-stamp edits, symlinks and invalid records
+ok 30 - readiness verifies digest ownership and rejects same-stamp edits, symlinks and invalid records
+  ---
+  duration_ms: 3.001792
+  type: 'test'
+  ...
+# Subtest: first publication and legacy stamp ownership upgrade to digest ownership
+    # Subtest: {"existing":false}
+    ok 1 - {"existing":false}
+      ---
+      duration_ms: 163.249584
+      type: 'test'
+      ...
+    # Subtest: {"strong":false}
+    ok 2 - {"strong":false}
+      ---
+      duration_ms: 268.102791
+      type: 'test'
+      ...
+    1..2
+ok 31 - first publication and legacy stamp ownership upgrade to digest ownership
+  ---
+  duration_ms: 431.59675
+  type: 'test'
+  ...
+# Subtest: caught data and cache failures restore every previous byte
+    # Subtest: backup-1
+    ok 1 - backup-1
+      ---
+      duration_ms: 158.651667
+      type: 'test'
+      ...
+    # Subtest: backup-3
+    ok 2 - backup-3
+      ---
+      duration_ms: 263.204917
+      type: 'test'
+      ...
+    1..2
+ok 32 - caught data and cache failures restore every previous byte
+  ---
+  duration_ms: 422.334292
+  type: 'test'
+  ...
+# Subtest: cache construction fails before exposing any prepared delivery file
+ok 33 - cache construction fails before exposing any prepared delivery file
+  ---
+  duration_ms: 19.801
+  type: 'test'
+  ...
+# Subtest: a cache or target edit while an asynchronous cache builder runs is rejected before publication
+    # Subtest: cache
+    ok 1 - cache
+      ---
+      duration_ms: 45.482958
+      type: 'test'
+      ...
+    # Subtest: jpeg
+    ok 2 - jpeg
+      ---
+      duration_ms: 38.804333
+      type: 'test'
+      ...
+    1..2
+ok 34 - a cache or target edit while an asynchronous cache builder runs is rejected before publication
+  ---
+  duration_ms: 84.508667
+  type: 'test'
+  ...
+# Subtest: source revision changes during final validation or marker flush restore the complete previous delivery
+    # Subtest: final-validation
+    ok 1 - final-validation
+      ---
+      duration_ms: 337.247917
+      type: 'test'
+      ...
+    # Subtest: commit-record-flush
+    ok 2 - commit-record-flush
+      ---
+      duration_ms: 382.171542
+      type: 'test'
+      ...
+    1..2
+ok 35 - source revision changes during final validation or marker flush restore the complete previous delivery
+  ---
+  duration_ms: 719.737209
+  type: 'test'
+  ...
+# Subtest: a snapshot validator must be a function before publication can begin
+ok 36 - a snapshot validator must be a function before publication can begin
+  ---
+  duration_ms: 6.538542
+  type: 'test'
+  ...
+# Subtest: cancellation before publication, between files and after cache publication restores the complete prior set
+    # Subtest: before
+    ok 1 - before
+      ---
+      duration_ms: 31.611667
+      type: 'test'
+      ...
+    # Subtest: second-file
+    ok 2 - second-file
+      ---
+      duration_ms: 233.574208
+      type: 'test'
+      ...
+    # Subtest: cache
+    ok 3 - cache
+      ---
+      duration_ms: 339.378792
+      type: 'test'
+      ...
+    # Subtest: final-validation
+    ok 4 - final-validation
+      ---
+      duration_ms: 345.895959
+      type: 'test'
+      ...
+    # Subtest: commit-record-flush
+    ok 5 - commit-record-flush
+      ---
+      duration_ms: 367.225875
+      type: 'test'
+      ...
+    # Subtest: snapshot-validation
+    ok 6 - snapshot-validation
+      ---
+      duration_ms: 330.81425
+      type: 'test'
+      ...
+    1..6
+ok 37 - cancellation before publication, between files and after cache publication restores the complete prior set
+  ---
+  duration_ms: 1649.071666
+  type: 'test'
+  ...
+# Subtest: unowned, edited and same-stamp content edits cannot be replaced
+    # Subtest: unowned
+    ok 1 - unowned
+      ---
+      duration_ms: 40.031291
+      type: 'test'
+      ...
+    # Subtest: edited
+    ok 2 - edited
+      ---
+      duration_ms: 31.269542
+      type: 'test'
+      ...
+    # Subtest: same-stamp
+    ok 3 - same-stamp
+      ---
+      duration_ms: 33.083167
+      type: 'test'
+      ...
+    1..3
+ok 38 - unowned, edited and same-stamp content edits cannot be replaced
+  ---
+  duration_ms: 104.637166
+  type: 'test'
+  ...
+# Subtest: ownership cache from another album or a concurrently changed cache is preserved
+    # Subtest: album
+    ok 1 - album
+      ---
+      duration_ms: 63.612917
+      type: 'test'
+      ...
+    # Subtest: content
+    ok 2 - content
+      ---
+      duration_ms: 31.51475
+      type: 'test'
+      ...
+    1..2
+ok 39 - ownership cache from another album or a concurrently changed cache is preserved
+  ---
+  duration_ms: 95.3985
+  type: 'test'
+  ...
+# Subtest: an absent ownership cache cannot be replaced by caller claims about existing files
+ok 40 - an absent ownership cache cannot be replaced by caller claims about existing files
+  ---
+  duration_ms: 23.683333
+  type: 'test'
+  ...
+# Subtest: a destination appearing at the exclusive install boundary survives with backups and journal
+ok 41 - a destination appearing at the exclusive install boundary survives with backups and journal
+  ---
+  duration_ms: 170.259083
+  type: 'test'
+  ...
+# Subtest: a replacement file at the copy-metadata boundary keeps its bytes, mode and timestamps
+    # Subtest: regular replacement
+    ok 1 - regular replacement
+      ---
+      duration_ms: 106.045334
+      type: 'test'
+      ...
+    # Subtest: symlink replacement
+    ok 2 - symlink replacement
+      ---
+      duration_ms: 80.871625
+      type: 'test'
+      ...
+    1..2
+ok 42 - a replacement file at the copy-metadata boundary keeps its bytes, mode and timestamps
+  ---
+  duration_ms: 187.266667
+  type: 'test'
+  ...
+# Subtest: an unrelated file appearing at a private backup destination is never overwritten
+ok 43 - an unrelated file appearing at a private backup destination is never overwritten
+  ---
+  duration_ms: 59.856708
+  type: 'test'
+  ...
+# Subtest: an unrelated file appearing at a private discard destination is never overwritten during rollback
+ok 44 - an unrelated file appearing at a private discard destination is never overwritten during rollback
+  ---
+  duration_ms: 116.820625
+  type: 'test'
+  ...
+# Subtest: a recovery backup changed after enumeration is preserved with its journal
+ok 45 - a recovery backup changed after enumeration is preserved with its journal
+  ---
+  duration_ms: 193.193084
+  type: 'test'
+  ...
+# Subtest: a history destination appearing during retirement is preserved without replacing either directory
+ok 46 - a history destination appearing during retirement is preserved without replacing either directory
+  ---
+  duration_ms: 250.914292
+  type: 'test'
+  ...
+# Subtest: an edit racing history retirement is retained and reported at the actual history path
+ok 47 - an edit racing history retirement is retained and reported at the actual history path
+  ---
+  duration_ms: 251.569834
+  type: 'test'
+  ...
+# Subtest: a helper error after completed history movement reports the actual retained journal
+    # Subtest: committed
+    ok 1 - committed
+      ---
+      duration_ms: 179.421833
+      type: 'test'
+      ...
+    # Subtest: restored
+    ok 2 - restored
+      ---
+      duration_ms: 190.0805
+      type: 'test'
+      ...
+    1..2
+ok 48 - a helper error after completed history movement reports the actual retained journal
+  ---
+  duration_ms: 369.797875
+  type: 'test'
+  ...
+# Subtest: exclusive copies remain available without hard links and preserve timestamps
+ok 49 - exclusive copies remain available without hard links and preserve timestamps
+  ---
+  duration_ms: 231.300292
+  type: 'test'
+  ...
+# Subtest: a synchronous commit-journal flush failure restores the old set before a marker is installed
+ok 50 - a synchronous commit-journal flush failure restores the old set before a marker is installed
+  ---
+  duration_ms: 362.032584
+  type: 'test'
+  ...
+# Subtest: a history retirement failure after commit reports committed status and restart keeps the new set
+ok 51 - a history retirement failure after commit reports committed status and restart keeps the new set
+  ---
+  duration_ms: 246.3395
+  type: 'test'
+  ...
+# Subtest: an edit racing the capture of an old target is preserved in its recovery backup
+ok 52 - an edit racing the capture of an old target is preserved in its recovery backup
+  ---
+  duration_ms: 85.00275
+  type: 'test'
+  ...
+# Subtest: an edit racing rollback remains at its name and in a retained recovery copy
+ok 53 - an edit racing rollback remains at its name and in a retained recovery copy
+  ---
+  duration_ms: 235.703083
+  type: 'test'
+  ...
+# Subtest: a symlink or unknown file at the temporary journal name cannot be overwritten or deleted
+    # Subtest: symlink
+    ok 1 - symlink
+      ---
+      duration_ms: 155.159083
+      type: 'test'
+      ...
+    # Subtest: regular
+    ok 2 - regular
+      ---
+      duration_ms: 156.978333
+      type: 'test'
+      ...
+    1..2
+ok 54 - a symlink or unknown file at the temporary journal name cannot be overwritten or deleted
+  ---
+  duration_ms: 312.370459
+  type: 'test'
+  ...
+# Subtest: restart restores the previous set at actual SIGKILL publication boundaries
+    # Subtest: prepared-journal
+    ok 1 - prepared-journal
+      ---
+      duration_ms: 178.72475
+      type: 'test'
+      ...
+    # Subtest: old-to-backup
+    ok 2 - old-to-backup
+      ---
+      duration_ms: 187.135583
+      type: 'test'
+      ...
+    # Subtest: new-install
+    ok 3 - new-install
+      ---
+      duration_ms: 204.746875
+      type: 'test'
+      ...
+    # Subtest: new-copy
+    ok 4 - new-copy
+      ---
+      duration_ms: 210.322
+      type: 'test'
+      ...
+    # Subtest: cache-to-backup
+    ok 5 - cache-to-backup
+      ---
+      duration_ms: 384.457834
+      type: 'test'
+      ...
+    # Subtest: cache-install
+    ok 6 - cache-install
+      ---
+      duration_ms: 417.725416
+      type: 'test'
+      ...
+    1..6
+ok 55 - restart restores the previous set at actual SIGKILL publication boundaries
+  ---
+  duration_ms: 1583.556
+  type: 'test'
+  ...
+# Subtest: restart keeps the complete new set after committed marker and interrupted cleanup
+    # Subtest: committed-marker
+    ok 1 - committed-marker
+      ---
+      duration_ms: 302.107875
+      type: 'test'
+      ...
+    # Subtest: committed-cleanup
+    ok 2 - committed-cleanup
+      ---
+      duration_ms: 263.7735
+      type: 'test'
+      ...
+    1..2
+ok 56 - restart keeps the complete new set after committed marker and interrupted cleanup
+  ---
+  duration_ms: 566.112833
+  type: 'test'
+  ...
+# Subtest: rollback can itself be killed and restarted without losing previous copies
+    # Subtest: rollback-discard
+    ok 1 - rollback-discard
+      ---
+      duration_ms: 336.881541
+      type: 'test'
+      ...
+    # Subtest: restored-install
+    ok 2 - restored-install
+      ---
+      duration_ms: 271.920125
+      type: 'test'
+      ...
+    1..2
+ok 57 - rollback can itself be killed and restarted without losing previous copies
+  ---
+  duration_ms: 609.029583
+  type: 'test'
+  ...
+# Subtest: a killed partial exclusive copy is a recovery conflict, never an excuse to delete unknown bytes
+ok 58 - a killed partial exclusive copy is a recovery conflict, never an excuse to delete unknown bytes
+  ---
+  duration_ms: 256.7545
+  type: 'test'
+  ...
+# Subtest: external edits after a kill retain all recovery copies and the journal
+ok 59 - external edits after a kill retain all recovery copies and the journal
+  ---
+  duration_ms: 177.574542
+  type: 'test'
+  ...
+# Subtest: unknown stage files survive recovery and keep the journal and backups
+ok 60 - unknown stage files survive recovery and keep the journal and backups
+  ---
+  duration_ms: 197.401875
+  type: 'test'
+  ...
+# Subtest: malformed path and album journals fail before mutating delivery files
+    # Subtest: target
+    ok 1 - target
+      ---
+      duration_ms: 147.855375
+      type: 'test'
+      ...
+    # Subtest: source
+    ok 2 - source
+      ---
+      duration_ms: 184.46325
+      type: 'test'
+      ...
+    # Subtest: album
+    ok 3 - album
+      ---
+      duration_ms: 168.60775
+      type: 'test'
+      ...
+    # Subtest: fingerprint
+    ok 4 - fingerprint
+      ---
+      duration_ms: 155.514334
+      type: 'test'
+      ...
+    1..4
+ok 61 - malformed path and album journals fail before mutating delivery files
+  ---
+  duration_ms: 656.777417
+  type: 'test'
+  ...
+# Subtest: target-directory and staged-source symlinks are rejected without touching their referents
+    # Subtest: directory
+    ok 1 - directory
+      ---
+      duration_ms: 25.517583
+      type: 'test'
+      ...
+    # Subtest: source
+    ok 2 - source
+      ---
+      duration_ms: 25.74475
+      type: 'test'
+      ...
+    1..2
+ok 62 - target-directory and staged-source symlinks are rejected without touching their referents
+  ---
+  duration_ms: 51.427917
+  type: 'test'
+  ...
+# Subtest: another process cannot publish or recover while publication holds the album lock
+ok 63 - another process cannot publish or recover while publication holds the album lock
+  ---
+  duration_ms: 246.217416
+  type: 'test'
+  ...
+# Subtest: a prepared stage without a journal is preserved and cannot affect delivered files
+ok 64 - a prepared stage without a journal is preserved and cannot affect delivered files
+  ---
+  duration_ms: 18.433375
+  type: 'test'
+  ...
+# Subtest: competing restarted processes cannot unlink a newly acquired lock while reclaiming stale ownership
+ok 65 - competing restarted processes cannot unlink a newly acquired lock while reclaiming stale ownership
+  ---
+  duration_ms: 326.753708
+  type: 'test'
+  ...
+# Subtest: an interrupted lock reclamation fails closed and preserves its guard without publishing
+ok 66 - an interrupted lock reclamation fails closed and preserves its guard without publishing
+  ---
+  duration_ms: 13.252417
+  type: 'test'
+  ...
+# Subtest: a real SIGKILL during stale-lock reclamation preserves the guard and all delivery recovery data
+ok 67 - a real SIGKILL during stale-lock reclamation preserves the guard and all delivery recovery data
+  ---
+  duration_ms: 284.458875
+  type: 'test'
+  ...
+# Subtest: an edited reclamation guard cannot be removed as if it were still process-owned
+ok 68 - an edited reclamation guard cannot be removed as if it were still process-owned
+  ---
+  duration_ms: 145.460834
+  type: 'test'
+  ...
+# Subtest: publication lock cleanup errors retain committed status and a later call clears its own stale owner
+ok 69 - publication lock cleanup errors retain committed status and a later call clears its own stale owner
+  ---
+  duration_ms: 188.825583
+  type: 'test'
+  ...
+# Subtest: unsupported directory synchronization is a best-effort fallback while files are flushed
+ok 70 - unsupported directory synchronization is a best-effort fallback while files are flushed
+  ---
+  duration_ms: 155.36575
+  type: 'test'
+  ...
+# Subtest: the library: collections albums use and ones added, defaults for new albums, removal leaves files
+ok 71 - the library: collections albums use and ones added, defaults for new albums, removal leaves files
+  ---
+  duration_ms: 21.532875
+  type: 'test'
+  ...
+# Subtest: storage reports sizes and preserves nonempty caches without ownership evidence
+ok 72 - storage reports sizes and preserves nonempty caches without ownership evidence
+  ---
+  duration_ms: 9.580916
+  type: 'test'
+  ...
+# Subtest: a real child-held job cannot lose cache bytes through another output metadata alias
+ok 73 - a real child-held job cannot lose cache bytes through another output metadata alias
+  ---
+  duration_ms: 326.765459
+  type: 'test'
+  ...
+# {"rejected":true,"retainedBytes":true,"error":"The managed output/proof path /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-PoXrfw/sheets-B/.album-studio changed, is a symlink, or is not the expected regular file/directory. All existing bytes and recovery histories were preserved. Inspect this path before retrying."}
+# Subtest: a real child-held job keeps its shared-page preview and manifest from another project
+ok 74 - a real child-held job keeps its shared-page preview and manifest from another project
+  ---
+  duration_ms: 402.142458
+  type: 'test'
+  ...
+# {"otherPreviewRetained":true,"manifestUnchanged":true,"idle":{"event":"proofs.idle","album":"/private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-FVsNKl/B","error":"The managed output/proof path /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-FVsNKl/B/proofs/pages changed, is a symlink, or is not the expected regular file/directory. All existing bytes and recovery histories were preserved. Inspect this path before retrying."}}
+# Subtest: output validation accepts root aliases and rejects metadata/nested recovery aliases without changing bytes
+    # Subtest: .album-studio
+    ok 1 - .album-studio
+      ---
+      duration_ms: 5.807291
+      type: 'test'
+      ...
+    # Subtest: .album-studio/raw
+    ok 2 - .album-studio/raw
+      ---
+      duration_ms: 7.248083
+      type: 'test'
+      ...
+    # Subtest: .album-studio/adjusted
+    ok 3 - .album-studio/adjusted
+      ---
+      duration_ms: 11.947708
+      type: 'test'
+      ...
+    # Subtest: .album-studio/sheets
+    ok 4 - .album-studio/sheets
+      ---
+      duration_ms: 5.87275
+      type: 'test'
+      ...
+    # Subtest: .album-studio/previews
+    ok 5 - .album-studio/previews
+      ---
+      duration_ms: 2.64425
+      type: 'test'
+      ...
+    # Subtest: .album-studio/render-history
+    ok 6 - .album-studio/render-history
+      ---
+      duration_ms: 10.146125
+      type: 'test'
+      ...
+    # Subtest: .album-studio/delivery-history
+    ok 7 - .album-studio/delivery-history
+      ---
+      duration_ms: 2.276708
+      type: 'test'
+      ...
+    # Subtest: .album-studio/render-01234567-89ab-cdef-0123-456789abcdef
+    ok 8 - .album-studio/render-01234567-89ab-cdef-0123-456789abcdef
+      ---
+      duration_ms: 9.083167
+      type: 'test'
+      ...
+    1..8
+ok 75 - output validation accepts root aliases and rejects metadata/nested recovery aliases without changing bytes
+  ---
+  duration_ms: 64.195167
+  type: 'test'
+  ...
+# Subtest: managed cache entries must be directories and nested links cannot be pruned as unknown cache data
+    # Subtest: file
+    ok 1 - file
+      ---
+      duration_ms: 61.5735
+      type: 'test'
+      ...
+    # Subtest: nested-link
+    ok 2 - nested-link
+      ---
+      duration_ms: 57.920792
+      type: 'test'
+      ...
+    1..2
+ok 76 - managed cache entries must be directories and nested links cannot be pruned as unknown cache data
+  ---
+  duration_ms: 119.746959
+  type: 'test'
+  ...
+# Subtest: a directory substituted while enumerating managed cache descendants fails closed
+ok 77 - a directory substituted while enumerating managed cache descendants fails closed
+  ---
+  duration_ms: 9.591708
+  type: 'test'
+  ...
+# Subtest: proof validation accepts canonical root aliases and rejects each intermediate proof alias
+    # Subtest: proofs
+    ok 1 - proofs
+      ---
+      duration_ms: 1.542125
+      type: 'test'
+      ...
+    # Subtest: proofs/pages
+    ok 2 - proofs/pages
+      ---
+      duration_ms: 7.273917
+      type: 'test'
+      ...
+    # Subtest: proofs/.album-studio-history
+    ok 3 - proofs/.album-studio-history
+      ---
+      duration_ms: 8.289291
+      type: 'test'
+      ...
+    1..3
+ok 78 - proof validation accepts canonical root aliases and rejects each intermediate proof alias
+  ---
+  duration_ms: 22.57275
+  type: 'test'
+  ...
+# Subtest: cache clearing preserves retained directories and loose files without ownership evidence
+ok 79 - cache clearing preserves retained directories and loose files without ownership evidence
+  ---
+  duration_ms: 489.68875
+  type: 'test'
+  ...
+# Subtest: delivery cannot validate a transient taller PSD header then upsample the restored low-resolution sheet
+ok 80 - delivery cannot validate a transient taller PSD header then upsample the restored low-resolution sheet
+  ---
+  duration_ms: 478.294125
+  type: 'test'
+  ...
+# Subtest: photo metadata and full-decode checks consume the same verified low-resolution original bytes
+ok 81 - photo metadata and full-decode checks consume the same verified low-resolution original bytes
+  ---
+  duration_ms: 15.848875
+  type: 'test'
+  ...
+# Subtest: template geometry cannot come from a transient easier frame while the original PSD is restored
+ok 82 - template geometry cannot come from a transient easier frame while the original PSD is restored
+  ---
+  duration_ms: 10.153125
+  type: 'test'
+  ...
+# Subtest: unchanged read-only snapshots are independently retained with metrics
+ok 83 - unchanged read-only snapshots are independently retained with metrics
+  ---
+  duration_ms: 22.754375
+  type: 'test'
+  ...
+# Subtest: empty cleanup cannot remove files appearing at the rmdir boundary
+ok 84 - empty cleanup cannot remove files appearing at the rmdir boundary
+  ---
+  duration_ms: 4.814125
+  type: 'test'
+  ...
+# Subtest: unknown files arriving at atomic capture survive the complete directory move
+ok 85 - unknown files arriving at atomic capture survive the complete directory move
+  ---
+  duration_ms: 4.435583
+  type: 'test'
+  ...
+# Subtest: a colliding history destination is never replaced or removed
+ok 86 - a colliding history destination is never replaced or removed
+  ---
+  duration_ms: 8.397708
+  type: 'test'
+  ...
+# Subtest: an uncertain completed native move is reconciled without a second mutation
+ok 87 - an uncertain completed native move is reconciled without a second mutation
+  ---
+  duration_ms: 9.156083
+  type: 'test'
+  ...
+# Subtest: a completed capture followed by a new source name reports both retained paths
+ok 88 - a completed capture followed by a new source name reports both retained paths
+  ---
+  duration_ms: 15.079708
+  type: 'test'
+  ...
+# Subtest: a substituted stage is preserved without following its customer symlink
+ok 89 - a substituted stage is preserved without following its customer symlink
+  ---
+  duration_ms: 4.940292
+  type: 'test'
+  ...
+# Subtest: history and free-space caps refuse before creating another stage or source copy
+ok 90 - history and free-space caps refuse before creating another stage or source copy
+  ---
+  duration_ms: 5.923792
+  type: 'test'
+  ...
+# Subtest: retention caps apply through aliases in a separate real process
+ok 91 - retention caps apply through aliases in a separate real process
+  ---
+  duration_ms: 67.254
+  type: 'test'
+  ...
+# Subtest: primary decoder errors retain their identity and recovery evidence
+ok 92 - primary decoder errors retain their identity and recovery evidence
+  ---
+  duration_ms: 4.593958
+  type: 'test'
+  ...
+# Subtest: global clearing preserves retained histories and unknown manual files
+ok 93 - global clearing preserves retained histories and unknown manual files
+  ---
+  duration_ms: 6.079792
+  type: 'test'
+  ...
+# Subtest: global clearing cannot delete an active source snapshot
+ok 94 - global clearing cannot delete an active source snapshot
+  ---
+  duration_ms: 14.133833
+  type: 'test'
+  ...
+# Subtest: another real process cannot clear active snapshots through a cache-root alias
+ok 95 - another real process cannot clear active snapshots through a cache-root alias
+  ---
+  duration_ms: 70.933667
+  type: 'test'
+  ...
+# Subtest: source cleanup retains a complete stage when an unknown file appears
+ok 96 - source cleanup retains a complete stage when an unknown file appears
+  ---
+  duration_ms: 17.068583
+  type: 'test'
+  ...
+# Subtest: derived evidence EEXIST preserves the exact unowned record
+ok 97 - derived evidence EEXIST preserves the exact unowned record
+  ---
+  duration_ms: 26.670792
+  type: 'test'
+  ...
+# Subtest: a decoder failure preserves a substituted temporary image and primary error
+not ok 98 - a decoder failure preserves a substituted temporary image and primary error
+  ---
+  duration_ms: 22.2275
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:55:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, open '/private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-34eXjq/derived/.album-studio-stage-history/9d4a0bc6-2208-4767-bced-497f10f54d6a/image.jpg'"
+  code: 'ENOENT'
+  stack: |-
+    Object.readFileSync (node:fs:440:20)
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:59:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+ok 99 - proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+  ---
+  duration_ms: 59.153667
+  type: 'test'
+  ...
+# Subtest: a template is read with its frames in drawing order, their shapes and strokes
+ok 100 - a template is read with its frames in drawing order, their shapes and strokes
+  ---
+  duration_ms: 75.567333
+  type: 'test'
+  ...
+# Subtest: erode shrinks a mask from its edges by r pixels
+ok 101 - erode shrinks a mask from its edges by r pixels
+  ---
+  duration_ms: 0.123541
+  type: 'test'
+  ...
+# Subtest: proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+ok 102 - proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+  ---
+  duration_ms: 1389.537125
+  type: 'test'
+  ...
+# Subtest: a spread layout says where each frame is and which photo fills it
+ok 103 - a spread layout says where each frame is and which photo fills it
+  ---
+  duration_ms: 37.824458
+  type: 'test'
+  ...
+# Subtest: a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+ok 104 - a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+  ---
+  duration_ms: 1026.027042
+  type: 'test'
+  ...
+# Subtest: proofs without source evidence are preserved in history and regenerated from current sources
+ok 105 - proofs without source evidence are preserved in history and regenerated from current sources
+  ---
+  duration_ms: 451.739666
+  type: 'test'
+  ...
+# Subtest: identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+ok 106 - identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+  ---
+  duration_ms: 655.264166
+  type: 'test'
+  ...
+# Subtest: the JPEG a TIFF-based RAW embeds is found, with its orientation
+ok 107 - the JPEG a TIFF-based RAW embeds is found, with its orientation
+  ---
+  duration_ms: 3.561792
+  type: 'test'
+  ...
+# Subtest: thumbnails refresh after a same-size, preserved-mtime original mutation
+ok 108 - thumbnails refresh after a same-size, preserved-mtime original mutation
+  ---
+  duration_ms: 95.059792
+  type: 'test'
+  ...
+# Subtest: an unverified legacy thumbnail is refreshed only while preserving its old bytes
+ok 109 - an unverified legacy thumbnail is refreshed only while preserving its old bytes
+  ---
+  duration_ms: 62.925375
+  type: 'test'
+  ...
+# Subtest: a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+ok 110 - a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+  ---
+  duration_ms: 46.833666
+  type: 'test'
+  ...
+# Subtest: a source change during thumbnail decoding cannot publish a stale proxy
+ok 111 - a source change during thumbnail decoding cannot publish a stale proxy
+  ---
+  duration_ms: 38.238625
+  type: 'test'
+  ...
+# Subtest: RAW development uses source content, retains previous derived copies and rejects symlinks
+ok 112 - RAW development uses source content, retains previous derived copies and rejects symlinks
+  ---
+  duration_ms: 86.418584
+  type: 'test'
+  ...
+# Subtest: embedded RAW preview content and orientation refresh under a preserved stamp
+ok 113 - embedded RAW preview content and orientation refresh under a preserved stamp
+  ---
+  duration_ms: 92.940625
+  type: 'test'
+  ...
+# Subtest: adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+ok 114 - adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+  ---
+  duration_ms: 93.224417
+  type: 'test'
+  ...
+# Subtest: source changes during adjustment decoding reject publication and preserve prior cache data
+ok 115 - source changes during adjustment decoding reject publication and preserve prior cache data
+  ---
+  duration_ms: 39.915959
+  type: 'test'
+  ...
+# Subtest: an edit racing the thumbnail capture is restored exclusively and retained in history
+ok 116 - an edit racing the thumbnail capture is restored exclusively and retained in history
+  ---
+  duration_ms: 81.608208
+  type: 'test'
+  ...
+# Subtest: a new target appearing during thumbnail publication is never replaced
+ok 117 - a new target appearing during thumbnail publication is never replaced
+  ---
+  duration_ms: 81.318458
+  type: 'test'
+  ...
+# Subtest: RAW development detects a source mutation during the converter and publishes no stale image
+ok 118 - RAW development detects a source mutation during the converter and publishes no stale image
+  ---
+  duration_ms: 31.107209
+  type: 'test'
+  ...
+# Subtest: manually changed development and adjustment outputs are rejected without replacement
+ok 119 - manually changed development and adjustment outputs are rejected without replacement
+  ---
+  duration_ms: 100.484417
+  type: 'test'
+  ...
+# Subtest: old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+ok 120 - old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+  ---
+  duration_ms: 44.048917
+  type: 'test'
+  ...
+# Subtest: embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+ok 121 - embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+  ---
+  duration_ms: 3.554917
+  type: 'test'
+  ...
+# Subtest: different sources targeting the same thumbnail name are serialized and independently verified
+ok 122 - different sources targeting the same thumbnail name are serialized and independently verified
+  ---
+  duration_ms: 76.91475
+  type: 'test'
+  ...
+# Subtest: a racing unrelated image.jpg in thumbnail history cannot be overwritten
+ok 123 - a racing unrelated image.jpg in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 83.659416
+  type: 'test'
+  ...
+# Subtest: a racing unrelated evidence.json in thumbnail history cannot be overwritten
+ok 124 - a racing unrelated evidence.json in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 71.527708
+  type: 'test'
+  ...
+# Subtest: cache publication uses atomic exclusive moves when the filesystem refuses hard links
+ok 125 - cache publication uses atomic exclusive moves when the filesystem refuses hard links
+  ---
+  duration_ms: 112.706
+  type: 'test'
+  ...
+# Subtest: a source changed and restored during RAW decoding cannot change the verified pixels consumed
+ok 126 - a source changed and restored during RAW decoding cannot change the verified pixels consumed
+  ---
+  duration_ms: 33.900792
+  type: 'test'
+  ...
+1..126
+# tests 182
+# suites 0
+# pass 181
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23403.063167

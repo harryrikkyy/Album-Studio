@@ -9,15 +9,12 @@ import { templateLabel } from './format'
 import { describeSlots, changedSpreads, type Template } from './plan_logic'
 import { album, assetVersion, spreadIndex, stored, store, toast } from './state'
 import type { Album, Spread } from './types'
+import type { AlbumOperation, OperationReport, UpdateResult as ContractUpdateResult } from '../../contracts/types'
 
-export type Op = { op: string } & Record<string, unknown>
+export type Op = AlbumOperation
 
-interface Report {
-  autoFill?: { spreads: number; withoutTemplate: number; cappedTo: number | null }
-  templates?: { n: number; name: string; auto: boolean }[]
-  noTemplate?: { n: number; h: number; v: number }[]
-}
-export interface UpdateResult { album: Album; report?: Report; canUndo: boolean; canRedo: boolean; changed?: boolean }
+type Report = OperationReport
+export type UpdateResult = ContractUpdateResult
 
 export const canUndo = signal(false)
 export const canRedo = signal(false)
@@ -73,7 +70,7 @@ export function edit(ops: Op[]): Promise<Report | null> {
   return queued(async (a) => {
     editing.value++
     try {
-      const r = await call<UpdateResult>('album.update', { album: a.path, ops: requested })
+      const r = await call('album.update', { album: a.path, ops: requested })
       apply(a, r)
       if (album.value?.path === a.path) explain(r.report)
       return r.report ?? {}
@@ -99,11 +96,11 @@ function explain(report: Report | undefined) {
 export function undo() { return step('album.undo', 'Nothing to undo.') }
 export function redo() { return step('album.redo', 'Nothing to redo.') }
 
-function step(method: string, nothing: string) {
+function step(method: 'album.undo' | 'album.redo', nothing: string) {
   return queued(async (a) => {
     editing.value++
     try {
-      const r = await call<UpdateResult>(method, { album: a.path })
+      const r = await call(method, { album: a.path })
       if (r.changed === false && album.value?.path === a.path) toast('info', nothing, 2500)
       apply(a, r)
     } catch (e) {
@@ -123,7 +120,7 @@ export function proofUrl(s: Spread): string | undefined {
 // ── proofs ──────────────────────────────────────────────────────────────────
 
 onEvent('proofs.updated', (d) => {
-  const e = d as { album: string; n: number; proof: string | null }
+  const e = d
   const a = album.value
   if (!a || a.path !== e.album) return
   batch(() => {
@@ -139,14 +136,14 @@ onEvent('proofs.updated', (d) => {
 })
 
 onEvent('proofs.failed', (d) => {
-  const e = d as { album: string; n: number; error: string }
+  const e = d
   if (album.value?.path !== e.album) return
   setPending([], [e.n])
   toast('error', `The preview of spread ${e.n} couldn’t be drawn: ${e.error}`, 8000)
 })
 
 onEvent('proofs.idle', (d) => {
-  const e = d as { album: string }
+  const e = d
   if (album.value?.path === e.album) proofPending.value = new Set()
 })
 
@@ -175,7 +172,7 @@ export async function loadTemplates(force = false) {
   templatesFor = a.path
   templatesError.value = null
   try {
-    const list = await call<Template[]>('templates.list', { album: a.path }, 60_000)
+    const list = await call('templates.list', { album: a.path }, 60_000)
     if (templatesFor === a.path) templates.value = list
   } catch (e) {
     templatesError.value = (e as Error).message

@@ -1,0 +1,631 @@
+TAP version 13
+# Subtest: reads a JPEG size from its header
+ok 1 - reads a JPEG size from its header
+  ---
+  duration_ms: 1.723833
+  type: 'test'
+  ...
+# Subtest: opens a project: spreads, templates, proofs, photos
+ok 2 - opens a project: spreads, templates, proofs, photos
+  ---
+  duration_ms: 18.355208
+  type: 'test'
+  ...
+# Subtest: a missing project explains itself
+ok 3 - a missing project explains itself
+  ---
+  duration_ms: 1.314917
+  type: 'test'
+  ...
+# backend: ignored invalid JSON protocol input
+# Subtest: recent albums: newest first, de-duplicated, availability checked
+ok 4 - recent albums: newest first, de-duplicated, availability checked
+  ---
+  duration_ms: 9.943042
+  type: 'test'
+  ...
+# Subtest: the protocol answers unknown methods with an error, not a crash
+ok 5 - the protocol answers unknown methods with an error, not a crash
+  ---
+  duration_ms: 1.601458
+  type: 'test'
+  ...
+# Subtest: a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+ok 6 - a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width and height
+  ---
+  duration_ms: 99.485458
+  type: 'test'
+  ...
+# Subtest: every registered method has authored valid request/result/reply examples
+    # Subtest: system.ping
+    ok 1 - system.ping
+      ---
+      duration_ms: 1.036333
+      type: 'test'
+      ...
+    # Subtest: account.status
+    ok 2 - account.status
+      ---
+      duration_ms: 0.138833
+      type: 'test'
+      ...
+    # Subtest: account.signIn
+    ok 3 - account.signIn
+      ---
+      duration_ms: 0.111833
+      type: 'test'
+      ...
+    # Subtest: account.cancelSignIn
+    ok 4 - account.cancelSignIn
+      ---
+      duration_ms: 0.052125
+      type: 'test'
+      ...
+    # Subtest: account.retry
+    ok 5 - account.retry
+      ---
+      duration_ms: 0.064583
+      type: 'test'
+      ...
+    # Subtest: account.signOut
+    ok 6 - account.signOut
+      ---
+      duration_ms: 0.062167
+      type: 'test'
+      ...
+    # Subtest: album.open
+    ok 7 - album.open
+      ---
+      duration_ms: 0.158708
+      type: 'test'
+      ...
+    # Subtest: album.recent
+    ok 8 - album.recent
+      ---
+      duration_ms: 0.221
+      type: 'test'
+      ...
+    # Subtest: folders.inspect
+    ok 9 - folders.inspect
+      ---
+      duration_ms: 0.202292
+      type: 'test'
+      ...
+    # Subtest: templates.collections
+    ok 10 - templates.collections
+      ---
+      duration_ms: 0.1425
+      type: 'test'
+      ...
+    # Subtest: templates.inspect
+    ok 11 - templates.inspect
+      ---
+      duration_ms: 0.090125
+      type: 'test'
+      ...
+    # Subtest: album.suggest
+    ok 12 - album.suggest
+      ---
+      duration_ms: 0.05475
+      type: 'test'
+      ...
+    # Subtest: album.create
+    ok 13 - album.create
+      ---
+      duration_ms: 0.141459
+      type: 'test'
+      ...
+    # Subtest: album.setFolders
+    ok 14 - album.setFolders
+      ---
+      duration_ms: 0.133958
+      type: 'test'
+      ...
+    # Subtest: album.update
+    ok 15 - album.update
+      ---
+      duration_ms: 0.410417
+      type: 'test'
+      ...
+    # Subtest: album.undo
+    ok 16 - album.undo
+      ---
+      duration_ms: 0.146292
+      type: 'test'
+      ...
+    # Subtest: album.redo
+    ok 17 - album.redo
+      ---
+      duration_ms: 0.116125
+      type: 'test'
+      ...
+    # Subtest: templates.list
+    ok 18 - templates.list
+      ---
+      duration_ms: 0.084083
+      type: 'test'
+      ...
+    # Subtest: spread.layout
+    ok 19 - spread.layout
+      ---
+      duration_ms: 0.090208
+      type: 'test'
+      ...
+    # Subtest: library.collections
+    ok 20 - library.collections
+      ---
+      duration_ms: 0.071625
+      type: 'test'
+      ...
+    # Subtest: library.add
+    ok 21 - library.add
+      ---
+      duration_ms: 0.070458
+      type: 'test'
+      ...
+    # Subtest: library.remove
+    ok 22 - library.remove
+      ---
+      duration_ms: 0.068833
+      type: 'test'
+      ...
+    # Subtest: library.setDefaults
+    ok 23 - library.setDefaults
+      ---
+      duration_ms: 0.068833
+      type: 'test'
+      ...
+    # Subtest: library.templates
+    ok 24 - library.templates
+      ---
+      duration_ms: 0.083667
+      type: 'test'
+      ...
+    # Subtest: storage.usage
+    ok 25 - storage.usage
+      ---
+      duration_ms: 0.10625
+      type: 'test'
+      ...
+    # Subtest: storage.clear
+    ok 26 - storage.clear
+      ---
+      duration_ms: 0.113708
+      type: 'test'
+      ...
+    # Subtest: lab.list
+    ok 27 - lab.list
+      ---
+      duration_ms: 0.126791
+      type: 'test'
+      ...
+    # Subtest: lab.rename
+    ok 28 - lab.rename
+      ---
+      duration_ms: 0.117667
+      type: 'test'
+      ...
+    # Subtest: picks.analyze
+    ok 29 - picks.analyze
+      ---
+      duration_ms: 0.266792
+      type: 'test'
+      ...
+    # Subtest: picks.copy
+    ok 30 - picks.copy
+      ---
+      duration_ms: 0.083375
+      type: 'test'
+      ...
+    # Subtest: proofs.refresh
+    ok 31 - proofs.refresh
+      ---
+      duration_ms: 0.038333
+      type: 'test'
+      ...
+    # Subtest: render.start
+    ok 32 - render.start
+      ---
+      duration_ms: 0.05275
+      type: 'test'
+      ...
+    # Subtest: render.cancel
+    ok 33 - render.cancel
+      ---
+      duration_ms: 0.031625
+      type: 'test'
+      ...
+    # Subtest: render.status
+    ok 34 - render.status
+      ---
+      duration_ms: 0.030042
+      type: 'test'
+      ...
+    # Subtest: render.plan
+    ok 35 - render.plan
+      ---
+      duration_ms: 0.063083
+      type: 'test'
+      ...
+    # Subtest: export.plan
+    ok 36 - export.plan
+      ---
+      duration_ms: 0.164583
+      type: 'test'
+      ...
+    # Subtest: export.start
+    ok 37 - export.start
+      ---
+      duration_ms: 0.06875
+      type: 'test'
+      ...
+    # Subtest: export.cancel
+    ok 38 - export.cancel
+      ---
+      duration_ms: 0.033166
+      type: 'test'
+      ...
+    # Subtest: export.status
+    ok 39 - export.status
+      ---
+      duration_ms: 0.050583
+      type: 'test'
+      ...
+    # Subtest: shell.ping
+    ok 40 - shell.ping
+      ---
+      duration_ms: 0.038708
+      type: 'test'
+      ...
+    # Subtest: shell.info
+    ok 41 - shell.info
+      ---
+      duration_ms: 0.037167
+      type: 'test'
+      ...
+    # Subtest: editor.open
+    ok 42 - editor.open
+      ---
+      duration_ms: 0.046
+      type: 'test'
+      ...
+    # Subtest: editor.inspect
+    ok 43 - editor.inspect
+      ---
+      duration_ms: 0.058125
+      type: 'test'
+      ...
+    # Subtest: dialog.pickFolder
+    ok 44 - dialog.pickFolder
+      ---
+      duration_ms: 0.041084
+      type: 'test'
+      ...
+    # Subtest: shell.reveal
+    ok 45 - shell.reveal
+      ---
+      duration_ms: 0.032667
+      type: 'test'
+      ...
+    # Subtest: shell.showAlbum
+    ok 46 - shell.showAlbum
+      ---
+      duration_ms: 0.026291
+      type: 'test'
+      ...
+    # Subtest: shell.dragWindow
+    ok 47 - shell.dragWindow
+      ---
+      duration_ms: 0.033416
+      type: 'test'
+      ...
+    # Subtest: shell.zoomWindow
+    ok 48 - shell.zoomWindow
+      ---
+      duration_ms: 0.025792
+      type: 'test'
+      ...
+    # Subtest: shell.activate
+    ok 49 - shell.activate
+      ---
+      duration_ms: 0.025875
+      type: 'test'
+      ...
+    # Subtest: shell.log
+    ok 50 - shell.log
+      ---
+      duration_ms: 0.044666
+      type: 'test'
+      ...
+    # Subtest: shell.selftestReturnAfter
+    ok 51 - shell.selftestReturnAfter
+      ---
+      duration_ms: 0.032417
+      type: 'test'
+      ...
+    # Subtest: debug.queuePicks
+    ok 52 - debug.queuePicks
+      ---
+      duration_ms: 0.048125
+      type: 'test'
+      ...
+    # Subtest: debug.result
+    ok 53 - debug.result
+      ---
+      duration_ms: 0.036084
+      type: 'test'
+      ...
+    1..53
+ok 7 - every registered method has authored valid request/result/reply examples
+  ---
+  duration_ms: 7.853541
+  type: 'test'
+  ...
+# Subtest: all registered events have authored valid examples including committed finishing warnings
+    # Subtest: backend.ready
+    ok 1 - backend.ready
+      ---
+      duration_ms: 0.05775
+      type: 'test'
+      ...
+    # Subtest: backend.exited
+    ok 2 - backend.exited
+      ---
+      duration_ms: 0.022375
+      type: 'test'
+      ...
+    # Subtest: account.signIn
+    ok 3 - account.signIn
+      ---
+      duration_ms: 0.023333
+      type: 'test'
+      ...
+    # Subtest: album.creating
+    ok 4 - album.creating
+      ---
+      duration_ms: 0.025958
+      type: 'test'
+      ...
+    # Subtest: album.folders
+    ok 5 - album.folders
+      ---
+      duration_ms: 0.070459
+      type: 'test'
+      ...
+    # Subtest: picks.progress
+    ok 6 - picks.progress
+      ---
+      duration_ms: 0.03975
+      type: 'test'
+      ...
+    # Subtest: render.started
+    ok 7 - render.started
+      ---
+      duration_ms: 0.034166
+      type: 'test'
+      ...
+    # Subtest: render.progress
+    ok 8 - render.progress
+      ---
+      duration_ms: 0.045125
+      type: 'test'
+      ...
+    # Subtest: render.finished
+    ok 9 - render.finished
+      ---
+      duration_ms: 0.106083
+      type: 'test'
+      ...
+    # Subtest: export.started
+    ok 10 - export.started
+      ---
+      duration_ms: 0.04275
+      type: 'test'
+      ...
+    # Subtest: export.progress
+    ok 11 - export.progress
+      ---
+      duration_ms: 0.032833
+      type: 'test'
+      ...
+    # Subtest: export.finished
+    ok 12 - export.finished
+      ---
+      duration_ms: 0.089625
+      type: 'test'
+      ...
+    # Subtest: proofs.updated
+    ok 13 - proofs.updated
+      ---
+      duration_ms: 0.031958
+      type: 'test'
+      ...
+    # Subtest: proofs.failed
+    ok 14 - proofs.failed
+      ---
+      duration_ms: 0.026875
+      type: 'test'
+      ...
+    # Subtest: proofs.idle
+    ok 15 - proofs.idle
+      ---
+      duration_ms: 0.026875
+      type: 'test'
+      ...
+    # Subtest: shell.albumShown
+    ok 16 - shell.albumShown
+      ---
+      duration_ms: 0.019833
+      type: 'test'
+      ...
+    # Subtest: menu
+    ok 17 - menu
+      ---
+      duration_ms: 0.022708
+      type: 'test'
+      ...
+    1..17
+ok 8 - all registered events have authored valid examples including committed finishing warnings
+  ---
+  duration_ms: 1.26925
+  type: 'test'
+  ...
+# Subtest: strict envelopes, closed DTOs, finite numbers and absolute paths reject malformed messages
+ok 9 - strict envelopes, closed DTOs, finite numbers and absolute paths reject malformed messages
+  ---
+  duration_ms: 0.681917
+  type: 'test'
+  ...
+# Subtest: optional object undefined matches JSON omission; non-JSON data and executable accessors are rejected
+ok 10 - optional object undefined matches JSON omission; non-JSON data and executable accessors are rejected
+  ---
+  duration_ms: 0.157917
+  type: 'test'
+  ...
+# Subtest: global traversal bounds fail closed before schema work and cap diagnostic counts
+ok 11 - global traversal bounds fail closed before schema work and cap diagnostic counts
+  ---
+  duration_ms: 0.74025
+  type: 'test'
+  ...
+# Subtest: saved project input accepts supported legacy metadata without stripping or mutation
+ok 12 - saved project input accepts supported legacy metadata without stripping or mutation
+  ---
+  duration_ms: 1.20875
+  type: 'test'
+  ...
+# Subtest: error serialization retains only bounded recovery data and never invokes metadata accessors
+ok 13 - error serialization retains only bounded recovery data and never invokes metadata accessors
+  ---
+  duration_ms: 0.373375
+  type: 'test'
+  ...
+# Subtest: runtime loads in a browser-like VM with only its two JSON imports and no Node globals
+ok 14 - runtime loads in a browser-like VM with only its two JSON imports and no Node globals
+  ---
+  duration_ms: 4.970334
+  type: 'test'
+  ...
+# Subtest: unsupported schema policies fail at load, and scaled traversal budgets stop aggregate and union work
+ok 15 - unsupported schema policies fail at load, and scaled traversal budgets stop aggregate and union work
+  ---
+  duration_ms: 11.977292
+  type: 'test'
+  ...
+# Subtest: actual disposable backend producers satisfy their canonical response contracts
+ok 16 - actual disposable backend producers satisfy their canonical response contracts
+  ---
+  duration_ms: 144.96025
+  type: 'test'
+  ...
+# Subtest: all 39 backend method handlers cross the actual validating dispatcher with disposable data
+ok 17 - all 39 backend method handlers cross the actual validating dispatcher with disposable data
+  ---
+  duration_ms: 3928.857542
+  type: 'test'
+  ...
+# Subtest: the architecture graph inventories lazy runtime dependencies, protocol aliases, native handlers and actual closure
+ok 18 - the architecture graph inventories lazy runtime dependencies, protocol aliases, native handlers and actual closure
+  ---
+  duration_ms: 79.13725
+  type: 'test'
+  ...
+# Subtest: real forbidden imports fail while commented and stringified fake imports do not become graph edges
+ok 19 - real forbidden imports fail while commented and stringified fake imports do not become graph edges
+  ---
+  duration_ms: 59.308
+  type: 'test'
+  ...
+# Subtest: a shared module importing backend or issuer logic is rejected even when the import is lazy
+ok 20 - a shared module importing backend or issuer logic is rejected even when the import is lazy
+  ---
+  duration_ms: 57.083833
+  type: 'test'
+  ...
+# Subtest: a packaging collector cannot silently omit a lazy runtime module, source data or external package
+ok 21 - a packaging collector cannot silently omit a lazy runtime module, source data or external package
+  ---
+  duration_ms: 64.908333
+  type: 'test'
+  ...
+# Subtest: dynamic dependencies fail closed and packaged issuer files cannot be smuggled into the helper
+ok 22 - dynamic dependencies fail closed and packaged issuer files cannot be smuggled into the helper
+  ---
+  duration_ms: 57.587
+  type: 'test'
+  ...
+# Subtest: adding a backend/native handler or an emitted event requires a canonical schema contract
+ok 23 - adding a backend/native handler or an emitted event requires a canonical schema contract
+  ---
+  duration_ms: 58.614833
+  type: 'test'
+  ...
+# Subtest: namespace and renamed UI bridge imports still require declared methods and event contracts
+ok 24 - namespace and renamed UI bridge imports still require declared methods and event contracts
+  ---
+  duration_ms: 57.774416
+  type: 'test'
+  ...
+# Subtest: bounded literal-union UI methods are inventoried and unconstrained dynamic calls fail closed
+ok 25 - bounded literal-union UI methods are inventoried and unconstrained dynamic calls fail closed
+  ---
+  duration_ms: 109.624458
+  type: 'test'
+  ...
+# Subtest: missing schemas, unresolved internal references and absent domain contracts cannot count as coverage
+ok 26 - missing schemas, unresolved internal references and absent domain contracts cannot count as coverage
+  ---
+  duration_ms: 69.008125
+  type: 'test'
+  ...
+# Subtest: importing but never calling a canonical validator is not a checked process boundary
+ok 27 - importing but never calling a canonical validator is not a checked process boundary
+  ---
+  duration_ms: 80.622666
+  type: 'test'
+  ...
+# Subtest: generated type drift fails the real configured deterministic generator check
+ok 28 - generated type drift fails the real configured deterministic generator check
+  ---
+  duration_ms: 61.222167
+  type: 'test'
+  ...
+# Subtest: canonical orphan/duplicate method entries and circular dependency groups remain visible
+ok 29 - canonical orphan/duplicate method entries and circular dependency groups remain visible
+  ---
+  duration_ms: 65.093791
+  type: 'test'
+  ...
+# Subtest: native helper exit events are inventoried and canonical orphan events fail closed
+ok 30 - native helper exit events are inventoried and canonical orphan events fail closed
+  ---
+  duration_ms: 130.226917
+  type: 'test'
+  ...
+# Subtest: committed declarations are deterministic and --check detects schema or manifest drift without writing
+ok 31 - committed declarations are deterministic and --check detects schema or manifest drift without writing
+  ---
+  duration_ms: 384.393042
+  type: 'test'
+  ...
+# Subtest: generation rejects unresolved references and unchecked extensions rather than inventing types
+ok 32 - generation rejects unresolved references and unchecked extensions rather than inventing types
+  ---
+  duration_ms: 190.573041
+  type: 'test'
+  ...
+# Subtest: generated method/event maps and runtime declaration infer domain types and reject wrong shapes
+ok 33 - generated method/event maps and runtime declaration infer domain types and reject wrong shapes
+  ---
+  duration_ms: 572.827917
+  type: 'test'
+  ...
+1..33
+# tests 103
+# suites 0
+# pass 103
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4255.20175

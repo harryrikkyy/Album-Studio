@@ -15,6 +15,8 @@ const path = require('path')
 const { jpegSize } = require('./jpeg_size')
 const { canonicalProject } = require('./project_lock')
 const { readProjectSnapshot } = require('./project_transaction')
+const { migrateProject, pageCount } = require('./project_domain')
+const { prepareSourceAliases } = require('./source_roots')
 const { listTemplates } = require('./templates')
 const { sanitize, registryOf, assignAssetIds, referenceIndex, resolveReference, fileFromUrl, ensureSpreadIds } = require('./identity')
 
@@ -47,27 +49,14 @@ async function locateProject(p) {
   return canonicalProject(p)
 }
 
-async function mtimeOf(p) {
-  const st = await fs.promises.stat(p).catch(() => null)
-  return st ? st.mtimeMs : 0
-}
-
-/** Folder scans by folder path; reused until the folder (or its _Thumbnails) changes. */
-const folderCache = new Map()
-
 /**
  * Photos of one source folder: thumbnails (from _Thumbnails when present), originals, and each
- * thumbnail's pixel size. Cached until a file is added, removed or renamed in either folder
- * (which changes the folder's modification time), so an edit doesn't rescan thousands of photos.
+ * thumbnail's current pixel size. Directory stamps cannot prove member contents unchanged:
+ * an in-place thumbnail edit must be observed on the next album read.
  */
 async function scanPhotoFolder(master) {
   const thumbDir = path.join(master, '_Thumbnails')
-  const key = `${await mtimeOf(master)}|${await mtimeOf(thumbDir)}`
-  const hit = folderCache.get(master)
-  if (hit && hit.key === key) return hit.result
-  const result = await scanPhotoFolderUncached(master, thumbDir)
-  folderCache.set(master, { key, result })
-  return result
+  return scanPhotoFolderUncached(master, thumbDir)
 }
 
 async function scanPhotoFolderUncached(master, thumbDir) {
@@ -133,34 +122,42 @@ async function openAlbum({ path: projectPath }, options = {}) {
   } catch (e) {
     throw new Error(`${path.basename(file)} couldn't be read: ${e.message}`)
   }
+  migrateProject(data)
   const ws = data.workspace || data
   const registry = registryOf(data)
   const legacyPositions = new Set(Object.entries(data.albumPages || {}).filter(([, page]) => !page.id).map(([n]) => Number(n)))
   // Read-only opens derive repeatable legacy IDs; a subsequent atomic edit persists them.
   ensureSpreadIds(data, { seed: file })
   const pages = data.albumPages || {}
-  const spreadCount = Number(data.totalActivePages) || Object.keys(pages).length || 0
+  const spreadCount = pageCount(data)
 
   // Photos: every folder in the project, in parallel.
   const folders = await Promise.all([...new Set(ws.imageTokens || [])].map(scanPhotoFolder))
-  const assets = assignAssetIds(folders.flatMap((f) => f.photos), 'photo', registry)
+  const sources = await prepareSourceAliases(folders.flatMap((f) => f.photos), 'photo', registry)
+  const assets = assignAssetIds(sources.candidates, 'photo', registry)
   /** @type {Record<string, any>} */
   const photos = {}
   for (const p of assets) photos[p.id] = { ...p, orient: null, usedOn: [] }
 
   // Templates referenced by spreads → their PSD and preview.
-  const catalogue = await listTemplates(ws.templateTokens || [], registry)
+  const identityConflicts = [...sources.conflicts]
+  const catalogue = await listTemplates(ws.templateTokens || [], registry, { onConflict: conflict => identityConflicts.push(conflict) })
   const photoIndex = referenceIndex(assets, 'photo', registry)
   const templateIndex = referenceIndex(catalogue, 'template', registry)
-  const identityConflicts = []
+  const blockedAliases = new Set()
   // Old per-photo adjustments cannot be assigned by an ambiguous display-name alias. Include
   // absent registry records in the check so removing a folder cannot transfer its edits.
   for (const key of ['imageRotations', 'imagePlacements', 'imageAdjustments']) {
     const edits = ws[key] || {}
     for (const id of Object.keys(edits)) {
       if (registry.assets[id]) continue
-      const matches = Object.entries(registry.assets).filter(([, a]) => a.kind === 'photo' && a.legacyId === id)
+      const matches = Object.entries(registry.assets).filter(([, a]) => a.kind === 'photo' && (a.legacyId === id || (a.legacyAliases || []).includes(id)))
       if (matches.length === 1) {
+        if (edits[matches[0][0]] !== undefined && JSON.stringify(edits[matches[0][0]]) !== JSON.stringify(edits[id])) {
+          blockedAliases.add(id)
+          identityConflicts.push({ kind: 'photo', id, reason: 'conflicting-alias-adjustment', field: key, candidates: [matches[0][0]] })
+          continue
+        }
         edits[matches[0][0]] ??= edits[id]
         delete edits[id]
       } else if (matches.length > 1) identityConflicts.push({ kind: 'photo', id, reason: 'ambiguous-adjustment', field: key, candidates: matches.map(([assetId]) => assetId) })
@@ -174,7 +171,7 @@ async function openAlbum({ path: projectPath }, options = {}) {
   for (let n = 1; n <= spreadCount; n++) {
     const page = pages[n] || pages[String(n)] || { photos: [], template: null }
     for (const p of page.photos || []) {
-      const { asset, conflict, id } = resolveReference(p, assets, 'photo', registry, photoIndex)
+      const { asset, conflict, id } = blockedAliases.has(p.id) ? {} : resolveReference(p, assets, 'photo', registry, photoIndex)
       if (conflict) identityConflicts.push({ ...conflict, n })
       if (asset) p.id = asset.id
       else if (id) p.id = id

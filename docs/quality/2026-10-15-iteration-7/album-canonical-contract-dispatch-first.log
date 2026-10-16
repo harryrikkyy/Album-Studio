@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: all 39 backend method handlers cross the actual validating dispatcher with disposable data
+not ok 1 - all 39 backend method handlers cross the actual validating dispatcher with disposable data
+  ---
+  duration_ms: 3673.446333
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/contracts_dispatch.test.js:23:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    export.plan: {"id":30,"ok":false,"error":"The operation completed, but its reply did not match the supported format. Reopen the album to verify its state before retrying. Invalid export.plan result: The field is not part of this closed contract. (/preflight/info/2/templateDigest).","code":"CONTRACT_INVALID","retryable":false,"details":{"issues":[{"path":"/preflight/info/2/templateDigest","message":"The field is not part of this closed contract.","keyword":"additionalProperties"},{"path":"/preflight/info/2/photos","message":"The field is not part of this closed contract.","keyword":"additionalProperties"}]}}
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    rpc (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/contracts_dispatch.test.js:50:12)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/contracts_dispatch.test.js:75:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4153.478958

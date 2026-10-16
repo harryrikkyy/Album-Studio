@@ -11,6 +11,7 @@ const { openAlbum } = require('./album')
 const exclusiveRename = require('./exclusive_rename')
 const { updateAlbum, migrateAlbum } = require('./project')
 const { newSpreadId } = require('./identity')
+const { validateCreateInput, validateOperations, validateProject } = require('./project_domain')
 const { listRecent, rememberAlbum } = require('./recent')
 const { listTemplates } = require('./templates')
 const { ensureThumbnails, surveyFolder } = require('./thumbs')
@@ -77,6 +78,7 @@ let creating = null
  * @param {{ emit: (event: string, data: object) => void }} ctx
  */
 async function createAlbum(p, { emit }) {
+  validateCreateInput(p)
   if (creating) throw new Error('An album is already being created.')
   const name = String(p.name || '').trim()
   if (!name) throw new Error('Give the album a name.')
@@ -137,6 +139,7 @@ async function createAlbum(p, { emit }) {
       totalActivePages: 1,
       renderHashes: {},
     }
+    validateProject(project)
     const temporary = path.join(folder, `.project-${crypto.randomUUID()}.json`)
     let handle
     try {
@@ -173,6 +176,10 @@ async function createAlbum(p, { emit }) {
  */
 async function setAlbumFolders(p, { emit }) {
   if (!p.album) throw new Error('missing `album`')
+  const requested = []
+  if (p.photoFolders !== undefined) requested.push({ op: 'setPhotoFolders', folders: p.photoFolders })
+  if (p.templateCollections !== undefined) requested.push({ op: 'setCollections', collections: p.templateCollections })
+  if (requested.length) validateOperations(requested)
   const before = await openAlbum({ path: p.album })
   const ops = []
   if (Array.isArray(p.photoFolders)) {

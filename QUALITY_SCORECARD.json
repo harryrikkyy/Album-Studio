@@ -1,6 +1,6 @@
 {
   "rubricVersion": 1,
-  "target": "Each category >95/100; all simultaneously",
+  "target": "Architecture strictly >95/100 with evidence, as updated by the user; other category scores retained as historical context.",
   "scoring": "10 criteria x 10 points. Verified complete =10, verified partial=5, failed/unverified/blocked=0. Critical unresolved defects prohibit certification. No criterion may be removed to increase scores. Scores are acceptance evidence, not the prior subjective audit ratings.",
   "baselineCommit": "81bd5b4",
   "engineCommit": "bdb1f8f",
@@ -17,7 +17,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Source-layer boundaries remain enforced; the final graph has 108 files, 603 edges and zero cycles. Native entry-point registration is separately incomplete. See docs/quality/2026-10-15-iteration-7/architecture-current.json."
         },
         {
           "id": "2",
@@ -25,7 +25,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Render recipe/input domains replace render/proof/delivery coordinator cycles; project validation, private-stage capabilities and bounded transport are separate tested modules. Final full gate passes1133. See docs/ARCHITECTURE.md."
         },
         {
           "id": "3",
@@ -33,7 +33,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Canonical53methods/17events, generated interface types, actual39 backend dispatch handlers and13 producer events verified. Fourteen native method vectors are authored examples; native Value/String adapters are not complete typed runtime execution."
         },
         {
           "id": "4",
@@ -41,7 +41,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Project/output capabilities now precede PSD/cache restart recovery; intermediate managed aliases are refused. Permanent/legacy/native/global ownership remains incomplete. See docs/quality/2026-10-14-iteration-6/verification.json."
+          "evidence": "Private-stage capabilities, physical source aliases and reserved historical identities pass final real-host cases. Native editor saves still bypass project/output ownership, and permanent/legacy/global reconciliation and reclamation remain incomplete."
         },
         {
           "id": "5",
@@ -49,7 +49,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Print canvas/settings and source pixel route are shared across rendering/preflight/delivery/template paths; complete domain invariant contracts remain partial. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Central project/version/operation safety bounds and shared verified-byte print policy pass real dispatcher and pipeline tests. Native save/transport admission and complete global ownership invariants remain outside this verified boundary."
         },
         {
           "id": "6",
@@ -57,7 +57,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Committed render errors carry revision/history metadata; cancellation and derived-preview failures distinguish saved sheets from rolled-back work. Complete runtime contracts remain open. See docs/quality/2026-10-14-iteration-6/verification.json."
+          "evidence": "Structured commit/recovery/error fields survive Node and bundled browser boundaries; finishing warnings preserve successful sheet counts. Native string errors and obsolete helper-generation teardown remain incomplete; isolated native candidate is not integrated."
         },
         {
           "id": "7",
@@ -65,7 +65,7 @@
           "weight": 10,
           "points": 10,
           "status": "verified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Pure project, identity, recipe and policy domains; injectable real dispatcher; bundled browser bridge tests; bounded writer/framing faults and real-child native replay strengthen testable seams. Final Node gate1133 passes."
         },
         {
           "id": "8",
@@ -73,7 +73,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Render publication validates exact prior cache/project and sheet revisions plus consumed frozen sources. Live print/preflight/catalogue/capture-order metadata remains open. See docs/quality/2026-10-14-iteration-6/verification.json."
+          "evidence": "Consumed photo/template/sheet metadata, nested template inventory, EXIF order and thumbnail dimensions follow verified content revisions. Whole-application native/editor invalidation and legacy/shared cache scope are not certified."
         },
         {
           "id": "9",
@@ -81,7 +81,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "JS/TS AST layer, cycle, registry/schema/type drift and packaged-closure gates plus mutation tests pass and are wired in CI/pretest. Actual pinned cargo xtask layers fails missing album-studio registration; candidate patch16/16 is isolated and not applied."
         },
         {
           "id": "10",
@@ -89,11 +89,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Explicit legacy0/1/digit-string normalization, future-version refusal, unknown-field preservation, source alias/conflict and historical reservation tests pass. Complete native/permanent ownership migration and supported rollout acceptance remain unverified."
         }
       ],
       "certified": false,
-      "assessment": "Explicit render/cache transaction and no-follow descendant validation strengthen existing ownership/error/invalidation partial criteria. Complete contracts, permanent/legacy/native/global ownership and complete invalidation remain open."
+      "assessment": "Architecture remains65/100 on the unchanged rubric. Verified Node/interface boundaries substantially improve partial criteria; unresolved native transport/save ownership and native layering prevent completion. No score is inferred from a static inventory or isolated candidate."
     },
     {
       "name": "UI and workflow",
@@ -817,9 +817,10 @@
     }
   ],
   "latestAssessment": {
-    "date": "2026-10-14",
-    "iteration": 6,
-    "evidence": "docs/quality/2026-10-14-iteration-6/verification.json",
+    "date": "2026-10-16",
+    "iteration": 7,
+    "scope": "Architecture only; updated user goal supersedes the earlier all-nine-category completion objective.",
+    "evidence": "docs/quality/2026-10-15-iteration-7/verification.json",
     "previousScores": {
       "Architecture": 6.5,
       "UI and workflow": 4.5,
@@ -832,9 +833,9 @@
       "Build and distribution": 4
     },
     "missionComplete": false,
-    "independentReview": "Scoped reviewers reproduced metadata/proof alias deletion and snapshot collision/permission bugs. Final review of the new render journal, path integration and parent snapshot fix was interrupted by a provider limit and remains incomplete.",
-    "highestPriority": "Complete independent review and fail-first fixes for consumed print/preflight metadata; permanent/legacy/native/global ownership and physical recovery remain open.",
-    "executionLimit": "All three workers terminated at provider usage limit reporting Oct 15th, 2026 3:02 AM. Timezone unspecified; no verified future reset estimate.",
-    "scoringDecision": "All 90 fixed names, weights and points reassessed without inflation. Local recovery/path/snapshot evidence strengthens partial criteria. No whole-app, native GUI, physical print/storage or release certification."
+    "independentReview": "Scoped reviewers reproduced snapshot/journal/private-cleanup/alias/transport defects. Final parent host gate86 and complete Node gate1133 pass. Native generation/layering baseline replay fails2/16; isolated candidate16/16 is not integrated. Broader native/editor/global review remains open.",
+    "highestPriority": "Integrate generation-safe bounded native transport and canonical local DTOs; bring native editor and standalone saves under explicit ownership/publication contracts. Register the native app in the pinned layering table through a reviewed new pin/build.",
+    "executionLimit": "Some prior worker checks were rejected by usage-limited automatic approval review and did not run. Parent later obtained approval and completed final host/full gates. One native-design worker subsequently reported provider reset Oct16,2026 4:20AM without timezone; no native completion inferred. Parent continues local work.",
+    "scoringDecision": "All90 criterion names, weights and points remain unchanged. Architecture ten criteria reassessed; other categories are historical context and not newly certified. Architecture remains6.5 with actual unresolved native defects."
   }
 }

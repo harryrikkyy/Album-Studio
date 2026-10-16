@@ -5,6 +5,7 @@
 const crypto = require('crypto')
 const path = require('path')
 const { fileURLToPath } = require('url')
+const { migrateProject, pageCount, validateIdentity } = require('./project_domain')
 
 const sanitize = (s) => s.replace(/[^a-zA-Z0-9]/g, '_')
 const digest = (parts) => crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex')
@@ -15,20 +16,8 @@ function registryOf(data) {
   const ws = workspaceOf(data)
   if (!ws.identity) ws.identity = { version: 1, roots: {}, assets: {} }
   const r = ws.identity
-  if (r.version !== 1 || !r.roots || !r.assets || typeof r.roots !== 'object' || typeof r.assets !== 'object' || Array.isArray(r.roots) || Array.isArray(r.assets)) {
-    throw new Error('The album identity registry is invalid. Restore project.json.bak before editing this album.')
-  }
-  const bad = () => { throw new Error('The album identity registry is invalid. Restore project.json.bak before editing this album.') }
-  for (const [id, root] of Object.entries(r.roots)) {
-    if (!/^root_[a-zA-Z0-9_-]+$/.test(id) || !root || !['photo', 'template'].includes(root.kind) || typeof root.path !== 'string' || !path.isAbsolute(root.path)) bad()
-  }
-  const seen = new Set()
-  for (const [id, asset] of Object.entries(r.assets)) {
-    if (!asset || !['photo', 'template'].includes(asset.kind) || !/^(img|tpl)_[a-zA-Z0-9_-]+$/.test(id) || typeof asset.legacyId !== 'string' || typeof asset.relativePath !== 'string' || !asset.relativePath || path.isAbsolute(asset.relativePath) || asset.relativePath === '..' || asset.relativePath.startsWith('..' + path.sep) || !r.roots[asset.rootId] || r.roots[asset.rootId].kind !== asset.kind) bad()
-    const locator = JSON.stringify([asset.kind, asset.rootId, asset.relativePath])
-    if (seen.has(locator)) bad()
-    seen.add(locator)
-  }
+  validateIdentity(r)
+  r.version = 1
   return r
 }
 
@@ -46,37 +35,59 @@ function assignAssetIds(candidates, kind, registry) {
   const located = candidates.map((candidate) => {
     const root = candidate.folder || candidate.sourceRoot
     const file = kind === 'photo' ? candidate.thumb : candidate.file
-    const rootId = rootFor(registry, kind, root)
+    const rootId = candidate.identityRootId || rootFor(registry, kind, candidate.canonicalRoot || root)
+    if (!registry.roots[rootId] || registry.roots[rootId].kind !== kind) throw new Error('The source root identity could not be verified. Preserve the project before retrying.')
     const relativePath = path.relative(path.resolve(root), path.resolve(file))
     if (!relativePath || relativePath.startsWith('..' + path.sep) || path.isAbsolute(relativePath)) throw new Error('An asset is outside its source folder.')
     return { ...candidate, legacyId: candidate.legacyId || candidate.id, rootId, relativePath }
   })
   const counts = new Map()
-  for (const a of located) counts.set(a.legacyId, (counts.get(a.legacyId) || 0) + 1)
+  for (const a of located) {
+    if (!counts.has(a.legacyId)) counts.set(a.legacyId, new Set())
+    counts.get(a.legacyId).add(JSON.stringify([a.rootId, a.relativePath]))
+  }
+  // A missing asset still owns every name by which an old project can refer to it.
+  // Looking only for an exact registry key would let a new photo claim a formerly
+  // ambiguous alias after all of its original folders were removed.
+  const reserved = new Set(Object.keys(registry.assets))
+  for (const asset of Object.values(registry.assets)) {
+    reserved.add(asset.legacyId)
+    for (const alias of asset.legacyAliases || []) reserved.add(alias)
+  }
   const records = new Map()
   for (const [id, a] of Object.entries(registry.assets)) {
-    if (a && a.kind === kind) records.set(JSON.stringify([a.rootId, a.relativePath]), id)
+    if (a && a.kind === kind) records.set(JSON.stringify([a.rootId, path.normalize(a.relativePath)]), id)
   }
-  const seen = new Set()
+  const seen = new Map()
   return located.filter((a) => {
     const key = JSON.stringify([a.rootId, a.relativePath])
-    if (seen.has(key)) return false // duplicate folder tokens never duplicate the same asset
-    seen.add(key)
+    if (seen.has(key)) {
+      const first = seen.get(key)
+      first.legacyAliases = [...new Set([...(first.legacyAliases || []), a.legacyId, ...(a.legacyAliases || [])])]
+      first.locatorAliases = [...new Set([...(first.locatorAliases || []), ...(a.locatorAliases || [])])]
+      return false
+    }
+    seen.set(key, a)
     return true
   }).map((a) => {
     const key = JSON.stringify([a.rootId, a.relativePath])
     let id = records.get(key)
     if (!id) {
-      const availableLegacy = counts.get(a.legacyId) === 1 && !Object.hasOwn(registry.assets, a.legacyId)
+      const availableLegacy = counts.get(a.legacyId).size === 1 && !reserved.has(a.legacyId)
       id = availableLegacy ? a.legacyId : a.legacyId + '__' + digest([kind, a.rootId, a.relativePath])
       const occupied = registry.assets[id]
       if (occupied && (occupied.kind !== kind || occupied.rootId !== a.rootId || occupied.relativePath !== a.relativePath)) {
         throw new Error('Two assets have the same identity. Restore the album backup before editing.')
       }
       registry.assets[id] = { kind, rootId: a.rootId, relativePath: a.relativePath, legacyId: a.legacyId }
+      reserved.add(id); reserved.add(a.legacyId)
       records.set(key, id)
     }
-    return { ...a, id }
+    const saved = registry.assets[id]
+    const aliases = [...new Set([...(saved.legacyAliases || []), ...(a.legacyAliases || []), a.legacyId])].filter(alias => alias !== saved.legacyId)
+    if (aliases.length) saved.legacyAliases = aliases
+    for (const alias of aliases) reserved.add(alias)
+    return { ...a, id, legacyAliases: aliases }
   })
 }
 
@@ -89,14 +100,18 @@ function referenceIndex(candidates, kind, registry) {
   const byId = new Map(), byLegacy = new Map(), aliases = new Map()
   for (const asset of candidates) {
     byId.set(asset.id, asset)
-    if (!byLegacy.has(asset.legacyId)) byLegacy.set(asset.legacyId, [])
-    byLegacy.get(asset.legacyId).push(asset)
+    for (const alias of new Set([asset.legacyId, ...(asset.legacyAliases || [])])) {
+      if (!byLegacy.has(alias)) byLegacy.set(alias, [])
+      byLegacy.get(alias).push(asset)
+    }
   }
   for (const entry of Object.entries(registry.assets)) {
     const asset = entry[1]
     if (asset.kind !== kind) continue
-    if (!aliases.has(asset.legacyId)) aliases.set(asset.legacyId, [])
-    aliases.get(asset.legacyId).push(entry)
+    for (const alias of new Set([asset.legacyId, ...(asset.legacyAliases || [])])) {
+      if (!aliases.has(alias)) aliases.set(alias, [])
+      aliases.get(alias).push(entry)
+    }
   }
   return { byId, byLegacy, aliases }
 }
@@ -111,11 +126,11 @@ function resolveReference(entry, candidates, kind, registry, index = referenceIn
   // URLs are not PSD locators: two nested templates can share one thumbnail.
   const exact = kind === 'photo' ? fileFromUrl(entry.url) : (typeof entry.file === 'string' ? entry.file : null)
   if (exact) {
-    const located = matches.filter((a) => path.resolve(kind === 'photo' ? a.thumb : a.file) === path.resolve(exact))
+    const located = matches.filter((a) => [kind === 'photo' ? a.thumb : a.file, ...(a.locatorAliases || [])].some(file => path.resolve(file) === path.resolve(exact)))
     if (located.length === 1) return { asset: located[0] }
     const absent = aliases.filter(([, a]) => {
       const root = registry.roots[a.rootId]
-      return root && path.resolve(root.path, a.relativePath) === path.resolve(exact)
+      return root && [root.path, ...(root.aliases || [])].some(folder => path.resolve(folder, a.relativePath) === path.resolve(exact))
     })
     if (absent.length === 1) return { id: absent[0][0], asset: null }
   }
@@ -127,8 +142,9 @@ function resolveReference(entry, candidates, kind, registry, index = referenceIn
 
 /** Materialise stable IDs once, before operations can move or replace page positions. */
 function ensureSpreadIds(data, { seed } = {}) {
+  migrateProject(data)
   const seen = new Set()
-  const total = Math.max(1, Number(data.totalActivePages) || Object.keys(data.albumPages || {}).length || 1)
+  const total = pageCount(data)
   data.albumPages ||= {}
   for (let n = 1; n <= total; n++) {
     const page = data.albumPages[n] ||= { photos: [], template: null }
@@ -147,6 +163,8 @@ function relinkRoot(data, kind, from, to) {
   if (!root) throw new Error('That source folder has no saved identity. Open and save the album before relinking it.')
   if (Object.values(registry.roots).some((r) => r !== root && r.kind === kind && path.resolve(r.path) === path.resolve(to))) throw new Error('That folder already belongs to a different album source.')
   root.path = path.resolve(to)
+  delete root.canonicalPath
+  delete root.aliases
 }
 
-module.exports = { sanitize, registryOf, assignAssetIds, referenceIndex, resolveReference, fileFromUrl, ensureSpreadIds, newSpreadId, relinkRoot }
+module.exports = { sanitize, registryOf, rootFor, assignAssetIds, referenceIndex, resolveReference, fileFromUrl, ensureSpreadIds, newSpreadId, relinkRoot }

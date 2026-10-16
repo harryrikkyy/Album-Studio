@@ -12,7 +12,7 @@ import type { Photo, Placement } from '../../types'
 export interface FrameBox { x: number; y: number; w: number; h: number } // fractions of the spread
 
 const MAX_ZOOM = 5
-const fitted: Placement = { scale: 1, ox: 0, oy: 0 }
+const fitted: Required<Placement> = { scale: 1, ox: 0, oy: 0 }
 
 export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
   frame: FrameBox
@@ -21,7 +21,7 @@ export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
   onDone: (pl: Placement | null) => void
   onCancel: () => void
 }) {
-  const [pl, setPl] = useState<Placement>(photo.placement ?? fitted)
+  const [pl, setPl] = useState<Required<Placement>>({ scale: photo.placement?.scale ?? 1, ox: photo.placement?.ox ?? 0, oy: photo.placement?.oy ?? 0 })
   const current = useRef(pl)
   current.current = pl
   const drag = useRef<{ x: number; y: number; start: Placement } | null>(null)

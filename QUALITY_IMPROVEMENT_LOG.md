@@ -940,3 +940,57 @@ Source/evidence manifest: `docs/quality/2026-10-14-iteration-6/verification.json
 all local benchmark data, user folders, engine `.DS_Store` files and existing bundles remain
 preserved. Goal status is active; no completion, pause or blocked certification is inferred
 from this checkpoint or the provider review limit.
+
+
+## Iteration 7 — canonical contracts, explicit ownership and native handoff gaps
+
+The updated user goal is **Architecture strictly above9.5/10**. The ten criteria retain their
+existing names, weights and10/5/0 scoring; strict >9.5 therefore requires100/100. Architecture
+remains **6.5/10, uncertified**. Other category scores are retained as historical context.
+Resumed `1528ffaade6cf48cdb0e2eea6c01700e6558f391`; no audit restart. Before edits all533
+iteration-6 hashes matched. After implementation449 prior artifacts, release executables and
+retained benchmark hashes still match. User folders, old recovery histories, engine source/
+release binaries and all three existing engine `.DS_Store` files remain preserved.
+
+The implementation establishes canonical53-method/17-event request/result/error schemas,
+generated interface types, real dispatcher/browser validation, bounded UTF-8 framing/output,
+project/version/operation bounds and explicit legacy normalization. Shared render input/recipe
+modules remove coordinator cycles. Source-alias identity preserves all historical IDs/aliases
+and conflicting edits. Verified-byte metadata/preflight/decoded delivery guards replace mutable
+header reopen checks. Private-stage capabilities protect RAW/proof/render/delivery/colour work;
+unknown/edited/partial trees retire exclusively and remain available. Journal checksum/commit-node
+identity and descriptor-close recovery errors are checked. Finishing errors preserve committed
+sheet counts and remain visible in the interface. Native/editor/global ownership is not complete.
+
+The final strict gate passes **289 shared +798 backend +46 interface =1133**, zero failures,
+cancellations or skips. Lint0/0, shared/interface types and production interface build pass
+(JavaScript248.2KiB, CSS54.5KiB). The actual graph passes108files/603edges/zero cycles;65 runtime
+files and10 packages are packaged. Actual39 backend methods and13 event producers cross canonical
+validation using real disposable render/export/PDF fixtures; account/browser services are mocked.
+Native14-method examples/source inventory do not prove native execution. See the retained raw
+logs and `verification.json` in `docs/quality/2026-10-15-iteration-7/`.
+
+The first full gate had two integration-test failures. Structured invalid-registry metadata
+replaced the old wording assertion while preserving byte checks. The obsolete-edit fault moved
+from preliminary validation to after the authoritative leased read; another test proves an
+external field saved before that read survives the requested edit. The repaired18-test scope
+and final full gate pass; first failures remain retained. No production conflict guard was
+weakened. Earlier worker automatic-review rejections did not execute; later parent approval
+completed the host86/full1133 gates. Worker provider limits interrupted remaining native design.
+
+A root-owned replay of exact pinned native source now reproduces **two unresolved failures**:
+the missing native composition-root registration and old helper EOF failing a new generation's
+request. Baseline14/16 passes; isolated candidate16/16 passes. Its source hashes, fixtures,
+Cargo.lock, logs and candidate patch are retained. The candidate is not applied to the pinned
+engine or compiled into Album Studio. Temporary earlier worker paths were missing, so their
+bare reports were not used as substitute evidence.
+
+**Next executable work:** integrate bounded/generation-safe typed native transport and explicit
+editor/standalone document-save ownership/publication; register the app in the native layering
+table with regression coverage; create a reviewed engine commit/pin/bundle while preserving old
+source/binaries and untracked files; rebuild new provenance-tagged native outputs; execute the
+native and full application gates. Complete permanent/legacy/global reconciliation, native
+error/invalidation semantics and supported migration rollout before closing partial criteria.
+These are unfinished implementation requirements, not external blockers or completed work.
+`docs/ARCHITECTURE.md` and the iteration README document exact boundary scope and limits.
+The goal remains active; this is a verified source checkpoint for continuing native work.

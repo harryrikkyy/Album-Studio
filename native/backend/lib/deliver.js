@@ -16,16 +16,19 @@ const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
 const { migrateAlbum, withProjectLease } = require('./project')
-const { fileStamp, fileDigest, snapshotFile } = require('./cache')
+const { fileStamp, fileDigest, readVerifiedBuffer } = require('./cache')
+const { createPrivateStage, withPrivateStage } = require('./private_stage')
+const exclusive = require('./exclusive_rename')
 const { writeJpegPdf } = require('./pdf')
 const { outputName } = require('./sheet')
 const { psdPixels } = require('./color')
-const { spreadHash } = require('./render')
+const { spreadHash, renderInputHash } = require('./render_inputs')
+const { spreadInputs } = require('./inputs')
 const { outputFolder, ownedSheetRecord, readRenderCache, verifiedSheetRecord } = require('./sheets')
 const { reserveJob, identifyJob, releaseJob, spreadSelection } = require('./jobs')
 const { withProjectOutputs } = require('./output_lock')
 const { preflightAlbum } = require('./preflight')
-const { printSettings, psdDimensions } = require('./print_settings')
+const { printSettings, psdDimensions, validateSheetPrint } = require('./print_settings')
 const { publishDelivery, recoverDeliveries, verifyOwnedArtifact } = require('./delivery_transaction')
 
 const EXPORT_VERSION = 'export-3-frozen-and-scans'
@@ -61,15 +64,18 @@ function settingsOf(p) {
  * engine's own export of it.
  * @returns {Promise<{ input: Buffer | string, raw?: { width: number, height: number, channels: 4 }, width: number, height: number, cleanup?: () => Promise<void> }>}
  */
-async function sheetPixels(psdPath) {
-  return psdPixels(psdPath)
+async function sheetPixels(psdPath, options) {
+  return psdPixels(psdPath, options)
 }
 
 /** Write the print and/or review JPEGs of one sheet. */
-async function exportSheet(psdPath, targets, s) {
+async function exportSheet(psdPath, targets, s, guard) {
   const sharp = getSharp()
-  const px = await sheetPixels(psdPath)
+  const buffer = guard ? await readVerifiedBuffer(psdPath, guard.expectedDigest) : undefined
+  const px = await sheetPixels(psdPath, buffer ? { buffer } : undefined)
+  let result, failure
   try {
+    if (guard) validateSheetPrint(px, s, guard.spec, guard.n)
     const height = s.size === 'print' ? Math.round(s.heightInches * s.ppi) : px.height
     const width = Math.round((px.width * height) / px.height)
     // Resample once, then encode every target from the same pixels, side by side.
@@ -79,10 +85,10 @@ async function exportSheet(psdPath, targets, s) {
     p = p.flatten({ background: '#ffffff' })
     if (width !== px.width || height !== px.height) p = p.resize(width, height, { fit: 'fill', kernel: 'lanczos3' })
     const pixels = await p.removeAlpha().raw().toBuffer({ resolveWithObject: true })
-    await Promise.all(targets.map(async (t) => {
-      const tmp = `${t.file}.${crypto.randomUUID()}.part.jpg`
-      await fs.promises.mkdir(path.dirname(t.file), { recursive: true })
-      try {
+    // Wait for every encoder before the caller may retire or hand off its stage.
+    const encoded = await Promise.allSettled(targets.map(async (t) => withPrivateStage(path.dirname(t.file), '.jpeg-encode-', async stage => {
+      const tmp = path.join(stage.path, 'encoded.jpg')
+      await stage.reserveBytes(pixels.data.length)
       await sharp(pixels.data, { raw: { width: pixels.info.width, height: pixels.info.height, channels: pixels.info.channels } })
         .withIccProfile('srgb')
         .withMetadata({ density: s.ppi })
@@ -90,13 +96,19 @@ async function exportSheet(psdPath, targets, s) {
         // this size for 4% more bytes). Review files: mozjpeg, a third smaller for the PDF.
         .jpeg(t.quality >= 90 ? { quality: t.quality, chromaSubsampling: '4:4:4', optimiseCoding: true } : { quality: t.quality, mozjpeg: true })
         .toFile(tmp)
-      await fs.promises.rename(tmp, t.file)
-      } finally { await fs.promises.unlink(tmp).catch(() => {}) }
-    }))
-    return { width, height }
-  } finally {
-    if (px.cleanup) await px.cleanup()
+      await stage.register(tmp)
+      await exclusive.renameExclusive(tmp, t.file); stage.forget(tmp)
+    })))
+    const errors = encoded.filter(item => item.status === 'rejected').map(item => item.reason)
+    if (errors.length) { const first = errors[0]; first.encoderErrors = errors.slice(1); throw first }
+    result = { width, height }
+  } catch (error) { failure = error }
+  try { if (px.cleanup) await px.cleanup() } catch (cleanup) {
+    if (failure) { failure.cleanupError = cleanup; failure.message += ` Colour decoder cleanup also failed: ${cleanup.message}` }
+    else failure = cleanup
   }
+  if (failure) throw failure
+  return result
 }
 
 /**
@@ -120,6 +132,7 @@ async function prepareExport(p, lease) {
   const old = await readJson(paths.cache)
   const cache = old.version === 2 && old.albumFile === album.file ? old : { version: 2, albumFile: album.file, spreads: {} }
   const rendered = await readRenderCache(paths.sheets, { albumFile: album.file })
+  const expectedInputs = new Map()
   const spreads = await Promise.all(album.spreads.map(async (sp) => {
     const name = outputName(sp.n)
     const record = await ownedSheetRecord(ws, album.path, sp.id, rendered)
@@ -127,15 +140,14 @@ async function prepareExport(p, lease) {
     const stamp = psd ? await fileStamp(psd) : 'missing'
     const base = { n: sp.n, id: sp.id, psd, stamp }
     if (stamp === 'missing') return { ...base, state: 'nosheet', reason: `Spread ${sp.n} is not rendered. Render the album first.` }
-    const hash = await spreadHash(sp, album, ws)
+    const inputValues = await spreadInputs(sp, album, ws)
+    expectedInputs.set(sp.n, inputValues)
+    const hash = renderInputHash(inputValues)
     if (!verifiedSheetRecord(record) || record.hash !== hash) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n} has changed or its sheet has no verified content history. Render this spread before delivery; preserve any manual edits first.` }
     const sheetDigest = await fileDigest(psd)
     let dimensions
-    try { dimensions = await psdDimensions(psd) } catch (_) { return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet has invalid dimensions. Recover or render it again.` } }
-    const { height, width } = dimensions
-    if (s.size === 'print' && height / s.heightInches + 1e-7 < s.ppi) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet supplies ${(height / s.heightInches).toFixed(1)} PPI at this print size, below the configured ${s.ppi} PPI policy. Render a larger sheet or choose a smaller physical print size.` }
-    const spec = ws.printSpec
-    if (spec && spec.widthInches > 0 && spec.heightInches > 0 && Math.abs(width / height - spec.widthInches / spec.heightInches) > 0.001) return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s actual sheet proportions differ from the configured lab dimensions.` }
+    try { dimensions = await psdDimensions(psd, sheetDigest) } catch (error) { return { ...base, hash, state: 'blocked', reason: `Spread ${sp.n}'s sheet dimensions could not be verified from its current revision: ${error.message}` } }
+    try { validateSheetPrint(dimensions, s, ws.printSpec, sp.n) } catch (error) { return { ...base, hash, state: 'blocked', reason: error.message } }
     const key = exportKey(sheetDigest, s)
     const high = path.join(paths.high, `${name}.jpg`), low = path.join(paths.low, `${name}.jpg`)
     const e = cache.spreads[sp.id]
@@ -144,7 +156,7 @@ async function prepareExport(p, lease) {
       e.low && e.low.path === low && await verifyOwnedArtifact(low, e.low.stamp, e.low.digest)
     return { ...base, sheetDigest, hash, key, high, low, state: fresh ? 'ready' : e ? 'stale' : 'todo' }
   }))
-  const preflight = await preflightAlbum(album, ws, { ...s, phase: 'export' })
+  const preflight = await preflightAlbum(album, ws, { ...s, phase: 'export' }, null, expectedInputs)
   for (const sp of spreads) {
     const failures = preflight.errors.filter((e) => e.n === undefined || e.n === sp.n)
     if (failures.length && sp.state !== 'nosheet') { sp.state = 'blocked'; sp.reason = failures.map((e) => e.message).join(' ') }
@@ -188,7 +200,7 @@ async function startExport(p, { emit }) {
       }
     }
     const missingSheets = plan.spreads.filter((sp) => sp.state === 'nosheet').map((sp) => sp.n)
-    const job = { id: lease.id, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now() }
+    const job = { id: lease.id, total: spreads.length, done: 0, skipped: 0, failed: 0, cancelled: false, startedAt: Date.now(), finishingErrors: [] }
     current = job
     emit('export.started', { jobId: job.id, total: job.total, paths, missingSheets })
     // runExport catches failures and releases the lease before its completion event.
@@ -214,11 +226,12 @@ async function runExport(job, prepared, emit) {
   const { p, plan, cache, spreads, want, s, paths, missingSheets, lease } = prepared
   const next = JSON.parse(JSON.stringify(cache))
   const results = []
-  let pdfResult = null, stage = null, error = null, preserveStage = false
+  let pdfResult = null, stage = null, stageCapability = null, transactionOwnsStage = false, error = null
   const files = [], review = new Map(plan.spreads.filter((sp) => sp.state === 'ready').map((sp) => [sp.id, sp.low]))
   try {
     await fs.promises.mkdir(path.join(paths.sheets, '.album-studio'), { recursive: true })
-    stage = await fs.promises.mkdtemp(path.join(paths.sheets, '.album-studio', 'delivery-'))
+    stageCapability = await createPrivateStage(path.join(paths.sheets, '.album-studio'), 'delivery-')
+    stage = stageCapability.path
     for (let i = 0; i < spreads.length; i++) {
       if (job.cancelled) break
       const sp = spreads[i], { n, id, psd, key, hash } = sp
@@ -232,9 +245,11 @@ async function runExport(job, prepared, emit) {
       }
       report('exporting')
       const targets = [{ file: path.join(stage, `${name}-high.jpg`), quality: s.highQuality }, { file: path.join(stage, `${name}-low.jpg`), quality: s.lowQuality }]
-      const frozen = await snapshotFile(psd, stage, sp.sheetDigest)
-      let size
-      try { size = await exportSheet(frozen, targets, s) } finally { await fs.promises.unlink(frozen).catch(() => {}) }
+      const size = await withPrivateStage(path.dirname(stage), '.delivery-sources-', async sourceStage => {
+        const frozen = await sourceStage.snapshot(psd, sp.sheetDigest)
+        return exportSheet(frozen, targets, s, { expectedDigest: sp.sheetDigest, spec: prepared.ws.printSpec, n })
+      })
+      for (const target of targets) await stageCapability.register(target.file)
       files.push({ source: targets[0].file, target: sp.high }, { source: targets[1].file, target: sp.low })
       review.set(id, targets[1].file)
       next.spreads[id] = { n, key, hash, psd, at: new Date().toISOString(), ...size, high: { path: sp.high }, low: { path: sp.low } }
@@ -246,6 +261,7 @@ async function runExport(job, prepared, emit) {
       emit('export.progress', { jobId: job.id, index: job.total, total: job.total, n: null, state: 'pdf', pages: pages.length })
       const source = path.join(stage, 'review.pdf')
       await writeJpegPdf(source, pages, { title: path.basename(paths.pdf, '.pdf') })
+      await stageCapability.register(source)
       files.push({ source, target: paths.pdf })
       pdfResult = { path: paths.pdf, pages: pages.length, bytes: (await fs.promises.stat(source)).size }
     }
@@ -266,20 +282,25 @@ async function runExport(job, prepared, emit) {
     if (pdfResult) next.pdf = { path: paths.pdf }
     // Cache bytes and ownership fingerprints are journaled together with the files. The
     // builder runs before publication, so it must use staged records rather than target stats.
-    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, validateSnapshot: async () => { await lease.project.assertOwned(); await assertSnapshot(prepared, required) }, makeCache: async () => {
+    await stageCapability.transfer()
+    transactionOwnsStage = true // The durable publication protocol owns all later cleanup/recovery.
+    await publishDelivery(files, cache, stage, { paths, isCancelled: () => job.cancelled, validateSnapshot: async () => { await lease.project.assertOwned(); await assertSnapshot(prepared, required); await stageCapability.assertFiles() }, makeCache: async () => {
       await lease.project.assertOwned()
       await assertSnapshot(prepared, required)
+      await stageCapability.assertFiles()
       return next
     } })
     job.cancelled = false // Stop requested after the committed marker cannot roll back a final set.
     for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
   } catch (e) {
-    preserveStage = !!(e.recoveryStage || e.recoveryJournal || e.recoveryLock || e.snapshotPath || e.retainedPath)
-    if (e.code === 'DELIVERY_CANCELLED' && !preserveStage) job.cancelled = true
+    const requiresRecovery = !!(e.recoveryStage || e.recoveryJournal || e.recoveryLock || e.snapshotPath || e.retainedPath)
+    if (transactionOwnsStage && stage && await fs.promises.lstat(stage).then(() => true, () => true)) e.message += ` Inspect prepared delivery work at ${stage} and any reported recovery history before retrying; the caller did not remove it.`
+    if (e.code === 'DELIVERY_CANCELLED' && !requiresRecovery) job.cancelled = true
     else {
       error = e.message || String(e)
       if (e.deliveryCommitted) {
         job.cancelled = false
+        job.finishingErrors.push(error)
         // The complete new set is final; retain recovery evidence for cleanup on restart.
         for (const item of results) if (item.state === 'prepared') { item.state = 'done'; job.done++; emit('export.progress', { jobId: job.id, total: job.total, n: item.n, ...item }) }
         emit('export.progress', { jobId: job.id, total: job.total, n: null, state: 'warning', error })
@@ -290,13 +311,19 @@ async function runExport(job, prepared, emit) {
       }
     }
   } finally {
-    // A recovery error owns this stage. Never discard its journal or captured customer files.
-    if (stage && !preserveStage) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {})
+    if (stageCapability && !transactionOwnsStage) {
+      try {
+        const retirement = await stageCapability.cleanup()
+        if (retirement.retainedPath) job.finishingErrors.push(`Prepared delivery work was retained at ${retirement.retainedPath}.`)
+      } catch (cleanup) { job.finishingErrors.push(cleanup.message) }
+    }
     if (current === job) current = null
-    try { await releaseJob(lease) } catch (release) { error = [error, release.message].filter(Boolean).join(' '); job.failed++ }
+    try { await releaseJob(lease) } catch (release) { job.finishingErrors.push(`Delivery completed its file work, but its lease could not finish releasing: ${release.message}`) }
+    const finishingError = job.finishingErrors.join(' ') || null
+    error = [error, finishingError].filter(Boolean).join(' ') || null
     emit('export.finished', {
       jobId: job.id, total: job.total, done: job.done, skipped: job.skipped, failed: job.failed, cancelled: job.cancelled,
-      ms: Date.now() - job.startedAt, paths, results, pdf: pdfResult, missingSheets, error,
+      ms: Date.now() - job.startedAt, paths, results, pdf: pdfResult, missingSheets, error, finishingError, warnings: [...job.finishingErrors],
     })
   }
 }

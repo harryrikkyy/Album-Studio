@@ -17,7 +17,7 @@ const { addOverlays, applyLayerEdits } = require('./parity')
 const { printSettings, printCanvas } = require('./print_settings')
 
 /** Pixels kept beyond what the frame needs, so the photo can be re-cropped later. */
-const HEADROOM = 1.25
+const { HEADROOM } = require('./render_recipe')
 
 // ── pure geometry (tested) ──────────────────────────────────────────────────
 

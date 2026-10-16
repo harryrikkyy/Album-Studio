@@ -192,7 +192,9 @@ test('duplicate persisted spread IDs and conflicting asset registry records fail
   const [asset] = Object.values(data.workspace.identity.assets)
   data.workspace.identity.assets.img_conflicting = { ...asset }
   fs.writeFileSync(file, JSON.stringify(data))
-  await assert.rejects(openAlbum({ path: proj }), /identity registry is invalid/)
+  const conflicting = fs.readFileSync(file)
+  await assert.rejects(openAlbum({ path: proj }), error => error.code === 'PROJECT_INVALID' && error.field === 'identity registry' && /duplicate asset locator/.test(error.message))
+  assert.deepEqual(fs.readFileSync(file), conflicting)
 })
 
 test('project edits and undo cannot change a plan while its files are being produced', async () => {

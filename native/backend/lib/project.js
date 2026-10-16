@@ -15,6 +15,7 @@ const { newSpreadId, relinkRoot } = require('./identity')
 const { planAlbum } = require('./autofill')
 const { firstUsable, offPageFrames } = require('./template_check')
 const { commonShape, listTemplates, shapeOf } = require('./templates')
+const { LIMITS, pageCount, validateProject, validateOperations } = require('./project_domain')
 
 /** Workspace maps keyed by spread number: they move with their spread. */
 const PAGE_KEYED = ['pageOverlays', 'pageLayerEdits', 'pageBackgrounds']
@@ -25,11 +26,14 @@ const histories = new Map() // canonical project file → { undo, redo, revision
 // ── file I/O ────────────────────────────────────────────────────────────────
 
 async function readProject(file) {
-  return readProjectSnapshot(file)
+  const snapshot = await readProjectSnapshot(file)
+  validateProject(snapshot.data)
+  return snapshot
 }
 
 /** Write atomically; the version being replaced is kept as project.json.bak. */
 async function writeProject(file, data, revision, lease) {
+  validateProject(data)
   data.savedAt = new Date().toISOString()
   return (await saveProject(file, data, revision, { assertOwned: () => lease.assertOwned() })).revision
 }
@@ -44,7 +48,7 @@ function workspaceOf(d) {
 const emptyPage = (id = newSpreadId()) => ({ id, photos: [], template: null })
 
 function pagesOf(d) {
-  const total = Math.max(1, Number(d.totalActivePages) || Object.keys(d.albumPages || {}).length || 1)
+  const total = pageCount(d)
   const out = []
   for (let n = 1; n <= total; n++) {
     const p = (d.albumPages || {})[n] || (d.albumPages || {})[String(n)]
@@ -55,6 +59,7 @@ function pagesOf(d) {
 
 function setPages(d, pages) {
   const list = pages.length ? pages : [emptyPage()]
+  if (list.length > LIMITS.SPREADS) throw new Error(`The album exceeds the supported ${LIMITS.SPREADS}-spread limit. Split it into smaller projects before retrying.`)
   d.albumPages = {}
   list.forEach((p, i) => { d.albumPages[i + 1] = p })
   d.totalActivePages = list.length
@@ -394,6 +399,7 @@ const OPS = {
 
   /** Re-plan the whole album from all its photos (undoable as one step). */
   async autoFill(ctx, opts) {
+    if ((ctx.model.identityConflicts || []).some(c => ['physical-source-alias', 'conflicting-alias-adjustment'].includes(c.reason))) throw new Error('Two source aliases refer to the same physical files with different saved identities or edits. Choose the original source folder in Album Settings before auto-fill; all saved IDs and edits were preserved.')
     // `ids`: only these photos (Best picks); otherwise every photo of the album.
     const ids = Array.isArray(opts && opts.ids) ? ctx.model.pool.filter((id) => opts.ids.includes(id)) : ctx.model.pool
     const photos = ids.map((id) => ctx.model.photos[id]).filter(Boolean)
@@ -428,6 +434,9 @@ const OPS = {
  */
 async function withProjectLease(albumPath, work, { lease: provided, kind = 'edit' } = {}) {
   const location = await canonicalProject(albumPath)
+  // A supported current file must be validated before creating lease metadata. A missing
+  // public name may still belong to a bounded pending save, which is recovered under lease.
+  try { await readProject(location.file) } catch (error) { if (error.code !== 'ENOENT') throw error }
   const run = async () => {
     if (provided && provided.file !== location.file) throw new Error('The project lease belongs to another album.')
     if (!provided) require('./jobs').assertProjectIdle(location.file, location.folder)
@@ -436,6 +445,7 @@ async function withProjectLease(albumPath, work, { lease: provided, kind = 'edit
     try {
       await lease.assertOwned()
       await recoverProject(location.file, { assertOwned: () => lease.assertOwned() })
+      await readProject(location.file)
       result = await work({ ...location, lease })
     } catch (error) { failure = error }
     if (!provided) {
@@ -468,6 +478,7 @@ function historyOf(file, revision) {
 async function updateAlbum({ album: albumPath, ops }, opts = {}) {
   if (!albumPath) throw new Error('missing `album`')
   if (!Array.isArray(ops) || !ops.length) throw new Error('missing `ops`')
+  validateOperations(ops)
   return withProjectLease(albumPath, async ({ file, folder, lease }) => {
     const { data: d, revision } = await readProject(file)
     const h = historyOf(file, revision)

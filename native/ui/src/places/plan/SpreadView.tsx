@@ -25,7 +25,7 @@ function useLayout(albumPath: string, s: Spread): Layout | null {
     let live = true
     const hit = cache.get(key)
     if (hit) { setLayout(hit); return }
-    call<Layout>('spread.layout', { album: albumPath, n: s.n }, 30_000)
+    call('spread.layout', { album: albumPath, n: s.n }, 30_000)
       .then((l) => {
         if (cache.size > 200) cache.clear()
         cache.set(key, l)

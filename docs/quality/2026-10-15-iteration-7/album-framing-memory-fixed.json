@@ -1,0 +1,9 @@
+{
+  "payloadBytes": 1048576,
+  "chunks": 16,
+  "elapsedMs": 58.21525,
+  "heapUsedDelta": 175064,
+  "rssDelta": 9355264,
+  "externalDelta": 1108889,
+  "node": "v22.22.3"
+}

@@ -11,11 +11,12 @@ import { DEFAULT_PICKS, choose, pickKey, type PickOptions, type Reason, type Sco
 import { album, place, stored, store, toast } from '../../state'
 import { Button, Segmented } from '../../ui/controls'
 import { openAutoFillWith } from '../plan/AutoFill'
+import type { PicksProgress } from '../../../../contracts/types'
 
 type View = 'keep' | Exclude<Reason, 'error'>
 const REASON: Record<Reason, string> = { blur: 'Blurry', exposure: 'Exposure', duplicate: 'Duplicate', cap: 'Over the count', error: 'Unreadable', yours: 'Dropped by you' }
 
-interface Progress { stage: 'thumbs' | 'score'; folder: string; done: number; total: number }
+type Progress = PicksProgress
 
 export function BestPicks() {
   const a = album.value
@@ -32,9 +33,9 @@ export function BestPicks() {
     setScored(null)
     setYours(new Map())
     setBusy(true)
-    const off = onEvent('picks.progress', (d) => setProgress(d as Progress))
+    const off = onEvent('picks.progress', setProgress)
     try {
-      const r = await call<{ photos: Scored[] }>('picks.analyze', { folders }, 6 * 60 * 60_000)
+      const r = await call('picks.analyze', { folders }, 6 * 60 * 60_000)
       setScored(r.photos)
     } catch (e) {
       toast('error', (e as Error).message, 9000)
@@ -45,8 +46,8 @@ export function BestPicks() {
     }
   }
   const chooseFolder = async () => {
-    const dir = await call<string | null>('dialog.pickFolder', { title: 'Choose a folder of photos' }).catch(() => null)
-    if (dir) await analyze(dir.split('/').pop() ?? dir, [dir], false)
+    const dir = await call('dialog.pickFolder', { title: 'Choose a folder of photos' }).catch(() => null)
+    if (typeof dir === 'string' && dir) await analyze(dir.split('/').pop() ?? dir, [dir], false)
   }
   const fromAlbum = () => a && analyze(a.name, a.photoFolders.map((f) => f.path), true)
 
@@ -72,7 +73,7 @@ export function BestPicks() {
   const copy = async () => {
     if (!picked?.keep.length) return
     try {
-      const r = await call<{ copied: number; skipped: number; folders: { dest: string }[] }>('picks.copy', { picks: picked.keep.map((p) => ({ folder: p.folder, base: p.base })) }, 60 * 60_000)
+      const r = await call('picks.copy', { picks: picked.keep.map((p) => ({ folder: p.folder, base: p.base })) }, 60 * 60_000)
       toast('ok', `${plural(r.copied, 'file')} copied to ${r.folders.length === 1 ? shortPath(r.folders[0]!.dest, 2) : `${r.folders.length} _Selected folders`}${r.skipped ? ` (${r.skipped} already there)` : ''}.`, 8000)
     } catch (e) {
       toast('error', (e as Error).message, 9000)
@@ -80,7 +81,8 @@ export function BestPicks() {
   }
   const planFromPicks = () => {
     if (!a || !picked) return
-    const byThumb = new Map(Object.values(a.photos).map((ph) => [ph.thumb, ph.id]))
+    const byThumb = new Map<string, string>()
+    for (const ph of Object.values(a.photos)) if (ph) byThumb.set(ph.thumb, ph.id)
     const ids = picked.keep.map((p) => byThumb.get(p.thumb)).filter((id): id is string => !!id)
     place.value = 'plan'
     openAutoFillWith(ids)

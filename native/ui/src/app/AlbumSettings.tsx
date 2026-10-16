@@ -10,17 +10,16 @@ import { applyUpdate, forgetTemplateCatalogue, type UpdateResult } from '../edit
 import { plural, shortPath } from '../format'
 import { album, toast } from '../state'
 import { Button, IconButton } from '../ui/controls'
+import type { Collection, EventData, FolderInfo } from '../../../contracts/types'
 
-interface FolderInfo { path: string; name: string; exists: boolean; photos: number; raws: number; thumbs: number; missing: number; samples: string[] }
-interface Collection { path: string; name: string; exists: boolean; templates: number; albums: string[] }
-interface Progress { folder?: string; index?: number; folders?: number; done?: number; total?: number }
+type Progress = EventData<'album.folders'>
 
 const open = signal(false)
 export const openAlbumSettings = () => { if (album.value) open.value = true }
 
 async function pick(title: string, directory: string | null): Promise<string[]> {
   try {
-    const r = await call<string | string[] | null>('dialog.pickFolder', { title, directory, multiple: true }, 30 * 60_000)
+    const r = await call('dialog.pickFolder', { title, directory, multiple: true }, 30 * 60_000)
     return r === null ? [] : Array.isArray(r) ? r : [r]
   } catch (e) {
     toast('error', (e as Error).message)
@@ -43,15 +42,15 @@ export function AlbumSettingsDialog() {
     if (open.value && !d.open && a) {
       setFolders(null); setColls(null); setError(null); setProgress(null)
       d.showModal()
-      void call<FolderInfo[]>('folders.inspect', { paths: a.photoFolders.map((f) => f.path) }, 5 * 60_000).then(setFolders).catch((e) => setError((e as Error).message))
-      void call<Collection[]>('templates.inspect', { paths: a.templateCollections.map((c) => c.path) }).then(setColls).catch((e) => setError((e as Error).message))
+      void call('folders.inspect', { paths: a.photoFolders.map((f) => f.path) }, 5 * 60_000).then(setFolders).catch((e) => setError((e as Error).message))
+      void call('templates.inspect', { paths: a.templateCollections.map((c) => c.path) }).then(setColls).catch((e) => setError((e as Error).message))
     } else if (!open.value && d.open) d.close()
   }, [open.value])
 
-  useEffect(() => onEvent('album.folders', (d) => setProgress(d as Progress)), [])
+  useEffect(() => onEvent('album.folders', setProgress), [])
 
   if (!a) return null
-  const placedFrom = (folder: string) => Object.values(a.photos).filter((p) => p.folder === folder && p.usedOn.length).length
+  const placedFrom = (folder: string) => Object.values(a.photos).filter((p) => p !== undefined && p.folder === folder && p.usedOn.length > 0).length
   const changed = folders && colls
     && (folders.map((f) => f.path).join('|') !== a.photoFolders.map((f) => f.path).join('|')
       || colls.map((c) => c.path).join('|') !== a.templateCollections.map((c) => c.path).join('|'))
@@ -60,13 +59,13 @@ export function AlbumSettingsDialog() {
   const addFolders = async () => {
     const picked = (await pick('Add photo folders', a.photoFolders[0]?.path.replace(/\/[^/]+$/, '') ?? null)).filter((p) => !folders?.some((f) => f.path === p))
     if (!picked.length) return
-    const info = await call<FolderInfo[]>('folders.inspect', { paths: picked }, 5 * 60_000).catch(() => [])
+    const info = await call('folders.inspect', { paths: picked }, 5 * 60_000).catch(() => [])
     setFolders([...(folders ?? []), ...info])
   }
   const addCollections = async () => {
     const picked = (await pick('Add template collections', a.templateCollections[0]?.path.replace(/\/[^/]+$/, '') ?? null)).filter((p) => !colls?.some((c) => c.path === p))
     if (!picked.length) return
-    const info = await call<Collection[]>('templates.inspect', { paths: picked }).catch(() => [])
+    const info = await call('templates.inspect', { paths: picked }).catch(() => [])
     setColls([...(colls ?? []), ...info])
   }
 
@@ -75,7 +74,7 @@ export function AlbumSettingsDialog() {
     setBusy(true)
     setError(null)
     try {
-      const r = await call<UpdateResult>('album.setFolders', { album: a.path, photoFolders: folders.map((f) => f.path), templateCollections: colls.map((c) => c.path) }, 6 * 60 * 60_000)
+      const r = await call('album.setFolders', { album: a.path, photoFolders: folders.map((f) => f.path), templateCollections: colls.map((c) => c.path) }, 6 * 60 * 60_000)
       forgetTemplateCatalogue()
       applyUpdate(r)
       open.value = false

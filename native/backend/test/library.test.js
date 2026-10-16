@@ -40,7 +40,7 @@ test('the library: collections albums use and ones added, defaults for new album
   assert.deepEqual(t.map((x) => [x.name, x.h, x.v]), [['2h1v_0001.psd', 2, 1]])
 })
 
-test('storage: cache sizes, and clearing only what was asked', async () => {
+test('storage reports sizes and preserves nonempty caches without ownership evidence', async () => {
   const { storageUsage, clearStorage } = require('../lib/storage')
   const { cacheRoot } = require('../lib/cache')
   fs.mkdirSync(path.join(cacheRoot(), 'raw-previews'), { recursive: true })
@@ -54,8 +54,14 @@ test('storage: cache sizes, and clearing only what was asked', async () => {
   let u = await storageUsage({ album: proj })
   const get = (id) => u.caches.find((c) => c.id === id)
   assert.deepEqual([get('raw-previews').bytes, get('raw').bytes, get('raw').scope], [1000, 500, 'album'])
-  u = await clearStorage({ ids: ['raw-previews', 'raw'], album: proj })
-  assert.deepEqual([get('raw-previews').bytes, get('raw').bytes, get('picks').files], [0, 0, 1])
+  await assert.rejects(clearStorage({ ids: ['raw-previews', 'raw'], album: proj }), error => error.code === 'CACHE_CLEAR_PRESERVED')
+  u = await storageUsage({ album: proj })
+  assert.deepEqual([get('raw-previews').bytes, get('raw').bytes, get('picks').files], [1000, 500, 1])
+  assert.deepEqual(fs.readFileSync(path.join(cacheRoot(), 'raw-previews', 'a.jpg')), Buffer.alloc(1000))
+  assert.deepEqual(fs.readFileSync(path.join(root, 'out', '.album-studio', 'raw', 'B2.jpg')), Buffer.alloc(500))
+  const empty = path.join(cacheRoot(), 'lab-thumbs'); fs.mkdirSync(empty)
+  await clearStorage({ ids: ['lab-thumbs'] })
+  assert.equal(fs.existsSync(empty), true); assert.deepEqual(fs.readdirSync(empty), [])
   assert.ok(fs.existsSync(path.join(root, 'out', '.album-studio', 'render-cache.json')), 'the render record stays')
   await assert.rejects(clearStorage({ ids: ['../../etc'] }), /Unknown cache/)
 })

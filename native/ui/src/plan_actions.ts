@@ -17,7 +17,7 @@ function spreadsOf(ids: string[], except: number): number[] {
 /** Append template fitting for every spread whose photos changed. */
 function fit(ops: Op[], spreads: number[]): Op[] {
   if (!autoTemplate.value) return ops
-  return [...ops, ...[...new Set(spreads)].map((n) => ({ op: 'fitTemplate', n }))]
+  return [...ops, ...[...new Set(spreads)].map((n): Op => ({ op: 'fitTemplate', n }))]
 }
 
 export function addPhotos(n: number, ids: string[], { copy = false, index }: { copy?: boolean; index?: number } = {}) {

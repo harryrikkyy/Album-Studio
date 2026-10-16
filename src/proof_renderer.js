@@ -351,23 +351,8 @@ async function renderPageProof(job) {
   const dims = proofDims(job.canvasWidth, job.canvasHeight, maxEdge)
   const scale = dims.scale
 
-  // Resolve focal points via the plugin dispatcher. Done lazily — only when
-  // smart-crop is on and the photo doesn't already carry a precomputed focal
-  // point from the caller. Cached inside the focal-point plugin so a 200-page
-  // album with shared photos doesn't pay the cost twice.
-  if (smartCrop && job.photos?.length) {
-    let plugins = null
-    try { plugins = require('./plugins') } catch (_) { /* plugin system optional */ }
-    if (plugins) {
-      for (const p of job.photos) {
-        if (p.focal != null) continue
-        try {
-          const r = await plugins.dispatchFirst('focalPoint', p.filePath, { rotation: p.rotation || 0 })
-          if (r?.value) p.focal = r.value
-        } catch (_) { /* plugin failure already logged by dispatcher */ }
-      }
-    }
-  }
+  // Callers supply focal points when available. The removed plugin dispatcher
+  // was never part of this application's runtime closure.
 
   // Cheap hash of the inputs that affect output. Caller can use this to skip
   // work (matches the render queue's dirty-tracking approach). NOTE: frames

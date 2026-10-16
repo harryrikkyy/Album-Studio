@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: render retains the complete private stage after unknown-file without losing its committed sheet
+not ok 1 - render retains the complete private stage after unknown-file without losing its committed sheet
+  ---
+  duration_ms: 36.9315
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_private_stage.test.js:33:61'
+  failureType: 'testCodeFailure'
+  error: 'The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1YYvJQ/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-JikPVm; /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1YYvJQ/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.lock. Unused owner evidence remains at /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1YYvJQ/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-JikPVm: The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1YYvJQ/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-JikPVm; /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1YYvJQ/Album/.album-studio-project-lock-history/.album-studio-project-7680eb66f8e7b2155dfc25c4-unused-4995fe77-5d59-41b1-b02c-3eaf116dca35.'
+  code: 'ENOENT'
+  stack: |-
+    /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/exclusive_rename.js:14:23
+    exithandler (node:child_process:424:5)
+    ChildProcess.errorhandler (node:child_process:436:5)
+    ChildProcess.emit (node:events:519:28)
+    ChildProcess._handle.onexit (node:internal/child_process:291:12)
+    onErrorNT (node:internal/child_process:483:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+  ...
+# Subtest: render retains the complete private stage after edited-snapshot without losing its committed sheet
+not ok 2 - render retains the complete private stage after edited-snapshot without losing its committed sheet
+  ---
+  duration_ms: 11.597375
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_private_stage.test.js:33:61'
+  failureType: 'testCodeFailure'
+  error: 'The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-a3VLYP/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-hOnW1K; /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-a3VLYP/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.lock. Unused owner evidence remains at /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-a3VLYP/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-hOnW1K: The atomic publication helper is missing. Rebuild the pinned native engine/helpers before publishing; all existing files were preserved. Both lock locations were preserved for inspection: /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-a3VLYP/Album/.album-studio-project-7680eb66f8e7b2155dfc25c4.candidate-hOnW1K; /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-a3VLYP/Album/.album-studio-project-lock-history/.album-studio-project-7680eb66f8e7b2155dfc25c4-unused-74b2f834-b9e3-45d4-b808-c92c54bca38f.'
+  code: 'ENOENT'
+  stack: |-
+    /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/exclusive_rename.js:14:23
+    exithandler (node:child_process:424:5)
+    ChildProcess.errorhandler (node:child_process:436:5)
+    ChildProcess.emit (node:events:519:28)
+    ChildProcess._handle.onexit (node:internal/child_process:291:12)
+    onErrorNT (node:internal/child_process:483:16)
+    process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 302.435625

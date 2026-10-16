@@ -2,9 +2,12 @@
 
 const fs = require('fs')
 const path = require('path')
+const crypto = require('crypto')
 const { collectFrames } = require('./psd_template')
 const { coverQuad, embedScale } = require('./sheet')
-const { placeable } = require('./raw')
+const { placeableEvidence } = require('./raw')
+const { fileDigest, contentKey, readVerifiedBuffer } = require('./cache')
+const { spreadInputs } = require('./inputs')
 const { printCanvas } = require('./print_settings')
 const { readPsdBuffer } = require('./color')
 const sharp = () => require('../../../src/sharp_config').getSharp()
@@ -20,7 +23,7 @@ const finiteTree = (value) => typeof value === 'number' ? Number.isFinite(value)
 const exists = async (file) => !!file && await fs.promises.stat(file).then((s) => s.isFile(), () => false)
 
 /** Full original decode and real PSD geometry. No lab compliance is inferred from defaults. */
-async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
+async function preflightAlbum(album, ws, settings, requestedSpreads = null, expectedInputs = null) {
   const report = { errors: [], warnings: [], info: [] }
   const add = (kind, code, message, sp = {}, extra = {}) => report[kind].push({ code, n: sp.n, id: sp.id, message, ...extra })
   const fail = (code, message, sp, extra) => add('errors', code, message, sp, extra)
@@ -45,6 +48,10 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
   }
   const photoCache = new Map(), templateCache = new Map()
   for (const sp of selected) {
+    let inputValues
+    try {
+      inputValues = expectedInputs && expectedInputs.get(sp.n) || await spreadInputs(sp, album, ws)
+    } catch (error) { fail('source_changed', `Spread ${sp.n}'s input revisions could not be verified: ${error.message}`, sp); continue }
     const ids = new Set(sp.photoIds)
     for (const c of album.identityConflicts || []) {
       const relevant = c.n ? c.n === sp.n : ids.has(c.id) || (c.candidates || []).some((id) => ids.has(id)) || sp.template && (c.id === sp.template.id || (c.candidates || []).includes(sp.template.id))
@@ -53,15 +60,18 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
     if (!sp.template || !(await exists(sp.template.file))) { fail('template_missing', `Spread ${sp.n}'s template is missing.`, sp); continue }
     let psd
     try {
-      if (!templateCache.has(sp.template.file)) {
-        const bytes = await readPsdBuffer(sp.template.file), outline = decoder().readPsd(bytes, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
+      const templateKey = contentKey(sp.template.file, inputValues[1])
+      if (!templateCache.has(templateKey)) {
+        const bytes = await readPsdBuffer(sp.template.file)
+        if (crypto.createHash('sha256').update(bytes).digest('hex') !== inputValues[1]) throw new Error('The template changed before its verified geometry could be decoded.')
+        const outline = decoder().readPsd(bytes, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
         let budget = outline.width * outline.height * 4
         const measure = (nodes) => { for (const n of nodes || []) { budget += Math.max(0, (n.right - n.left) * (n.bottom - n.top)) * 8; measure(n.children) } }
         measure(outline.children)
         if (!Number.isFinite(budget) || budget > 900 * 1024 * 1024) throw new Error('Template exceeds the full geometry-decode budget; its masks cannot be verified.')
-        templateCache.set(sp.template.file, decoder().readPsd(bytes, { skipCompositeImageData: true, skipThumbnail: true, useImageData: true }))
+        templateCache.set(templateKey, decoder().readPsd(bytes, { skipCompositeImageData: true, skipThumbnail: true, useImageData: true }))
       }
-      psd = templateCache.get(sp.template.file)
+      psd = templateCache.get(templateKey)
       if (![psd.width, psd.height].every((v) => Number.isFinite(v) && v > 0)) throw new Error('Invalid template dimensions.')
     } catch (e) { fail('template_corrupt', `Spread ${sp.n}: ${e.message}`, sp); continue }
     const inches = settings.size === 'original' ? psd.height / settings.ppi : settings.heightInches
@@ -124,14 +134,19 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
         if (adjust.vignette) fail('unsupported_edit', `Spread ${sp.n}'s vignette is preview-only and must be removed before printing.`, sp)
         let meta
         try {
-          if (!photoCache.has(photo.original)) {
-            const input = await placeable(photo.original, path.join(ws.outputToken || path.join(album.path, 'exports'), '.album-studio', 'raw'))
-            const pipeline = sharp()(input, { failOn: 'warning' })
+          const expected = inputValues[2].find(v => v[0] === id)
+          if (!expected || expected[1] !== photo.original) throw new Error('The original no longer matches its verified print input.')
+          const photoKey = contentKey(photo.original, expected[2])
+          if (!photoCache.has(photoKey)) {
+            const developed = await placeableEvidence(photo.original, path.join(ws.outputToken || path.join(album.path, 'exports'), '.album-studio', 'raw'))
+            if (developed.sourceKey !== photoKey) throw new Error('The original changed before its print metadata could be verified.')
+            const input = await readVerifiedBuffer(developed.file, developed.digest)
+            const pipeline = sharp()(input, { failOn: 'warning', limitInputPixels: 134217728 })
             const m = await pipeline.metadata(); await pipeline.stats()
             const turn = [5, 6, 7, 8].includes(m.orientation)
-            photoCache.set(photo.original, { w: turn ? m.height : m.width, h: turn ? m.width : m.height })
+            photoCache.set(photoKey, { w: turn ? m.height : m.width, h: turn ? m.width : m.height })
           }
-          meta = photoCache.get(photo.original)
+          meta = photoCache.get(photoKey)
           if (![meta.w, meta.h].every((v) => Number.isFinite(v) && v > 0)) throw new Error('Invalid source dimensions.')
         } catch (e) { fail('photo_corrupt', `Spread ${sp.n}: ${photo.base || id} cannot be fully decoded (${e.message}).`, sp); continue }
         const edit = { rotation, ...placement }, transform = coverQuad(f, meta, edit)
@@ -148,6 +163,11 @@ async function preflightAlbum(album, ws, settings, requestedSpreads = null) {
       }
     }
     for (const id of sp.photoIds) if (!album.photos[id]) fail('photo_missing', `Spread ${sp.n} references a missing photo (${id}).`, sp)
+    try {
+      if (await fileDigest(sp.template.file) !== inputValues[1]) throw new Error('the template changed')
+      for (const [id, file, digest] of inputValues[2]) if (file && await fileDigest(file) !== digest) throw new Error(`photo ${id} changed`)
+      add('info', 'verified_input_revisions', 'Template geometry and original photo metadata were decoded from the verified source revisions.', sp, { templateDigest: inputValues[1], photos: inputValues[2].map(([id, , digest]) => ({ id, digest })) })
+    } catch (error) { fail('source_changed', `Spread ${sp.n}'s print inputs changed during verification: ${error.message}`, sp) }
   }
   if (settings.phase === 'export') add('warnings', 'embedded_resolution_unverified', 'Original photo resolution is checked. Detail inside edited sheets still needs a visual check before printing.')
   return report

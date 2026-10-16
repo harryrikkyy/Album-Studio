@@ -1,0 +1,12 @@
+
+> album-studio-ui@0.1.0 build
+> node build.mjs
+
+
+  dist/app.js             247.7kb
+  dist/app.css             54.5kb
+  dist/app.js.LEGAL.txt     3.3kb
+  dist/app.js.map        1005.4kb
+  dist/app.css.map        116.7kb
+
+⚡ Done in 2064ms

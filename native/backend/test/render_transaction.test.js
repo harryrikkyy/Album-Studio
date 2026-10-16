@@ -216,7 +216,7 @@ test('true partial-write and precommit fsync ENOSPC leave a recoverable old pair
         const write = handle.write.bind(handle)
         handle.write = async (...call) => { injected = true; await write(call[0], call[1], 1, call[3]); throw Object.assign(new Error('ENOSPC partial snapshot write'), { code: 'ENOSPC' }) }
       }
-      if (!injected && at === 'commit-flush' && path.basename(target) === 'commit.part.json') handle.sync = async () => { injected = true; throw Object.assign(new Error('ENOSPC commit flush'), { code: 'ENOSPC' }) }
+      if (!injected && at === 'commit-flush' && path.basename(target) === 'commit.part.json' && fs.existsSync(f.sheet) && sha(fs.readFileSync(f.sheet)) === sha(f.next)) handle.sync = async () => { injected = true; throw Object.assign(new Error('ENOSPC commit flush'), { code: 'ENOSPC' }) }
       return handle
     })
     await assert.rejects(publishRender(p, capabilities), error => error.code === 'ENOSPC' && !error.renderCommitted && /recovery evidence/.test(error.message))
@@ -230,7 +230,7 @@ test('a stop during commit fsync is honoured before the durable marker rename', 
   const { publishRender } = require(modulePath), f = fixture(t), p = await input(f), open = fs.promises.open; let stop = false
   t.mock.method(fs.promises, 'open', async (target, ...args) => {
     const handle = await open(target, ...args)
-    if (path.basename(target) === 'commit.part.json') { const sync = handle.sync.bind(handle); handle.sync = async () => { await sync(); stop = true } }
+    if (path.basename(target) === 'commit.part.json' && fs.existsSync(f.sheet) && sha(fs.readFileSync(f.sheet)) === sha(f.next)) { const sync = handle.sync.bind(handle); handle.sync = async () => { await sync(); stop = true } }
     return handle
   })
   await assert.rejects(publishRender(p, { ...capabilities, isCancelled: () => stop }), error => error.code === 'RENDER_CANCELLED' && !error.renderCommitted)
@@ -312,4 +312,94 @@ test('writable/edited detached snapshots and oversized cache inputs fail before 
     await assert.rejects(recoverRenders(p, capabilities), /changed|permissions|immutable/i)
     assert.deepEqual(fs.readFileSync(f.sheet), sheetBytes); assert.deepEqual(fs.readFileSync(f.cache), cacheBytes)
   }
+})
+
+function mutateJournal(file) {
+  const value = JSON.parse(fs.readFileSync(file)); value.projectRevision = '0'.repeat(64)
+  fs.chmodSync(file, 0o600); fs.writeFileSync(file, JSON.stringify(value)); fs.chmodSync(file, 0o400)
+}
+for (const at of ['before-exposure', 'sheet-installed', 'commit-flush']) test(`an exact journal revision change at ${at} cannot become a valid commit`, async t => {
+  const { publishRender } = require(modulePath), f = fixture(t), p = await input(f), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive, open = fs.promises.open
+  let injected = false
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    if (at === 'before-exposure' && /^render-[a-f0-9-]{36}$/.test(path.basename(to))) { injected = true; mutateJournal(path.join(from, 'journal.json')) }
+    await rename(from, to)
+    if (at === 'sheet-installed' && to === f.sheet && !injected) { injected = true; mutateJournal(path.join(path.dirname(from), 'journal.json')) }
+  })
+  if (at === 'commit-flush') t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (path.basename(file) === 'commit.part.json' && fs.existsSync(f.sheet) && sha(fs.readFileSync(f.sheet)) === sha(f.next)) {
+      const sync = handle.sync.bind(handle); handle.sync = async () => { await sync(); if (!injected) { injected = true; mutateJournal(path.join(path.dirname(file), 'journal.json')) } }
+    }
+    return handle
+  })
+  const error = await publishRender(p, capabilities).then(() => null, e => e)
+  assert.ok(injected); assert.ok(error, 'a schema-valid journal edit must be rejected, even when all source files remain valid')
+  assert.ok(!error.renderCommitted); assert.match(error.message, /journal.*revision|journal.*changed/i)
+  assert.deepEqual(fs.readFileSync(f.sheet), f.old); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache)
+  assert.ok(fs.existsSync(error.recoveryStage)); assert.ok(fs.existsSync(error.recoveryJournal))
+  assert.ok(files(path.dirname(f.cache)).every(file => path.basename(file) !== 'commit.json'), 'no committed marker may authorize the mutated journal')
+})
+
+for (const kind of ['wrong-json', 'same-bytes-new-inode', 'writable', 'symlink']) test(`a ${kind} commit-part substitution fails before the marker can commit`, async t => {
+  const { publishRender } = require(modulePath), f = fixture(t), p = await input(f), open = fs.promises.open; let injected = false
+  const displaced = path.join(f.root, 'displaced-commit-part.json')
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (path.basename(file) === 'commit.part.json' && fs.existsSync(f.sheet) && sha(fs.readFileSync(f.sheet)) === sha(f.next)) {
+      const sync = handle.sync.bind(handle)
+      handle.sync = async () => {
+        await sync(); if (injected) return; injected = true
+        const bytes = fs.readFileSync(file)
+        if (kind === 'wrong-json') { fs.chmodSync(file, 0o600); fs.writeFileSync(file, JSON.stringify({ version: 1, journal: '0'.repeat(64) })); fs.chmodSync(file, 0o400) }
+        if (kind === 'same-bytes-new-inode') { fs.renameSync(file, displaced); fs.writeFileSync(file, bytes, { mode: 0o400, flag: 'wx' }) }
+        if (kind === 'writable') fs.chmodSync(file, 0o600)
+        if (kind === 'symlink') { fs.renameSync(file, displaced); fs.symlinkSync(displaced, file) }
+      }
+    }
+    return handle
+  })
+  const error = await publishRender(p, capabilities).then(() => null, e => e)
+  assert.ok(injected); assert.ok(error); assert.ok(!error.renderCommitted, 'an unverified marker cannot classify the sheet/cache as committed')
+  assert.ok(files(path.dirname(f.cache)).every(file => path.basename(file) !== 'commit.json'))
+  if (kind !== 'symlink') { assert.deepEqual(fs.readFileSync(f.sheet), f.old); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache) }
+  else { assert.equal(fs.existsSync(displaced), true); assert.ok(fs.existsSync(error.recoveryStage), 'a nonregular unknown entry is retained for explicit review') }
+})
+
+test('a pending rollback failure reports existing detached history after successful restoration', async t => {
+  const { publishRender } = require(modulePath), f = fixture(t), p = await input(f), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => { if (to === f.cache && path.basename(from) === 'install-cache.json') throw Object.assign(new Error('ENOSPC pending cache install'), { code: 'ENOSPC' }); return rename(from, to) })
+  const error = await publishRender(p, capabilities).then(() => null, e => e)
+  assert.equal(error.code, 'ENOSPC'); assert.ok(!error.renderCommitted); assert.ok(fs.existsSync(error.recoveryStage)); assert.ok(fs.existsSync(error.recoveryJournal))
+  assert.equal(path.basename(path.dirname(error.recoveryStage)), 'render-history')
+  assert.deepEqual(fs.readFileSync(f.sheet), f.old); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache)
+})
+
+test('a substituted identical-byte committed marker cannot gain restart authority', async t => {
+  const { recoverRenders } = require(modulePath), f = fixture(t), p = await input(f); await killed(f, p, 'commit')
+  const stage = pending(f)[0], marker = path.join(stage, 'commit.json'), bytes = fs.readFileSync(marker)
+  const originalMarker = path.join(f.root, 'displaced-legitimate-marker.json'); fs.renameSync(marker, originalMarker); fs.writeFileSync(marker, bytes, { mode: 0o400, flag: 'wx' })
+  const sheet = fs.readFileSync(f.sheet), cache = fs.readFileSync(f.cache)
+  await assert.rejects(recoverRenders(p, capabilities), /commit identity|changed/i)
+  assert.deepEqual(fs.readFileSync(f.sheet), sheet); assert.deepEqual(fs.readFileSync(f.cache), cache); assert.deepEqual(fs.readFileSync(originalMarker), bytes)
+})
+
+test('the additive commit-node field keeps older version-one committed journals recoverable', async t => {
+  const { recoverRenders } = require(modulePath), f = fixture(t), p = await input(f); await killed(f, p, 'commit')
+  const stage = pending(f)[0], file = path.join(stage, 'journal.json'), marker = path.join(stage, 'commit.json'), journal = JSON.parse(fs.readFileSync(file))
+  delete journal.commitNode
+  const bytes = Buffer.from(JSON.stringify(journal)); fs.chmodSync(file, 0o600); fs.writeFileSync(file, bytes); fs.chmodSync(file, 0o400)
+  fs.chmodSync(marker, 0o600); fs.writeFileSync(marker, JSON.stringify({ version: 1, journal: sha(bytes) })); fs.chmodSync(marker, 0o400)
+  const r = await recoverRenders(p, capabilities)
+  assert.equal(r.recovered[0].state, 'committed'); assert.deepEqual(fs.readFileSync(f.sheet), f.next); assert.equal(pending(f).length, 0)
+})
+
+test('a stopped job whose rollback meets a manual edit reports recovery required instead of claiming restoration', async t => {
+  const { publishRender } = require(modulePath), f = fixture(t), p = await input(f), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  const manual = Buffer.from('manual sheet after cancellation'); let stop = false, edited = false
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => { await rename(from, to); if (!stop && to === f.sheet && path.basename(from) === 'install-sheet.psd') stop = true })
+  const error = await publishRender(p, { ...capabilities, isCancelled: () => { if (stop && !edited) { edited = true; fs.writeFileSync(f.sheet, manual) } return stop } }).then(() => null, e => e)
+  assert.equal(error.code, 'RENDER_CANCELLED'); assert.equal(error.recoveryRequired, true); assert.ok(!error.renderRestored); assert.ok(!error.renderCommitted)
+  assert.match(error.message, /rollback conflict/i); assert.doesNotMatch(error.message, /previous sheet and cache were restored/i)
+  assert.deepEqual(fs.readFileSync(f.sheet), manual); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache); assert.ok(fs.existsSync(error.recoveryJournal))
 })

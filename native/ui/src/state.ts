@@ -129,7 +129,7 @@ export function dismissToast(id: number) {
 export async function loadRecent() {
   recentError.value = null
   try {
-    recent.value = await call<RecentAlbum[]>('album.recent')
+    recent.value = await call('album.recent')
   } catch (e) {
     recentError.value = (e as Error).message
     recent.value = recent.value ?? []
@@ -140,7 +140,7 @@ export async function openAlbum(path: string) {
   albumLoading.value = path
   albumError.value = null
   try {
-    const a = await call<Album>('album.open', { path })
+    const a = await call('album.open', { path })
     batch(() => {
       album.value = a
       spreadIndex.value = 0
@@ -161,7 +161,7 @@ export async function openAlbum(path: string) {
 /** Re-read the open album (after a render) without moving the user anywhere. */
 export async function openAlbumQuietly(path: string) {
   try {
-    const a = await call<Album>('album.open', { path })
+    const a = await call('album.open', { path })
     if (album.value?.path === path) album.value = a
   } catch (e) {
     toast('error', (e as Error).message, 8000)

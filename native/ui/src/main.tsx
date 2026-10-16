@@ -2,7 +2,7 @@
 
 import { effect } from '@preact/signals'
 import { Component, render, type ComponentChildren } from 'preact'
-import { call, inShell, onEvent } from './bridge'
+import { call, inShell, onEvent, onProtocolError } from './bridge'
 import { account, checkAccount, whenAllowed } from './account'
 import { SignIn } from './app/SignIn'
 import { AboutDialog, openAbout } from './app/About'
@@ -23,11 +23,13 @@ import { moveSpread, removePhotos, rotatePhotos, shuffleTemplate, turnTargets } 
 import { editCurrentSpread, loadPlan, plan, startRender } from './render'
 import {
   album, currentSpread, frameAdjusting, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
-  toggleInspector,
+  toggleInspector, toast,
 } from './state'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
+
+onProtocolError(error => toast('error', `Album Studio received an unsupported message: ${error.message}`, 12000))
 
 effect(() => {
   document.documentElement.dataset.theme = theme.value
@@ -152,8 +154,8 @@ onEvent('menu', (d) => {
 
 async function pickAndOpenAlbum() {
   try {
-    const path = await call<string | null>('dialog.pickFolder', { title: 'Open an album project folder' })
-    if (path) await openAlbum(path)
+    const path = await call('dialog.pickFolder', { title: 'Open an album project folder' })
+    if (typeof path === 'string') await openAlbum(path)
   } catch (e) {
     report('menu', e)
   }

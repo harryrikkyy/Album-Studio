@@ -3,10 +3,11 @@
 'use strict'
 
 const fs = require('fs')
-const os = require('os')
 const path = require('path')
 const crypto = require('crypto')
 const zlib = require('zlib')
+const { cacheRoot } = require('./cache')
+const { createPrivateStage, finishPrivateStage } = require('./private_stage')
 
 const MAX_PROFILE = 16 * 1024 * 1024
 const verifiedProfiles = new Map()
@@ -347,21 +348,29 @@ async function profiledRgba(input, width, height, profile, depth = 8) {
   const header = rgbaTiffHeader(width, height, profile, depth)
   await assertProfileUsable(profile)
   if (input.length !== width * height * 4 * (depth / 8)) throw new Error('The sheet composite has an invalid pixel length.')
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'as-colour-'))
-  const file = path.join(dir, 'composite.tif')
-  const cleanup = () => fs.promises.rm(dir, { recursive: true, force: true })
-  let handle
+  return writeProfiledTiff(header, input, width, height)
+}
+
+function colourCleanup(stage) {
+  let completion
+  return () => completion || (completion = finishPrivateStage(stage))
+}
+async function writeProfiledTiff(header, pixels, width, height) {
+  const stage = await createPrivateStage(cacheRoot(), 'as-colour-'), file = path.join(stage.path, 'composite.tif')
+  let handle, failure
   try {
-    handle = await fs.promises.open(file, 'wx', 0o600)
+    await stage.reserveBytes(header.length + pixels.length)
+    handle = await fs.promises.open(file, 'wx', 0o400)
     await handle.writeFile(header)
-    await handle.writeFile(input)
-    await handle.close(); handle = null
-    return { input: file, width, height, cleanup }
-  } catch (e) {
-    if (handle) await handle.close().catch(() => {})
-    await cleanup()
-    throw e
+    await handle.writeFile(pixels)
+  } catch (error) { failure = error }
+  try { if (handle) await handle.close() } catch (close) {
+    if (failure) { failure.closeError = close; failure.message += ` Colour file close also failed: ${close.message}` }
+    else failure = close
   }
+  if (failure) return finishPrivateStage(stage, failure)
+  try { await stage.register(file, { readOnly: true }) } catch (error) { return finishPrivateStage(stage, error) }
+  return { input: file, width, height, cleanup: colourCleanup(stage) }
 }
 
 function cmykError(detail) {
@@ -445,13 +454,7 @@ async function profiledCmyk(composite, profile) {
   tag(34675, 7, profile.length, profileAt)
   for (let i = 0; i < channels; i++) header.writeUInt16LE(depth, bitsAt + i * 2)
   profile.copy(header, profileAt)
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'as-colour-')), file = path.join(dir, 'composite.tif')
-  const cleanup = () => fs.promises.rm(dir, { recursive: true, force: true })
-  let handle
-  try {
-    handle = await fs.promises.open(file, 'wx', 0o600); await handle.writeFile(header); await handle.writeFile(data); await handle.close(); handle = null
-    return { input: file, width, height, cleanup }
-  } catch (error) { if (handle) await handle.close().catch(() => {}); await cleanup(); throw error }
+  return writeProfiledTiff(header, data, width, height)
 }
 
 let defaultRgbProfile = null
@@ -487,26 +490,34 @@ async function psdPixels(psdPath, { buffer } = {}) {
     }
   }
   const { PhotoCraftSession } = require('./photocraft')
-  const dir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'as-export-')), out = path.join(dir, 'sheet.png')
+  const stage = await createPrivateStage(cacheRoot(), 'as-export-'), dir = stage.path, out = path.join(dir, 'sheet.png')
   const frozen = path.join(dir, `source.${buf.readUInt16BE(4) === 2 ? 'psb' : 'psd'}`)
-  const cleanup = () => fs.promises.rm(dir, { recursive: true, force: true })
-  let pc = null
+  let pc = null, failure
   try {
     // The source can change after readPsdBuffer's verification, including A→B→A
     // changes hidden from later source hashes. The engine must consume these exact
     // verified bytes, with the same PSD/PSB encoding, rather than reopening its path.
+    await stage.reserveBytes(buf.length + source.width * source.height * 4)
     await fs.promises.writeFile(frozen, buf, { flag: 'wx', mode: 0o400 })
+    await stage.register(frozen, { digest: crypto.createHash('sha256').update(buf).digest('hex'), readOnly: true })
     pc = new PhotoCraftSession({ writeRoot: dir })
     await pc.call('doc.open', { path: PhotoCraftSession.readPath(frozen) })
     await pc.run('edit.convertToProfile', SRGB_POLICY)
     await pc.call('doc.save', { path: pc.writePath(out) })
-  } catch (error) { await cleanup(); throw error } finally { if (pc) await pc.close() }
+  } catch (error) { failure = error }
+  try { if (pc) await pc.close() } catch (close) {
+    if (failure) { failure.closeError = close; failure.message += ` PhotoCraft close also failed: ${close.message}` }
+    else failure = close
+  }
+  if (failure) return finishPrivateStage(stage, failure)
   try {
+    await stage.assertFiles()
+    await stage.register(out)
     const meta = await require('../../../src/sharp_config').getSharp()(out, { failOn: 'warning' }).metadata()
     if (profile && !meta.icc) throw new Error('The editor render did not retain a verifiable colour profile. Save an 8-bit RGB sheet with its compatibility composite before delivery.')
     if (meta.icc) await assertProfileUsable(meta.icc)
-    return { input: out, width: meta.width, height: meta.height, cleanup }
-  } catch (error) { await cleanup(); throw error }
+    return { input: out, width: meta.width, height: meta.height, cleanup: colourCleanup(stage) }
+  } catch (error) { return finishPrivateStage(stage, error) }
 }
 
 module.exports = { readPsdBuffer, psdPixels, profiledRgba, profiledCmyk, decodeRgbComposite, decodeCmykComposite, psdProfile, rgbaTiffHeader, validateProfile, assertProfileUsable, SRGB_POLICY, MAX_PSD_SOURCE_BYTES, MAX_COMPOSITE_BYTES }

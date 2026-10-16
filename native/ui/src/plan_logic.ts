@@ -137,11 +137,11 @@ export function placementLayout(frameW: number, frameH: number, photoW: number, 
 }
 
 /** The placement after dragging the picture by (dx, dy) frame pixels: it follows the pointer. */
-export function panBy(start: Placement, dx: number, dy: number, overflowX: number, overflowY: number): Placement {
+export function panBy(start: Placement, dx: number, dy: number, overflowX: number, overflowY: number): Required<Placement> {
   return {
-    scale: start.scale,
-    ox: overflowX > 0.5 ? clamp(start.ox - (2 * dx) / overflowX, -1, 1) : 0,
-    oy: overflowY > 0.5 ? clamp(start.oy - (2 * dy) / overflowY, -1, 1) : 0,
+    scale: start.scale ?? 1,
+    ox: overflowX > 0.5 ? clamp((start.ox ?? 0) - (2 * dx) / overflowX, -1, 1) : 0,
+    oy: overflowY > 0.5 ? clamp((start.oy ?? 0) - (2 * dy) / overflowY, -1, 1) : 0,
   }
 }
 

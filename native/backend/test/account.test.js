@@ -106,7 +106,7 @@ test('signed out with nothing saved: only account and system calls are answered'
 
   const out = []
   const orig = process.stdout.write.bind(process.stdout)
-  process.stdout.write = (s) => { out.push(JSON.parse(String(s))); return true }
+  process.stdout.write = (s, callback) => { out.push(JSON.parse(String(s))); if (callback) queueMicrotask(callback); return true }
   try {
     await dispatch(JSON.stringify({ id: 1, method: 'album.recent' }))
   } finally {

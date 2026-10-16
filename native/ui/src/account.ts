@@ -29,7 +29,7 @@ export async function checkAccount(refresh = false): Promise<void> {
   if (!inShell) { settle({ state: 'allowed', configured: true, bypass: true, daysLeft: 999 }); return }
   checking.value = true
   try {
-    settle(await call<Account>('account.status', refresh ? { refresh } : {}, 60_000))
+    settle(await call('account.status', refresh ? { refresh } : {}, 60_000))
   } catch (e) {
     settle({ state: 'blocked', reason: 'error', message: (e as Error).message, configured: true })
   } finally {
@@ -41,7 +41,7 @@ export async function signIn(): Promise<void> {
   accountError.value = null
   signingIn.value = true
   try {
-    settle(await call<Account>('account.signIn', {}, 200_000))
+    settle(await call('account.signIn', {}, 200_000))
     void call('shell.activate').catch(() => {})
   } catch (e) {
     const m = (e as Error).message
@@ -59,7 +59,7 @@ export async function retryAccount(): Promise<void> {
   accountError.value = null
   checking.value = true
   try {
-    settle(await call<Account>('account.retry', {}, 60_000))
+    settle(await call('account.retry', {}, 60_000))
   } catch (e) {
     accountError.value = (e as Error).message
   } finally {
@@ -69,7 +69,7 @@ export async function retryAccount(): Promise<void> {
 
 export async function signOut(): Promise<void> {
   try {
-    settle(await call<Account>('account.signOut'))
+    settle(await call('account.signOut'))
   } catch (e) {
     toast('error', (e as Error).message)
   }

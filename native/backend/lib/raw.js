@@ -9,7 +9,8 @@ const childProcess = require('child_process')
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
-const { contentFileKey, fileDigest, contentKey, snapshotFile } = require('./cache')
+const { contentFileKey, fileDigest, contentKey } = require('./cache')
+const { withPrivateStage } = require('./private_stage')
 const exclusiveRename = require('./exclusive_rename')
 
 const RAW_EXT = /\.(arw|cr2|cr3|nef|dng|raf|orf|rw2|srw|pef)$/i
@@ -42,26 +43,17 @@ async function unchangedSource(file, key, identity = null) {
 }
 
 /** Decoders consume a private read-only copy, not a mutable original with coarse timestamps. */
-async function consumeSnapshot(file, key, parent, consume) {
-  await fs.promises.mkdir(parent, { recursive: true })
-  const stage = await fs.promises.mkdtemp(path.join(parent, '.source-'))
-  let frozen = null, digest = null, preserve = false
-  try {
+async function consumeSnapshot(file, key, parent, consume, options = {}) {
+  return withPrivateStage(parent, '.source-', async stage => {
     const identity = await sourceIdentity(file)
-    digest = await fileDigest(file)
+    const digest = await fileDigest(file)
     if (contentKey(file, digest) !== key) throw changed(file)
-    frozen = await snapshotFile(file, stage, digest)
-    const result = await consume(frozen, stage)
-    if (await fileDigest(frozen) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) { preserve = true; throw changed(frozen) }
+    const frozen = await stage.snapshot(file, digest)
+    const result = await consume(frozen, stage.path)
+    if (await fileDigest(frozen) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) throw changed(frozen)
     await unchangedSource(file, key, identity)
     return result
-  } catch (error) { if (error.snapshotPath || error.retainedPath) preserve = true; throw error }
-  finally {
-    if (frozen && !preserve) {
-      try { preserve = await fileDigest(frozen) !== digest || !!((await fs.promises.lstat(frozen)).mode & 0o222) } catch (_) { preserve = true }
-    }
-    if (!preserve) await fs.promises.rm(stage, { recursive: true, force: true }).catch(() => {})
-  }
+  }, options)
 }
 
 /** Small evidence files are read without following links or accepting an in-flight rewrite. */
@@ -84,8 +76,6 @@ async function readEvidence(file, maxBytes = 65536) {
 async function publishExclusive(from, to) {
   try { await fs.promises.link(from, to) } catch (error) {
     if (!['ENOSYS', 'ENOTSUP', 'EOPNOTSUPP', 'EPERM', 'EXDEV', 'EMLINK'].includes(error.code)) throw error
-    // exFAT/SMB may disallow hard links. The same-filesystem OS move still refuses replacement
-    // atomically, without exposing a partial exclusive-copy destination.
     await exclusiveRename.renameExclusive(from, to)
   }
 }
@@ -114,29 +104,29 @@ async function deriveCached(file, out, sourceKey, recipe, generate, extra = {}) 
     const reused = await verifiedDerived(file, out, sourceKey, recipe)
     if (reused) { await unchangedSource(file, sourceKey, identity); return reused }
     await fs.promises.mkdir(path.dirname(out), { recursive: true })
-    const stage = await fs.promises.mkdtemp(path.join(path.dirname(out), '.album-studio-derived-'))
-    const tmp = path.join(stage, 'image.jpg'), evidence = path.join(stage, 'evidence.json')
-    try {
-      await consumeSnapshot(file, sourceKey, stage, (frozen) => generate(tmp, frozen))
+    return withPrivateStage(path.dirname(out), '.album-studio-derived-', async stage => {
+      const tmp = path.join(stage.path, 'image.jpg'), evidence = path.join(stage.path, 'evidence.json')
+      await consumeSnapshot(file, sourceKey, stage.path, (frozen) => generate(tmp, frozen), { historyParent: path.dirname(out) })
       const digest = await fileDigest(tmp)
+      await stage.register(tmp, { digest })
       await unchangedSource(file, sourceKey, identity)
       await fs.promises.writeFile(evidence, JSON.stringify({ ...extra, version: 1, sourceKey, recipe, digest }), { flag: 'wx' })
-      try { await publishExclusive(tmp, out) } catch (error) {
+      await stage.register(evidence)
+      // Retained stages must not share writable inodes with public derivatives.
+      try { await exclusiveRename.renameExclusive(tmp, out) } catch (error) {
         if (error.code !== 'EEXIST') throw error
         const concurrent = await verifiedDerived(file, out, sourceKey, recipe)
         if (concurrent) return concurrent
         throw error
       }
+      stage.forget(tmp)
       // A second writer cannot replace either the image or its evidence.
-      await publishExclusive(evidence, `${out}.json`)
+      await exclusiveRename.renameExclusive(evidence, `${out}.json`)
+      stage.forget(evidence)
       const result = await verifiedDerived(file, out, sourceKey, recipe)
       await unchangedSource(file, sourceKey, identity)
       return result
-    } finally {
-      await fs.promises.unlink(tmp).catch(() => {})
-      await fs.promises.unlink(evidence).catch(() => {})
-      await fs.promises.rmdir(stage).catch(() => {})
-    }
+    })
   })()
   derivations.set(identity, work)
   try { return await work } finally { derivations.delete(identity) }

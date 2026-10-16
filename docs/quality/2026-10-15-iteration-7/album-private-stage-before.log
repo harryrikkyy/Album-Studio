@@ -1,0 +1,129 @@
+TAP version 13
+# Subtest: global clearing preserves retained histories and unknown manual files
+not ok 1 - global clearing preserves retained histories and unknown manual files
+  ---
+  duration_ms: 13.970375
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:18:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:21:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: global clearing cannot delete an active source snapshot
+not ok 2 - global clearing cannot delete an active source snapshot
+  ---
+  duration_ms: 12.218084
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:24:1'
+  failureType: 'testCodeFailure'
+  error: 'Missing expected rejection.'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  operator: 'rejects'
+  stack: |-
+    async /Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:27:5
+    async Object.consumeSnapshot (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/raw.js:54:20)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:26:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: source cleanup retains a complete stage when an unknown file appears
+not ok 3 - source cleanup retains a complete stage when an unknown file appears
+  ---
+  duration_ms: 7.276959
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:31:1'
+  failureType: 'testCodeFailure'
+  error: 'unknown stage contents must fail closed'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: ~
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:34:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: derived evidence EEXIST preserves the exact unowned record
+not ok 4 - derived evidence EEXIST preserves the exact unowned record
+  ---
+  duration_ms: 14.216916
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:38:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(error.retainedPath)
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:41:46)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a decoder failure preserves a substituted temporary image and primary error
+not ok 5 - a decoder failure preserves a substituted temporary image and primary error
+  ---
+  duration_ms: 8.89775
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:44:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(error.retainedPath)
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:47:54)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+not ok 6 - proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+  ---
+  duration_ms: 300.12375
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:50:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + undefined
+    - 'PRIVATE_STAGE_PRESERVED'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'PRIVATE_STAGE_PRESERVED'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/private_stage_cleanup.test.js:63:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 0
+# fail 6
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 433.1235

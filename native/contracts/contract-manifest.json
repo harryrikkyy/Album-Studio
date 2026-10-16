@@ -1,0 +1,663 @@
+{
+  "version": 1,
+  "schema": "album-studio.schema.json",
+  "schemaVersions": {
+    "protocol": [
+      1
+    ],
+    "persistedProject": [
+      0,
+      1
+    ],
+    "identity": [
+      1
+    ],
+    "legacyProjectDigitStrings": [
+      "0",
+      "1"
+    ]
+  },
+  "methods": {
+    "account.cancelSignIn": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/AccountCancelsigninResult"
+      }
+    },
+    "account.retry": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/Account"
+      }
+    },
+    "account.signIn": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/Account"
+      }
+    },
+    "account.signOut": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/Account"
+      }
+    },
+    "account.status": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/AccountStatusParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Account"
+      }
+    },
+    "album.create": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/CreateAlbumParams"
+      },
+      "result": {
+        "$ref": "#/$defs/CreateAlbumResult"
+      }
+    },
+    "album.open": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/OpenAlbumParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Album"
+      }
+    },
+    "album.recent": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/AlbumRecentResult"
+      }
+    },
+    "album.redo": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/AlbumPathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/UpdateResult"
+      }
+    },
+    "album.setFolders": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/SetFoldersParams"
+      },
+      "result": {
+        "$ref": "#/$defs/UpdateResult"
+      }
+    },
+    "album.suggest": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/SuggestParams"
+      },
+      "result": {
+        "$ref": "#/$defs/AlbumSuggestResult"
+      }
+    },
+    "album.undo": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/AlbumPathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/UpdateResult"
+      }
+    },
+    "album.update": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/UpdateParams"
+      },
+      "result": {
+        "$ref": "#/$defs/UpdateResult"
+      }
+    },
+    "debug.queuePicks": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/DebugPicksParams"
+      },
+      "result": {
+        "$ref": "#/$defs/DebugQueuepicksResult"
+      },
+      "availability": "debug"
+    },
+    "debug.result": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/DebugResultParams"
+      },
+      "result": {
+        "$ref": "#/$defs/DebugResultResult"
+      },
+      "availability": "debug"
+    },
+    "dialog.pickFolder": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/PickFolderParams"
+      },
+      "result": {
+        "$ref": "#/$defs/DialogPickfolderResult"
+      }
+    },
+    "editor.inspect": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/JsonObject"
+      },
+      "verification": "bounded opaque native diagnostic; typed Rust DTO/native execution remains unverified"
+    },
+    "editor.open": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/PathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/EditorOpenResult"
+      }
+    },
+    "export.cancel": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/CancelJobParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ExportCancelResult"
+      }
+    },
+    "export.plan": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/ExportParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ExportPlan"
+      }
+    },
+    "export.start": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/ExportParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ExportStarted"
+      }
+    },
+    "export.status": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/JobStatus"
+      }
+    },
+    "folders.inspect": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathsParams"
+      },
+      "result": {
+        "$ref": "#/$defs/FoldersInspectResult"
+      }
+    },
+    "lab.list": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/LabListParams"
+      },
+      "result": {
+        "$ref": "#/$defs/LabListResult"
+      }
+    },
+    "lab.rename": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/LabRenameParams"
+      },
+      "result": {
+        "$ref": "#/$defs/LabRenameResult"
+      }
+    },
+    "library.add": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathsParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Collections"
+      }
+    },
+    "library.collections": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/Collections"
+      }
+    },
+    "library.remove": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Collections"
+      }
+    },
+    "library.setDefaults": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathsParams"
+      },
+      "result": {
+        "$ref": "#/$defs/Collections"
+      }
+    },
+    "library.templates": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/LibraryTemplatesResult"
+      }
+    },
+    "picks.analyze": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PicksAnalyzeParams"
+      },
+      "result": {
+        "$ref": "#/$defs/PicksAnalyzeResult"
+      }
+    },
+    "picks.copy": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PicksCopyParams"
+      },
+      "result": {
+        "$ref": "#/$defs/PicksCopyResult"
+      }
+    },
+    "proofs.refresh": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/AlbumPathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ProofsRefreshResult"
+      }
+    },
+    "render.cancel": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/CancelJobParams"
+      },
+      "result": {
+        "$ref": "#/$defs/RenderCancelResult"
+      }
+    },
+    "render.plan": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/RenderParams"
+      },
+      "result": {
+        "$ref": "#/$defs/RenderPlan"
+      }
+    },
+    "render.start": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/RenderParams"
+      },
+      "result": {
+        "$ref": "#/$defs/RenderStarted"
+      }
+    },
+    "render.status": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/JobStatus"
+      }
+    },
+    "shell.activate": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellActivateResult"
+      }
+    },
+    "shell.dragWindow": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellDragwindowResult"
+      }
+    },
+    "shell.info": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellInfoResult"
+      }
+    },
+    "shell.log": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/ShellLogParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellLogResult"
+      }
+    },
+    "shell.ping": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/PingParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellPingResult"
+      }
+    },
+    "shell.reveal": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/PathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellRevealResult"
+      }
+    },
+    "shell.selftestReturnAfter": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/SelfTestParams"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellSelftestreturnafterResult"
+      },
+      "availability": "debug"
+    },
+    "shell.showAlbum": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellShowalbumResult"
+      }
+    },
+    "shell.zoomWindow": {
+      "owner": "shell",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/ShellZoomwindowResult"
+      }
+    },
+    "spread.layout": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/SpreadLayoutParams"
+      },
+      "result": {
+        "$ref": "#/$defs/SpreadLayout"
+      }
+    },
+    "storage.clear": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/StorageClearParams"
+      },
+      "result": {
+        "$ref": "#/$defs/StorageUsage"
+      }
+    },
+    "storage.usage": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/StorageParams"
+      },
+      "result": {
+        "$ref": "#/$defs/StorageUsage"
+      }
+    },
+    "system.ping": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PingParams"
+      },
+      "result": {
+        "$ref": "#/$defs/SystemPingResult"
+      }
+    },
+    "templates.collections": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/Empty"
+      },
+      "result": {
+        "$ref": "#/$defs/TemplatesCollectionsResult"
+      }
+    },
+    "templates.inspect": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/PathsParams"
+      },
+      "result": {
+        "$ref": "#/$defs/TemplatesInspectResult"
+      }
+    },
+    "templates.list": {
+      "owner": "backend",
+      "params": {
+        "$ref": "#/$defs/AlbumPathParams"
+      },
+      "result": {
+        "$ref": "#/$defs/TemplatesListResult"
+      }
+    }
+  },
+  "events": {
+    "account.signIn": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/AccountSignIn"
+      }
+    },
+    "album.creating": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/CreatingProgress"
+      }
+    },
+    "album.folders": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/CreatingProgress"
+      }
+    },
+    "backend.exited": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/BackendExited"
+      }
+    },
+    "backend.ready": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/BackendReady"
+      }
+    },
+    "export.finished": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ExportFinished"
+      }
+    },
+    "export.progress": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ExportProgress"
+      }
+    },
+    "export.started": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ExportStarted"
+      }
+    },
+    "menu": {
+      "owner": "shell",
+      "data": {
+        "$ref": "#/$defs/MenuEvent"
+      }
+    },
+    "picks.progress": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/PicksProgress"
+      }
+    },
+    "proofs.failed": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ProofFailed"
+      }
+    },
+    "proofs.idle": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ProofIdle"
+      }
+    },
+    "proofs.updated": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/ProofUpdated"
+      }
+    },
+    "render.finished": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/RenderFinished"
+      }
+    },
+    "render.progress": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/RenderProgress"
+      }
+    },
+    "render.started": {
+      "owner": "backend",
+      "data": {
+        "$ref": "#/$defs/RenderStarted"
+      }
+    },
+    "shell.albumShown": {
+      "owner": "shell",
+      "data": {
+        "$ref": "#/$defs/Empty"
+      }
+    }
+  },
+  "dto": {
+    "Album": {
+      "$ref": "#/$defs/Album"
+    },
+    "Photo": {
+      "$ref": "#/$defs/Photo"
+    },
+    "Spread": {
+      "$ref": "#/$defs/Spread"
+    },
+    "Template": {
+      "$ref": "#/$defs/Template"
+    },
+    "UpdateResult": {
+      "$ref": "#/$defs/UpdateResult"
+    },
+    "RenderPlan": {
+      "$ref": "#/$defs/RenderPlan"
+    },
+    "ExportPlan": {
+      "$ref": "#/$defs/ExportPlan"
+    },
+    "RenderFinished": {
+      "$ref": "#/$defs/RenderFinished"
+    },
+    "ExportFinished": {
+      "$ref": "#/$defs/ExportFinished"
+    },
+    "StorageUsage": {
+      "$ref": "#/$defs/StorageUsage"
+    },
+    "SpreadLayout": {
+      "$ref": "#/$defs/SpreadLayout"
+    },
+    "Account": {
+      "$ref": "#/$defs/Account"
+    }
+  },
+  "errors": {
+    "ErrorData": {
+      "$ref": "#/$defs/ErrorData"
+    },
+    "FailureReply": {
+      "$ref": "#/$defs/FailureReply"
+    },
+    "ValidationIssue": {
+      "$ref": "#/$defs/ValidationIssue"
+    }
+  },
+  "persistedProject": {
+    "input": {
+      "$ref": "#/$defs/PersistedProject"
+    },
+    "normalization": "project_domain.migrateProject validates and preserves supported unknown fields; runtime validator never mutates"
+  },
+  "nativeVerification": "Source inventory plus boundary JSON validation only; native Rust DTO/runtime adapter verification remains unverified."
+}

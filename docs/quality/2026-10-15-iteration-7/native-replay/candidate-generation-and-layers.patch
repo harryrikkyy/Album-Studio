@@ -1,0 +1,159 @@
+--- a/apps/album-studio/src/backend.rs
++++ b/apps/album-studio/src/backend.rs
+@@ -21,20 +21,31 @@
+     Event(Value),
+ }
+ 
++struct Pending {
++    page_id: Value,
++    generation: u64,
++}
++
++enum ReaderMessage {
++    Line { generation: u64, line: String },
++    Exited { generation: u64 },
++}
++
+ pub struct Backend {
+     child: Option<Child>,
+     stdin: Option<ChildStdin>,
+     next_id: u64,
+     /// helper id → the page's own request id.
+-    waiting: HashMap<u64, Value>,
+-    lines: Arc<Mutex<VecDeque<String>>>,
++    waiting: HashMap<u64, Pending>,
++    generation: u64,
++    lines: Arc<Mutex<VecDeque<ReaderMessage>>>,
+     wake: Arc<dyn Fn() + Send + Sync>,
+ }
+ 
+ impl Backend {
+     /// `wake` is called (from the reader thread) whenever the helper writes a line.
+     pub fn new(wake: Arc<dyn Fn() + Send + Sync>) -> Self {
+-        Self { child: None, stdin: None, next_id: 1, waiting: HashMap::new(), lines: Arc::default(), wake }
++        Self { child: None, stdin: None, next_id: 1, waiting: HashMap::new(), generation: 0, lines: Arc::default(), wake }
+     }
+ 
+     fn ensure_running(&mut self) -> Result<(), String> {
+@@ -42,11 +53,12 @@
+             match child.try_wait() {
+                 Ok(None) => return Ok(()),
+                 Ok(Some(status)) => log::warn!("background helper exited ({status}); restarting"),
+-                Err(e) => log::warn!("background helper state unknown ({e}); restarting"),
++                Err(e) => return Err(format!("The background helper state could not be verified ({e}). Preserve current work before retrying.")),
+             }
+             self.child = None;
+             self.stdin = None;
+         }
++        let generation = self.generation.checked_add(1).ok_or("The helper generation counter is exhausted; restart Album Studio after current work finishes.")?;
+         let script = crate::resources::backend_script();
+         let mut cmd = Command::new(crate::resources::node());
+         cmd.arg(&script);
+@@ -69,11 +81,11 @@
+         std::thread::spawn(move || {
+             for line in BufReader::new(stdout).lines() {
+                 let Ok(line) = line else { break };
+-                lines.lock().unwrap_or_else(|e| e.into_inner()).push_back(line);
++                lines.lock().unwrap_or_else(|e| e.into_inner()).push_back(ReaderMessage::Line { generation, line });
+                 wake();
+             }
+             // EOF: the helper is gone. One more wake so waiting requests get their error.
+-            lines.lock().unwrap_or_else(|e| e.into_inner()).push_back(r#"{"event":"backend.exited"}"#.into());
++            lines.lock().unwrap_or_else(|e| e.into_inner()).push_back(ReaderMessage::Exited { generation });
+             wake();
+         });
+         std::thread::spawn(move || {
+@@ -81,6 +93,7 @@
+                 log::warn!("[backend] {line}");
+             }
+         });
++        self.generation = generation;
+         self.stdin = child.stdin.take();
+         self.child = Some(child);
+         Ok(())
+@@ -94,35 +107,45 @@
+         let line = json!({"id": id, "method": method, "params": params}).to_string();
+         let stdin = self.stdin.as_mut().ok_or("helper input is closed")?;
+         writeln!(stdin, "{line}").and_then(|()| stdin.flush()).map_err(|e| format!("helper didn't accept the request: {e}"))?;
+-        self.waiting.insert(id, page_id);
++        self.waiting.insert(id, Pending { page_id, generation: self.generation });
+         Ok(())
+     }
+ 
+     /// Everything the helper sent since the last call.
+     pub fn drain(&mut self) -> Vec<Incoming> {
+-        let lines: Vec<String> = self.lines.lock().unwrap_or_else(|e| e.into_inner()).drain(..).collect();
++        let lines: Vec<ReaderMessage> = self.lines.lock().unwrap_or_else(|e| e.into_inner()).drain(..).collect();
+         let mut out = Vec::new();
+-        for line in lines {
+-            let Ok(msg) = serde_json::from_str::<Value>(&line) else {
+-                log::warn!("[backend] not a protocol line: {}", line.chars().take(200).collect::<String>());
+-                continue;
+-            };
+-            if msg.get("event").and_then(Value::as_str) == Some("backend.exited") {
+-                // Answer everything still waiting; the next request restarts the helper.
+-                for (_, page_id) in self.waiting.drain() {
+-                    out.push(Incoming::Reply(json!({"id": page_id, "ok": false, "error": "The background helper stopped. Try again."})));
++        for message in lines {
++            match message {
++                ReaderMessage::Exited { generation } => {
++                    let abandoned: Vec<u64> = self.waiting.iter().filter_map(|(id, pending)| (pending.generation == generation).then_some(*id)).collect();
++                    for id in abandoned {
++                        if let Some(pending) = self.waiting.remove(&id) {
++                            out.push(Incoming::Reply(json!({"id": pending.page_id, "ok": false, "code": "BACKEND_STOPPED", "retryable": false, "error": "The background helper stopped. Reopen the album to verify completed work before retrying."})));
++                        }
++                    }
++                    if generation == self.generation {
++                        self.stdin = None;
++                        out.push(Incoming::Event(json!({"event": "backend.exited", "data": {}})));
++                    }
+                 }
+-                out.push(Incoming::Event(msg));
+-                continue;
+-            }
+-            if let Some(id) = msg.get("id").and_then(Value::as_u64) {
+-                if let Some(page_id) = self.waiting.remove(&id) {
+-                    let mut reply = msg;
+-                    reply["id"] = page_id;
+-                    out.push(Incoming::Reply(reply));
++                ReaderMessage::Line { generation, line } => {
++                    let Ok(msg) = serde_json::from_str::<Value>(&line) else {
++                        log::warn!("[backend] invalid protocol line");
++                        continue;
++                    };
++                    if let Some(id) = msg.get("id").and_then(Value::as_u64) {
++                        if self.waiting.get(&id).is_some_and(|pending| pending.generation == generation)
++                            && let Some(pending) = self.waiting.remove(&id)
++                        {
++                            let mut reply = msg;
++                            reply["id"] = pending.page_id;
++                            out.push(Incoming::Reply(reply));
++                        }
++                    } else if generation == self.generation && msg.get("event").is_some() {
++                        out.push(Incoming::Event(msg));
++                    }
+                 }
+-            } else if msg.get("event").is_some() {
+-                out.push(Incoming::Event(msg));
+             }
+         }
+         out
+--- a/xtask/src/layers.rs
++++ b/xtask/src/layers.rs
+@@ -66,6 +66,7 @@
+     ("platform", Class::Layer(6)),
+     ("testkit", Class::Testkit),
+     // L7 apps and tooling
++    ("album-studio", Class::Exempt),
+     ("photocraft", Class::Exempt),
+     ("cli", Class::Exempt),
+     ("web", Class::Exempt),
+@@ -372,7 +373,7 @@
+ 
+     #[test]
+     fn apps_and_xtask_exempt() {
+-        for app in ["photocraft", "photocraft-cli", "photocraft-web", "xtask"] {
++        for app in ["album-studio", "photocraft", "photocraft-cli", "photocraft-web", "xtask"] {
+             assert!(check(&[c(app, &[("egui", Normal, false), ("photocraft-ui-egui", Normal, true)])]).is_empty());
+         }
+     }

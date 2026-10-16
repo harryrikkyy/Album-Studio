@@ -38,13 +38,13 @@ export function LabNaming() {
   // The open album's print JPEGs, offered as a one-click folder.
   useEffect(() => {
     if (!a) { setAlbumPrints(null); return }
-    void call<{ paths: { high: string } }>('export.plan', { album: a.path }).then((p) => setAlbumPrints(p.paths.high)).catch(() => setAlbumPrints(null))
+    void call('export.plan', { album: a.path }).then((p) => setAlbumPrints(p.paths.high)).catch(() => setAlbumPrints(null))
   }, [a?.path])
 
   const load = async (dir: string, keep = false) => {
     setLoading(true)
     try {
-      const r = await call<{ name: string; sheets: Sheet[] }>('lab.list', { folder: dir }, 10 * 60_000)
+      const r = await call('lab.list', { folder: dir }, 10 * 60_000)
       const back = readBack(r.sheets.map((s) => ({ path: s.path, baseName: s.baseName })))
       setSheets(new Map(r.sheets.map((s) => [s.path, s])))
       setTiles(back.tiles)
@@ -66,8 +66,8 @@ export function LabNaming() {
   useEffect(() => { if (folder) void load(folder) }, [])
 
   const choose = async () => {
-    const dir = await call<string | null>('dialog.pickFolder', { title: 'Choose the order folder', directory: folder }).catch(() => null)
-    if (dir) await load(dir)
+    const dir = await call('dialog.pickFolder', { title: 'Choose the order folder', directory: folder }).catch(() => null)
+    if (typeof dir === 'string') await load(dir)
   }
 
   const input = { folderName: name.trim() || 'order', tiles, coverPad: cover, customPageName: custom }
@@ -99,7 +99,7 @@ export function LabNaming() {
     if (!folder || !ops.length) return
     setBusy(true)
     try {
-      const r = await call<{ renamed: number; undo: RenameOp[] }>('lab.rename', { folder, ops })
+      const r = await call('lab.rename', { folder, ops })
       setUndo({ folder, ops: r.undo })
       toast('ok', `${plural(r.renamed, 'sheet')} renamed for the lab.`)
       await load(folder, true)

@@ -1,0 +1,32 @@
+TAP version 13
+# Subtest: engine and release finishing errors combine while a committed sheet stays successful
+not ok 1 - engine and release finishing errors combine while a committed sheet stays successful
+  ---
+  duration_ms: 531.156417
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_finish.test.js:102:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    ["Private render work needs review: The private stage contains unknown or missing files. Private work was preserved at /private/var/folders/8g/8fbqmlzs0759k0mxqy_kzpfw0000gn/T/as-backend-1TVyW2/Album/exports/.album-studio/.album-studio-stage-history/bbc93cee-35a9-4d12-819d-6167cbed2d2c. Inspect it before retrying; no history was pruned.","The print-sheet processing finished, but PhotoCraft could not finish closing: engine close evidence unavailable after terminal exit","The render job finished, but its leases could not finish releasing: outputs release evidence unavailable after retirement"]
+    
+    3 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 3
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/render_finish.test.js:107:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 625.394625

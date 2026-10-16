@@ -1,0 +1,528 @@
+TAP version 13
+# Subtest: low-level JPEG export preserves an existing unrelated destination
+ok 1 - low-level JPEG export preserves an existing unrelated destination
+  ---
+  duration_ms: 55.83
+  type: 'test'
+  ...
+# Subtest: JPEG publication failure retains a substituted private image
+ok 2 - JPEG publication failure retains a substituted private image
+  ---
+  duration_ms: 16.870583
+  type: 'test'
+  ...
+# Subtest: pipeline print guard blocks decoded dimensions before low-resolution upsampling
+ok 3 - pipeline print guard blocks decoded dimensions before low-resolution upsampling
+  ---
+  duration_ms: 7.863916
+  type: 'test'
+  ...
+# Subtest: guarded export decodes verified immutable bytes even if its input name changes afterward
+ok 4 - guarded export decodes verified immutable bytes even if its input name changes afterward
+  ---
+  duration_ms: 17.786625
+  type: 'test'
+  ...
+# Subtest: publication handoff retains the transaction stage even before journal creation fails
+ok 5 - publication handoff retains the transaction stage even before journal creation fails
+  ---
+  duration_ms: 365.9685
+  type: 'test'
+  ...
+# Subtest: lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+ok 6 - lease finish failure preserves delivered-sheet counts and exposes a finishing warning
+  ---
+  duration_ms: 502.757917
+  type: 'test'
+  ...
+# Subtest: a prepared JPEG changed at handoff is preserved and cannot become delivered evidence
+ok 7 - a prepared JPEG changed at handoff is preserved and cannot become delivered evidence
+  ---
+  duration_ms: 329.28775
+  type: 'test'
+  ...
+# Subtest: duplicate physical locators count once when deciding whether a legacy ID is attributable
+ok 8 - duplicate physical locators count once when deciding whether a legacy ID is attributable
+  ---
+  duration_ms: 0.74125
+  type: 'test'
+  ...
+# Subtest: an absent historical legacyId reserves its identifier against a new unrelated asset
+ok 9 - an absent historical legacyId reserves its identifier against a new unrelated asset
+  ---
+  duration_ms: 0.374792
+  type: 'test'
+  ...
+# Subtest: an absent historical legacyAliases reserves its identifier against a new unrelated asset
+ok 10 - an absent historical legacyAliases reserves its identifier against a new unrelated asset
+  ---
+  duration_ms: 0.075333
+  type: 'test'
+  ...
+# Subtest: an absent historical assetId reserves its identifier against a new unrelated asset
+ok 11 - an absent historical assetId reserves its identifier against a new unrelated asset
+  ---
+  duration_ms: 0.065583
+  type: 'test'
+  ...
+# Subtest: historical aliases belonging to the same locator preserve its established ID
+ok 12 - historical aliases belonging to the same locator preserve its established ID
+  ---
+  duration_ms: 0.541708
+  type: 'test'
+  ...
+# Subtest: ordinary album open rejects unsafe count Infinity within a bounded subprocess
+ok 13 - ordinary album open rejects unsafe count Infinity within a bounded subprocess
+  ---
+  duration_ms: 65.736958
+  type: 'test'
+  ...
+# Subtest: ordinary album open rejects unsafe count 1e309 within a bounded subprocess
+ok 14 - ordinary album open rejects unsafe count 1e309 within a bounded subprocess
+  ---
+  duration_ms: 65.556166
+  type: 'test'
+  ...
+# Subtest: ordinary album open rejects unsafe count 9007199254740991 within a bounded subprocess
+ok 15 - ordinary album open rejects unsafe count 9007199254740991 within a bounded subprocess
+  ---
+  duration_ms: 60.197041
+  type: 'test'
+  ...
+# Subtest: ordinary album open rejects unsafe count 2.5 within a bounded subprocess
+ok 16 - ordinary album open rejects unsafe count 2.5 within a bounded subprocess
+  ---
+  duration_ms: 65.34525
+  type: 'test'
+  ...
+# Subtest: pure validation rejects unsafe project counts, malformed arrays and future versions without mutation
+ok 17 - pure validation rejects unsafe project counts, malformed arrays and future versions without mutation
+  ---
+  duration_ms: 1.31575
+  type: 'test'
+  ...
+# Subtest: legacy migration is explicit, idempotent, in-place and preserves unknown extension fields
+ok 18 - legacy migration is explicit, idempotent, in-place and preserves unknown extension fields
+  ---
+  duration_ms: 0.374375
+  type: 'test'
+  ...
+# Subtest: rejected migration leaves even supported pending normalizations untouched
+ok 19 - rejected migration leaves even supported pending normalizations untouched
+  ---
+  duration_ms: 0.102208
+  type: 'test'
+  ...
+# Subtest: missing count preserves sparse page positions and bounded inactive data is never silently discarded
+ok 20 - missing count preserves sparse page positions and bounded inactive data is never silently discarded
+  ---
+  duration_ms: 0.14875
+  type: 'test'
+  ...
+# Subtest: ordinary open normalizes the supplied owned data object without cloning it
+ok 21 - ordinary open normalizes the supplied owned data object without cloning it
+  ---
+  duration_ms: 8.252
+  type: 'test'
+  ...
+# Subtest: a future version is refused before identity mutation or source-folder scans
+ok 22 - a future version is refused before identity mutation or source-folder scans
+  ---
+  duration_ms: 1.430458
+  type: 'test'
+  ...
+# Subtest: direct spread identity materialization shares the finite page guard
+ok 23 - direct spread identity materialization shares the finite page guard
+  ---
+  duration_ms: 51.296375
+  type: 'test'
+  ...
+# Subtest: operation and creation boundaries reject malformed/unbounded inputs before filesystem work
+ok 24 - operation and creation boundaries reject malformed/unbounded inputs before filesystem work
+  ---
+  duration_ms: 9.205167
+  type: 'test'
+  ...
+# Subtest: finite limits reject oversized folder/photo/page collections with recoverable errors
+ok 25 - finite limits reject oversized folder/photo/page collections with recoverable errors
+  ---
+  duration_ms: 0.1905
+  type: 'test'
+  ...
+# Subtest: ordinary catalogue reopening observes in-place thumbnail dimensions even with preserved file/directory stamps
+ok 26 - ordinary catalogue reopening observes in-place thumbnail dimensions even with preserved file/directory stamps
+  ---
+  duration_ms: 17.961375
+  type: 'test'
+  ...
+# Subtest: engine close errors retain committed results and exact per-sheet counts after success, partial failure and cancellation
+    # Subtest: saved
+    ok 1 - saved
+      ---
+      duration_ms: 1838.927541
+      type: 'test'
+      ...
+    # Subtest: partial-failure
+    ok 2 - partial-failure
+      ---
+      duration_ms: 950.018041
+      type: 'test'
+      ...
+    # Subtest: cancelled-after-save
+    ok 3 - cancelled-after-save
+      ---
+      duration_ms: 981.755375
+      type: 'test'
+      ...
+    1..3
+ok 27 - engine close errors retain committed results and exact per-sheet counts after success, partial failure and cancellation
+  ---
+  duration_ms: 3772.005375
+  type: 'test'
+  ...
+# Subtest: lease release errors retain saved-sheet results without inventing a failed sheet and attempt every release
+    # Subtest: outputs
+    ok 1 - outputs
+      ---
+      duration_ms: 920.231875
+      type: 'test'
+      ...
+    # Subtest: project
+    ok 2 - project
+      ---
+      duration_ms: 906.903708
+      type: 'test'
+      ...
+    # Subtest: outputs+project
+    ok 3 - outputs+project
+      ---
+      duration_ms: 960.180542
+      type: 'test'
+      ...
+    1..3
+ok 28 - lease release errors retain saved-sheet results without inventing a failed sheet and attempt every release
+  ---
+  duration_ms: 2788.493334
+  type: 'test'
+  ...
+# Subtest: engine and release finishing errors combine while a committed sheet stays successful
+ok 29 - engine and release finishing errors combine while a committed sheet stays successful
+  ---
+  duration_ms: 847.249292
+  type: 'test'
+  ...
+# Subtest: a release error after stopping before work preserves cancellation without reporting a failed sheet
+ok 30 - a release error after stopping before work preserves cancellation without reporting a failed sheet
+  ---
+  duration_ms: 350.095667
+  type: 'test'
+  ...
+# Subtest: render retains the complete private stage after unknown-file without losing its committed sheet
+ok 31 - render retains the complete private stage after unknown-file without losing its committed sheet
+  ---
+  duration_ms: 655.288459
+  type: 'test'
+  ...
+# Subtest: render retains the complete private stage after edited-snapshot without losing its committed sheet
+ok 32 - render retains the complete private stage after edited-snapshot without losing its committed sheet
+  ---
+  duration_ms: 679.383542
+  type: 'test'
+  ...
+# Subtest: commits exact PSD/cache revisions with detached old and next history
+ok 33 - commits exact PSD/cache revisions with detached old and next history
+  ---
+  duration_ms: 184.207458
+  type: 'test'
+  ...
+# Subtest: first render supports absent sheet and cache without adopting unrelated files
+ok 34 - first render supports absent sheet and cache without adopting unrelated files
+  ---
+  duration_ms: 132.956542
+  type: 'test'
+  ...
+# Subtest: stale cache/project/source revisions and foreign cache ownership preserve all public bytes
+ok 35 - stale cache/project/source revisions and foreign cache ownership preserve all public bytes
+  ---
+  duration_ms: 23.896792
+  type: 'test'
+  ...
+# Subtest: missing capabilities, output substitutions, symlinks and hard-linked sheets fail closed
+ok 36 - missing capabilities, output substitutions, symlinks and hard-linked sheets fail closed
+  ---
+  duration_ms: 28.652791
+  type: 'test'
+  ...
+# Subtest: preserves logical symlink output paths while reserving the physical namespace
+ok 37 - preserves logical symlink output paths while reserving the physical namespace
+  ---
+  duration_ms: 153.540083
+  type: 'test'
+  ...
+# Subtest: manual edits at sheet capture and occupied install names retain exact customer bytes
+ok 38 - manual edits at sheet capture and occupied install names retain exact customer bytes
+  ---
+  duration_ms: 171.249834
+  type: 'test'
+  ...
+# Subtest: ENOSPC before publication and after sheet installation preserves/restores the old pair
+ok 39 - ENOSPC before publication and after sheet installation preserves/restores the old pair
+  ---
+  duration_ms: 217.310458
+  type: 'test'
+  ...
+# Subtest: stop before/during publication rolls back but stop after commit keeps the committed pair
+ok 40 - stop before/during publication rolls back but stop after commit keeps the committed pair
+  ---
+  duration_ms: 308.629
+  type: 'test'
+  ...
+# Subtest: SIGKILL at journal recovers the exact pending/committed pair idempotently
+ok 41 - SIGKILL at journal recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 151.534916
+  type: 'test'
+  ...
+# Subtest: SIGKILL at sheet-captured recovers the exact pending/committed pair idempotently
+ok 42 - SIGKILL at sheet-captured recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 191.921959
+  type: 'test'
+  ...
+# Subtest: SIGKILL at sheet-installed recovers the exact pending/committed pair idempotently
+ok 43 - SIGKILL at sheet-installed recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 179.911416
+  type: 'test'
+  ...
+# Subtest: SIGKILL at cache-captured recovers the exact pending/committed pair idempotently
+ok 44 - SIGKILL at cache-captured recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 207.422709
+  type: 'test'
+  ...
+# Subtest: SIGKILL at cache-installed recovers the exact pending/committed pair idempotently
+ok 45 - SIGKILL at cache-installed recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 266.117416
+  type: 'test'
+  ...
+# Subtest: SIGKILL at commit recovers the exact pending/committed pair idempotently
+ok 46 - SIGKILL at commit recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 212.147208
+  type: 'test'
+  ...
+# Subtest: SIGKILL at history recovers the exact pending/committed pair idempotently
+ok 47 - SIGKILL at history recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 181.056708
+  type: 'test'
+  ...
+# Subtest: pending recovery preserves a manual public edit and a malformed/foreign journal
+ok 48 - pending recovery preserves a manual public edit and a malformed/foreign journal
+  ---
+  duration_ms: 497.025334
+  type: 'test'
+  ...
+# Subtest: committed recovery preserves later manual edits and reports commit cleanup failures
+ok 49 - committed recovery preserves later manual edits and reports commit cleanup failures
+  ---
+  duration_ms: 209.643458
+  type: 'test'
+  ...
+# Subtest: streams large PSDs with a fixed read allocation instead of buffering the file
+ok 50 - streams large PSDs with a fixed read allocation instead of buffering the file
+  ---
+  duration_ms: 88.875292
+  type: 'test'
+  ...
+# Subtest: a same-stamp in-place ABA yields mismatched full passes rather than a hybrid accepted digest
+ok 51 - a same-stamp in-place ABA yields mismatched full passes rather than a hybrid accepted digest
+  ---
+  duration_ms: 5.808375
+  type: 'test'
+  ...
+# Subtest: true partial-write and precommit fsync ENOSPC leave a recoverable old pair
+ok 52 - true partial-write and precommit fsync ENOSPC leave a recoverable old pair
+  ---
+  duration_ms: 192.183875
+  type: 'test'
+  ...
+# Subtest: a stop during commit fsync is honoured before the durable marker rename
+ok 53 - a stop during commit fsync is honoured before the durable marker rename
+  ---
+  duration_ms: 188.830542
+  type: 'test'
+  ...
+# Subtest: source validator failure after sheet installation restores the old sheet/cache
+ok 54 - source validator failure after sheet installation restores the old sheet/cache
+  ---
+  duration_ms: 165.013125
+  type: 'test'
+  ...
+# Subtest: cleanup errors before/after history movement keep committed metadata and exact evidence paths
+ok 55 - cleanup errors before/after history movement keep committed metadata and exact evidence paths
+  ---
+  duration_ms: 293.137291
+  type: 'test'
+  ...
+# Subtest: a helper error after a completed exact move is reconciled without duplicate publication
+ok 56 - a helper error after a completed exact move is reconciled without duplicate publication
+  ---
+  duration_ms: 143.263542
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at cache-discard can be recovered again without losing either prior revision
+ok 57 - SIGKILL during recovery at cache-discard can be recovered again without losing either prior revision
+  ---
+  duration_ms: 291.575375
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at cache-restored can be recovered again without losing either prior revision
+ok 58 - SIGKILL during recovery at cache-restored can be recovered again without losing either prior revision
+  ---
+  duration_ms: 304.847625
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at sheet-discard can be recovered again without losing either prior revision
+ok 59 - SIGKILL during recovery at sheet-discard can be recovered again without losing either prior revision
+  ---
+  duration_ms: 313.562208
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at sheet-restored can be recovered again without losing either prior revision
+ok 60 - SIGKILL during recovery at sheet-restored can be recovered again without losing either prior revision
+  ---
+  duration_ms: 300.220375
+  type: 'test'
+  ...
+# Subtest: writable/edited detached snapshots and oversized cache inputs fail before changing public files
+ok 61 - writable/edited detached snapshots and oversized cache inputs fail before changing public files
+  ---
+  duration_ms: 360.873042
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at before-exposure cannot become a valid commit
+ok 62 - an exact journal revision change at before-exposure cannot become a valid commit
+  ---
+  duration_ms: 100.94425
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at sheet-installed cannot become a valid commit
+ok 63 - an exact journal revision change at sheet-installed cannot become a valid commit
+  ---
+  duration_ms: 160.895375
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at commit-flush cannot become a valid commit
+ok 64 - an exact journal revision change at commit-flush cannot become a valid commit
+  ---
+  duration_ms: 211.423708
+  type: 'test'
+  ...
+# Subtest: a wrong-json commit-part substitution fails before the marker can commit
+ok 65 - a wrong-json commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 208.858042
+  type: 'test'
+  ...
+# Subtest: a same-bytes-new-inode commit-part substitution fails before the marker can commit
+ok 66 - a same-bytes-new-inode commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 184.24
+  type: 'test'
+  ...
+# Subtest: a writable commit-part substitution fails before the marker can commit
+ok 67 - a writable commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 216.389667
+  type: 'test'
+  ...
+# Subtest: a symlink commit-part substitution fails before the marker can commit
+ok 68 - a symlink commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 132.424083
+  type: 'test'
+  ...
+# Subtest: a pending rollback failure reports existing detached history after successful restoration
+ok 69 - a pending rollback failure reports existing detached history after successful restoration
+  ---
+  duration_ms: 176.984458
+  type: 'test'
+  ...
+# Subtest: a substituted identical-byte committed marker cannot gain restart authority
+ok 70 - a substituted identical-byte committed marker cannot gain restart authority
+  ---
+  duration_ms: 196.596666
+  type: 'test'
+  ...
+# Subtest: the additive commit-node field keeps older version-one committed journals recoverable
+ok 71 - the additive commit-node field keeps older version-one committed journals recoverable
+  ---
+  duration_ms: 229.199458
+  type: 'test'
+  ...
+# Subtest: a stopped job whose rollback meets a manual edit reports recovery required instead of claiming restoration
+ok 72 - a stopped job whose rollback meets a manual edit reports recovery required instead of claiming restoration
+  ---
+  duration_ms: 109.204458
+  type: 'test'
+  ...
+# Subtest: new registry canonicalizes two logical source aliases into one photo pool and preserves exact legacy references
+ok 73 - new registry canonicalizes two logical source aliases into one photo pool and preserves exact legacy references
+  ---
+  duration_ms: 216.33275
+  type: 'test'
+  ...
+# Subtest: adding/reordering/removing a new alias keeps persisted IDs and existing per-photo edits
+ok 74 - adding/reordering/removing a new alias keeps persisted IDs and existing per-photo edits
+  ---
+  duration_ms: 985.49575
+  type: 'test'
+  ...
+# Subtest: separately persisted physical aliases retain both IDs/edits and make auto-fill fail visibly
+ok 75 - separately persisted physical aliases retain both IDs/edits and make auto-fill fail visibly
+  ---
+  duration_ms: 280.87775
+  type: 'test'
+  ...
+# Subtest: conflicting unregistered legacy alias adjustments and page references are never silently merged
+ok 76 - conflicting unregistered legacy alias adjustments and page references are never silently merged
+  ---
+  duration_ms: 182.796708
+  type: 'test'
+  ...
+# Subtest: a newly selected alias with multiple historical owners stays unresolved until an original root is chosen
+ok 77 - a newly selected alias with multiple historical owners stays unresolved until an original root is chosen
+  ---
+  duration_ms: 181.338917
+  type: 'test'
+  ...
+# Subtest: template root aliases deduplicate only when they have a single attributable identity
+ok 78 - template root aliases deduplicate only when they have a single attributable identity
+  ---
+  duration_ms: 25.740708
+  type: 'test'
+  ...
+# Subtest: same-display physical aliases preserve a uniquely attributable legacy ID
+ok 79 - same-display physical aliases preserve a uniquely attributable legacy ID
+  ---
+  duration_ms: 159.214583
+  type: 'test'
+  ...
+# Subtest: removing collided roots never frees their legacy alias for an unrelated third photo or its edits
+ok 80 - removing collided roots never frees their legacy alias for an unrelated third photo or its edits
+  ---
+  duration_ms: 400.1205
+  type: 'test'
+  ...
+1..80
+# tests 86
+# suites 0
+# pass 86
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10830.724333
