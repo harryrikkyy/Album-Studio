@@ -1,0 +1,19 @@
+    Checking album-studio v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/apps/album-studio)
+error: this loop could be written as a `while let` loop
+   --> apps/album-studio/src/backend/transport.rs:115:5
+    |
+115 | /     loop {
+116 | |         let Ok(buffer) = reader.fill_buf() else {
+117 | |             break;
+118 | |         };
+...   |
+139 | |     }
+    | |_____^ help: try: `while let Ok(buffer) = reader.fill_buf() { .. }`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#while_let_loop
+    = note: `-D clippy::while-let-loop` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::while_let_loop)]`
+
+error: could not compile `album-studio` (bin "album-studio") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `album-studio` (bin "album-studio" test) due to 1 previous error

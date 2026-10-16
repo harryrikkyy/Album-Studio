@@ -1,0 +1,23 @@
+   Compiling photocraft-engine v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4/crates/engine)
+   Compiling photocraft-automation v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4/crates/automation)
+   Compiling photocraft-cli v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4/apps/photocraft-cli)
+   Compiling photocraft-ui-egui v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4/crates/ui-egui)
+   Compiling album-studio v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4/apps/album-studio)
+    Finished `release` profile [optimized] target(s) in 4m 10s
+warning: the following packages contain code that will be rejected by a future version of Rust: block v0.1.6
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+{
+  "engine": "/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-reconstructed-591c5b4",
+  "commit": "41a0f464405a1e4e20629de928727815679f5906",
+  "rustToolchain": "1.99.0",
+  "cargoLockSha256": "1f0ee0881214592d3a2ad51c5974a4a31a3f72e4590ecba4cd8862492d24c8d6",
+  "features": [
+    "heif"
+  ],
+  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "cargo": "cargo 1.99.0 (5f94df478 2026-08-27)",
+  "cli": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/photocraft-cli",
+  "shell": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/album-studio",
+  "version": "photocraft-cli 0.6.0 (41a0f4644, 2026-10-16)",
+  "rename": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/album-studio-rename-exclusive"
+}

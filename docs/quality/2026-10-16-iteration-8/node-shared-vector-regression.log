@@ -1,0 +1,492 @@
+TAP version 13
+# Subtest: every registered method has authored valid request/result/reply examples
+    # Subtest: system.ping
+    ok 1 - system.ping
+      ---
+      duration_ms: 1.009417
+      type: 'test'
+      ...
+    # Subtest: account.status
+    ok 2 - account.status
+      ---
+      duration_ms: 0.123458
+      type: 'test'
+      ...
+    # Subtest: account.signIn
+    ok 3 - account.signIn
+      ---
+      duration_ms: 0.097292
+      type: 'test'
+      ...
+    # Subtest: account.cancelSignIn
+    ok 4 - account.cancelSignIn
+      ---
+      duration_ms: 0.043875
+      type: 'test'
+      ...
+    # Subtest: account.retry
+    ok 5 - account.retry
+      ---
+      duration_ms: 0.053375
+      type: 'test'
+      ...
+    # Subtest: account.signOut
+    ok 6 - account.signOut
+      ---
+      duration_ms: 0.048875
+      type: 'test'
+      ...
+    # Subtest: album.open
+    ok 7 - album.open
+      ---
+      duration_ms: 0.130959
+      type: 'test'
+      ...
+    # Subtest: album.recent
+    ok 8 - album.recent
+      ---
+      duration_ms: 0.19325
+      type: 'test'
+      ...
+    # Subtest: folders.inspect
+    ok 9 - folders.inspect
+      ---
+      duration_ms: 0.179083
+      type: 'test'
+      ...
+    # Subtest: templates.collections
+    ok 10 - templates.collections
+      ---
+      duration_ms: 0.120417
+      type: 'test'
+      ...
+    # Subtest: templates.inspect
+    ok 11 - templates.inspect
+      ---
+      duration_ms: 0.075167
+      type: 'test'
+      ...
+    # Subtest: album.suggest
+    ok 12 - album.suggest
+      ---
+      duration_ms: 0.050709
+      type: 'test'
+      ...
+    # Subtest: album.create
+    ok 13 - album.create
+      ---
+      duration_ms: 0.135959
+      type: 'test'
+      ...
+    # Subtest: album.setFolders
+    ok 14 - album.setFolders
+      ---
+      duration_ms: 0.115417
+      type: 'test'
+      ...
+    # Subtest: album.update
+    ok 15 - album.update
+      ---
+      duration_ms: 0.303916
+      type: 'test'
+      ...
+    # Subtest: album.undo
+    ok 16 - album.undo
+      ---
+      duration_ms: 0.123
+      type: 'test'
+      ...
+    # Subtest: album.redo
+    ok 17 - album.redo
+      ---
+      duration_ms: 0.09575
+      type: 'test'
+      ...
+    # Subtest: templates.list
+    ok 18 - templates.list
+      ---
+      duration_ms: 0.066625
+      type: 'test'
+      ...
+    # Subtest: spread.layout
+    ok 19 - spread.layout
+      ---
+      duration_ms: 0.089916
+      type: 'test'
+      ...
+    # Subtest: library.collections
+    ok 20 - library.collections
+      ---
+      duration_ms: 0.064042
+      type: 'test'
+      ...
+    # Subtest: library.add
+    ok 21 - library.add
+      ---
+      duration_ms: 0.06625
+      type: 'test'
+      ...
+    # Subtest: library.remove
+    ok 22 - library.remove
+      ---
+      duration_ms: 0.058209
+      type: 'test'
+      ...
+    # Subtest: library.setDefaults
+    ok 23 - library.setDefaults
+      ---
+      duration_ms: 0.060417
+      type: 'test'
+      ...
+    # Subtest: library.templates
+    ok 24 - library.templates
+      ---
+      duration_ms: 0.073
+      type: 'test'
+      ...
+    # Subtest: storage.usage
+    ok 25 - storage.usage
+      ---
+      duration_ms: 0.090042
+      type: 'test'
+      ...
+    # Subtest: storage.clear
+    ok 26 - storage.clear
+      ---
+      duration_ms: 0.095208
+      type: 'test'
+      ...
+    # Subtest: lab.list
+    ok 27 - lab.list
+      ---
+      duration_ms: 0.068209
+      type: 'test'
+      ...
+    # Subtest: lab.rename
+    ok 28 - lab.rename
+      ---
+      duration_ms: 0.067166
+      type: 'test'
+      ...
+    # Subtest: picks.analyze
+    ok 29 - picks.analyze
+      ---
+      duration_ms: 0.237292
+      type: 'test'
+      ...
+    # Subtest: picks.copy
+    ok 30 - picks.copy
+      ---
+      duration_ms: 0.122084
+      type: 'test'
+      ...
+    # Subtest: proofs.refresh
+    ok 31 - proofs.refresh
+      ---
+      duration_ms: 0.047375
+      type: 'test'
+      ...
+    # Subtest: render.start
+    ok 32 - render.start
+      ---
+      duration_ms: 0.058792
+      type: 'test'
+      ...
+    # Subtest: render.cancel
+    ok 33 - render.cancel
+      ---
+      duration_ms: 0.035167
+      type: 'test'
+      ...
+    # Subtest: render.status
+    ok 34 - render.status
+      ---
+      duration_ms: 0.032292
+      type: 'test'
+      ...
+    # Subtest: render.plan
+    ok 35 - render.plan
+      ---
+      duration_ms: 0.062334
+      type: 'test'
+      ...
+    # Subtest: export.plan
+    ok 36 - export.plan
+      ---
+      duration_ms: 0.161
+      type: 'test'
+      ...
+    # Subtest: export.start
+    ok 37 - export.start
+      ---
+      duration_ms: 0.071958
+      type: 'test'
+      ...
+    # Subtest: export.cancel
+    ok 38 - export.cancel
+      ---
+      duration_ms: 0.034583
+      type: 'test'
+      ...
+    # Subtest: export.status
+    ok 39 - export.status
+      ---
+      duration_ms: 0.0535
+      type: 'test'
+      ...
+    # Subtest: shell.ping
+    ok 40 - shell.ping
+      ---
+      duration_ms: 0.039375
+      type: 'test'
+      ...
+    # Subtest: shell.info
+    ok 41 - shell.info
+      ---
+      duration_ms: 0.045958
+      type: 'test'
+      ...
+    # Subtest: editor.open
+    ok 42 - editor.open
+      ---
+      duration_ms: 0.032334
+      type: 'test'
+      ...
+    # Subtest: editor.inspect
+    ok 43 - editor.inspect
+      ---
+      duration_ms: 0.057584
+      type: 'test'
+      ...
+    # Subtest: dialog.pickFolder
+    ok 44 - dialog.pickFolder
+      ---
+      duration_ms: 0.043584
+      type: 'test'
+      ...
+    # Subtest: shell.reveal
+    ok 45 - shell.reveal
+      ---
+      duration_ms: 0.031208
+      type: 'test'
+      ...
+    # Subtest: shell.showAlbum
+    ok 46 - shell.showAlbum
+      ---
+      duration_ms: 0.028167
+      type: 'test'
+      ...
+    # Subtest: shell.dragWindow
+    ok 47 - shell.dragWindow
+      ---
+      duration_ms: 0.032333
+      type: 'test'
+      ...
+    # Subtest: shell.zoomWindow
+    ok 48 - shell.zoomWindow
+      ---
+      duration_ms: 0.02725
+      type: 'test'
+      ...
+    # Subtest: shell.activate
+    ok 49 - shell.activate
+      ---
+      duration_ms: 0.027375
+      type: 'test'
+      ...
+    # Subtest: shell.log
+    ok 50 - shell.log
+      ---
+      duration_ms: 0.050125
+      type: 'test'
+      ...
+    # Subtest: shell.selftestReturnAfter
+    ok 51 - shell.selftestReturnAfter
+      ---
+      duration_ms: 0.028833
+      type: 'test'
+      ...
+    # Subtest: debug.queuePicks
+    ok 52 - debug.queuePicks
+      ---
+      duration_ms: 0.045708
+      type: 'test'
+      ...
+    # Subtest: debug.result
+    ok 53 - debug.result
+      ---
+      duration_ms: 0.03475
+      type: 'test'
+      ...
+    1..53
+ok 1 - every registered method has authored valid request/result/reply examples
+  ---
+  duration_ms: 7.24475
+  type: 'test'
+  ...
+# Subtest: all registered events have authored valid examples including committed finishing warnings
+    # Subtest: backend.ready
+    ok 1 - backend.ready
+      ---
+      duration_ms: 0.053083
+      type: 'test'
+      ...
+    # Subtest: backend.exited
+    ok 2 - backend.exited
+      ---
+      duration_ms: 0.020667
+      type: 'test'
+      ...
+    # Subtest: account.signIn
+    ok 3 - account.signIn
+      ---
+      duration_ms: 0.021625
+      type: 'test'
+      ...
+    # Subtest: album.creating
+    ok 4 - album.creating
+      ---
+      duration_ms: 0.024542
+      type: 'test'
+      ...
+    # Subtest: album.folders
+    ok 5 - album.folders
+      ---
+      duration_ms: 0.03825
+      type: 'test'
+      ...
+    # Subtest: picks.progress
+    ok 6 - picks.progress
+      ---
+      duration_ms: 0.031083
+      type: 'test'
+      ...
+    # Subtest: render.started
+    ok 7 - render.started
+      ---
+      duration_ms: 0.030458
+      type: 'test'
+      ...
+    # Subtest: render.progress
+    ok 8 - render.progress
+      ---
+      duration_ms: 0.38125
+      type: 'test'
+      ...
+    # Subtest: render.finished
+    ok 9 - render.finished
+      ---
+      duration_ms: 0.171417
+      type: 'test'
+      ...
+    # Subtest: export.started
+    ok 10 - export.started
+      ---
+      duration_ms: 0.066541
+      type: 'test'
+      ...
+    # Subtest: export.progress
+    ok 11 - export.progress
+      ---
+      duration_ms: 0.038125
+      type: 'test'
+      ...
+    # Subtest: export.finished
+    ok 12 - export.finished
+      ---
+      duration_ms: 0.096542
+      type: 'test'
+      ...
+    # Subtest: proofs.updated
+    ok 13 - proofs.updated
+      ---
+      duration_ms: 0.03225
+      type: 'test'
+      ...
+    # Subtest: proofs.failed
+    ok 14 - proofs.failed
+      ---
+      duration_ms: 0.028625
+      type: 'test'
+      ...
+    # Subtest: proofs.idle
+    ok 15 - proofs.idle
+      ---
+      duration_ms: 0.027916
+      type: 'test'
+      ...
+    # Subtest: shell.albumShown
+    ok 16 - shell.albumShown
+      ---
+      duration_ms: 0.019916
+      type: 'test'
+      ...
+    # Subtest: menu
+    ok 17 - menu
+      ---
+      duration_ms: 0.024083
+      type: 'test'
+      ...
+    1..17
+ok 2 - all registered events have authored valid examples including committed finishing warnings
+  ---
+  duration_ms: 1.39825
+  type: 'test'
+  ...
+# Subtest: strict envelopes, closed DTOs, finite numbers and absolute paths reject malformed messages
+ok 3 - strict envelopes, closed DTOs, finite numbers and absolute paths reject malformed messages
+  ---
+  duration_ms: 0.764292
+  type: 'test'
+  ...
+# Subtest: optional object undefined matches JSON omission; non-JSON data and executable accessors are rejected
+ok 4 - optional object undefined matches JSON omission; non-JSON data and executable accessors are rejected
+  ---
+  duration_ms: 0.166042
+  type: 'test'
+  ...
+# Subtest: global traversal bounds fail closed before schema work and cap diagnostic counts
+ok 5 - global traversal bounds fail closed before schema work and cap diagnostic counts
+  ---
+  duration_ms: 0.65625
+  type: 'test'
+  ...
+# Subtest: saved project input accepts supported legacy metadata without stripping or mutation
+ok 6 - saved project input accepts supported legacy metadata without stripping or mutation
+  ---
+  duration_ms: 1.145125
+  type: 'test'
+  ...
+# Subtest: error serialization retains only bounded recovery data and never invokes metadata accessors
+ok 7 - error serialization retains only bounded recovery data and never invokes metadata accessors
+  ---
+  duration_ms: 0.379584
+  type: 'test'
+  ...
+# Subtest: runtime loads in a browser-like VM with only its two JSON imports and no Node globals
+ok 8 - runtime loads in a browser-like VM with only its two JSON imports and no Node globals
+  ---
+  duration_ms: 4.56325
+  type: 'test'
+  ...
+# Subtest: unsupported schema policies fail at load, and scaled traversal budgets stop aggregate and union work
+ok 9 - unsupported schema policies fail at load, and scaled traversal budgets stop aggregate and union work
+  ---
+  duration_ms: 11.227541
+  type: 'test'
+  ...
+# Subtest: actual disposable backend producers satisfy their canonical response contracts
+ok 10 - actual disposable backend producers satisfy their canonical response contracts
+  ---
+  duration_ms: 224.599709
+  type: 'test'
+  ...
+1..10
+# tests 80
+# suites 0
+# pass 80
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 320.350167

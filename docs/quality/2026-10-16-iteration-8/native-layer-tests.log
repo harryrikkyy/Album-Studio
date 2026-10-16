@@ -1,0 +1,23 @@
+   Compiling xtask v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/xtask)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2.25s
+     Running unittests src/main.rs (/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/debug/deps/xtask-f13dbd95a95632b5)
+
+running 15 tests
+test layers::tests::self_dev_dependency_ignored ... ok
+test layers::tests::l0_foundation_chain_allowed_one_way ... ok
+test layers::tests::standalone_exception_is_exactly_codecs_to_heif ... ok
+test layers::tests::apps_and_xtask_exempt ... ok
+test layers::tests::standalone_is_usable_from_higher_layers ... ok
+test layers::tests::standalone_crates_have_no_workspace_deps ... ok
+test layers::tests::clean_downward_graph_passes ... ok
+test layers::tests::sideways_dependency_flagged ... ok
+test layers::tests::album_studio_is_a_registered_composition_root ... ok
+test layers::tests::metadata_parsing ... ok
+test layers::tests::testkit_only_as_dev_dependency ... ok
+test layers::tests::ui_crates_below_l6_flagged ... ok
+test layers::tests::unregistered_crate_is_error ... ok
+test layers::tests::upward_dependency_flagged ... ok
+test layers::tests::upward_dev_dependency_flagged ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 34 filtered out; finished in 0.00s
+

@@ -1,0 +1,8 @@
+
+> album-studio@1.0.0 typecheck
+> tsc --noEmit && npm --prefix native/ui run typecheck
+
+
+> album-studio-ui@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
+
