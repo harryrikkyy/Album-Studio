@@ -49,7 +49,7 @@ export function AutoFillDialog() {
   }
 
   return (
-    <dialog class="dialog" ref={ref} onClose={() => (open.value = false)} aria-labelledby="autofill-title">
+    <dialog class="dialog" ref={ref} onCancel={(e) => { if (busy) e.preventDefault() }} onClose={() => (open.value = false)} aria-labelledby="autofill-title" aria-busy={busy || undefined}>
       <form method="dialog" class="dialog__body" onSubmit={submit}>
         <h2 id="autofill-title" class="dialog__title"><WandSparkles size={18} /> Auto-fill the album</h2>
         <p class="dialog__lead">

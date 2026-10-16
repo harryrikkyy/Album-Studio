@@ -3,7 +3,8 @@
  * Surfaces are true neutral greys (chroma 0): a tinted surround biases colour judgement, and
  * photographers judge skin and saree reds here for hours. One accent, a cool ice blue, does the
  * work of selection, focus, primary action and progress; it never competes with the warm reds
- * and golds of wedding photos. Contrast pairs are AA-checked in test/contrast.test.ts.
+ * and golds of wedding photos. Authored text pairs are checked in native/ui/test/contrast.test.ts;
+ * this token check does not certify every composed screen or the native editor.
  */
 
 :root {
@@ -86,6 +87,7 @@
   --ok:     oklch(0.78 0.13 155);
   --warn:   oklch(0.83 0.13 80);
   --danger: oklch(0.71 0.15 25);
+  --danger-ink: oklch(0.17 0.02 25);
   --ok-soft:     oklch(0.78 0.13 155 / 0.16);
   --warn-soft:   oklch(0.83 0.13 80 / 0.16);
   --danger-soft: oklch(0.71 0.15 25 / 0.16);
@@ -118,11 +120,12 @@
   --accent-line:   oklch(0.50 0.13 245 / 0.55);
   --focus-ring:    0 0 0 2px var(--bg-app), 0 0 0 4px var(--accent);
 
-  --ok:     oklch(0.52 0.13 155);
-  --warn:   oklch(0.56 0.12 70);
+  --ok:     oklch(0.49 0.13 155);
+  --warn:   oklch(0.49 0.12 70);
   --danger: oklch(0.53 0.17 25);
-  --ok-soft:     oklch(0.52 0.13 155 / 0.12);
-  --warn-soft:   oklch(0.56 0.12 70 / 0.14);
+  --danger-ink: oklch(0.99 0 0);
+  --ok-soft:     oklch(0.49 0.13 155 / 0.12);
+  --warn-soft:   oklch(0.49 0.12 70 / 0.14);
   --danger-soft: oklch(0.53 0.17 25 / 0.12);
 
   --shadow-pop: 0 12px 32px oklch(0 0 0 / 0.16), 0 0 0 1px var(--line-strong);

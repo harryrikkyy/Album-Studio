@@ -1,35 +1,37 @@
 // Pool.tsx — every photo of the album. Select (click, ⌘-click, ⇧-click), then drag onto a spread
 // or double-click to add to the current one. Dropping a photo from a spread here takes it off.
-// Each photo turns left or right from its corner buttons (or ⌘L / ⌘R with photos selected), and a
-// selection shows its landscape/portrait mix and the templates that fit it.
+// The selection toolbar turns photos (also ⌘L / ⌘R), shows their landscape/portrait mix, and
+// offers templates that fit. Options contain no nested controls, so screen readers can select them.
 
-import { Check, LayoutTemplate, RotateCcw, RotateCw, Undo2, WandSparkles } from 'lucide-preact'
-import { useState } from 'preact/hooks'
+import { Check, ChevronLeft, ChevronRight, LayoutTemplate, RotateCcw, RotateCw, Search, Undo2, WandSparkles } from 'lucide-preact'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag } from '../../dnd'
 import { plural, signature } from '../../format'
 import { addPhotos, removePhotos, rotatePhotos } from '../../plan_actions'
 import { rangeSelect, seenAspect, selectionSlots } from '../../plan_logic'
 import {
-  album, currentSpread, goToSpread, hoveredPhoto, orientFilter, poolAnchor, poolFilter, poolPhotos, poolSelection,
+  album, currentSpread, goToSpread, hoveredPhoto, orientFilter, planView, poolAnchor, poolFilter, poolPhotos, poolSelection,
   selectionFocus, setPoolFilter, setThumbSize, templateBrowserOpen, thumbSize,
 } from '../../state'
 import type { Photo } from '../../types'
 import { Button, IconButton, Segmented } from '../../ui/controls'
 import { Thumb } from '../../ui/Thumb'
 import { openAutoFill } from './AutoFill'
+import { openAlbumSettings } from '../../app/AlbumSettings'
+import { PHOTO_PAGE_SIZE, photoKeyIndex, photoWindow } from '../../pool_logic'
 
 /** Width ÷ height as the photo is seen (after its turn), kept within reason for the rows. */
 function aspect(p: Photo): number {
   return Math.min(3, Math.max(0.33, seenAspect(p)))
 }
 
-function select(p: Photo, e: MouseEvent | KeyboardEvent) {
+function select(p: Photo, e: MouseEvent | KeyboardEvent, order: readonly Photo[], toggle = false) {
   selectionFocus.value = 'pool'
   const sel = new Set(poolSelection.value)
   if (e.shiftKey) {
-    const ids = poolPhotos.value.map((x) => x.id)
+    const ids = order.map((x) => x.id)
     for (const id of rangeSelect(ids, poolAnchor.value, p.id)) sel.add(id)
-  } else if (e.metaKey) {
+  } else if (e.metaKey || e.ctrlKey || toggle) {
     if (sel.has(p.id)) sel.delete(p.id)
     else sel.add(p.id)
     poolAnchor.value = p.id
@@ -48,12 +50,26 @@ function dragSet(p: Photo): string[] {
   return poolPhotos.value.filter((x) => sel.has(x.id)).map((x) => x.id)
 }
 
-function addToCurrent(ids: string[], copy = false) {
+async function addToCurrent(ids: string[], copy = false) {
   const s = currentSpread.value
-  if (s) void addPhotos(s.n, ids, { copy })
+  const a = album.value
+  if (!a) return
+  if (!s) {
+    planView.value = 'spread'
+    requestAnimationFrame(() => document.getElementById('first-spread-button')?.focus())
+    return
+  }
+  const result = await addPhotos(s.n, ids, { copy })
+  if (result && album.value?.path === a.path && planView.value === 'photos') {
+    goToSpread(s.n - 1)
+    requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
+  }
 }
 
-function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; selected: boolean }) {
+function PoolTile({ p, onCurrent, selected, tabIndex, position, total, order, onFocus, onMove }: {
+  p: Photo; onCurrent: boolean; selected: boolean; tabIndex: number; position: number; total: number
+  order: readonly Photo[]; onFocus: () => void; onMove: (key: string) => boolean
+}) {
   const used = p.usedOn.length > 0
   const ar = aspect(p)
   return (
@@ -64,7 +80,11 @@ function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; se
       class={`tile ${used ? 'is-used' : ''} ${onCurrent ? 'is-current' : ''} ${selected ? 'is-selected' : ''} ${hoveredPhoto.value === p.id ? 'is-hovered' : ''}`}
       role="option"
       aria-selected={selected}
-      tabIndex={0}
+      aria-label={`${p.base}${used ? ` · on spread ${p.usedOn.join(', ')}` : ' · unused'}`}
+      aria-posinset={position}
+      aria-setsize={total}
+      tabIndex={tabIndex}
+      onFocus={onFocus}
       title={`${p.base}${used ? ` · on spread ${p.usedOn.join(', ')}` : ''}\nDouble-click to add to this spread`}
       draggable
       onDragStart={(e) => {
@@ -76,35 +96,21 @@ function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; se
       onDragEnd={endDrag}
       onMouseEnter={() => (hoveredPhoto.value = p.id)}
       onMouseLeave={() => (hoveredPhoto.value = null)}
-      onClick={(e) => select(p, e)}
+      onClick={(e) => select(p, e, order)}
       onDblClick={() => addToCurrent(dragSet(p))}
       onKeyDown={(e) => {
-        if (e.key === ' ') { e.preventDefault(); select(p, e) }
+        if (e.target !== e.currentTarget) return
+        if (e.altKey || e.metaKey || e.ctrlKey) return
+        if (e.key === ' ') { e.preventDefault(); e.stopPropagation(); select(p, e, order, true) }
         else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addToCurrent(dragSet(p)) }
+        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); poolSelection.value = new Set(); poolAnchor.value = null }
+        else if (onMove(e.key)) { e.preventDefault(); e.stopPropagation() }
       }}
     >
-      <Thumb p={p} alt={p.base} />
+      <Thumb p={p} />
+      <span class="tile__name" aria-hidden="true">{p.base}</span>
       {selected ? <span class="tile__check" aria-hidden="true"><Check size={11} strokeWidth={3} /></span> : null}
-      <span class="tile__turns" onDblClick={(e) => e.stopPropagation()}>
-        <button type="button" class="tile__turn" tabIndex={-1} title="Turn left (⌘L)" aria-label={`Turn ${p.base} left`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], -90) }}>
-          <RotateCcw size={12} strokeWidth={2.2} />
-        </button>
-        <button type="button" class="tile__turn" tabIndex={-1} title="Turn right (⌘R)" aria-label={`Turn ${p.base} right`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], 90) }}>
-          <RotateCw size={12} strokeWidth={2.2} />
-        </button>
-      </span>
-      {used ? (
-        <button
-          type="button"
-          class="tile__badge"
-          tabIndex={-1}
-          title={`Go to spread ${p.usedOn[0]}`}
-          aria-label={`On spread ${p.usedOn.join(', ')}; go there`}
-          onClick={(e) => { e.stopPropagation(); goToSpread(p.usedOn[0]! - 1) }}
-        >
-          {p.usedOn.join(',')}
-        </button>
-      ) : null}
+      {used ? <span class="tile__badge" aria-hidden="true" title={`On spread ${p.usedOn.join(', ')}`}>{p.usedOn.join(',')}</span> : null}
     </li>
   )
 }
@@ -117,6 +123,40 @@ export function Pool() {
   const unused = a.stats.photos - a.stats.used
   const sel = poolSelection.value
   const [over, setOver] = useState(false)
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const [active, setActive] = useState<string | null>(null)
+  const grid = useRef<HTMLUListElement>(null)
+  const search = useRef<HTMLInputElement>(null)
+  const focusNext = useRef<string | null>(null)
+  const pageInfo = useMemo(() => photoWindow(photos, query, page), [photos, query, page])
+  const tabStop = pageInfo.visible.find(p => p.id === active)?.id ?? pageInfo.visible[0]?.id
+  const resultIds = useMemo(() => new Set(pageInfo.matches.map(p => p.id)), [pageInfo.matches])
+  const hiddenSelected = [...sel].filter(id => !resultIds.has(id)).length
+  useEffect(() => { setPage(0) }, [query, poolFilter.value, orientFilter.value, a.path])
+  useLayoutEffect(() => {
+    if (grid.current) grid.current.scrollTop = 0
+  }, [pageInfo.index, query])
+  useLayoutEffect(() => {
+    if (!focusNext.current) return
+    const index = pageInfo.visible.findIndex(p => p.id === focusNext.current)
+    if (index < 0) return
+    grid.current?.querySelectorAll<HTMLElement>('[role="option"]')[index]?.focus()
+    focusNext.current = null
+  }, [pageInfo.visible])
+  const moveFocus = (p: Photo, key: string) => {
+    const target = photoKeyIndex(key, pageInfo.matches.findIndex(x => x.id === p.id), pageInfo.matches.length)
+    if (target === null) return false
+    const id = pageInfo.matches[target]!.id
+    focusNext.current = id
+    setActive(id); setPage(Math.floor(target / PHOTO_PAGE_SIZE))
+    // The current page may not change, so focus it immediately as well.
+    if (Math.floor(target / PHOTO_PAGE_SIZE) === pageInfo.index) {
+      grid.current?.querySelectorAll<HTMLElement>('[role="option"]')[target - pageInfo.offset]?.focus()
+      focusNext.current = null
+    }
+    return true
+  }
   const drag = dragging.value
   // Photos dragged off a spread can be dropped back here.
   const takesBack = drag?.kind === 'photos' && !!drag.from
@@ -142,7 +182,7 @@ export function Pool() {
       <div class="pool__head">
         <div class="pool__title">
           <h2>Photos</h2>
-          <span class="count">{photos.length === a.stats.photos ? a.stats.photos : `${photos.length} of ${a.stats.photos}`}</span>
+          <span class="count" role="status">{pageInfo.matches.length === a.stats.photos ? a.stats.photos : `${pageInfo.matches.length} of ${a.stats.photos}`}</span>
           <Button size="sm" variant="ghost" class="pool__autofill" icon={<WandSparkles size={14} />} onClick={openAutoFill} title="Plan every spread from the photos">
             Auto-fill…
           </Button>
@@ -164,20 +204,28 @@ export function Pool() {
             onChange={(v) => (orientFilter.value = v)}
             options={[
               { value: 'any', label: 'Any', title: 'Landscape and portrait' },
-              { value: 'h', label: 'H', title: 'Landscape only' },
-              { value: 'v', label: 'V', title: 'Portrait only' },
+              { value: 'h', label: 'H', title: 'Landscape only', ariaLabel: 'Landscape only' },
+              { value: 'v', label: 'V', title: 'Portrait only', ariaLabel: 'Portrait only' },
             ]}
           />
         </div>
+        <label class="search pool__search">
+          <Search size={14} aria-hidden="true" />
+          <span class="visually-hidden">Search photos by file name</span>
+          <input ref={search} type="search" placeholder="Find a photo…" value={query} onInput={(e) => setQuery(e.currentTarget.value)} />
+        </label>
       </div>
-      {photos.length === 0 ? (
+      <p id="pool-keys" class="visually-hidden">Arrow keys move between photos. Space selects or deselects; Shift Space selects a range. Enter adds the selection to the current spread. Home and End reach the first and last result.</p>
+      {pageInfo.matches.length === 0 ? (
         <div class="pool__empty">
-          {poolFilter.value === 'unused' ? 'Every photo is placed.' : 'No photos match these filters.'}
+          <p>{!a.stats.photos ? 'No photos in this album yet.' : !query && poolFilter.value === 'unused' && orientFilter.value === 'any' ? 'Every photo is placed.' : 'No photos match these filters.'}</p>
+          {!a.stats.photos ? <Button size="sm" onClick={openAlbumSettings}>Add photo folders…</Button> : <Button size="sm" onClick={() => { setQuery(''); setPoolFilter('all'); orientFilter.value = 'any' }}>Show all photos</Button>}
         </div>
       ) : (
-        <ul class="pool__grid" style={{ '--row': `${thumbSize.value}px` }} role="listbox" aria-multiselectable="true" aria-label="Photos">
-          {photos.map((p) => (
-            <PoolTile p={p} onCurrent={onSpread.has(p.id)} selected={sel.has(p.id)} key={p.id} />
+        <ul ref={grid} class="pool__grid" style={{ '--row': `${thumbSize.value}px` }} role="listbox" aria-multiselectable="true" aria-label="Photos" aria-describedby="pool-keys">
+          {pageInfo.visible.map((p, index) => (
+            <PoolTile p={p} onCurrent={onSpread.has(p.id)} selected={sel.has(p.id)} key={p.id} tabIndex={p.id === tabStop ? 0 : -1}
+              position={pageInfo.offset + index + 1} total={pageInfo.matches.length} order={pageInfo.matches} onFocus={() => setActive(p.id)} onMove={(key) => moveFocus(p, key)} />
           ))}
         </ul>
       )}
@@ -187,8 +235,17 @@ export function Pool() {
         </div>
       ) : null}
       <div class="pool__foot">
+        {pageInfo.pages > 1 ? <div class="pool__pages" aria-label="Photo pages">
+          <IconButton label="Previous photo page" disabled={pageInfo.index === 0} onClick={() => setPage(pageInfo.index - 1)}><ChevronLeft size={15} /></IconButton>
+          <span role="status">{pageInfo.offset + 1}–{pageInfo.offset + pageInfo.visible.length} of {pageInfo.matches.length}</span>
+          <IconButton label="Next photo page" disabled={pageInfo.index === pageInfo.pages - 1} onClick={() => setPage(pageInfo.index + 1)}><ChevronRight size={15} /></IconButton>
+        </div> : null}
+        {hiddenSelected ? <p class="pool__hidden-selection">{plural(hiddenSelected, 'selected photo')} outside these filters</p> : null}
         {sel.size ? (
-          <SelectionBar />
+          <SelectionBar onClear={() => {
+            poolSelection.value = new Set(); poolAnchor.value = null
+            requestAnimationFrame(() => (grid.current?.querySelector<HTMLElement>('[role="option"][tabindex="0"]') ?? search.current)?.focus())
+          }} />
         ) : (
           <label class="slider">
             <span class="visually-hidden">Thumbnail size</span>
@@ -208,27 +265,32 @@ export function Pool() {
 }
 
 /** What can be done with the photos selected in the pool. */
-function SelectionBar() {
+function SelectionBar({ onClear }: { onClear: () => void }) {
   const a = album.value!
   const sel = poolSelection.value
   const s = currentSpread.value
   // In pool order; photos hidden by a filter stay selected.
   const ids = [...a.pool.filter((id) => sel.has(id))]
   const { h, v } = selectionSlots(a, ids)
-  const showTemplates = () => { selectionFocus.value = 'pool'; templateBrowserOpen.value = true }
+  const one = ids.length === 1 ? a.photos[ids[0]!] : null
+  const showTemplates = () => { selectionFocus.value = 'pool'; planView.value = 'spread'; templateBrowserOpen.value = true }
   return (
     <div class="pool__selection">
       <div class="pool__selection-row">
         <span class="pool__selection-what">{plural(ids.length, 'photo')} selected <span class="count">{signature(h, v)}</span></span>
-        <Button size="sm" variant="ghost" onClick={() => { poolSelection.value = new Set(); poolAnchor.value = null }}>Clear</Button>
+        <Button size="sm" variant="ghost" onClick={onClear}>Clear</Button>
       </div>
+      {one?.usedOn.length ? <label class="select pool__placements"><span class="visually-hidden">Go to a spread using the selected photo</span><select value="" onChange={(e) => { goToSpread(Number(e.currentTarget.value) - 1); e.currentTarget.value = ''; requestAnimationFrame(() => document.getElementById('spread-heading')?.focus()) }}>
+        <option value="" disabled>Show where this photo is used…</option>
+        {one.usedOn.map(n => <option value={n} key={n}>Spread {n}</option>)}
+      </select></label> : null}
       <div class="pool__selection-row">
         <IconButton label="Turn left (⌘L)" onClick={() => void rotatePhotos(ids, -90)}><RotateCcw size={15} /></IconButton>
         <IconButton label="Turn right (⌘R)" onClick={() => void rotatePhotos(ids, 90)}><RotateCw size={15} /></IconButton>
         <span class="pool__selection-grow" />
         <Button size="sm" icon={<LayoutTemplate size={14} />} onClick={showTemplates} title={`Templates with frames for ${signature(h, v)}`}>Templates</Button>
-        <Button size="sm" variant="primary" disabled={!s} onClick={() => addToCurrent(ids)}>
-          Add to spread {s?.n}
+        <Button size="sm" variant="primary" onClick={() => addToCurrent(ids)}>
+          {s ? `Add to spread ${s.n}` : 'Start a spread'}
         </Button>
       </div>
     </div>

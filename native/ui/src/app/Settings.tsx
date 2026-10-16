@@ -24,16 +24,28 @@ export function SettingsDialog() {
   const ref = useRef<HTMLDialogElement>(null)
   const a = album.value
   const [caches, setCaches] = useState<Cache[] | null>(null)
+  const [cacheError, setCacheError] = useState<string | null>(null)
+  const cacheRequest = useRef(0)
   const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
   const [clearing, setClearing] = useState(false)
 
-  const load = () => call('storage.usage', { album: a?.path }, 120_000).then((r) => setCaches(r.caches)).catch(() => setCaches([]))
+  const load = async () => {
+    const request = ++cacheRequest.current
+    setCaches(null); setCacheError(null)
+    try {
+      const r = await call('storage.usage', a ? { album: a.path } : {}, 120_000)
+      if (request === cacheRequest.current && open.peek()) setCaches(r.caches)
+    } catch (e) {
+      if (request === cacheRequest.current && open.peek()) setCacheError((e as Error).message)
+    }
+  }
   useEffect(() => {
     const d = ref.current
     if (!d) return
-    if (open.value && !d.open) { setCaches(null); d.showModal(); void load() }
-    else if (!open.value && d.open) d.close()
-  }, [open.value])
+    if (open.value) { if (!d.open) d.showModal(); void load() }
+    else if (d.open) d.close()
+    return () => { cacheRequest.current++ }
+  }, [open.value, a?.path])
 
   const s = exportSettings.value
   const total = (caches ?? []).reduce((n, c) => n + c.bytes, 0)
@@ -52,11 +64,11 @@ export function SettingsDialog() {
   }
 
   return (
-    <dialog class="dialog dialog--wide settings" ref={ref} onClose={() => (open.value = false)} aria-labelledby="settings-title">
+    <dialog class="dialog dialog--wide settings" ref={ref} onCancel={(e) => { if (clearing) e.preventDefault() }} onClose={() => (open.value = false)} aria-labelledby="settings-title">
       <div class="dialog__body">
         <div class="dialog__titlebar">
           <h2 id="settings-title" class="dialog__title"><SettingsIcon size={18} /> Settings</h2>
-          <IconButton label="Close" onClick={() => (open.value = false)}><X size={16} /></IconButton>
+          <IconButton label="Close" disabled={clearing} onClick={() => (open.value = false)}><X size={16} /></IconButton>
         </div>
 
         {account.value ? <AccountSection /> : null}
@@ -88,16 +100,16 @@ export function SettingsDialog() {
           <h3>Deliver</h3>
           <label class="set-row">
             <span>Print JPEGs</span>
-            <input class="field field--num field--xs" type="number" min={1} max={60} step={0.5} value={s.heightInches} onChange={(e) => setExportSettings({ size: 'print', heightInches: Number((e.target as HTMLInputElement).value) || 12 })} />
+            <input class="field field--num field--xs" aria-label="Print height in inches" type="number" min={1} max={60} step={0.5} value={s.heightInches} onChange={(e) => setExportSettings({ size: 'print', heightInches: Number((e.target as HTMLInputElement).value) || 12 })} />
             <span>in tall at</span>
-            <input class="field field--num field--xs" type="number" min={72} max={1200} value={s.ppi} onChange={(e) => setExportSettings({ size: 'print', ppi: Number((e.target as HTMLInputElement).value) || 300 })} />
+            <input class="field field--num field--xs" aria-label="Print resolution in pixels per inch" type="number" min={72} max={1200} value={s.ppi} onChange={(e) => setExportSettings({ size: 'print', ppi: Number((e.target as HTMLInputElement).value) || 300 })} />
             <span>ppi ({Math.round(s.heightInches * s.ppi).toLocaleString('en-US')} px)</span>
           </label>
         </section>
 
         <section class="set-section">
           <h3><HardDrive size={14} class="inline-icon" /> Storage {caches ? <span class="count">{megabytes(total)}</span> : null}</h3>
-          {!caches ? <p class="muted">Measuring…</p> : (
+          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p><Button size="sm" onClick={() => void load()}>Try measuring again</Button></div> : !caches ? <p class="muted" role="status">Measuring…</p> : caches.length === 0 ? <p class="muted">No caches found.</p> : (
             <ul class="set-caches">
               {caches.map((c) => (
                 <li key={`${c.scope}-${c.id}`}>

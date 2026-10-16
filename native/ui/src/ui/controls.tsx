@@ -39,19 +39,32 @@ export function IconButton({ label, pressed, children, class: cls, ...rest }: Ic
 export function Segmented<T extends string>({ label, value, options, onChange }: {
   label: string
   value: T
-  options: { value: T; label: string; title?: string }[]
+  options: { value: T; label: string; title?: string; ariaLabel?: string }[]
   onChange: (v: T) => void
 }) {
   return (
     <div class="segmented" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
+      {options.map((o, index) => (
         <button
+          key={o.value}
           type="button"
           role="radio"
           aria-checked={o.value === value}
+          aria-label={o.ariaLabel}
+          tabIndex={o.value === value || (!options.some(x => x.value === value) && index === 0) ? 0 : -1}
           class={`segmented__item ${o.value === value ? 'is-on' : ''}`}
           title={o.title}
           onClick={() => onChange(o.value)}
+          onKeyDown={(e) => {
+            if (e.altKey || e.metaKey || e.ctrlKey) return
+            const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+            const next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : step ? (index + step + options.length) % options.length : null
+            if (next === null) return
+            e.preventDefault(); e.stopPropagation()
+            onChange(options[next]!.value)
+            const group = e.currentTarget.parentElement
+            group?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
+          }}
         >
           {o.label}
         </button>

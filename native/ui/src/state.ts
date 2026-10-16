@@ -30,12 +30,15 @@ export const theme = signal<Theme>(stored<Theme>('as.theme', 'studio-dark'))
 
 export const recent = signal<RecentAlbum[] | null>(null)
 export const recentError = signal<string | null>(null)
+export const recentLoading = signal(false)
 
 export const album = signal<Album | null>(null)
 export const albumLoading = signal<string | null>(null) // the path being opened
 export const albumError = signal<string | null>(null)
 
 export const spreadIndex = signal(0)
+/** Which working pane is visible when the window is too narrow to show both. */
+export const planView = signal<'spread' | 'photos'>('spread')
 export const poolFilter = signal<'all' | 'unused' | 'used'>(stored('as.poolFilter', 'all'))
 export const orientFilter = signal<'any' | Orient>('any')
 export const thumbSize = signal<number>(stored('as.thumbSize', 72))
@@ -119,31 +122,44 @@ export function toggleInspector() {
 export function toast(kind: Toast['kind'], text: string, ms = 4500) {
   const t = { id: toastId++, kind, text }
   toasts.value = [...toasts.value, t]
-  window.setTimeout(() => dismissToast(t.id), ms)
+  // Errors must remain available while a photographer investigates or reconnects a drive.
+  if (kind !== 'error' && ms > 0) window.setTimeout(() => dismissToast(t.id), ms)
 }
 
 export function dismissToast(id: number) {
   toasts.value = toasts.value.filter((t) => t.id !== id)
 }
 
+let recentRequest = 0
 export async function loadRecent() {
+  const request = ++recentRequest
+  recentLoading.value = true
   recentError.value = null
   try {
-    recent.value = await call('album.recent')
+    const result = await call('album.recent')
+    if (request === recentRequest) recent.value = result
   } catch (e) {
-    recentError.value = (e as Error).message
-    recent.value = recent.value ?? []
+    if (request === recentRequest) {
+      recentError.value = (e as Error).message
+      recent.value = recent.value ?? []
+    }
+  } finally {
+    if (request === recentRequest) recentLoading.value = false
   }
 }
 
+let albumRequest = 0
 export async function openAlbum(path: string) {
+  const request = ++albumRequest
   albumLoading.value = path
   albumError.value = null
   try {
     const a = await call('album.open', { path })
+    if (request !== albumRequest) return
     batch(() => {
       album.value = a
       spreadIndex.value = 0
+      planView.value = 'spread'
       place.value = 'plan'
       poolSelection.value = new Set()
       poolAnchor.value = null
@@ -151,20 +167,28 @@ export async function openAlbum(path: string) {
     })
     void loadRecent()
   } catch (e) {
-    albumError.value = (e as Error).message
-    toast('error', (e as Error).message, 8000)
+    if (request === albumRequest) {
+      albumError.value = (e as Error).message
+      toast('error', (e as Error).message, 8000)
+    }
   } finally {
-    albumLoading.value = null
+    if (request === albumRequest) albumLoading.value = null
   }
 }
 
 /** Re-read the open album (after a render) without moving the user anywhere. */
+let quietRequest = 0
 export async function openAlbumQuietly(path: string) {
+  const displayed = album.peek(), context = albumRequest
+  if (!displayed || displayed.path !== path) return
+  const request = ++quietRequest
   try {
     const a = await call('album.open', { path })
-    if (album.value?.path === path) album.value = a
+    // Neither a later open nor an edit that already updated the screen may be rebased onto
+    // an older read. Only the newest refresh of this exact displayed snapshot can apply.
+    if (context === albumRequest && request === quietRequest && album.peek() === displayed) album.value = a
   } catch (e) {
-    toast('error', (e as Error).message, 8000)
+    if (context === albumRequest && request === quietRequest && album.peek() === displayed) toast('error', (e as Error).message, 8000)
   }
 }
 
@@ -172,6 +196,7 @@ export function goToSpread(i: number) {
   const n = album.value?.spreads.length ?? 0
   if (!n) return
   spreadIndex.value = Math.max(0, Math.min(n - 1, i))
+  planView.value = 'spread'
 }
 
 export function nextSpread(step = 1) {

@@ -1,0 +1,196 @@
+{
+  "scope": "Actual production web UI with a synthetic RPC fixture; no native engine, account, folder-picker, or customer filesystem acceptance is inferred.",
+  "passed": 23,
+  "failed": 0,
+  "cases": [
+    {
+      "name": "Failed recents are distinct from empty albums",
+      "observed": {
+        "emptyClaim": false,
+        "retry": true,
+        "title": "Recent albums couldn’t be loaded"
+      },
+      "passed": true
+    },
+    {
+      "name": "Genuinely empty recents offer a new album",
+      "passed": true
+    },
+    {
+      "name": "An empty plan exposes its first-spread action",
+      "passed": true
+    },
+    {
+      "name": "6000-photo page has bounded accessible options",
+      "observed": {
+        "mounted": 120,
+        "nestedActions": 0,
+        "page": "1–120 of 6000",
+        "tabStops": 1
+      },
+      "passed": true
+    },
+    {
+      "name": "End reaches photo 6000",
+      "observed": {
+        "focus": "Wedding_6000.jpg · unused",
+        "position": "6000"
+      },
+      "passed": true
+    },
+    {
+      "name": "Filename search keeps a hidden selection explicit",
+      "observed": {
+        "hidden": "1 selected photo outside these filters",
+        "names": [
+          "Wedding_0121.jpg · unused"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "name": "T opens templates from a photo and focuses search",
+      "observed": {
+        "field": "search",
+        "focus": "Name, e.g. 0019",
+        "visible": true
+      },
+      "passed": true
+    },
+    {
+      "name": "Closing templates restores the photo focus",
+      "observed": {
+        "closed": true,
+        "focus": "Wedding_0121.jpg · unused"
+      },
+      "passed": true
+    },
+    {
+      "name": "Radio arrow changes orientation without changing spread",
+      "observed": {
+        "orientation": "Landscape only",
+        "spread": "Spread 1 of 3"
+      },
+      "passed": true
+    },
+    {
+      "name": "Modal blocks background place shortcuts",
+      "observed": {
+        "open": true,
+        "spread": "Spread 1 of 3"
+      },
+      "passed": true
+    },
+    {
+      "name": "Modal Tab and Shift-Tab remain contained",
+      "steps": 32,
+      "passed": true
+    },
+    {
+      "name": "Escape returns to the Settings trigger",
+      "observed": "Settings (⌘,)",
+      "passed": true
+    },
+    {
+      "name": "ArrowUp opens menu at last enabled command",
+      "observed": "Delete spread",
+      "passed": true
+    },
+    {
+      "name": "Menu Tab closes and advances to next control",
+      "observed": {
+        "closed": true,
+        "focus": "Edit spread"
+      },
+      "passed": true
+    },
+    {
+      "name": "Missing thumbnails have explicit previews and visible file names",
+      "observed": {
+        "fallbacks": 36,
+        "names": 36,
+        "visibleText": true
+      },
+      "passed": true
+    },
+    {
+      "name": "Storage failure is visible and retry loads caches",
+      "observed": {
+        "caches": true,
+        "error": false
+      },
+      "passed": true
+    },
+    {
+      "name": "Picker errors appear in the active dialog top layer",
+      "observed": {
+        "insideDialog": true,
+        "text": "This synthetic UI preview cannot run dialog.pickFolder. No files were changed."
+      },
+      "passed": true
+    },
+    {
+      "name": "Closing a dialog retains its actionable error",
+      "observed": {
+        "focus": "New album",
+        "stillVisible": true
+      },
+      "passed": true
+    },
+    {
+      "name": "Narrow inspector closes and returns focus to its toggle",
+      "observed": {
+        "closed": true,
+        "focus": "inspector-toggle"
+      },
+      "passed": true
+    },
+    {
+      "name": "Photos remain reachable at 760 by 480",
+      "observed": {
+        "overflow": false,
+        "photos": "flex",
+        "spread": "none"
+      },
+      "passed": true
+    },
+    {
+      "name": "A photo placement opens its spread from the narrow photo pane",
+      "observed": {
+        "focus": "spread-heading",
+        "heading": "Spread 2 of 3",
+        "spread": "flex"
+      },
+      "passed": true
+    },
+    {
+      "name": "Templates from the narrow photo pane open the spread and focus search",
+      "observed": {
+        "browser": true,
+        "focus": "search",
+        "spread": "flex"
+      },
+      "passed": true
+    },
+    {
+      "name": "Starting from photos in an empty plan preserves selection and focuses the first-spread action",
+      "observed": {
+        "focus": "first-spread-button",
+        "selection": 1,
+        "stage": "flex"
+      },
+      "passed": true
+    }
+  ],
+  "attempts": [
+    {
+      "name": "Storage retry first setup",
+      "result": "Retry control was absent because Settings opened before album.open completed; changing the album context triggered a second measurement, which succeeded. The initial selector timed out. Setup now waits for the spread heading."
+    }
+  ],
+  "nativeHost": {
+    "status": "unverified",
+    "elapsedSeconds": 4242.2032,
+    "error": "Native app lookup timed out; UI-control kernel reset. No successful native launch or interaction was observed."
+  }
+}

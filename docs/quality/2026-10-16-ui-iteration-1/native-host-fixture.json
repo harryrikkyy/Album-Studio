@@ -1,0 +1,11 @@
+{
+  "app": "/private/tmp/album-studio-ui-host-2hy3o8bh/Album Studio UI Fixture.app",
+  "config": "/private/tmp/album-studio-ui-host-2hy3o8bh/config",
+  "sourceBinary": "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/album-studio",
+  "sourceSha256": "fe806a89c5259ef1033be2e0333ae50148c6617bc532476409aced00f2d48850",
+  "copiedBinarySha256": "fe806a89c5259ef1033be2e0333ae50148c6617bc532476409aced00f2d48850",
+  "node": "/opt/homebrew/bin/node",
+  "backend": "synthetic refusing helper only; no real account/project IO",
+  "nativeControlServer": false,
+  "UI": "current production UI in synthetic browser fixture; not end-to-end native rendering/editor certification"
+}

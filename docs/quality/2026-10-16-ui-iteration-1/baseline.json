@@ -1,0 +1,23 @@
+{
+  "mission": "UI and workflow >=9.5/10; architecture mission stopped by user",
+  "head": "cdd52fc77532444c83b365289af29b875d0a33e3",
+  "preservedPreexistingChanges": {
+    ".github/workflows/ci.yml": "4572a9846f72bff0beabedcf9b00ca360fe61da4b6f7322ff635f2db0667c0e5",
+    "QUALITY_IMPROVEMENT_LOG.md": "71d7010696f73f83668decf74aad64140d1da8528f2a9220948e2af8d2485843",
+    "native/backend/lib/file_publication.js": "8ca6e01585c63a1df8cbaa76dcb539d199d366de8e25ac38b2a5414fe1c1f984",
+    "native/backend/lib/namespace_lock.js": "7d3d02e7de2e86def651262ed1a7ee2f640c2ba135eae98e9a1c6be742e60b17",
+    "native/backend/lib/output_lock.js": "285c3c667696138c8ad00b851f2d7a3a628694aa431added347a95fa8ef078ae",
+    "native/backend/lib/publication_broker.js": "e10955fab69d4b0a5cb46a17feaddad40aa6e9384288b6b11503a8ce5c13c35f",
+    "native/backend/lib/publication_io.js": "58ac59042d7d9cd6204940611596307aa3c0a915e28ecef8a21ac220392f0f6a",
+    "native/backend/lib/render_transaction.js": "249605bcdc68487f46a12d04391b8b235b92549e18d89f854488b80875a68893",
+    "native/backend/lib/sheets.js": "a0579e3c84144c7ff5349c4a0f3845d52dd4e0829d3666877ac28dc9ae8ec934",
+    "native/backend/test/namespace_lock.test.js": "b432524198dbc14d0809c27556b4b29013c102d65eb9be7a356cb61d7747bbda",
+    "native/backend/test/publication_broker.test.js": "c483a05152e227d7e514a699f5f82078dc5be0c85a6c191dd102dca0bd3d457f"
+  },
+  "userFoldersUntouched": [
+    "docs/reviews/",
+    "invoice-template/"
+  ],
+  "scoreBefore": 4.5,
+  "goalTracker": "Replacement rejected because prior usage-limited goal is unfinished; no supported clear operation. Architecture is not complete."
+}

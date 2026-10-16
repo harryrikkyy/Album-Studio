@@ -16,6 +16,8 @@ import { Pending } from './places/Pending'
 import { Plan } from './places/Plan'
 import { Review } from './places/Review'
 import { Tools } from './places/Tools'
+import { containDialogTab, isTypingTarget, ownsNavigationKeys, shortcutsSuspended } from './ui/keyboard'
+import { Notifications } from './ui/Notifications'
 import { Library } from './places/Library'
 import { redo, spreadSelection, undo } from './edit'
 import { openNewAlbum } from './places/albums/NewAlbum'
@@ -48,11 +50,12 @@ function Current() {
 }
 
 function isTyping(e: KeyboardEvent): boolean {
-  const t = e.target as HTMLElement | null
-  return !!t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
+  return isTypingTarget(e.target)
 }
 
+document.addEventListener('keydown', containDialogTab, true)
 document.addEventListener('keydown', (e) => {
+  if (shortcutsSuspended(e, !!document.querySelector('dialog[open]'), account.value?.state === 'allowed')) return
   if (e.metaKey && !e.shiftKey && !e.altKey && /^[1-7]$/.test(e.key)) {
     const p = placeForKey(e.key)
     if (p) { e.preventDefault(); goToPlace(p) }
@@ -72,6 +75,7 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (isTyping(e) || e.metaKey || e.ctrlKey) return
+  if (ownsNavigationKeys(e.target) && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Backspace', 'Delete'].includes(e.key)) return
   // Moving a photo in its frame has its own keys (Return, Esc).
   if (frameAdjusting.value) return
   if (place.value === 'plan' || place.value === 'review') {
@@ -133,6 +137,11 @@ class Boundary extends Component<{ children: ComponentChildren }, { error: Error
 onEvent('menu', (d) => {
   const command = (d as { command: string }).command
   if (account.value?.state !== 'allowed') return // the sign-in screen has no album commands
+  if (document.querySelector('dialog[open]')) {
+    // The native Edit menu still belongs to a focused field inside the dialog.
+    if ((command === 'undo' || command === 'redo') && isTypingTarget(document.activeElement)) document.execCommand(command)
+    return
+  }
   const typing = isTyping({ target: document.activeElement } as unknown as KeyboardEvent)
   if (command === 'undo' || command === 'redo') {
     // In a text field the menu's Undo is the field's own; elsewhere it is the album's.
@@ -163,8 +172,10 @@ async function pickAndOpenAlbum() {
 
 /** The app, once the Creative Hubb account lets it open; the sign-in screen until then. */
 function Root() {
-  if (account.value?.state !== 'allowed') return <SignIn />
-  return <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>
+  return <>
+    {account.value?.state !== 'allowed' ? <SignIn /> : <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>}
+    <Notifications />
+  </>
 }
 
 void checkAccount()

@@ -6,6 +6,13 @@ const fs = require('fs')
 const path = require('path')
 const sharp = require('../../../src/sharp_config').getSharp()
 const { tmpdir } = require('./fixtures')
+const colourCache = tmpdir(), previousCache = process.env.ALBUM_STUDIO_CACHE_DIR
+process.env.ALBUM_STUDIO_CACHE_DIR = colourCache
+test.after(() => {
+  if (previousCache === undefined) delete process.env.ALBUM_STUDIO_CACHE_DIR
+  else process.env.ALBUM_STUDIO_CACHE_DIR = previousCache
+  fs.rmSync(colourCache, { recursive: true, force: true })
+})
 const f = require('./color_edge_fixtures')
 const { exportSheet } = require('../lib/deliver')
 

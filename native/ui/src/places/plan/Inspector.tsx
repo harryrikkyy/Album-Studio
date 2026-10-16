@@ -11,9 +11,9 @@ import { shortPath, signature, templateLabel } from '../../format'
 import { addPhotos, adjustPhoto, movePhoto, removePhotos, replacePhoto, rotatePhotos, shuffleTemplate } from '../../plan_actions'
 import { colourMatrix, slotsOf, templateFits } from '../../plan_logic'
 import { sheetStateOf } from '../../render'
-import { album, currentPhotos, currentSpread, frameAdjusting, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen } from '../../state'
+import { album, currentPhotos, currentSpread, frameAdjusting, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen, toggleInspector } from '../../state'
 import type { Adjust, Photo } from '../../types'
-import { Button, Kbd } from '../../ui/controls'
+import { Button, IconButton, Kbd } from '../../ui/controls'
 import { Thumb } from '../../ui/Thumb'
 
 function FitNote() {
@@ -123,6 +123,10 @@ export function Inspector() {
   const picked = sel && s.photoIds.includes(sel) ? album.value?.photos[sel] ?? null : null
   return (
     <aside class="inspector" aria-label="Inspector">
+      <div class="inspector__head"><h2>Inspector</h2><IconButton label="Close inspector" onClick={() => {
+        toggleInspector()
+        requestAnimationFrame(() => document.getElementById('inspector-toggle')?.focus())
+      }}><X size={15} /></IconButton></div>
       {picked ? <PhotoSection p={picked} n={s.n} key={picked.id} /> : null}
       <section class="insp-section">
         <h3 class="insp-section__title">Template</h3>

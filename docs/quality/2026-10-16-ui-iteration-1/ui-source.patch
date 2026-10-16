@@ -1,0 +1,1740 @@
+diff --git a/QUALITY_SCORECARD.json b/QUALITY_SCORECARD.json
+index 2a7a895..adacf8f 100644
+--- a/QUALITY_SCORECARD.json
++++ b/QUALITY_SCORECARD.json
+@@ -1,6 +1,6 @@
+ {
+   "rubricVersion": 1,
+-  "target": "Architecture strictly >95/100 with evidence, as updated by the user; other category scores retained as historical context.",
++  "target": "UI and workflow >=95/100 with verified evidence, as requested after the user stopped the unfinished architecture mission. Other category scores remain historical context.",
+   "scoring": "10 criteria x 10 points. Verified complete =10, verified partial=5, failed/unverified/blocked=0. Critical unresolved defects prohibit certification. No criterion may be removed to increase scores. Scores are acceptance evidence, not the prior subjective audit ratings.",
+   "baselineCommit": "81bd5b4",
+   "engineCommit": "41a0f464405a1e4e20629de928727815679f5906",
+@@ -99,7 +99,7 @@
+       "name": "UI and workflow",
+       "historicalScore": 7.5,
+       "baselineVerifiedScore": 4,
+-      "currentScore": 4.5,
++      "currentScore": 5.5,
+       "criteria": [
+         {
+           "id": "1",
+@@ -107,7 +107,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "evidence": "Empty-plan first-spread and photo-entry routes now exist;23 synthetic-transport production-web-UI checks pass. Actual Mac create/render/editor/delivery/reopen acceptance remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "2",
+@@ -123,7 +123,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Captured-album queued edit/undo/failure regressions pass; actual native workflow remains unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
++          "evidence": "Actual UI-state regressions reject stale album opens, recents, quiet reads and reads preceding a newer edit; three quiet-refresh failures are retained before the fix. Prior backend association/undo evidence remains. Native editor save/reopen and ownership candidate integration remain open. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "4",
+@@ -131,7 +131,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Real engine crashes, normal reopening, cancellation and committed-sheet preview failure/regeneration pass at the backend boundary. Actual native interactions remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
++          "evidence": "Prior real-engine crash/reopen/cancellation and committed-sheet preview-warning evidence remains. No new native progress/stop/partial-failure interaction is inferred from the browser fixture. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "5",
+@@ -139,7 +139,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Manual/foreign/malformed recovery, directory aliases and snapshot preservation report retained paths; full customer/native reconciliation remains unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
++          "evidence": "Persistent errors enter the active modal top layer and survive its closure. Storage/template failures offer retry; missing thumbnails have explicit fallbacks. Native reconciliation, relink and approved retained-history recovery remain incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "6",
+@@ -147,15 +147,15 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "evidence": "Shared radios/menus, photo roving focus, keyboard multi-selection, template focus return and background-shortcut isolation pass executed browser checks. All places/native editor/frame-adjustment keyboard acceptance remains incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "7",
+           "criterion": "Focus and modal behavior",
+           "weight": 10,
+-          "points": 0,
+-          "status": "unverified",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "points": 5,
++          "status": "partial",
++          "evidence": "Previously unverified criterion is now partial: WebKit Tab leakage was reproduced and repaired, dialog Tab/Shift-Tab containment and Escape restoration pass, and narrow-pane/inspector/template focus returns pass. Native app host lookup timed out; busy transitions/all native dialogs remain unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "8",
+@@ -163,15 +163,15 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "evidence": "Nested controls were removed from photo options and remain available in the selection toolbar. Authored neutral/status/action/menu text contrast pairs pass both themes after fail-first repairs. Full VoiceOver/composed-screen/native-editor accessibility is not certified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "9",
+           "criterion": "Realistic large grid usability",
+           "weight": 10,
+-          "points": 0,
+-          "status": "unverified",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "points": 5,
++          "status": "partial",
++          "evidence": "Previously unverified criterion is now partial: a6000-photo synthetic fixture mounts120 options, has one photo Tab stop, reaches item6000 and searches without losing selection;760x480 photo/template/placement routes pass. SVG fixtures do not certify representative real-photo native memory/latency or drag/drop usability. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         },
+         {
+           "id": "10",
+@@ -179,11 +179,11 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
++          "evidence": "Actual browser checks distinguish failed recents from confirmed empty recents; empty plans and missing previews have next steps. Storage retry recovers; stale reads cannot overwrite the current UI. Full native account/drive/backend interruption scope remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
+         }
+       ],
+       "certified": false,
+-      "assessment": "Reopening, committed-sheet preview warnings, regeneration and cancellation are backend-tested. Native recovery/ambiguity/relink, focus, accessibility and large-grid workflows remain unverified."
++      "assessment": "UI/workflow55/100 on the unchanged rubric. Focus/modal and large-grid criteria gain partial evidence only. Native end-to-end, editor, VoiceOver, real-corpus and complete recovery acceptance remain unverified; target >=95/100 is unfinished."
+     },
+     {
+       "name": "Testing",
+@@ -837,5 +837,42 @@
+     "highestPriority": "Bring native editor/standalone saves and related producers under shared revision/ownership/publication rules; complete typed local DTOs, native invalidation and permanent/legacy/global migration.",
+     "executionLimit": "No current local execution limit or external blocker; implementation continues. Hosted CI, full native workspace/corpus and supported GUI/migration acceptance remain unverified.",
+     "scoringDecision": "All90 criterion names and weights unchanged. Architecture dependency/layering criterion9 gains5 verified points; architecture rises6.5 to7.0. Other scores are retained historical context."
++  },
++  "activeMission": {
++    "category": "UI and workflow",
++    "targetScore": 9.5,
++    "comparison": ">=",
++    "startedDate": "2026-10-16",
++    "architectureMission": "Stopped by user; not complete; source and evidence preserved.",
++    "goalTracker": "Existing architecture entry remains usageLimited. create_goal rejected replacement; no clear tool; Codex-app computer control denied. User can issue /goal clear."
++  },
++  "latestUIAssessment": {
++    "iteration": 1,
++    "evidence": "docs/quality/2026-10-16-ui-iteration-1/verification.json",
++    "previousScore": 4.5,
++    "currentScore": 5.5,
++    "criterionNamesAndWeightsUnchanged": true,
++    "scoreDecision": "Only criteria7 and9 change from0 to5 partial points. All other UI point values and other categories remain unchanged.",
++    "missionComplete": false,
++    "tests": {
++      "shared": 297,
++      "backend": 848,
++      "UI": 61,
++      "total": 1206,
++      "skipped": 0,
++      "failures": 0,
++      "browserFixtureCases": 23
++    },
++    "blockers": [
++      "Native app host lookup timed out after4242.2032 seconds and reset computer-control session. No native end-to-end acceptance pass.",
++      "Old goal cannot be cleared through exposed tools; its app entry needs user /goal clear."
++    ],
++    "remaining": [
++      "Native create/render/editor/delivery/reopen and save-publication candidate integration",
++      "All-place/native-editor keyboard, busy dialogs and handoffs",
++      "VoiceOver and complete composed-screen contrast/names audit",
++      "Representative native large-photo memory/latency and drag/drop",
++      "Complete relink/reconciliation and approved retained-history recovery"
++    ]
+   }
+ }
+diff --git a/native/backend/test/rgb_composite_formats.test.js b/native/backend/test/rgb_composite_formats.test.js
+index 91da4a0..d3f12ed 100644
+--- a/native/backend/test/rgb_composite_formats.test.js
++++ b/native/backend/test/rgb_composite_formats.test.js
+@@ -6,6 +6,13 @@ const fs = require('fs')
+ const path = require('path')
+ const sharp = require('../../../src/sharp_config').getSharp()
+ const { tmpdir } = require('./fixtures')
++const colourCache = tmpdir(), previousCache = process.env.ALBUM_STUDIO_CACHE_DIR
++process.env.ALBUM_STUDIO_CACHE_DIR = colourCache
++test.after(() => {
++  if (previousCache === undefined) delete process.env.ALBUM_STUDIO_CACHE_DIR
++  else process.env.ALBUM_STUDIO_CACHE_DIR = previousCache
++  fs.rmSync(colourCache, { recursive: true, force: true })
++})
+ const f = require('./color_edge_fixtures')
+ const { exportSheet } = require('../lib/deliver')
+ 
+diff --git a/native/ui/src/app/Frame.tsx b/native/ui/src/app/Frame.tsx
+index 434ad4b..7a9b4b3 100644
+--- a/native/ui/src/app/Frame.tsx
++++ b/native/ui/src/app/Frame.tsx
+@@ -1,13 +1,13 @@
+ // Frame.tsx — the window's frame: the top bar (with room for the traffic lights), the rail of
+ // places, and the toast stack. The current place renders inside.
+ 
+-import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Settings, Sun, Undo2, Wrench, X } from 'lucide-preact'
++import { BookImage, Brush, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Settings, Sun, Undo2, Wrench } from 'lucide-preact'
+ import type { ComponentChildren } from 'preact'
+ import { call, inShell } from '../bridge'
+ import { canRedo, canUndo, editing, redo, undo } from '../edit'
+ import { plural } from '../format'
+ import { editCurrentSpread, job, running } from '../render'
+-import { album, dismissToast, place, setTheme, theme, toasts, type Place } from '../state'
++import { album, place, setTheme, theme, type Place } from '../state'
+ import { IconButton } from '../ui/controls'
+ import { openAlbumSettings } from './AlbumSettings'
+ import { openSettings } from './Settings'
+@@ -95,6 +95,8 @@ function Rail() {
+           <button
+             type="button"
+             class={`rail__item ${current === p.id ? 'is-current' : ''}`}
++            aria-label={p.label}
++            aria-keyshortcuts={`Meta+${p.key}`}
+             aria-current={current === p.id ? 'page' : undefined}
+             disabled={disabled}
+             title={disabled ? `${p.label} — open an album first` : `${p.label}  ⌘${p.key}`}
+@@ -109,32 +111,13 @@ function Rail() {
+   )
+ }
+ 
+-function Toasts() {
+-  const list = toasts.value
+-  return (
+-    <div class="toasts" role="status" aria-live="polite">
+-      {list.map((t) => (
+-        <div class={`toast toast--${t.kind}`} key={t.id}>
+-          <span class="toast__icon" aria-hidden="true">
+-            {t.kind === 'error' ? <CircleAlert size={16} /> : t.kind === 'ok' ? <CircleCheck size={16} /> : <Info size={16} />}
+-          </span>
+-          <span class="toast__text">{t.text}</span>
+-          <button type="button" class="icon-btn icon-btn--sm" aria-label="Dismiss" onClick={() => dismissToast(t.id)}>
+-            <X size={14} />
+-          </button>
+-        </div>
+-      ))}
+-    </div>
+-  )
+-}
+-
+ export function Frame({ children }: { children: ComponentChildren }) {
+   return (
+     <div class="frame">
++      <a class="skip-link" href="#main">Skip to workspace</a>
+       <TopBar />
+       <Rail />
+-      <main class="frame__main" id="main">{children}</main>
+-      <Toasts />
++      <main class="frame__main" id="main" tabIndex={-1}>{children}</main>
+     </div>
+   )
+ }
+diff --git a/native/ui/src/app/Settings.tsx b/native/ui/src/app/Settings.tsx
+index 72fd68d..e6544b5 100644
+--- a/native/ui/src/app/Settings.tsx
++++ b/native/ui/src/app/Settings.tsx
+@@ -24,16 +24,28 @@ export function SettingsDialog() {
+   const ref = useRef<HTMLDialogElement>(null)
+   const a = album.value
+   const [caches, setCaches] = useState<Cache[] | null>(null)
++  const [cacheError, setCacheError] = useState<string | null>(null)
++  const cacheRequest = useRef(0)
+   const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
+   const [clearing, setClearing] = useState(false)
+ 
+-  const load = () => call('storage.usage', { album: a?.path }, 120_000).then((r) => setCaches(r.caches)).catch(() => setCaches([]))
++  const load = async () => {
++    const request = ++cacheRequest.current
++    setCaches(null); setCacheError(null)
++    try {
++      const r = await call('storage.usage', a ? { album: a.path } : {}, 120_000)
++      if (request === cacheRequest.current && open.peek()) setCaches(r.caches)
++    } catch (e) {
++      if (request === cacheRequest.current && open.peek()) setCacheError((e as Error).message)
++    }
++  }
+   useEffect(() => {
+     const d = ref.current
+     if (!d) return
+-    if (open.value && !d.open) { setCaches(null); d.showModal(); void load() }
+-    else if (!open.value && d.open) d.close()
+-  }, [open.value])
++    if (open.value) { if (!d.open) d.showModal(); void load() }
++    else if (d.open) d.close()
++    return () => { cacheRequest.current++ }
++  }, [open.value, a?.path])
+ 
+   const s = exportSettings.value
+   const total = (caches ?? []).reduce((n, c) => n + c.bytes, 0)
+@@ -52,11 +64,11 @@ export function SettingsDialog() {
+   }
+ 
+   return (
+-    <dialog class="dialog dialog--wide settings" ref={ref} onClose={() => (open.value = false)} aria-labelledby="settings-title">
++    <dialog class="dialog dialog--wide settings" ref={ref} onCancel={(e) => { if (clearing) e.preventDefault() }} onClose={() => (open.value = false)} aria-labelledby="settings-title">
+       <div class="dialog__body">
+         <div class="dialog__titlebar">
+           <h2 id="settings-title" class="dialog__title"><SettingsIcon size={18} /> Settings</h2>
+-          <IconButton label="Close" onClick={() => (open.value = false)}><X size={16} /></IconButton>
++          <IconButton label="Close" disabled={clearing} onClick={() => (open.value = false)}><X size={16} /></IconButton>
+         </div>
+ 
+         {account.value ? <AccountSection /> : null}
+@@ -88,16 +100,16 @@ export function SettingsDialog() {
+           <h3>Deliver</h3>
+           <label class="set-row">
+             <span>Print JPEGs</span>
+-            <input class="field field--num field--xs" type="number" min={1} max={60} step={0.5} value={s.heightInches} onChange={(e) => setExportSettings({ size: 'print', heightInches: Number((e.target as HTMLInputElement).value) || 12 })} />
++            <input class="field field--num field--xs" aria-label="Print height in inches" type="number" min={1} max={60} step={0.5} value={s.heightInches} onChange={(e) => setExportSettings({ size: 'print', heightInches: Number((e.target as HTMLInputElement).value) || 12 })} />
+             <span>in tall at</span>
+-            <input class="field field--num field--xs" type="number" min={72} max={1200} value={s.ppi} onChange={(e) => setExportSettings({ size: 'print', ppi: Number((e.target as HTMLInputElement).value) || 300 })} />
++            <input class="field field--num field--xs" aria-label="Print resolution in pixels per inch" type="number" min={72} max={1200} value={s.ppi} onChange={(e) => setExportSettings({ size: 'print', ppi: Number((e.target as HTMLInputElement).value) || 300 })} />
+             <span>ppi ({Math.round(s.heightInches * s.ppi).toLocaleString('en-US')} px)</span>
+           </label>
+         </section>
+ 
+         <section class="set-section">
+           <h3><HardDrive size={14} class="inline-icon" /> Storage {caches ? <span class="count">{megabytes(total)}</span> : null}</h3>
+-          {!caches ? <p class="muted">Measuring…</p> : (
++          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p><Button size="sm" onClick={() => void load()}>Try measuring again</Button></div> : !caches ? <p class="muted" role="status">Measuring…</p> : caches.length === 0 ? <p class="muted">No caches found.</p> : (
+             <ul class="set-caches">
+               {caches.map((c) => (
+                 <li key={`${c.scope}-${c.id}`}>
+diff --git a/native/ui/src/main.tsx b/native/ui/src/main.tsx
+index a145939..27df8f5 100644
+--- a/native/ui/src/main.tsx
++++ b/native/ui/src/main.tsx
+@@ -16,6 +16,8 @@ import { Pending } from './places/Pending'
+ import { Plan } from './places/Plan'
+ import { Review } from './places/Review'
+ import { Tools } from './places/Tools'
++import { containDialogTab, isTypingTarget, ownsNavigationKeys, shortcutsSuspended } from './ui/keyboard'
++import { Notifications } from './ui/Notifications'
+ import { Library } from './places/Library'
+ import { redo, spreadSelection, undo } from './edit'
+ import { openNewAlbum } from './places/albums/NewAlbum'
+@@ -48,11 +50,12 @@ function Current() {
+ }
+ 
+ function isTyping(e: KeyboardEvent): boolean {
+-  const t = e.target as HTMLElement | null
+-  return !!t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))
++  return isTypingTarget(e.target)
+ }
+ 
++document.addEventListener('keydown', containDialogTab, true)
+ document.addEventListener('keydown', (e) => {
++  if (shortcutsSuspended(e, !!document.querySelector('dialog[open]'), account.value?.state === 'allowed')) return
+   if (e.metaKey && !e.shiftKey && !e.altKey && /^[1-7]$/.test(e.key)) {
+     const p = placeForKey(e.key)
+     if (p) { e.preventDefault(); goToPlace(p) }
+@@ -72,6 +75,7 @@ document.addEventListener('keydown', (e) => {
+     return
+   }
+   if (isTyping(e) || e.metaKey || e.ctrlKey) return
++  if (ownsNavigationKeys(e.target) && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Backspace', 'Delete'].includes(e.key)) return
+   // Moving a photo in its frame has its own keys (Return, Esc).
+   if (frameAdjusting.value) return
+   if (place.value === 'plan' || place.value === 'review') {
+@@ -133,6 +137,11 @@ class Boundary extends Component<{ children: ComponentChildren }, { error: Error
+ onEvent('menu', (d) => {
+   const command = (d as { command: string }).command
+   if (account.value?.state !== 'allowed') return // the sign-in screen has no album commands
++  if (document.querySelector('dialog[open]')) {
++    // The native Edit menu still belongs to a focused field inside the dialog.
++    if ((command === 'undo' || command === 'redo') && isTypingTarget(document.activeElement)) document.execCommand(command)
++    return
++  }
+   const typing = isTyping({ target: document.activeElement } as unknown as KeyboardEvent)
+   if (command === 'undo' || command === 'redo') {
+     // In a text field the menu's Undo is the field's own; elsewhere it is the album's.
+@@ -163,8 +172,10 @@ async function pickAndOpenAlbum() {
+ 
+ /** The app, once the Creative Hubb account lets it open; the sign-in screen until then. */
+ function Root() {
+-  if (account.value?.state !== 'allowed') return <SignIn />
+-  return <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>
++  return <>
++    {account.value?.state !== 'allowed' ? <SignIn /> : <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>}
++    <Notifications />
++  </>
+ }
+ 
+ void checkAccount()
+diff --git a/native/ui/src/places/Albums.tsx b/native/ui/src/places/Albums.tsx
+index 6290b6b..b003d0c 100644
+--- a/native/ui/src/places/Albums.tsx
++++ b/native/ui/src/places/Albums.tsx
+@@ -4,7 +4,7 @@ import { BookPlus, FolderOpen, HardDrive, ImageIcon, RefreshCw } from 'lucide-pr
+ import { useEffect } from 'preact/hooks'
+ import { call, fileUrl, inShell } from '../bridge'
+ import { plural, relativeTime, shortPath } from '../format'
+-import { album, albumLoading, loadRecent, openAlbum, recent, recentError, toast } from '../state'
++import { album, albumLoading, loadRecent, openAlbum, recent, recentError, recentLoading, toast } from '../state'
+ import type { RecentAlbum } from '../types'
+ import { Button } from '../ui/controls'
+ import { NewAlbumDialog, openNewAlbum } from './albums/NewAlbum'
+@@ -71,7 +71,7 @@ export function Albums() {
+           </p>
+         </div>
+         <div class="place__actions">
+-          <Button variant="ghost" icon={<RefreshCw size={15} />} onClick={() => loadRecent()} disabled={!inShell}>Refresh</Button>
++          <Button variant="ghost" icon={<RefreshCw size={15} />} onClick={() => loadRecent()} busy={recentLoading.value} disabled={!inShell}>Refresh</Button>
+           <Button icon={<FolderOpen size={15} />} onClick={pickAndOpen} disabled={!inShell || !!albumLoading.value}>
+             Open album…
+           </Button>
+@@ -84,10 +84,16 @@ export function Albums() {
+ 
+       {recentError.value ? <p class="notice notice--error" role="alert">{recentError.value}</p> : null}
+ 
+-      {list === null ? (
++      {list === null || (!list.length && recentLoading.value) ? (
+         <ul class="album-grid" aria-busy="true" aria-label="Loading albums">
+           {[0, 1, 2].map(() => <li class="album-card album-card--skeleton" aria-hidden="true"><span class="album-card__cover" /><span class="album-card__body"><span class="sk sk--line" /><span class="sk sk--line sk--short" /></span></li>)}
+         </ul>
++      ) : list.length === 0 && recentError.value ? (
++        <div class="empty">
++          <h2 class="empty__title">Recent albums couldn’t be loaded</h2>
++          <p class="empty__text">Try again, or open an album folder directly. The recent list hasn’t been confirmed.</p>
++          <div class="empty__actions"><Button variant="primary" onClick={() => void loadRecent()}>Try again</Button><Button onClick={pickAndOpen}>Open album…</Button></div>
++        </div>
+       ) : list.length === 0 ? (
+         <div class="empty">
+           <h2 class="empty__title">No albums yet</h2>
+diff --git a/native/ui/src/places/Plan.tsx b/native/ui/src/places/Plan.tsx
+index e94f9a5..41c0b23 100644
+--- a/native/ui/src/places/Plan.tsx
++++ b/native/ui/src/places/Plan.tsx
+@@ -12,9 +12,9 @@ import { plural, signature, templateLabel } from '../format'
+ import { addPhotos, clearSpread, deleteSpread, insertSpread, moveSpread, shuffleTemplate } from '../plan_actions'
+ import { slotsOf, templateFits } from '../plan_logic'
+ import { editCurrentSpread, sheetStateOf } from '../render'
+-import { album, currentSpread, goToSpread, inspectorOpen, nextSpread, spreadIndex, templateBrowserOpen, toggleInspector } from '../state'
++import { album, currentSpread, goToSpread, inspectorOpen, nextSpread, planView, spreadIndex, templateBrowserOpen, toggleInspector } from '../state'
+ import type { Spread } from '../types'
+-import { Button, IconButton } from '../ui/controls'
++import { Button, IconButton, Segmented } from '../ui/controls'
+ import { Menu } from '../ui/Menu'
+ import { Inspector } from './plan/Inspector'
+ import { Pool } from './plan/Pool'
+@@ -32,7 +32,7 @@ function StageHead({ s }: { s: Spread }) {
+         <IconButton label="Previous spread (←)" onClick={() => nextSpread(-1)} disabled={spreadIndex.value === 0}>
+           <ChevronLeft size={18} />
+         </IconButton>
+-        <h2 class="stage__title">
++        <h2 class="stage__title" id="spread-heading" tabIndex={-1}>
+           Spread {s.n} <span class="stage__of">of {total}</span>
+         </h2>
+         <IconButton label="Next spread (→)" onClick={() => nextSpread(1)} disabled={spreadIndex.value >= total - 1}>
+@@ -76,7 +76,7 @@ function StageHead({ s }: { s: Spread }) {
+         <Button variant="primary" icon={<SquarePen size={15} />} onClick={editCurrentSpread} title="Open this spread in the editor (Return)">
+           Edit spread
+         </Button>
+-        <IconButton label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen.value} onClick={toggleInspector}>
++        <IconButton id="inspector-toggle" label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen.value} onClick={toggleInspector}>
+           {inspectorOpen.value ? <PanelRightClose size={17} /> : <PanelRight size={17} />}
+         </IconButton>
+       </div>
+@@ -86,9 +86,17 @@ function StageHead({ s }: { s: Spread }) {
+ 
+ function Stage() {
+   const s = currentSpread.value
+-  if (!s) return <section class="stage" />
++  if (!s) return <section class="stage" aria-label="Empty album plan"><div class="empty">
++    <h1 class="empty__title">Build your first spread</h1>
++    <p class="empty__text">Add a spread, then choose photos and a template. You can undo each change.</p>
++    <div class="empty__actions"><Button id="first-spread-button" variant="primary" icon={<Plus size={15} />} onClick={async () => {
++      await insertSpread(1)
++      requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
++    }}>Add the first spread</Button></div>
++  </div></section>
+   return (
+     <section class={`stage ${templateBrowserOpen.value ? 'has-browser' : ''}`} aria-label={`Spread ${s.n}`}>
++      <h1 class="visually-hidden">Plan the album</h1>
+       <StageHead s={s} />
+       <div class="stage__well">
+         <SpreadView s={s} />
+@@ -185,7 +193,10 @@ function StatusDot({ s }: { s: Spread }) {
+ 
+ export function Plan() {
+   return (
+-    <div class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'}`}>
++    <div class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'} ${planView.value === 'photos' ? 'is-pool-open' : ''}`}>
++      <div class="plan__view-switch">
++        <Segmented label="Plan view" value={planView.value} onChange={(v) => (planView.value = v)} options={[{ value: 'spread', label: 'Spread' }, { value: 'photos', label: 'Photos' }]} />
++      </div>
+       <Pool />
+       <Stage />
+       <Inspector />
+diff --git a/native/ui/src/places/albums/NewAlbum.tsx b/native/ui/src/places/albums/NewAlbum.tsx
+index 412a879..8566f50 100644
+--- a/native/ui/src/places/albums/NewAlbum.tsx
++++ b/native/ui/src/places/albums/NewAlbum.tsx
+@@ -42,8 +42,8 @@ function ProgressView({ p, name }: { p: Progress | null; name: string }) {
+         : `Planning ${plural(p.spreads ?? 0, 'spread')}…`
+   return (
+     <div class="dialog__body" role="status" aria-live="polite">
+-      <h2 class="dialog__title"><BookPlus size={18} /> Creating {name}</h2>
+-      <div class="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined}>
++      <h2 id="new-album-title" class="dialog__title"><BookPlus size={18} /> Creating {name}</h2>
++      <div class="progress" role="progressbar" aria-label="Album creation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined}>
+         <span class={`progress__bar ${pct === null ? 'is-indeterminate' : ''}`} style={{ width: pct === null ? '35%' : `${pct}%` }} />
+       </div>
+       <p class="job__line">{line}{p?.stage === 'thumbs' && (p.folders ?? 0) > 1 ? ` (folder ${p.index} of ${p.folders})` : ''}</p>
+diff --git a/native/ui/src/places/plan/AutoFill.tsx b/native/ui/src/places/plan/AutoFill.tsx
+index 52ad29f..7e6234a 100644
+--- a/native/ui/src/places/plan/AutoFill.tsx
++++ b/native/ui/src/places/plan/AutoFill.tsx
+@@ -49,7 +49,7 @@ export function AutoFillDialog() {
+   }
+ 
+   return (
+-    <dialog class="dialog" ref={ref} onClose={() => (open.value = false)} aria-labelledby="autofill-title">
++    <dialog class="dialog" ref={ref} onCancel={(e) => { if (busy) e.preventDefault() }} onClose={() => (open.value = false)} aria-labelledby="autofill-title" aria-busy={busy || undefined}>
+       <form method="dialog" class="dialog__body" onSubmit={submit}>
+         <h2 id="autofill-title" class="dialog__title"><WandSparkles size={18} /> Auto-fill the album</h2>
+         <p class="dialog__lead">
+diff --git a/native/ui/src/places/plan/Inspector.tsx b/native/ui/src/places/plan/Inspector.tsx
+index 7dc924b..1d5e7f0 100644
+--- a/native/ui/src/places/plan/Inspector.tsx
++++ b/native/ui/src/places/plan/Inspector.tsx
+@@ -11,9 +11,9 @@ import { shortPath, signature, templateLabel } from '../../format'
+ import { addPhotos, adjustPhoto, movePhoto, removePhotos, replacePhoto, rotatePhotos, shuffleTemplate } from '../../plan_actions'
+ import { colourMatrix, slotsOf, templateFits } from '../../plan_logic'
+ import { sheetStateOf } from '../../render'
+-import { album, currentPhotos, currentSpread, frameAdjusting, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen } from '../../state'
++import { album, currentPhotos, currentSpread, frameAdjusting, hoveredPhoto, inspectorOpen, selectionFocus, templateBrowserOpen, toggleInspector } from '../../state'
+ import type { Adjust, Photo } from '../../types'
+-import { Button, Kbd } from '../../ui/controls'
++import { Button, IconButton, Kbd } from '../../ui/controls'
+ import { Thumb } from '../../ui/Thumb'
+ 
+ function FitNote() {
+@@ -123,6 +123,10 @@ export function Inspector() {
+   const picked = sel && s.photoIds.includes(sel) ? album.value?.photos[sel] ?? null : null
+   return (
+     <aside class="inspector" aria-label="Inspector">
++      <div class="inspector__head"><h2>Inspector</h2><IconButton label="Close inspector" onClick={() => {
++        toggleInspector()
++        requestAnimationFrame(() => document.getElementById('inspector-toggle')?.focus())
++      }}><X size={15} /></IconButton></div>
+       {picked ? <PhotoSection p={picked} n={s.n} key={picked.id} /> : null}
+       <section class="insp-section">
+         <h3 class="insp-section__title">Template</h3>
+diff --git a/native/ui/src/places/plan/Pool.tsx b/native/ui/src/places/plan/Pool.tsx
+index d566914..f279ed8 100644
+--- a/native/ui/src/places/plan/Pool.tsx
++++ b/native/ui/src/places/plan/Pool.tsx
+@@ -1,35 +1,37 @@
+ // Pool.tsx — every photo of the album. Select (click, ⌘-click, ⇧-click), then drag onto a spread
+ // or double-click to add to the current one. Dropping a photo from a spread here takes it off.
+-// Each photo turns left or right from its corner buttons (or ⌘L / ⌘R with photos selected), and a
+-// selection shows its landscape/portrait mix and the templates that fit it.
++// The selection toolbar turns photos (also ⌘L / ⌘R), shows their landscape/portrait mix, and
++// offers templates that fit. Options contain no nested controls, so screen readers can select them.
+ 
+-import { Check, LayoutTemplate, RotateCcw, RotateCw, Undo2, WandSparkles } from 'lucide-preact'
+-import { useState } from 'preact/hooks'
++import { Check, ChevronLeft, ChevronRight, LayoutTemplate, RotateCcw, RotateCw, Search, Undo2, WandSparkles } from 'lucide-preact'
++import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
+ import { allowDrop, dragging, endDrag, payloadOf, startDrag } from '../../dnd'
+ import { plural, signature } from '../../format'
+ import { addPhotos, removePhotos, rotatePhotos } from '../../plan_actions'
+ import { rangeSelect, seenAspect, selectionSlots } from '../../plan_logic'
+ import {
+-  album, currentSpread, goToSpread, hoveredPhoto, orientFilter, poolAnchor, poolFilter, poolPhotos, poolSelection,
++  album, currentSpread, goToSpread, hoveredPhoto, orientFilter, planView, poolAnchor, poolFilter, poolPhotos, poolSelection,
+   selectionFocus, setPoolFilter, setThumbSize, templateBrowserOpen, thumbSize,
+ } from '../../state'
+ import type { Photo } from '../../types'
+ import { Button, IconButton, Segmented } from '../../ui/controls'
+ import { Thumb } from '../../ui/Thumb'
+ import { openAutoFill } from './AutoFill'
++import { openAlbumSettings } from '../../app/AlbumSettings'
++import { PHOTO_PAGE_SIZE, photoKeyIndex, photoWindow } from '../../pool_logic'
+ 
+ /** Width ÷ height as the photo is seen (after its turn), kept within reason for the rows. */
+ function aspect(p: Photo): number {
+   return Math.min(3, Math.max(0.33, seenAspect(p)))
+ }
+ 
+-function select(p: Photo, e: MouseEvent | KeyboardEvent) {
++function select(p: Photo, e: MouseEvent | KeyboardEvent, order: readonly Photo[], toggle = false) {
+   selectionFocus.value = 'pool'
+   const sel = new Set(poolSelection.value)
+   if (e.shiftKey) {
+-    const ids = poolPhotos.value.map((x) => x.id)
++    const ids = order.map((x) => x.id)
+     for (const id of rangeSelect(ids, poolAnchor.value, p.id)) sel.add(id)
+-  } else if (e.metaKey) {
++  } else if (e.metaKey || e.ctrlKey || toggle) {
+     if (sel.has(p.id)) sel.delete(p.id)
+     else sel.add(p.id)
+     poolAnchor.value = p.id
+@@ -48,12 +50,26 @@ function dragSet(p: Photo): string[] {
+   return poolPhotos.value.filter((x) => sel.has(x.id)).map((x) => x.id)
+ }
+ 
+-function addToCurrent(ids: string[], copy = false) {
++async function addToCurrent(ids: string[], copy = false) {
+   const s = currentSpread.value
+-  if (s) void addPhotos(s.n, ids, { copy })
++  const a = album.value
++  if (!a) return
++  if (!s) {
++    planView.value = 'spread'
++    requestAnimationFrame(() => document.getElementById('first-spread-button')?.focus())
++    return
++  }
++  const result = await addPhotos(s.n, ids, { copy })
++  if (result && album.value?.path === a.path && planView.value === 'photos') {
++    goToSpread(s.n - 1)
++    requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
++  }
+ }
+ 
+-function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; selected: boolean }) {
++function PoolTile({ p, onCurrent, selected, tabIndex, position, total, order, onFocus, onMove }: {
++  p: Photo; onCurrent: boolean; selected: boolean; tabIndex: number; position: number; total: number
++  order: readonly Photo[]; onFocus: () => void; onMove: (key: string) => boolean
++}) {
+   const used = p.usedOn.length > 0
+   const ar = aspect(p)
+   return (
+@@ -64,7 +80,11 @@ function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; se
+       class={`tile ${used ? 'is-used' : ''} ${onCurrent ? 'is-current' : ''} ${selected ? 'is-selected' : ''} ${hoveredPhoto.value === p.id ? 'is-hovered' : ''}`}
+       role="option"
+       aria-selected={selected}
+-      tabIndex={0}
++      aria-label={`${p.base}${used ? ` · on spread ${p.usedOn.join(', ')}` : ' · unused'}`}
++      aria-posinset={position}
++      aria-setsize={total}
++      tabIndex={tabIndex}
++      onFocus={onFocus}
+       title={`${p.base}${used ? ` · on spread ${p.usedOn.join(', ')}` : ''}\nDouble-click to add to this spread`}
+       draggable
+       onDragStart={(e) => {
+@@ -76,35 +96,21 @@ function PoolTile({ p, onCurrent, selected }: { p: Photo; onCurrent: boolean; se
+       onDragEnd={endDrag}
+       onMouseEnter={() => (hoveredPhoto.value = p.id)}
+       onMouseLeave={() => (hoveredPhoto.value = null)}
+-      onClick={(e) => select(p, e)}
++      onClick={(e) => select(p, e, order)}
+       onDblClick={() => addToCurrent(dragSet(p))}
+       onKeyDown={(e) => {
+-        if (e.key === ' ') { e.preventDefault(); select(p, e) }
++        if (e.target !== e.currentTarget) return
++        if (e.altKey || e.metaKey || e.ctrlKey) return
++        if (e.key === ' ') { e.preventDefault(); e.stopPropagation(); select(p, e, order, true) }
+         else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); addToCurrent(dragSet(p)) }
++        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); poolSelection.value = new Set(); poolAnchor.value = null }
++        else if (onMove(e.key)) { e.preventDefault(); e.stopPropagation() }
+       }}
+     >
+-      <Thumb p={p} alt={p.base} />
++      <Thumb p={p} />
++      <span class="tile__name" aria-hidden="true">{p.base}</span>
+       {selected ? <span class="tile__check" aria-hidden="true"><Check size={11} strokeWidth={3} /></span> : null}
+-      <span class="tile__turns" onDblClick={(e) => e.stopPropagation()}>
+-        <button type="button" class="tile__turn" tabIndex={-1} title="Turn left (⌘L)" aria-label={`Turn ${p.base} left`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], -90) }}>
+-          <RotateCcw size={12} strokeWidth={2.2} />
+-        </button>
+-        <button type="button" class="tile__turn" tabIndex={-1} title="Turn right (⌘R)" aria-label={`Turn ${p.base} right`} onClick={(e) => { e.stopPropagation(); void rotatePhotos([p.id], 90) }}>
+-          <RotateCw size={12} strokeWidth={2.2} />
+-        </button>
+-      </span>
+-      {used ? (
+-        <button
+-          type="button"
+-          class="tile__badge"
+-          tabIndex={-1}
+-          title={`Go to spread ${p.usedOn[0]}`}
+-          aria-label={`On spread ${p.usedOn.join(', ')}; go there`}
+-          onClick={(e) => { e.stopPropagation(); goToSpread(p.usedOn[0]! - 1) }}
+-        >
+-          {p.usedOn.join(',')}
+-        </button>
+-      ) : null}
++      {used ? <span class="tile__badge" aria-hidden="true" title={`On spread ${p.usedOn.join(', ')}`}>{p.usedOn.join(',')}</span> : null}
+     </li>
+   )
+ }
+@@ -117,6 +123,40 @@ export function Pool() {
+   const unused = a.stats.photos - a.stats.used
+   const sel = poolSelection.value
+   const [over, setOver] = useState(false)
++  const [query, setQuery] = useState('')
++  const [page, setPage] = useState(0)
++  const [active, setActive] = useState<string | null>(null)
++  const grid = useRef<HTMLUListElement>(null)
++  const search = useRef<HTMLInputElement>(null)
++  const focusNext = useRef<string | null>(null)
++  const pageInfo = useMemo(() => photoWindow(photos, query, page), [photos, query, page])
++  const tabStop = pageInfo.visible.find(p => p.id === active)?.id ?? pageInfo.visible[0]?.id
++  const resultIds = useMemo(() => new Set(pageInfo.matches.map(p => p.id)), [pageInfo.matches])
++  const hiddenSelected = [...sel].filter(id => !resultIds.has(id)).length
++  useEffect(() => { setPage(0) }, [query, poolFilter.value, orientFilter.value, a.path])
++  useLayoutEffect(() => {
++    if (grid.current) grid.current.scrollTop = 0
++  }, [pageInfo.index, query])
++  useLayoutEffect(() => {
++    if (!focusNext.current) return
++    const index = pageInfo.visible.findIndex(p => p.id === focusNext.current)
++    if (index < 0) return
++    grid.current?.querySelectorAll<HTMLElement>('[role="option"]')[index]?.focus()
++    focusNext.current = null
++  }, [pageInfo.visible])
++  const moveFocus = (p: Photo, key: string) => {
++    const target = photoKeyIndex(key, pageInfo.matches.findIndex(x => x.id === p.id), pageInfo.matches.length)
++    if (target === null) return false
++    const id = pageInfo.matches[target]!.id
++    focusNext.current = id
++    setActive(id); setPage(Math.floor(target / PHOTO_PAGE_SIZE))
++    // The current page may not change, so focus it immediately as well.
++    if (Math.floor(target / PHOTO_PAGE_SIZE) === pageInfo.index) {
++      grid.current?.querySelectorAll<HTMLElement>('[role="option"]')[target - pageInfo.offset]?.focus()
++      focusNext.current = null
++    }
++    return true
++  }
+   const drag = dragging.value
+   // Photos dragged off a spread can be dropped back here.
+   const takesBack = drag?.kind === 'photos' && !!drag.from
+@@ -142,7 +182,7 @@ export function Pool() {
+       <div class="pool__head">
+         <div class="pool__title">
+           <h2>Photos</h2>
+-          <span class="count">{photos.length === a.stats.photos ? a.stats.photos : `${photos.length} of ${a.stats.photos}`}</span>
++          <span class="count" role="status">{pageInfo.matches.length === a.stats.photos ? a.stats.photos : `${pageInfo.matches.length} of ${a.stats.photos}`}</span>
+           <Button size="sm" variant="ghost" class="pool__autofill" icon={<WandSparkles size={14} />} onClick={openAutoFill} title="Plan every spread from the photos">
+             Auto-fill…
+           </Button>
+@@ -164,20 +204,28 @@ export function Pool() {
+             onChange={(v) => (orientFilter.value = v)}
+             options={[
+               { value: 'any', label: 'Any', title: 'Landscape and portrait' },
+-              { value: 'h', label: 'H', title: 'Landscape only' },
+-              { value: 'v', label: 'V', title: 'Portrait only' },
++              { value: 'h', label: 'H', title: 'Landscape only', ariaLabel: 'Landscape only' },
++              { value: 'v', label: 'V', title: 'Portrait only', ariaLabel: 'Portrait only' },
+             ]}
+           />
+         </div>
++        <label class="search pool__search">
++          <Search size={14} aria-hidden="true" />
++          <span class="visually-hidden">Search photos by file name</span>
++          <input ref={search} type="search" placeholder="Find a photo…" value={query} onInput={(e) => setQuery(e.currentTarget.value)} />
++        </label>
+       </div>
+-      {photos.length === 0 ? (
++      <p id="pool-keys" class="visually-hidden">Arrow keys move between photos. Space selects or deselects; Shift Space selects a range. Enter adds the selection to the current spread. Home and End reach the first and last result.</p>
++      {pageInfo.matches.length === 0 ? (
+         <div class="pool__empty">
+-          {poolFilter.value === 'unused' ? 'Every photo is placed.' : 'No photos match these filters.'}
++          <p>{!a.stats.photos ? 'No photos in this album yet.' : !query && poolFilter.value === 'unused' && orientFilter.value === 'any' ? 'Every photo is placed.' : 'No photos match these filters.'}</p>
++          {!a.stats.photos ? <Button size="sm" onClick={openAlbumSettings}>Add photo folders…</Button> : <Button size="sm" onClick={() => { setQuery(''); setPoolFilter('all'); orientFilter.value = 'any' }}>Show all photos</Button>}
+         </div>
+       ) : (
+-        <ul class="pool__grid" style={{ '--row': `${thumbSize.value}px` }} role="listbox" aria-multiselectable="true" aria-label="Photos">
+-          {photos.map((p) => (
+-            <PoolTile p={p} onCurrent={onSpread.has(p.id)} selected={sel.has(p.id)} key={p.id} />
++        <ul ref={grid} class="pool__grid" style={{ '--row': `${thumbSize.value}px` }} role="listbox" aria-multiselectable="true" aria-label="Photos" aria-describedby="pool-keys">
++          {pageInfo.visible.map((p, index) => (
++            <PoolTile p={p} onCurrent={onSpread.has(p.id)} selected={sel.has(p.id)} key={p.id} tabIndex={p.id === tabStop ? 0 : -1}
++              position={pageInfo.offset + index + 1} total={pageInfo.matches.length} order={pageInfo.matches} onFocus={() => setActive(p.id)} onMove={(key) => moveFocus(p, key)} />
+           ))}
+         </ul>
+       )}
+@@ -187,8 +235,17 @@ export function Pool() {
+         </div>
+       ) : null}
+       <div class="pool__foot">
++        {pageInfo.pages > 1 ? <div class="pool__pages" aria-label="Photo pages">
++          <IconButton label="Previous photo page" disabled={pageInfo.index === 0} onClick={() => setPage(pageInfo.index - 1)}><ChevronLeft size={15} /></IconButton>
++          <span role="status">{pageInfo.offset + 1}–{pageInfo.offset + pageInfo.visible.length} of {pageInfo.matches.length}</span>
++          <IconButton label="Next photo page" disabled={pageInfo.index === pageInfo.pages - 1} onClick={() => setPage(pageInfo.index + 1)}><ChevronRight size={15} /></IconButton>
++        </div> : null}
++        {hiddenSelected ? <p class="pool__hidden-selection">{plural(hiddenSelected, 'selected photo')} outside these filters</p> : null}
+         {sel.size ? (
+-          <SelectionBar />
++          <SelectionBar onClear={() => {
++            poolSelection.value = new Set(); poolAnchor.value = null
++            requestAnimationFrame(() => (grid.current?.querySelector<HTMLElement>('[role="option"][tabindex="0"]') ?? search.current)?.focus())
++          }} />
+         ) : (
+           <label class="slider">
+             <span class="visually-hidden">Thumbnail size</span>
+@@ -208,27 +265,32 @@ export function Pool() {
+ }
+ 
+ /** What can be done with the photos selected in the pool. */
+-function SelectionBar() {
++function SelectionBar({ onClear }: { onClear: () => void }) {
+   const a = album.value!
+   const sel = poolSelection.value
+   const s = currentSpread.value
+   // In pool order; photos hidden by a filter stay selected.
+   const ids = [...a.pool.filter((id) => sel.has(id))]
+   const { h, v } = selectionSlots(a, ids)
+-  const showTemplates = () => { selectionFocus.value = 'pool'; templateBrowserOpen.value = true }
++  const one = ids.length === 1 ? a.photos[ids[0]!] : null
++  const showTemplates = () => { selectionFocus.value = 'pool'; planView.value = 'spread'; templateBrowserOpen.value = true }
+   return (
+     <div class="pool__selection">
+       <div class="pool__selection-row">
+         <span class="pool__selection-what">{plural(ids.length, 'photo')} selected <span class="count">{signature(h, v)}</span></span>
+-        <Button size="sm" variant="ghost" onClick={() => { poolSelection.value = new Set(); poolAnchor.value = null }}>Clear</Button>
++        <Button size="sm" variant="ghost" onClick={onClear}>Clear</Button>
+       </div>
++      {one?.usedOn.length ? <label class="select pool__placements"><span class="visually-hidden">Go to a spread using the selected photo</span><select value="" onChange={(e) => { goToSpread(Number(e.currentTarget.value) - 1); e.currentTarget.value = ''; requestAnimationFrame(() => document.getElementById('spread-heading')?.focus()) }}>
++        <option value="" disabled>Show where this photo is used…</option>
++        {one.usedOn.map(n => <option value={n} key={n}>Spread {n}</option>)}
++      </select></label> : null}
+       <div class="pool__selection-row">
+         <IconButton label="Turn left (⌘L)" onClick={() => void rotatePhotos(ids, -90)}><RotateCcw size={15} /></IconButton>
+         <IconButton label="Turn right (⌘R)" onClick={() => void rotatePhotos(ids, 90)}><RotateCw size={15} /></IconButton>
+         <span class="pool__selection-grow" />
+         <Button size="sm" icon={<LayoutTemplate size={14} />} onClick={showTemplates} title={`Templates with frames for ${signature(h, v)}`}>Templates</Button>
+-        <Button size="sm" variant="primary" disabled={!s} onClick={() => addToCurrent(ids)}>
+-          Add to spread {s?.n}
++        <Button size="sm" variant="primary" onClick={() => addToCurrent(ids)}>
++          {s ? `Add to spread ${s.n}` : 'Start a spread'}
+         </Button>
+       </div>
+     </div>
+diff --git a/native/ui/src/places/plan/TemplateBrowser.tsx b/native/ui/src/places/plan/TemplateBrowser.tsx
+index 22920ca..84ed0af 100644
+--- a/native/ui/src/places/plan/TemplateBrowser.tsx
++++ b/native/ui/src/places/plan/TemplateBrowser.tsx
+@@ -4,7 +4,7 @@
+ // (the current one when empty, else a new one after it). All collections are a click away.
+ 
+ import { Check, Search, Shuffle, X } from 'lucide-preact'
+-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
++import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
+ import { fileUrl } from '../../bridge'
+ import { autoTemplate, loadTemplates, setAutoTemplate, templates, templatesError } from '../../edit'
+ import { plural, signature, templateLabel } from '../../format'
+@@ -23,6 +23,14 @@ export function TemplateBrowser() {
+   const [text, setText] = useState('')
+   const [limit, setLimit] = useState(PAGE)
+   const search = useRef<HTMLInputElement>(null)
++  useLayoutEffect(() => {
++    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
++    search.current?.focus()
++    return () => {
++      if (opener?.isConnected && opener.getClientRects().length) opener.focus()
++      else document.getElementById('spread-heading')?.focus()
++    }
++  }, [])
+ 
+   // The pool's selection, in pool order, when templates are for it.
+   const picked = poolSelection.value
+@@ -49,7 +57,7 @@ export function TemplateBrowser() {
+       class="tpl-browser"
+       aria-label="Templates"
+       onKeyDown={(e) => {
+-        if (e.key === 'Escape') { e.stopPropagation(); close() }
++        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close() }
+       }}
+     >
+       <header class="tpl-browser__head">
+@@ -111,7 +119,7 @@ export function TemplateBrowser() {
+       {forSelection ? <p class="tpl-browser__hint">Click a template to put the {plural(selIds.length, 'selected photo')} on {target} with it.</p> : null}
+ 
+       {templatesError.value ? (
+-        <p class="notice notice--error" role="alert">{templatesError.value}</p>
++        <div class="notice notice--error" role="alert"><p>{templatesError.value}</p><Button size="sm" onClick={() => void loadTemplates()}>Try loading templates again</Button></div>
+       ) : !all ? (
+         <ul class="tpl-grid" aria-busy="true">
+           {Array.from({ length: 8 }, () => <li class="tpl-card tpl-card--skeleton"><span class="tpl-card__img" /></li>)}
+diff --git a/native/ui/src/state.ts b/native/ui/src/state.ts
+index d9b562b..49ba70c 100644
+--- a/native/ui/src/state.ts
++++ b/native/ui/src/state.ts
+@@ -30,12 +30,15 @@ export const theme = signal<Theme>(stored<Theme>('as.theme', 'studio-dark'))
+ 
+ export const recent = signal<RecentAlbum[] | null>(null)
+ export const recentError = signal<string | null>(null)
++export const recentLoading = signal(false)
+ 
+ export const album = signal<Album | null>(null)
+ export const albumLoading = signal<string | null>(null) // the path being opened
+ export const albumError = signal<string | null>(null)
+ 
+ export const spreadIndex = signal(0)
++/** Which working pane is visible when the window is too narrow to show both. */
++export const planView = signal<'spread' | 'photos'>('spread')
+ export const poolFilter = signal<'all' | 'unused' | 'used'>(stored('as.poolFilter', 'all'))
+ export const orientFilter = signal<'any' | Orient>('any')
+ export const thumbSize = signal<number>(stored('as.thumbSize', 72))
+@@ -119,31 +122,44 @@ export function toggleInspector() {
+ export function toast(kind: Toast['kind'], text: string, ms = 4500) {
+   const t = { id: toastId++, kind, text }
+   toasts.value = [...toasts.value, t]
+-  window.setTimeout(() => dismissToast(t.id), ms)
++  // Errors must remain available while a photographer investigates or reconnects a drive.
++  if (kind !== 'error' && ms > 0) window.setTimeout(() => dismissToast(t.id), ms)
+ }
+ 
+ export function dismissToast(id: number) {
+   toasts.value = toasts.value.filter((t) => t.id !== id)
+ }
+ 
++let recentRequest = 0
+ export async function loadRecent() {
++  const request = ++recentRequest
++  recentLoading.value = true
+   recentError.value = null
+   try {
+-    recent.value = await call('album.recent')
++    const result = await call('album.recent')
++    if (request === recentRequest) recent.value = result
+   } catch (e) {
+-    recentError.value = (e as Error).message
+-    recent.value = recent.value ?? []
++    if (request === recentRequest) {
++      recentError.value = (e as Error).message
++      recent.value = recent.value ?? []
++    }
++  } finally {
++    if (request === recentRequest) recentLoading.value = false
+   }
+ }
+ 
++let albumRequest = 0
+ export async function openAlbum(path: string) {
++  const request = ++albumRequest
+   albumLoading.value = path
+   albumError.value = null
+   try {
+     const a = await call('album.open', { path })
++    if (request !== albumRequest) return
+     batch(() => {
+       album.value = a
+       spreadIndex.value = 0
++      planView.value = 'spread'
+       place.value = 'plan'
+       poolSelection.value = new Set()
+       poolAnchor.value = null
+@@ -151,20 +167,28 @@ export async function openAlbum(path: string) {
+     })
+     void loadRecent()
+   } catch (e) {
+-    albumError.value = (e as Error).message
+-    toast('error', (e as Error).message, 8000)
++    if (request === albumRequest) {
++      albumError.value = (e as Error).message
++      toast('error', (e as Error).message, 8000)
++    }
+   } finally {
+-    albumLoading.value = null
++    if (request === albumRequest) albumLoading.value = null
+   }
+ }
+ 
+ /** Re-read the open album (after a render) without moving the user anywhere. */
++let quietRequest = 0
+ export async function openAlbumQuietly(path: string) {
++  const displayed = album.peek(), context = albumRequest
++  if (!displayed || displayed.path !== path) return
++  const request = ++quietRequest
+   try {
+     const a = await call('album.open', { path })
+-    if (album.value?.path === path) album.value = a
++    // Neither a later open nor an edit that already updated the screen may be rebased onto
++    // an older read. Only the newest refresh of this exact displayed snapshot can apply.
++    if (context === albumRequest && request === quietRequest && album.peek() === displayed) album.value = a
+   } catch (e) {
+-    toast('error', (e as Error).message, 8000)
++    if (context === albumRequest && request === quietRequest && album.peek() === displayed) toast('error', (e as Error).message, 8000)
+   }
+ }
+ 
+@@ -172,6 +196,7 @@ export function goToSpread(i: number) {
+   const n = album.value?.spreads.length ?? 0
+   if (!n) return
+   spreadIndex.value = Math.max(0, Math.min(n - 1, i))
++  planView.value = 'spread'
+ }
+ 
+ export function nextSpread(step = 1) {
+diff --git a/native/ui/src/styles/app.css b/native/ui/src/styles/app.css
+index 01c1af1..48e3567 100644
+--- a/native/ui/src/styles/app.css
++++ b/native/ui/src/styles/app.css
+@@ -188,6 +188,8 @@
+ .toast--ok .toast__icon { color: var(--ok); }
+ .toast--info .toast__icon { color: var(--accent); }
+ .toast__text { flex: 1; line-height: 1.4; padding-top: 1px; }
++.toasts { max-height: min(45vh, 400px); overflow-y: auto; overscroll-behavior: contain; }
++.toast__text { user-select: text; -webkit-user-select: text; overflow-wrap: anywhere; }
+ @keyframes toast-in { from { opacity: 0.4; transform: translateY(6px); } }
+ 
+ /* ── Places: shared ───────────────────────────────────────────────────── */
+@@ -272,6 +274,7 @@
+   overflow: hidden;
+ }
+ .place--plan.no-inspector { grid-template-columns: minmax(250px, 330px) minmax(0, 1fr); }
++.plan__view-switch { display: none; }
+ 
+ .pool {
+   display: flex;
+@@ -298,6 +301,12 @@
+ .pool__grid::after { content: ""; flex-grow: 1000; }
+ .pool__empty { flex: 1; display: grid; place-items: center; padding: var(--sp-8); color: var(--ink-3); text-align: center; }
+ .pool__foot { padding: var(--sp-3) var(--sp-5) var(--sp-4); border-top: 1px solid var(--line); }
++.pool__search { width: 100%; }
++.pool .pool__search input { min-width: 0; width: 100%; }
++.pool__pages { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); padding-bottom: var(--sp-3); color: var(--ink-2); font-size: var(--fs-12); }
++.pool__hidden-selection { font-size: var(--fs-12); color: var(--warn); padding-bottom: var(--sp-3); }
++.pool__empty { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: var(--sp-5); }
++.tile:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+ 
+ .tile {
+   position: relative;
+@@ -312,10 +321,6 @@
+ }
+ .tile img { width: 100%; height: 100%; object-fit: cover; }
+ /* Turn buttons in a photo's corner, shown on hover or focus. */
+-.tile__turns { position: absolute; z-index: 1; left: 4px; top: 4px; display: flex; gap: 2px; opacity: 0; transition: opacity var(--t-fast) var(--ease-out); }
+-.tile:hover .tile__turns, .tile:focus-within .tile__turns { opacity: 1; }
+-.tile__turn { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: oklch(0 0 0 / 0.62); color: oklch(0.97 0 0); cursor: pointer; }
+-.tile__turn:hover { background: var(--accent); color: var(--accent-ink); }
+ .tile.is-current { box-shadow: inset 0 0 0 2px var(--accent-line); }
+ .tile.is-current img { padding: 2px; border-radius: 3px; }
+ .tile.is-hovered:not(.is-current):not(.is-selected) { box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.5); }
+@@ -348,12 +353,12 @@
+   position: absolute;
+   z-index: 1;
+   left: 4px;
+-  bottom: 4px;
++  top: 4px;
+   border: 0;
+   max-width: calc(100% - 8px);
+   padding: 0 5px;
+   border-radius: 999px;
+-  background: oklch(0 0 0 / 0.55);
++  background: oklch(0 0 0 / 0.8);
+   color: oklch(0.96 0 0);
+   font-size: 10px;
+   font-weight: var(--fw-semibold);
+@@ -361,25 +366,28 @@
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+-  opacity: 0.85;
++  opacity: 1;
+ }
+ .tile.is-current .tile__badge { background: var(--accent); color: var(--accent-ink); opacity: 1; }
++.tile__name { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 1px 4px; color: oklch(0.96 0 0); background: oklch(0 0 0 / 0.8); font-size: var(--fs-11); line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+ 
+ .stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--bg-app); }
+ .stage__head {
+   display: grid;
+-  grid-template-columns: auto minmax(0, 1fr) auto;
++  grid-template-columns: minmax(0, 1fr) auto;
+   align-items: center;
+-  gap: var(--sp-6);
++  gap: var(--sp-3) var(--sp-5);
+   padding: var(--sp-4) var(--sp-6);
+   border-bottom: 1px solid var(--line);
+ }
+-.stage__nav { display: flex; align-items: center; gap: var(--sp-2); }
++.stage__nav { display: flex; align-items: center; gap: var(--sp-2); grid-column: 1; grid-row: 1; }
+ .stage__title { font-size: var(--fs-15); white-space: nowrap; min-width: 124px; text-align: center; }
+ .stage__of { color: var(--ink-3); font-weight: var(--fw-regular); }
+-.stage__facts { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; color: var(--ink-2); font-size: var(--fs-12); white-space: nowrap; overflow: hidden; }
++.stage__facts { grid-column: 1 / -1; grid-row: 2; display: flex; align-items: center; gap: var(--sp-4); min-width: 0; color: var(--ink-2); font-size: var(--fs-12); white-space: nowrap; overflow: hidden; }
+ .stage__facts > span:not(.dot):not(.pill) { overflow: hidden; text-overflow: ellipsis; }
+-.stage__actions { display: flex; align-items: center; gap: var(--sp-3); }
++.stage__actions { display: flex; align-items: center; gap: var(--sp-3); grid-column: 2; grid-row: 1; }
++.inspector__head { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4); padding: var(--sp-4) var(--sp-5); border-bottom: 1px solid var(--line); }
++.inspector__head h2 { font-size: var(--fs-13); }
+ .stage__well {
+   position: relative;
+   flex: 1;
+@@ -520,8 +528,12 @@
+   }
+ }
+ @media (max-width: 800px) {
+-  .place--plan { grid-template-columns: minmax(0, 1fr); }
++  .place--plan, .place--plan.no-inspector { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
++  .plan__view-switch { display: flex; padding: var(--sp-4); border-bottom: 1px solid var(--line); }
++  .place--plan .stage, .place--plan .pool { grid-row: 2; grid-column: 1; }
+   .place--plan .pool { display: none; }
++  .place--plan.is-pool-open .pool { display: flex; }
++  .place--plan.is-pool-open .stage, .place--plan.is-pool-open .inspector { display: none; }
+   .rail__label { display: none; }
+ }
+ 
+@@ -660,6 +672,7 @@
+ .pool__selection-what { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+ .pool__selection-what .count { margin-left: var(--sp-2); }
+ .pool__selection-grow { flex: 1; }
++.pool__placements, .pool__placements select { width: 100%; min-width: 0; }
+ .tile[draggable="true"] { cursor: grab; }
+ 
+ /* The spread: the preview at the largest size that fits, with its frames laid over it. */
+@@ -814,9 +827,9 @@
+ .menu__item:hover:not(:disabled), .menu__item:focus-visible { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+ .menu__item:disabled { color: var(--ink-4); }
+ .menu__item.is-danger:not(:disabled) { color: var(--danger); }
+-.menu__item.is-danger:hover:not(:disabled), .menu__item.is-danger:focus-visible { background: var(--danger); color: oklch(0.99 0 0); }
++.menu__item.is-danger:hover:not(:disabled), .menu__item.is-danger:focus-visible { background: var(--danger); color: var(--danger-ink); }
+ .menu__icon { display: grid; place-items: center; }
+-.menu__hint { color: inherit; opacity: 0.6; font-size: var(--fs-12); }
++.menu__hint { color: inherit; opacity: 1; font-size: var(--fs-12); }
+ .menu__sep { height: 1px; margin: var(--sp-2) var(--sp-3); background: var(--line); }
+ 
+ /* Template browser: under the spread, so each choice shows in the preview. */
+@@ -1260,6 +1273,7 @@
+    quarter-turned image is sized to the swapped box and still covers it. */
+ .thumb { position: relative; display: block; width: 100%; height: 100%; overflow: hidden; container-type: size; }
+ .thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
++.thumb__missing { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-2); width: 100%; height: 100%; padding: var(--sp-4); background: var(--bg-well); color: var(--ink-3); text-align: center; font-size: var(--fs-11); line-height: 1.25; }
+ .thumb--turn180 img { rotate: 180deg; }
+ .thumb--turn90 img, .thumb--turn270 img { position: absolute; left: 50%; top: 50%; width: 100cqh; height: 100cqw; max-width: none; translate: -50% -50%; }
+ .thumb--turn90 img { rotate: 90deg; }
+diff --git a/native/ui/src/styles/base.css b/native/ui/src/styles/base.css
+index 757eb65..c2861c3 100644
+--- a/native/ui/src/styles/base.css
++++ b/native/ui/src/styles/base.css
+@@ -29,6 +29,9 @@ button { cursor: default; }
+ :focus { outline: none; }
+ :focus-visible { box-shadow: var(--focus-ring); border-radius: var(--r-1); }
+ 
++.skip-link { position: fixed; top: 8px; left: 84px; z-index: var(--z-tooltip); transform: translateY(-160%); padding: 8px 16px; border-radius: var(--r-2); background: var(--accent); color: var(--accent-ink); font-weight: var(--fw-semibold); }
++.skip-link:focus { transform: none; }
++
+ .visually-hidden {
+   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+diff --git a/native/ui/src/styles/tokens.css b/native/ui/src/styles/tokens.css
+index b4c8c1f..90d105c 100644
+--- a/native/ui/src/styles/tokens.css
++++ b/native/ui/src/styles/tokens.css
+@@ -3,7 +3,8 @@
+  * Surfaces are true neutral greys (chroma 0): a tinted surround biases colour judgement, and
+  * photographers judge skin and saree reds here for hours. One accent, a cool ice blue, does the
+  * work of selection, focus, primary action and progress; it never competes with the warm reds
+- * and golds of wedding photos. Contrast pairs are AA-checked in test/contrast.test.ts.
++ * and golds of wedding photos. Authored text pairs are checked in native/ui/test/contrast.test.ts;
++ * this token check does not certify every composed screen or the native editor.
+  */
+ 
+ :root {
+@@ -86,6 +87,7 @@
+   --ok:     oklch(0.78 0.13 155);
+   --warn:   oklch(0.83 0.13 80);
+   --danger: oklch(0.71 0.15 25);
++  --danger-ink: oklch(0.17 0.02 25);
+   --ok-soft:     oklch(0.78 0.13 155 / 0.16);
+   --warn-soft:   oklch(0.83 0.13 80 / 0.16);
+   --danger-soft: oklch(0.71 0.15 25 / 0.16);
+@@ -118,11 +120,12 @@
+   --accent-line:   oklch(0.50 0.13 245 / 0.55);
+   --focus-ring:    0 0 0 2px var(--bg-app), 0 0 0 4px var(--accent);
+ 
+-  --ok:     oklch(0.52 0.13 155);
+-  --warn:   oklch(0.56 0.12 70);
++  --ok:     oklch(0.49 0.13 155);
++  --warn:   oklch(0.49 0.12 70);
+   --danger: oklch(0.53 0.17 25);
+-  --ok-soft:     oklch(0.52 0.13 155 / 0.12);
+-  --warn-soft:   oklch(0.56 0.12 70 / 0.14);
++  --danger-ink: oklch(0.99 0 0);
++  --ok-soft:     oklch(0.49 0.13 155 / 0.12);
++  --warn-soft:   oklch(0.49 0.12 70 / 0.14);
+   --danger-soft: oklch(0.53 0.17 25 / 0.12);
+ 
+   --shadow-pop: 0 12px 32px oklch(0 0 0 / 0.16), 0 0 0 1px var(--line-strong);
+diff --git a/native/ui/src/ui/Menu.tsx b/native/ui/src/ui/Menu.tsx
+index 0943cb1..0eaea91 100644
+--- a/native/ui/src/ui/Menu.tsx
++++ b/native/ui/src/ui/Menu.tsx
+@@ -2,7 +2,7 @@
+ // elsewhere; arrow keys move between items, as in a native menu.
+ 
+ import type { ComponentChildren } from 'preact'
+-import { useEffect, useRef, useState } from 'preact/hooks'
++import { useEffect, useId, useLayoutEffect, useRef, useState } from 'preact/hooks'
+ 
+ export interface MenuItem {
+   label: string
+@@ -18,48 +18,68 @@ export function Menu({ label, icon, items }: { label: string; icon: ComponentChi
+   const [open, setOpen] = useState(false)
+   const root = useRef<HTMLDivElement>(null)
+   const list = useRef<HTMLDivElement>(null)
++  const trigger = useRef<HTMLButtonElement>(null)
++  const firstFocus = useRef<'first' | 'last'>('first')
++  const id = useId()
++
++  const close = (restore = false) => { setOpen(false); if (restore) trigger.current?.focus() }
++  useLayoutEffect(() => {
++    if (!open) return
++    const buttons = list.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')
++    buttons?.[firstFocus.current === 'last' ? buttons.length - 1 : 0]?.focus()
++  }, [open])
+ 
+   useEffect(() => {
+     if (!open) return
+-    const onDown = (e: MouseEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false) }
+-    document.addEventListener('mousedown', onDown)
+-    list.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus()
+-    return () => document.removeEventListener('mousedown', onDown)
++    const onDown = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) close() }
++    document.addEventListener('pointerdown', onDown)
++    return () => document.removeEventListener('pointerdown', onDown)
+   }, [open])
+ 
+   const onKey = (e: KeyboardEvent) => {
+     const buttons = [...(list.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)') ?? [])]
+     const i = buttons.indexOf(document.activeElement as HTMLButtonElement)
+-    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setOpen(false); root.current?.querySelector<HTMLButtonElement>('.menu__trigger')?.focus() }
++    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(true) }
++    else if (e.key === 'Tab') { e.stopPropagation(); close(true) }
++    else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); e.stopPropagation(); buttons[e.key === 'Home' ? 0 : buttons.length - 1]?.focus() }
+     else if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); buttons[(i + 1) % buttons.length]?.focus() }
+     else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); buttons[(i - 1 + buttons.length) % buttons.length]?.focus() }
+     else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation()
+   }
+ 
+   return (
+-    <div class="menu" ref={root}>
++    <div class="menu" ref={root} onFocusOut={(e) => { if (e.relatedTarget && !root.current?.contains(e.relatedTarget as Node)) close() }}>
+       <button
++        ref={trigger}
+         type="button"
+         class="icon-btn menu__trigger"
+         aria-label={label}
+         title={label}
+         aria-haspopup="menu"
+         aria-expanded={open}
+-        onClick={() => setOpen(!open)}
++        aria-controls={open ? id : undefined}
++        onClick={() => { firstFocus.current = 'first'; setOpen(!open) }}
++        onKeyDown={(e) => {
++          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
++          e.preventDefault(); e.stopPropagation()
++          firstFocus.current = e.key === 'ArrowUp' ? 'last' : 'first'
++          setOpen(true)
++        }}
+       >
+         {icon}
+       </button>
+       {open ? (
+-        <div class="menu__list" role="menu" ref={list} onKeyDown={onKey}>
++        <div class="menu__list" role="menu" aria-label={label} id={id} ref={list} onKeyDown={onKey}>
+           {items.map((it) => (
+             <>
+               {it.separatorBefore ? <div class="menu__sep" role="separator" /> : null}
+               <button
+                 type="button"
+                 role="menuitem"
++                tabIndex={-1}
+                 class={`menu__item ${it.danger ? 'is-danger' : ''}`}
+                 disabled={it.disabled}
+-                onClick={() => { setOpen(false); it.onSelect() }}
++                onClick={() => { close(true); it.onSelect() }}
+               >
+                 <span class="menu__icon" aria-hidden="true">{it.icon}</span>
+                 <span class="menu__label">{it.label}</span>
+diff --git a/native/ui/src/ui/Thumb.tsx b/native/ui/src/ui/Thumb.tsx
+index 7464326..5366eb3 100644
+--- a/native/ui/src/ui/Thumb.tsx
++++ b/native/ui/src/ui/Thumb.tsx
+@@ -2,14 +2,19 @@
+ // is sized to (the wrapper is a size container), so the turned picture still covers its frame.
+ 
+ import { fileUrl } from '../bridge'
++import { ImageOff } from 'lucide-preact'
++import { useEffect, useState } from 'preact/hooks'
+ import { turnOf } from '../plan_logic'
+ import type { Photo } from '../types'
+ 
+ export function Thumb({ p, alt = '', lazy = true }: { p: Photo; alt?: string; lazy?: boolean }) {
+   const t = turnOf(p)
++  const [failed, setFailed] = useState(false)
++  // A refreshed album retries a failed thumbnail even if its path did not change.
++  useEffect(() => setFailed(false), [p])
+   return (
+     <span class={`thumb ${t ? `thumb--turn${t}` : ''}`}>
+-      <img src={fileUrl(p.thumb)} alt={alt} loading={lazy ? 'lazy' : undefined} decoding="async" draggable={false} />
++      {failed ? <span class="thumb__missing" role="img" aria-label={`${p.base}: thumbnail unavailable`} title="Thumbnail unavailable. Reconnect its drive or reopen the album to try again."><ImageOff size={18} aria-hidden="true" /><span>Preview unavailable</span></span> : <img src={fileUrl(p.thumb)} alt={alt} loading={lazy ? 'lazy' : undefined} decoding="async" draggable={false} onError={() => setFailed(true)} />}
+     </span>
+   )
+ }
+diff --git a/native/ui/src/ui/controls.tsx b/native/ui/src/ui/controls.tsx
+index e399ee2..47cf247 100644
+--- a/native/ui/src/ui/controls.tsx
++++ b/native/ui/src/ui/controls.tsx
+@@ -39,19 +39,32 @@ export function IconButton({ label, pressed, children, class: cls, ...rest }: Ic
+ export function Segmented<T extends string>({ label, value, options, onChange }: {
+   label: string
+   value: T
+-  options: { value: T; label: string; title?: string }[]
++  options: { value: T; label: string; title?: string; ariaLabel?: string }[]
+   onChange: (v: T) => void
+ }) {
+   return (
+     <div class="segmented" role="radiogroup" aria-label={label}>
+-      {options.map((o) => (
++      {options.map((o, index) => (
+         <button
++          key={o.value}
+           type="button"
+           role="radio"
+           aria-checked={o.value === value}
++          aria-label={o.ariaLabel}
++          tabIndex={o.value === value || (!options.some(x => x.value === value) && index === 0) ? 0 : -1}
+           class={`segmented__item ${o.value === value ? 'is-on' : ''}`}
+           title={o.title}
+           onClick={() => onChange(o.value)}
++          onKeyDown={(e) => {
++            if (e.altKey || e.metaKey || e.ctrlKey) return
++            const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
++            const next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : step ? (index + step + options.length) % options.length : null
++            if (next === null) return
++            e.preventDefault(); e.stopPropagation()
++            onChange(options[next]!.value)
++            const group = e.currentTarget.parentElement
++            group?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
++          }}
+         >
+           {o.label}
+         </button>
+diff --git a/native/ui/dev/fixtures.mjs b/native/ui/dev/fixtures.mjs
+new file mode 100644
+index 0000000..722da2f
+--- /dev/null
++++ b/native/ui/dev/fixtures.mjs
+@@ -0,0 +1,92 @@
++// Isolated UI acceptance preview. Synthetic data only: no helper, credentials, shell, or disk RPCs.
++// Run from any directory: node native/ui/dev/fixtures.mjs
++import { build } from 'esbuild'
++import { createServer } from 'node:http'
++import { readFileSync } from 'node:fs'
++import { dirname, resolve } from 'node:path'
++import { fileURLToPath } from 'node:url'
++import { validateDefinition, validateReply } from '../../contracts/runtime.js'
++
++const ui = resolve(dirname(fileURLToPath(import.meta.url)), '..')
++const examples = JSON.parse(readFileSync(resolve(ui, '../contracts/examples.json'), 'utf8')).methods
++const buildOptions = { entryPoints: [resolve(ui, 'src/main.tsx')], bundle: true, write: false,
++  outdir: 'dist', format: 'iife', target: 'safari15', jsx: 'automatic', jsxImportSource: 'preact',
++  define: { 'process.env.NODE_ENV': '"development"' } }
++const assets = new Map()
++async function rebuild() {
++  const bundle = await build(buildOptions)
++  for (const file of bundle.outputFiles) assets.set(file.path.split('/').pop(), file.text)
++}
++await rebuild()
++
++function fixture(count) {
++  const album = structuredClone(examples['album.open'][1])
++  album.name = 'Maya & Arjun — Wedding'
++  album.photoFolders = [{ path: '/shoot', name: 'Wedding day', exists: true, hasThumbs: true, count }]
++  album.photos = Object.fromEntries(Array.from({ length: count }, (_, i) => {
++    const id = `photo-${i + 1}`
++    return [id, { id, base: `Wedding_${String(i + 1).padStart(4, '0')}.jpg`, folder: '/shoot',
++      thumb: `/sample/${i % 6}.svg`, original: `/shoot/${id}.jpg`, width: 1800, height: 1200,
++      orient: 'h', usedOn: i < 3 ? [i + 1] : [], rotation: 0 }]
++  }))
++  album.pool = Object.keys(album.photos)
++  album.spreads = Array.from({ length: 3 }, (_, i) => ({ id: `spread_fixture_${i}`, n: i + 1,
++    photoIds: [`photo-${i + 1}`], missingPhotos: 0,
++    template: { id: 'tpl-one', name: '1h0v.psd', h: 1, v: 0, file: '/templates/1h0v.psd', preview: '/sample/0.svg' },
++    proof: '/sample/0.svg', sheet: null, edited: false }))
++  album.stats = { spreads: 3, photos: count, used: 3, planned: 3 }
++  return validateDefinition('Album', album)
++}
++
++createServer(async (req, res) => {
++  const url = new URL(req.url, 'http://localhost')
++  const send = (type, body) => { res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body) }
++  if (url.pathname === '/') {
++    await rebuild()
++    const count = url.searchParams.get('large') === '1' ? 6000 : 36
++    const scenario = url.searchParams.get('scenario') || 'normal'
++    const album = fixture(count)
++    if (scenario === 'missing-thumbs') for (const photo of Object.values(album.photos)) photo.thumb = '/sample/missing.svg'
++    if (scenario === 'empty-plan') { album.spreads = []; album.stats.spreads = 0; album.stats.planned = 0; album.stats.used = 0; for (const p of Object.values(album.photos)) p.usedOn = [] }
++    const data = { album, examples, scenario }
++    const shim = `
++      const fixture = ${JSON.stringify(data).replaceAll('<', '\\u003c')};
++      let storageRequests = 0;
++      window.__asFileBase = '/fixture';
++      window.ipc = { postMessage(text) {
++        const {id,method,params} = JSON.parse(text);
++        let result, error;
++        if (method === 'account.status') result = {state:'allowed',configured:true,bypass:true,daysLeft:999};
++        else if (method === 'album.open') result = fixture.album;
++        else if (method === 'album.recent') {
++          if (fixture.scenario === 'offline') error = 'The album drive is disconnected. Reconnect it and try Refresh.';
++          else result = fixture.scenario === 'empty' ? [] : [{...fixture.examples[method][1][0],name:fixture.album.name,photos:fixture.album.stats.photos,spreads:3}];
++        }
++        else if (method === 'storage.usage' && fixture.scenario === 'storage-error' && storageRequests++ === 0) error = 'Storage could not be measured. Reconnect the drive and try again.';
++        else if (method === 'render.plan') result = {...fixture.examples[method][1],spreads:fixture.album.spreads.map(s=>({n:s.n,id:s.id,state:'missing'}))};
++        else if (method === 'spread.layout') result = {...fixture.examples[method][1], n:params.n, frames:[]};
++        else if (['library.collections','library.templates','folders.inspect','templates.inspect','templates.list','storage.usage','export.plan'].includes(method)) result = fixture.examples[method]?.[1];
++        else if (method === 'shell.log') { console.info('[fixture]',params.kind,params.message); result = null; }
++        else error = 'This synthetic UI preview cannot run '+method+'. No files were changed.';
++        setTimeout(()=>window.__asReply?.({id,ok:!error,...(error?{error,code:'FIXTURE_ONLY'}:{result})}),80);
++      }};
++    `
++    const html = readFileSync(resolve(ui, 'index.html'), 'utf8')
++      .replace("script-src 'self' as:", "script-src 'self' as: 'unsafe-inline'")
++      .replace('<div id="app">', '<aside style="height:24px;background:#18364a;color:#fff;text-align:center;font:12px/24px system-ui">UI test fixture · Synthetic album · No files are written</aside><div id="app" style="height:calc(100% - 24px)">')
++      .replace('<script src="dist/app.js">', `<script>${shim}</script><script src="dist/main.js">`)
++      .replace('dist/app.css', 'dist/main.css')
++    return send('text/html; charset=utf-8', html)
++  }
++  if (/^\/dist\/main\.(js|css)$/.test(url.pathname)) {
++    const name = url.pathname.split('/').pop()
++    return send(name.endsWith('.js') ? 'text/javascript' : 'text/css', assets.get(name))
++  }
++  if (/^\/fixture\/sample\/[0-5]\.svg$/.test(url.pathname)) {
++    return send('image/svg+xml', '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><rect width="600" height="400" fill="#92715d"/><circle cx="180" cy="160" r="90" fill="#d8bc95"/><circle cx="400" cy="190" r="130" fill="#6c7d68"/><path d="M0 400L300 210 600 400" fill="#4b5751"/></svg>')
++  }
++  res.writeHead(404).end()
++}).listen(5191, '127.0.0.1', () => console.log('Synthetic UI preview: http://127.0.0.1:5191/?open=/album (large=1; scenario=empty|offline|storage-error)'))
++
++// Check the ordinary fixture through the same wire validator used in production.
++validateReply('album.open', { id: 1, ok: true, result: fixture(36) })
+diff --git a/native/ui/src/pool_logic.ts b/native/ui/src/pool_logic.ts
+new file mode 100644
+index 0000000..d80b77e
+--- /dev/null
++++ b/native/ui/src/pool_logic.ts
+@@ -0,0 +1,21 @@
++/** Bound the mounted photo grid while keeping selection and search in full album order. */
++export const PHOTO_PAGE_SIZE = 120
++
++export function photoWindow<T extends { base: string }>(photos: readonly T[], query: string, page: number) {
++  const text = query.trim().toLocaleLowerCase()
++  const matches = text ? photos.filter(p => p.base.toLocaleLowerCase().includes(text)) : photos
++  const pages = Math.max(1, Math.ceil(matches.length / PHOTO_PAGE_SIZE))
++  const index = Math.min(pages - 1, Math.max(0, Math.floor(page) || 0))
++  const offset = index * PHOTO_PAGE_SIZE
++  return { matches, pages, index, offset, visible: matches.slice(offset, offset + PHOTO_PAGE_SIZE) }
++}
++
++/** Focus moves without changing the multi-selection; Home/End can reach the entire result. */
++export function photoKeyIndex(key: string, index: number, total: number): number | null {
++  if (!total) return null
++  const next = key === 'Home' ? 0 : key === 'End' ? total - 1
++    : key === 'ArrowRight' || key === 'ArrowDown' ? index + 1
++      : key === 'ArrowLeft' || key === 'ArrowUp' ? index - 1
++        : key === 'PageDown' ? index + PHOTO_PAGE_SIZE : key === 'PageUp' ? index - PHOTO_PAGE_SIZE : null
++  return next === null ? null : Math.max(0, Math.min(total - 1, next))
++}
+diff --git a/native/ui/src/ui/Notifications.tsx b/native/ui/src/ui/Notifications.tsx
+new file mode 100644
+index 0000000..0b022bf
+--- /dev/null
++++ b/native/ui/src/ui/Notifications.tsx
+@@ -0,0 +1,24 @@
++// Keep notifications in the active dialog's top layer, including errors from a folder picker.
++import { CircleAlert, CircleCheck, Info, X } from 'lucide-preact'
++import { createPortal } from 'preact/compat'
++import { useEffect, useState } from 'preact/hooks'
++import { dismissToast, toasts } from '../state'
++
++export function Notifications() {
++  const [host, setHost] = useState<HTMLElement | null>(null)
++  useEffect(() => {
++    const sync = () => setHost([...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].at(-1) ?? document.body)
++    const observer = new MutationObserver(sync)
++    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['open'] })
++    sync()
++    return () => observer.disconnect()
++  }, [])
++  if (!host) return null
++  return createPortal(<div class="toasts" role="region" aria-label="Notifications">
++    {toasts.value.map(t => <div class={`toast toast--${t.kind}`} key={t.id} role={t.kind === 'error' ? 'alert' : 'status'}>
++      <span class="toast__icon" aria-hidden="true">{t.kind === 'error' ? <CircleAlert size={16} /> : t.kind === 'ok' ? <CircleCheck size={16} /> : <Info size={16} />}</span>
++      <span class="toast__text">{t.text}</span>
++      <button type="button" class="icon-btn icon-btn--sm" aria-label={`Dismiss: ${t.text}`} onClick={() => dismissToast(t.id)}><X size={14} /></button>
++    </div>)}
++  </div>, host)
++}
+diff --git a/native/ui/src/ui/keyboard.ts b/native/ui/src/ui/keyboard.ts
+new file mode 100644
+index 0000000..2925be3
+--- /dev/null
++++ b/native/ui/src/ui/keyboard.ts
+@@ -0,0 +1,36 @@
++/** A control keeps its own keys; window commands never act behind a modal dialog. */
++export function isTypingTarget(target: EventTarget | null): boolean {
++  const element = target as HTMLElement | null
++  return !!element && (element.isContentEditable || !!element.closest?.('input, textarea, select, [contenteditable="true"]'))
++}
++
++export function ownsNavigationKeys(target: EventTarget | null): boolean {
++  return !!(target as HTMLElement | null)?.closest?.('button, a, input, textarea, select, summary, [contenteditable="true"], [role="option"], [role="radio"], [role="menuitem"], [role="slider"]')
++}
++
++export function shortcutsSuspended(event: Pick<KeyboardEvent, 'defaultPrevented' | 'isComposing'>, modalOpen: boolean, allowed: boolean): boolean {
++  return event.defaultPrevented || event.isComposing || modalOpen || !allowed
++}
++
++/** WebKit can tab from the last modal control to browser chrome/body. Keep both edges local. */
++export function containDialogTab(event: KeyboardEvent): void {
++  if (event.key !== 'Tab' || event.altKey || event.ctrlKey || event.metaKey || event.defaultPrevented) return
++  const dialog = [...document.querySelectorAll<HTMLDialogElement>('dialog[open]')].at(-1)
++  if (!dialog) return
++  const controls = [...dialog.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex]')].filter(el => {
++    if (el.tabIndex < 0 || el.matches(':disabled') || el.closest('[hidden], [inert]') || !el.getClientRects().length || getComputedStyle(el).visibility !== 'visible') return false
++    if (el instanceof HTMLInputElement && el.type === 'radio' && el.name) {
++      const group = [...dialog.querySelectorAll<HTMLInputElement>('input[type="radio"]')].filter(input => input.name === el.name && !input.matches(':disabled'))
++      return (group.find(input => input.checked) ?? group[0]) === el
++    }
++    return true
++  })
++  const active = document.activeElement
++  const first = controls[0], last = controls.at(-1)
++  if (!first || !dialog.contains(active) || active === dialog || (event.shiftKey ? active === first : active === last)) {
++    event.preventDefault()
++    const target = event.shiftKey ? last : first
++    target?.focus()
++    if (!first) dialog.focus()
++  }
++}
+diff --git a/native/ui/test/contrast.test.ts b/native/ui/test/contrast.test.ts
+new file mode 100644
+index 0000000..bec2954
+--- /dev/null
++++ b/native/ui/test/contrast.test.ts
+@@ -0,0 +1,60 @@
++// Scope: authored tokens and specific text rules, not a whole-app accessibility certification.
++// Oklab inverse matrix: https://bottosson.github.io/posts/oklab/ (public domain).
++// Contrast: https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html
++import test from 'node:test'
++import assert from 'node:assert/strict'
++import { readFileSync } from 'node:fs'
++
++type RGBA = [number, number, number, number]
++const tokens = readFileSync(new URL('../src/styles/tokens.css', import.meta.url), 'utf8')
++const styles = readFileSync(new URL('../src/styles/app.css', import.meta.url), 'utf8')
++const clamp = (v: number) => Math.min(1, Math.max(0, v))
++const encode = (v: number) => v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055
++const linear = (v: number) => v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
++function colour(value: string): RGBA {
++  const [L = 0, C = 0, h = 0, alpha = 1] = value.replace(/oklch\(|\)/g, '').trim().split(/[\s/]+/).map(Number)
++  const a = C * Math.cos(h * Math.PI / 180), b = C * Math.sin(h * Math.PI / 180)
++  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3
++  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3
++  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3
++  return [encode(clamp(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s)),
++    encode(clamp(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s)),
++    encode(clamp(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s)), alpha]
++}
++function over(fg: RGBA, bg: RGBA): RGBA { return [fg[0] * fg[3] + bg[0] * (1 - fg[3]), fg[1] * fg[3] + bg[1] * (1 - fg[3]), fg[2] * fg[3] + bg[2] * (1 - fg[3]), 1] }
++const luminance = (c: RGBA) => 0.2126 * linear(c[0]) + 0.7152 * linear(c[1]) + 0.0722 * linear(c[2])
++function ratio(a: RGBA, b: RGBA) { const x = luminance(a), y = luminance(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05) }
++function rule(selector: string, property: string) {
++  const start = styles.indexOf(`${selector} {`)
++  assert.ok(start >= 0, `Missing ${selector}`)
++  const block = styles.slice(start, styles.indexOf('}', start))
++  const value = new RegExp(`${property}:\\s*([^;]+);`).exec(block)?.[1]
++  assert.ok(value, `Missing ${property} in ${selector}`)
++  return value
++}
++test('contrast calculations retain standard black/white and neutral-grey references', () => {
++  assert.equal(ratio([0, 0, 0, 1], [1, 1, 1, 1]), 21)
++  assert.ok(Math.abs(luminance(colour('oklch(0.5 0 0)')) - 0.125) < 1e-7)
++})
++for (const theme of ['studio-dark', 'studio-light']) {
++  test(`${theme}: content, status, primary actions, and menu text meet 4.5:1`, () => {
++    const start = tokens.indexOf(`[data-theme="${theme}"]`), block = tokens.slice(start, tokens.indexOf('}', start))
++    const palette = new Map([...block.matchAll(/--([a-z0-9-]+):\s*(oklch\([^;]+\));/g)].map(m => [m[1]!, colour(m[2]!)]))
++    const get = (key: string) => { const value = palette.get(key); assert.ok(value, `Missing ${key}`); return value }
++    const resolve = (value: string) => value.startsWith('var(') ? get(value.slice(6, -1)) : colour(value)
++    const failures: string[] = []
++    const check = (label: string, fg: RGBA, bg: RGBA) => { const value = ratio(fg, bg); if (value < 4.5) failures.push(`${label}: ${value.toFixed(3)}:1`) }
++    for (const bg of ['bg-app', 'bg-panel', 'bg-raised', 'bg-hover', 'bg-active', 'bg-well']) {
++      for (const ink of ['ink', 'ink-2', 'ink-3']) check(`${ink}/${bg}`, get(ink), get(bg))
++    }
++    check('primary', get('accent-ink'), get('accent'))
++    check('primary hover', get('accent-ink'), get('accent-hover'))
++    for (const status of ['ok', 'warn', 'danger']) check(`${status} notice`, get(status), over(get(`${status}-soft`), get('bg-raised')))
++    check('inspector keyboard hints', resolve(rule('.insp-hint', 'color')), get('bg-panel'))
++    const hintAlpha = Number(rule('.menu__hint', 'opacity'))
++    check('menu shortcut hints', over([...get('ink').slice(0, 3), hintAlpha] as RGBA, get('bg-raised')), get('bg-raised'))
++    check('focused menu shortcut hints', over([...get('accent-ink').slice(0, 3), hintAlpha] as RGBA, get('accent')), get('accent'))
++    check('danger menu hover', resolve(rule('.menu__item.is-danger:hover:not(:disabled), .menu__item.is-danger:focus-visible', 'color')), get('danger'))
++    assert.deepEqual(failures, [])
++  })
++}
+diff --git a/native/ui/test/keyboard.test.ts b/native/ui/test/keyboard.test.ts
+new file mode 100644
+index 0000000..114b89b
+--- /dev/null
++++ b/native/ui/test/keyboard.test.ts
+@@ -0,0 +1,12 @@
++import test from 'node:test'
++import assert from 'node:assert/strict'
++import { shortcutsSuspended } from '../src/ui/keyboard.ts'
++
++test('a modal, IME composition, consumed event, or locked account cannot trigger global commands', () => {
++  const key = { defaultPrevented: false, isComposing: false }
++  assert.equal(shortcutsSuspended(key, false, true), false)
++  assert.equal(shortcutsSuspended(key, true, true), true)
++  assert.equal(shortcutsSuspended(key, false, false), true)
++  assert.equal(shortcutsSuspended({ ...key, isComposing: true }, false, true), true)
++  assert.equal(shortcutsSuspended({ ...key, defaultPrevented: true }, false, true), true)
++})
+diff --git a/native/ui/test/pool_logic.test.ts b/native/ui/test/pool_logic.test.ts
+new file mode 100644
+index 0000000..69cd62e
+--- /dev/null
++++ b/native/ui/test/pool_logic.test.ts
+@@ -0,0 +1,36 @@
++import test from 'node:test'
++import assert from 'node:assert/strict'
++import { PHOTO_PAGE_SIZE, photoKeyIndex, photoWindow } from '../src/pool_logic.ts'
++
++const photos = Array.from({ length: 6000 }, (_, i) => ({ id: `p${i}`, base: `Wedding_${String(i + 1).padStart(4, '0')}.jpg` }))
++
++test('a 6000-photo shoot has bounded pages with no missing or duplicated photos', () => {
++  const first = photoWindow(photos, '', 0), all = []
++  assert.equal(first.pages, 50); assert.equal(first.visible.length, PHOTO_PAGE_SIZE)
++  for (let page = 0; page < first.pages; page++) {
++    const result = photoWindow(photos, '', page)
++    assert.ok(result.visible.length <= PHOTO_PAGE_SIZE)
++    all.push(...result.visible)
++  }
++  assert.deepEqual(all, photos)
++})
++test('filename search is case insensitive, trims whitespace, and clamps a formerly later page', () => {
++  const result = photoWindow(photos, '  WEDDING_6000  ', 49)
++  assert.deepEqual(result.visible, [photos[5999]])
++  assert.equal(result.index, 0); assert.equal(result.pages, 1)
++  assert.equal(photoWindow(photos, 'missing', 49).visible.length, 0)
++  assert.equal(photoWindow([], '', 0).index, 0)
++  assert.equal(photoWindow(photos, '', -5).index, 0)
++})
++test('keyboard navigation reaches across page boundaries and the whole shoot without wrapping', () => {
++  assert.equal(photoKeyIndex('ArrowRight', 119, 6000), 120)
++  assert.equal(photoKeyIndex('ArrowLeft', 120, 6000), 119)
++  assert.equal(photoKeyIndex('PageDown', 0, 6000), 120)
++  assert.equal(photoKeyIndex('PageUp', 120, 6000), 0)
++  assert.equal(photoKeyIndex('Home', 5999, 6000), 0)
++  assert.equal(photoKeyIndex('End', 0, 6000), 5999)
++  assert.equal(photoKeyIndex('ArrowRight', 5999, 6000), 5999)
++  assert.equal(photoKeyIndex('ArrowUp', 0, 6000), 0)
++  assert.equal(photoKeyIndex('End', 0, 0), null)
++  assert.equal(photoKeyIndex('Enter', 2, 6000), null)
++})
+diff --git a/native/ui/test/state.test.ts b/native/ui/test/state.test.ts
+new file mode 100644
+index 0000000..7af8782
+--- /dev/null
++++ b/native/ui/test/state.test.ts
+@@ -0,0 +1,100 @@
++import test from 'node:test'
++import assert from 'node:assert/strict'
++import { build } from 'esbuild'
++import { readFileSync } from 'node:fs'
++import { fileURLToPath } from 'node:url'
++import type * as State from '../src/state.ts'
++import type { Album } from '../src/types.ts'
++
++const source = fileURLToPath(new URL('../src/state.ts', import.meta.url))
++const bundle = build({ entryPoints: [source], bundle: true, write: false, platform: 'browser', format: 'esm', target: 'es2022' }).then(r => r.outputFiles[0]!.text)
++const examples = JSON.parse(readFileSync(new URL('../../contracts/examples.json', import.meta.url), 'utf8')).methods
++let sequence = 0
++async function fixture(t: test.TestContext) {
++  const previous = globalThis.window
++  const sent: { id: number; method: string }[] = [], timers = new Set<number>()
++  const originalClear = globalThis.clearTimeout.bind(globalThis)
++  t.mock.method(globalThis, 'clearTimeout', (id: ReturnType<typeof setTimeout>) => { timers.delete(Number(id)); originalClear(id) })
++  const window = {
++    ipc: { postMessage(text: string) { sent.push(JSON.parse(text)) } },
++    setTimeout(fn: () => void, ms: number) { const id = Number(setTimeout(() => { timers.delete(id); fn() }, ms)); timers.add(id); return id },
++  } as unknown as Window & typeof globalThis
++  globalThis.window = window
++  const state: typeof State = await import(`data:text/javascript;base64,${Buffer.from(await bundle + `\n// state fixture ${sequence++}`).toString('base64')}`)
++  t.after(() => { for (const id of timers) originalClear(id); globalThis.window = previous })
++  return { state, sent, timers,
++    answer(index: number, result: unknown) { window.__asReply!({ id: sent[index]!.id, ok: true, result }) },
++    fail(index: number, error: string) { window.__asReply!({ id: sent[index]!.id, ok: false, error, code: 'TEST_FAULT' }) },
++  }
++}
++const albumAt = (path: string): Album => ({ ...structuredClone(examples['album.open'][1]), path, name: path, file: `${path}/project.json` })
++
++test('a late album-open response cannot replace the album chosen more recently', async t => {
++  const f = await fixture(t), a = f.state.openAlbum('/A'), b = f.state.openAlbum('/B')
++  f.answer(1, albumAt('/B')); await b
++  f.answer(2, []); await Promise.resolve() // the successful open refreshes recents
++  f.answer(0, albumAt('/A')); await a
++  assert.equal(f.state.album.value?.path, '/B')
++  assert.equal(f.state.place.value, 'plan'); assert.equal(f.state.albumLoading.value, null)
++})
++test('an older failed open neither clears a newer loading state nor displays an unrelated error', async t => {
++  const f = await fixture(t), a = f.state.openAlbum('/A'), b = f.state.openAlbum('/B')
++  f.fail(0, 'A is disconnected'); await a
++  assert.equal(f.state.albumLoading.value, '/B')
++  assert.equal(f.state.albumError.value, null); assert.equal(f.state.toasts.value.length, 0)
++  f.answer(1, albumAt('/B')); await b; f.answer(2, []); await Promise.resolve()
++})
++test('an older recents failure cannot overwrite a successful newer refresh', async t => {
++  const f = await fixture(t), first = f.state.loadRecent(), second = f.state.loadRecent()
++  f.answer(1, examples['album.recent'][1]); await second
++  f.fail(0, 'Old request failed'); await first
++  assert.deepEqual(f.state.recent.value, examples['album.recent'][1])
++  assert.equal(f.state.recentError.value, null); assert.equal(f.state.recentLoading.value, false)
++})
++test('failed and genuinely empty recents remain distinguishable through a retry', async t => {
++  const f = await fixture(t), failed = f.state.loadRecent()
++  f.fail(0, 'The drive is disconnected'); await failed
++  assert.equal(f.state.recentError.value, 'The drive is disconnected')
++  assert.equal(f.state.recentLoading.value, false)
++  const retry = f.state.loadRecent()
++  assert.equal(f.state.recentLoading.value, true)
++  f.answer(1, []); await retry
++  assert.deepEqual(f.state.recent.value, [])
++  assert.equal(f.state.recentError.value, null); assert.equal(f.state.recentLoading.value, false)
++})
++test('actionable errors remain until dismissed even when a caller supplies an expiry', async t => {
++  const f = await fixture(t)
++  f.state.toast('error', 'Reconnect the album drive', 1)
++  assert.equal(f.timers.size, 0); assert.equal(f.state.toasts.value.length, 1)
++  f.state.dismissToast(f.state.toasts.value[0]!.id)
++  assert.equal(f.state.toasts.value.length, 0)
++  f.state.toast('info', 'Spread added', 1000)
++  assert.equal(f.timers.size, 1)
++})
++
++test('a quiet refresh cannot replace an edit applied while the read was pending', async t => {
++  const f = await fixture(t), initial = albumAt('/A')
++  f.state.album.value = initial
++  const refresh = f.state.openAlbumQuietly('/A')
++  f.state.album.value = { ...initial, name: 'A with a newer edit' }
++  f.answer(0, { ...initial, name: 'A before the edit' }); await refresh
++  assert.equal(f.state.album.value.name, 'A with a newer edit')
++})
++test('a quiet refresh belongs to the open context that requested it, including while a new album loads', async t => {
++  const f = await fixture(t), initial = albumAt('/A')
++  f.state.album.value = initial
++  const refresh = f.state.openAlbumQuietly('/A'), open = f.state.openAlbum('/B')
++  f.answer(0, { ...initial, name: 'A from an older context' }); await refresh
++  const nameWhileOpening = f.state.album.value.name
++  f.answer(1, albumAt('/B')); await open; f.answer(2, []); await Promise.resolve()
++  assert.equal(nameWhileOpening, initial.name)
++  assert.equal(f.state.album.value.path, '/B')
++})
++test('out-of-order quiet refreshes cannot replace the newest confirmed result', async t => {
++  const f = await fixture(t), initial = albumAt('/A')
++  f.state.album.value = initial
++  const first = f.state.openAlbumQuietly('/A'), second = f.state.openAlbumQuietly('/A')
++  f.answer(1, { ...initial, name: 'Newest' }); await second
++  f.answer(0, { ...initial, name: 'Older' }); await first
++  assert.equal(f.state.album.value.name, 'Newest')
++})

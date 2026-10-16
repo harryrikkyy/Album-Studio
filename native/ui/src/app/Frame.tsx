@@ -1,13 +1,13 @@
 // Frame.tsx — the window's frame: the top bar (with room for the traffic lights), the rail of
 // places, and the toast stack. The current place renders inside.
 
-import { BookImage, Brush, CircleAlert, CircleCheck, Info, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Settings, Sun, Undo2, Wrench, X } from 'lucide-preact'
+import { BookImage, Brush, LayoutGrid, LayoutTemplate, Library, LoaderCircle, Moon, PackageCheck, Redo2, Settings, Sun, Undo2, Wrench } from 'lucide-preact'
 import type { ComponentChildren } from 'preact'
 import { call, inShell } from '../bridge'
 import { canRedo, canUndo, editing, redo, undo } from '../edit'
 import { plural } from '../format'
 import { editCurrentSpread, job, running } from '../render'
-import { album, dismissToast, place, setTheme, theme, toasts, type Place } from '../state'
+import { album, place, setTheme, theme, type Place } from '../state'
 import { IconButton } from '../ui/controls'
 import { openAlbumSettings } from './AlbumSettings'
 import { openSettings } from './Settings'
@@ -95,6 +95,8 @@ function Rail() {
           <button
             type="button"
             class={`rail__item ${current === p.id ? 'is-current' : ''}`}
+            aria-label={p.label}
+            aria-keyshortcuts={`Meta+${p.key}`}
             aria-current={current === p.id ? 'page' : undefined}
             disabled={disabled}
             title={disabled ? `${p.label} — open an album first` : `${p.label}  ⌘${p.key}`}
@@ -109,32 +111,13 @@ function Rail() {
   )
 }
 
-function Toasts() {
-  const list = toasts.value
-  return (
-    <div class="toasts" role="status" aria-live="polite">
-      {list.map((t) => (
-        <div class={`toast toast--${t.kind}`} key={t.id}>
-          <span class="toast__icon" aria-hidden="true">
-            {t.kind === 'error' ? <CircleAlert size={16} /> : t.kind === 'ok' ? <CircleCheck size={16} /> : <Info size={16} />}
-          </span>
-          <span class="toast__text">{t.text}</span>
-          <button type="button" class="icon-btn icon-btn--sm" aria-label="Dismiss" onClick={() => dismissToast(t.id)}>
-            <X size={14} />
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function Frame({ children }: { children: ComponentChildren }) {
   return (
     <div class="frame">
+      <a class="skip-link" href="#main">Skip to workspace</a>
       <TopBar />
       <Rail />
-      <main class="frame__main" id="main">{children}</main>
-      <Toasts />
+      <main class="frame__main" id="main" tabIndex={-1}>{children}</main>
     </div>
   )
 }

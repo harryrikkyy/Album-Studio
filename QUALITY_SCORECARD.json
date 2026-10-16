@@ -1,6 +1,6 @@
 {
   "rubricVersion": 1,
-  "target": "Architecture strictly >95/100 with evidence, as updated by the user; other category scores retained as historical context.",
+  "target": "UI and workflow >=95/100 with verified evidence, as requested after the user stopped the unfinished architecture mission. Other category scores remain historical context.",
   "scoring": "10 criteria x 10 points. Verified complete =10, verified partial=5, failed/unverified/blocked=0. Critical unresolved defects prohibit certification. No criterion may be removed to increase scores. Scores are acceptance evidence, not the prior subjective audit ratings.",
   "baselineCommit": "81bd5b4",
   "engineCommit": "41a0f464405a1e4e20629de928727815679f5906",
@@ -99,7 +99,7 @@
       "name": "UI and workflow",
       "historicalScore": 7.5,
       "baselineVerifiedScore": 4,
-      "currentScore": 4.5,
+      "currentScore": 5.5,
       "criteria": [
         {
           "id": "1",
@@ -107,7 +107,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Empty-plan first-spread and photo-entry routes now exist;23 synthetic-transport production-web-UI checks pass. Actual Mac create/render/editor/delivery/reopen acceptance remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "2",
@@ -123,7 +123,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Captured-album queued edit/undo/failure regressions pass; actual native workflow remains unverified. See docs/quality/2026-10-13-iteration-2/verification.json."
+          "evidence": "Actual UI-state regressions reject stale album opens, recents, quiet reads and reads preceding a newer edit; three quiet-refresh failures are retained before the fix. Prior backend association/undo evidence remains. Native editor save/reopen and ownership candidate integration remain open. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "4",
@@ -131,7 +131,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Real engine crashes, normal reopening, cancellation and committed-sheet preview failure/regeneration pass at the backend boundary. Actual native interactions remain unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
+          "evidence": "Prior real-engine crash/reopen/cancellation and committed-sheet preview-warning evidence remains. No new native progress/stop/partial-failure interaction is inferred from the browser fixture. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "5",
@@ -139,7 +139,7 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "Manual/foreign/malformed recovery, directory aliases and snapshot preservation report retained paths; full customer/native reconciliation remains unverified. See docs/quality/2026-10-14-iteration-6/verification.json."
+          "evidence": "Persistent errors enter the active modal top layer and survive its closure. Storage/template failures offer retry; missing thumbnails have explicit fallbacks. Native reconciliation, relink and approved retained-history recovery remain incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "6",
@@ -147,15 +147,15 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Shared radios/menus, photo roving focus, keyboard multi-selection, template focus return and background-shortcut isolation pass executed browser checks. All places/native editor/frame-adjustment keyboard acceptance remains incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "7",
           "criterion": "Focus and modal behavior",
           "weight": 10,
-          "points": 0,
-          "status": "unverified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "points": 5,
+          "status": "partial",
+          "evidence": "Previously unverified criterion is now partial: WebKit Tab leakage was reproduced and repaired, dialog Tab/Shift-Tab containment and Escape restoration pass, and narrow-pane/inspector/template focus returns pass. Native app host lookup timed out; busy transitions/all native dialogs remain unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "8",
@@ -163,15 +163,15 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Nested controls were removed from photo options and remain available in the selection toolbar. Authored neutral/status/action/menu text contrast pairs pass both themes after fail-first repairs. Full VoiceOver/composed-screen/native-editor accessibility is not certified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "9",
           "criterion": "Realistic large grid usability",
           "weight": 10,
-          "points": 0,
-          "status": "unverified",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "points": 5,
+          "status": "partial",
+          "evidence": "Previously unverified criterion is now partial: a6000-photo synthetic fixture mounts120 options, has one photo Tab stop, reaches item6000 and searches without losing selection;760x480 photo/template/placement routes pass. SVG fixtures do not certify representative real-photo native memory/latency or drag/drop usability. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         },
         {
           "id": "10",
@@ -179,11 +179,11 @@
           "weight": 10,
           "points": 5,
           "status": "partial",
-          "evidence": "2026-10-13 baseline and prior review; partial means implementation/unit evidence only"
+          "evidence": "Actual browser checks distinguish failed recents from confirmed empty recents; empty plans and missing previews have next steps. Storage retry recovers; stale reads cannot overwrite the current UI. Full native account/drive/backend interruption scope remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
         }
       ],
       "certified": false,
-      "assessment": "Reopening, committed-sheet preview warnings, regeneration and cancellation are backend-tested. Native recovery/ambiguity/relink, focus, accessibility and large-grid workflows remain unverified."
+      "assessment": "UI/workflow55/100 on the unchanged rubric. Focus/modal and large-grid criteria gain partial evidence only. Native end-to-end, editor, VoiceOver, real-corpus and complete recovery acceptance remain unverified; target >=95/100 is unfinished."
     },
     {
       "name": "Testing",
@@ -837,5 +837,42 @@
     "highestPriority": "Bring native editor/standalone saves and related producers under shared revision/ownership/publication rules; complete typed local DTOs, native invalidation and permanent/legacy/global migration.",
     "executionLimit": "No current local execution limit or external blocker; implementation continues. Hosted CI, full native workspace/corpus and supported GUI/migration acceptance remain unverified.",
     "scoringDecision": "All90 criterion names and weights unchanged. Architecture dependency/layering criterion9 gains5 verified points; architecture rises6.5 to7.0. Other scores are retained historical context."
+  },
+  "activeMission": {
+    "category": "UI and workflow",
+    "targetScore": 9.5,
+    "comparison": ">=",
+    "startedDate": "2026-10-16",
+    "architectureMission": "Stopped by user; not complete; source and evidence preserved.",
+    "goalTracker": "Existing architecture entry remains usageLimited. create_goal rejected replacement; no clear tool; Codex-app computer control denied. User can issue /goal clear."
+  },
+  "latestUIAssessment": {
+    "iteration": 1,
+    "evidence": "docs/quality/2026-10-16-ui-iteration-1/verification.json",
+    "previousScore": 4.5,
+    "currentScore": 5.5,
+    "criterionNamesAndWeightsUnchanged": true,
+    "scoreDecision": "Only criteria7 and9 change from0 to5 partial points. All other UI point values and other categories remain unchanged.",
+    "missionComplete": false,
+    "tests": {
+      "shared": 297,
+      "backend": 848,
+      "UI": 61,
+      "total": 1206,
+      "skipped": 0,
+      "failures": 0,
+      "browserFixtureCases": 23
+    },
+    "blockers": [
+      "Native app host lookup timed out after4242.2032 seconds and reset computer-control session. No native end-to-end acceptance pass.",
+      "Old goal cannot be cleared through exposed tools; its app entry needs user /goal clear."
+    ],
+    "remaining": [
+      "Native create/render/editor/delivery/reopen and save-publication candidate integration",
+      "All-place/native-editor keyboard, busy dialogs and handoffs",
+      "VoiceOver and complete composed-screen contrast/names audit",
+      "Representative native large-photo memory/latency and drag/drop",
+      "Complete relink/reconciliation and approved retained-history recovery"
+    ]
   }
 }

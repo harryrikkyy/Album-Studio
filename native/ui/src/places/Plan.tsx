@@ -12,9 +12,9 @@ import { plural, signature, templateLabel } from '../format'
 import { addPhotos, clearSpread, deleteSpread, insertSpread, moveSpread, shuffleTemplate } from '../plan_actions'
 import { slotsOf, templateFits } from '../plan_logic'
 import { editCurrentSpread, sheetStateOf } from '../render'
-import { album, currentSpread, goToSpread, inspectorOpen, nextSpread, spreadIndex, templateBrowserOpen, toggleInspector } from '../state'
+import { album, currentSpread, goToSpread, inspectorOpen, nextSpread, planView, spreadIndex, templateBrowserOpen, toggleInspector } from '../state'
 import type { Spread } from '../types'
-import { Button, IconButton } from '../ui/controls'
+import { Button, IconButton, Segmented } from '../ui/controls'
 import { Menu } from '../ui/Menu'
 import { Inspector } from './plan/Inspector'
 import { Pool } from './plan/Pool'
@@ -32,7 +32,7 @@ function StageHead({ s }: { s: Spread }) {
         <IconButton label="Previous spread (←)" onClick={() => nextSpread(-1)} disabled={spreadIndex.value === 0}>
           <ChevronLeft size={18} />
         </IconButton>
-        <h2 class="stage__title">
+        <h2 class="stage__title" id="spread-heading" tabIndex={-1}>
           Spread {s.n} <span class="stage__of">of {total}</span>
         </h2>
         <IconButton label="Next spread (→)" onClick={() => nextSpread(1)} disabled={spreadIndex.value >= total - 1}>
@@ -76,7 +76,7 @@ function StageHead({ s }: { s: Spread }) {
         <Button variant="primary" icon={<SquarePen size={15} />} onClick={editCurrentSpread} title="Open this spread in the editor (Return)">
           Edit spread
         </Button>
-        <IconButton label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen.value} onClick={toggleInspector}>
+        <IconButton id="inspector-toggle" label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen.value} onClick={toggleInspector}>
           {inspectorOpen.value ? <PanelRightClose size={17} /> : <PanelRight size={17} />}
         </IconButton>
       </div>
@@ -86,9 +86,17 @@ function StageHead({ s }: { s: Spread }) {
 
 function Stage() {
   const s = currentSpread.value
-  if (!s) return <section class="stage" />
+  if (!s) return <section class="stage" aria-label="Empty album plan"><div class="empty">
+    <h1 class="empty__title">Build your first spread</h1>
+    <p class="empty__text">Add a spread, then choose photos and a template. You can undo each change.</p>
+    <div class="empty__actions"><Button id="first-spread-button" variant="primary" icon={<Plus size={15} />} onClick={async () => {
+      await insertSpread(1)
+      requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
+    }}>Add the first spread</Button></div>
+  </div></section>
   return (
     <section class={`stage ${templateBrowserOpen.value ? 'has-browser' : ''}`} aria-label={`Spread ${s.n}`}>
+      <h1 class="visually-hidden">Plan the album</h1>
       <StageHead s={s} />
       <div class="stage__well">
         <SpreadView s={s} />
@@ -185,7 +193,10 @@ function StatusDot({ s }: { s: Spread }) {
 
 export function Plan() {
   return (
-    <div class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'}`}>
+    <div class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'} ${planView.value === 'photos' ? 'is-pool-open' : ''}`}>
+      <div class="plan__view-switch">
+        <Segmented label="Plan view" value={planView.value} onChange={(v) => (planView.value = v)} options={[{ value: 'spread', label: 'Spread' }, { value: 'photos', label: 'Photos' }]} />
+      </div>
       <Pool />
       <Stage />
       <Inspector />

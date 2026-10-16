@@ -4,7 +4,7 @@
 // (the current one when empty, else a new one after it). All collections are a click away.
 
 import { Check, Search, Shuffle, X } from 'lucide-preact'
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks'
 import { fileUrl } from '../../bridge'
 import { autoTemplate, loadTemplates, setAutoTemplate, templates, templatesError } from '../../edit'
 import { plural, signature, templateLabel } from '../../format'
@@ -23,6 +23,14 @@ export function TemplateBrowser() {
   const [text, setText] = useState('')
   const [limit, setLimit] = useState(PAGE)
   const search = useRef<HTMLInputElement>(null)
+  useLayoutEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    search.current?.focus()
+    return () => {
+      if (opener?.isConnected && opener.getClientRects().length) opener.focus()
+      else document.getElementById('spread-heading')?.focus()
+    }
+  }, [])
 
   // The pool's selection, in pool order, when templates are for it.
   const picked = poolSelection.value
@@ -49,7 +57,7 @@ export function TemplateBrowser() {
       class="tpl-browser"
       aria-label="Templates"
       onKeyDown={(e) => {
-        if (e.key === 'Escape') { e.stopPropagation(); close() }
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close() }
       }}
     >
       <header class="tpl-browser__head">
@@ -111,7 +119,7 @@ export function TemplateBrowser() {
       {forSelection ? <p class="tpl-browser__hint">Click a template to put the {plural(selIds.length, 'selected photo')} on {target} with it.</p> : null}
 
       {templatesError.value ? (
-        <p class="notice notice--error" role="alert">{templatesError.value}</p>
+        <div class="notice notice--error" role="alert"><p>{templatesError.value}</p><Button size="sm" onClick={() => void loadTemplates()}>Try loading templates again</Button></div>
       ) : !all ? (
         <ul class="tpl-grid" aria-busy="true">
           {Array.from({ length: 8 }, () => <li class="tpl-card tpl-card--skeleton"><span class="tpl-card__img" /></li>)}

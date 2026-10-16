@@ -4,7 +4,7 @@ import { BookPlus, FolderOpen, HardDrive, ImageIcon, RefreshCw } from 'lucide-pr
 import { useEffect } from 'preact/hooks'
 import { call, fileUrl, inShell } from '../bridge'
 import { plural, relativeTime, shortPath } from '../format'
-import { album, albumLoading, loadRecent, openAlbum, recent, recentError, toast } from '../state'
+import { album, albumLoading, loadRecent, openAlbum, recent, recentError, recentLoading, toast } from '../state'
 import type { RecentAlbum } from '../types'
 import { Button } from '../ui/controls'
 import { NewAlbumDialog, openNewAlbum } from './albums/NewAlbum'
@@ -71,7 +71,7 @@ export function Albums() {
           </p>
         </div>
         <div class="place__actions">
-          <Button variant="ghost" icon={<RefreshCw size={15} />} onClick={() => loadRecent()} disabled={!inShell}>Refresh</Button>
+          <Button variant="ghost" icon={<RefreshCw size={15} />} onClick={() => loadRecent()} busy={recentLoading.value} disabled={!inShell}>Refresh</Button>
           <Button icon={<FolderOpen size={15} />} onClick={pickAndOpen} disabled={!inShell || !!albumLoading.value}>
             Open album…
           </Button>
@@ -84,10 +84,16 @@ export function Albums() {
 
       {recentError.value ? <p class="notice notice--error" role="alert">{recentError.value}</p> : null}
 
-      {list === null ? (
+      {list === null || (!list.length && recentLoading.value) ? (
         <ul class="album-grid" aria-busy="true" aria-label="Loading albums">
           {[0, 1, 2].map(() => <li class="album-card album-card--skeleton" aria-hidden="true"><span class="album-card__cover" /><span class="album-card__body"><span class="sk sk--line" /><span class="sk sk--line sk--short" /></span></li>)}
         </ul>
+      ) : list.length === 0 && recentError.value ? (
+        <div class="empty">
+          <h2 class="empty__title">Recent albums couldn’t be loaded</h2>
+          <p class="empty__text">Try again, or open an album folder directly. The recent list hasn’t been confirmed.</p>
+          <div class="empty__actions"><Button variant="primary" onClick={() => void loadRecent()}>Try again</Button><Button onClick={pickAndOpen}>Open album…</Button></div>
+        </div>
       ) : list.length === 0 ? (
         <div class="empty">
           <h2 class="empty__title">No albums yet</h2>

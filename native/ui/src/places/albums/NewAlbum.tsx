@@ -42,8 +42,8 @@ function ProgressView({ p, name }: { p: Progress | null; name: string }) {
         : `Planning ${plural(p.spreads ?? 0, 'spread')}…`
   return (
     <div class="dialog__body" role="status" aria-live="polite">
-      <h2 class="dialog__title"><BookPlus size={18} /> Creating {name}</h2>
-      <div class="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined}>
+      <h2 id="new-album-title" class="dialog__title"><BookPlus size={18} /> Creating {name}</h2>
+      <div class="progress" role="progressbar" aria-label="Album creation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined}>
         <span class={`progress__bar ${pct === null ? 'is-indeterminate' : ''}`} style={{ width: pct === null ? '35%' : `${pct}%` }} />
       </div>
       <p class="job__line">{line}{p?.stage === 'thumbs' && (p.folders ?? 0) > 1 ? ` (folder ${p.index} of ${p.folders})` : ''}</p>
