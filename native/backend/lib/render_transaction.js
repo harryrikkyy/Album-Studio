@@ -6,78 +6,25 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { isDeepStrictEqual } = require('util')
-const exclusive = require('./exclusive_rename')
 const MAX_CACHE_BYTES = 64 * 1024 * 1024
 const MAX_JOURNAL_BYTES = 65536
 const MAX_SHEET_BYTES = Number.MAX_SAFE_INTEGER // The supported positional file-offset bound, not an in-memory allocation.
-const CHUNK = 1024 * 1024
 const STAGE = /^render-[a-f0-9-]{36}$/
 const SHA = /^[a-f0-9]{64}$/
 const stat = file => fs.promises.lstat(file, { bigint: true }).catch(error => { if (error.code === 'ENOENT') return null; throw error })
-const node = st => ({ dev: String(st.dev), ino: String(st.ino) })
 const sameNode = (a, b) => !!a && !!b && String(a.dev) === String(b.dev) && String(a.ino) === String(b.ino)
-const sameRead = (a, b) => sameNode(a, b) && ['size', 'mtimeNs', 'ctimeNs', 'mode', 'nlink'].every(k => a[k] === b[k])
 const content = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.size
 const matches = (a, b) => content(a, b) && a.stamp === b.stamp
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => new Error(`The ${what} changed during rendering. Existing files and detached recovery snapshots were preserved; review them before retrying.`)
 function stopped(check) { if (check && check()) { const error = new Error('Rendering was cancelled before commit.'); error.code = 'RENDER_CANCELLED'; throw error } }
 
-/** Fixed allocation, declared-length reads, no-follow handle, identity/growth checks. */
-async function readRecord(file, maximum = MAX_SHEET_BYTES, retain = false, sink) {
-  const before = await stat(file)
-  if (!before) return null
-  if (!before.isFile() || before.isSymbolicLink() || before.nlink !== 1n || before.size < 0n || before.size > BigInt(maximum)) throw new Error(`Render file ${file} must be a regular, independent file within the ${maximum}-byte policy. Preserve it before retrying.`)
-  const handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
-  try {
-    const opened = await handle.stat({ bigint: true })
-    if (!sameRead(before, opened)) throw changed('render file')
-    const hash = crypto.createHash('sha256'), buffer = Buffer.alloc(CHUNK), chunks = []
-    let position = 0
-    const length = Number(opened.size)
-    while (position < length) {
-      const { bytesRead } = await handle.read(buffer, 0, Math.min(buffer.length, length - position), position)
-      if (!bytesRead) throw changed('render file length')
-      const bytes = buffer.subarray(0, bytesRead)
-      hash.update(bytes)
-      if (retain) chunks.push(Buffer.from(bytes))
-      if (sink) await sink(bytes, position)
-      position += bytesRead
-    }
-    const extra = await handle.read(buffer, 0, 1, length)
-    const firstEnd = await handle.stat({ bigint: true })
-    if (extra.bytesRead || !sameRead(opened, firstEnd) || !sameRead(firstEnd, await stat(file))) throw changed('render file identity or length')
-    const firstDigest = hash.digest('hex'), check = crypto.createHash('sha256')
-    // HFS timestamps can be coarse enough to miss an in-place A/B/A write. Verify all
-    // bytes again through the same handle before accepting the first pass or its copy.
-    position = 0
-    while (position < length) {
-      const { bytesRead } = await handle.read(buffer, 0, Math.min(buffer.length, length - position), position)
-      if (!bytesRead) throw changed('render file verification length')
-      check.update(buffer.subarray(0, bytesRead)); position += bytesRead
-    }
-    const verificationExtra = await handle.read(buffer, 0, 1, length)
-    const after = await handle.stat({ bigint: true }), named = await stat(file)
-    if (verificationExtra.bytesRead || check.digest('hex') !== firstDigest || !sameRead(opened, after) || !sameRead(after, named)) throw changed('render file content or identity')
-    return { digest: firstDigest, size: String(after.size), stamp: `${after.size}:${Math.round(Number(after.mtimeNs) / 1e6)}`, node: node(after), mode: Number(after.mode) & 0o777, mtimeMs: Number(after.mtimeNs) / 1e6, atimeMs: Number(after.atimeNs) / 1e6, ...(retain ? { bytes: Buffer.concat(chunks, length) } : {}) }
-  } finally { await handle.close() }
-}
+// The same stream/revision primitive will guard native document publication.
+const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Render', changed })
+
+const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
 const fingerprintRenderFile = file => readRecord(file)
 const description = r => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
-async function syncDirectory(folder) {
-  const handle = await fs.promises.open(folder, 'r')
-  try { await handle.sync() } catch (error) {
-    // Directory fsync is unavailable on some removable/network filesystems. This fallback
-    // does not certify hardware power-loss durability on those filesystems.
-    if (!['EINVAL', 'ENOTSUP', 'EOPNOTSUPP', 'ENOSYS', 'EPERM', 'EISDIR'].includes(error.code)) throw error
-  } finally { await handle.close() }
-}
-async function directory(folder, create = false) {
-  if (create) await fs.promises.mkdir(folder, { mode: 0o700 }).catch(error => { if (error.code !== 'EEXIST') throw error })
-  const info = await stat(folder)
-  if (!info || !info.isDirectory() || info.isSymbolicLink() || await fs.promises.realpath(folder) !== folder) throw changed(`render directory ${folder}`)
-  return node(info)
-}
 async function contextOf(p, capabilities) {
   if (!capabilities || typeof capabilities.assertOwned !== 'function' || typeof capabilities.assertOutput !== 'function') throw new Error('Render publication/recovery requires owned project and output capabilities.')
   if (!p || typeof p.albumFile !== 'string' || !path.isAbsolute(p.albumFile) || typeof p.outputFolder !== 'string' || !path.isAbsolute(p.outputFolder)) throw new Error('Render project and output paths must be absolute.')
@@ -90,51 +37,6 @@ async function contextOf(p, capabilities) {
 async function assertContext(c) {
   await c.capabilities.assertOwned(); await c.capabilities.assertOutput(c.logicalOutput)
   if (await fs.promises.realpath(c.logicalOutput) !== c.output || await fs.promises.realpath(c.albumFile) !== c.albumFile || !sameNode(c.outputNode, await directory(c.output)) || !sameNode(c.metadataNode, await directory(c.metadata)) || !sameNode(c.sheetsNode, await directory(c.sheets))) throw changed('project/output capability identity')
-}
-async function writeNew(file, bytes, mode = 0o600) {
-  const handle = await fs.promises.open(file, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0), mode)
-  try { const identity = node(await handle.stat({ bigint: true })); await handle.writeFile(bytes); await handle.sync(); return identity } finally { await handle.close() }
-}
-async function writeCommitPart(stage, bytes, expectedNode) {
-  const file = path.join(stage, 'commit.part.json'), before = await stat(file)
-  if (!before || !before.isFile() || before.nlink !== 1n || before.size !== 0n || !sameNode(before, expectedNode)) throw changed('reserved render commit identity')
-  const handle = await fs.promises.open(file, fs.constants.O_WRONLY | (fs.constants.O_NOFOLLOW || 0))
-  try {
-    if (!sameRead(before, await handle.stat({ bigint: true }))) throw changed('reserved render commit identity')
-    await handle.writeFile(bytes); await handle.chmod(0o400); await handle.sync()
-  } finally { await handle.close() }
-}
-/** Copy into an exclusive private name, never a hard link or a partially visible public file. */
-async function copyDetached(source, target, expected, mode = expected.mode) {
-  const handle = await fs.promises.open(target, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0), mode)
-  try {
-    const copied = await readRecord(source, MAX_SHEET_BYTES, false, async (bytes, position) => {
-      let offset = 0
-      while (offset < bytes.length) {
-        const { bytesWritten } = await handle.write(bytes, offset, bytes.length - offset, position + offset)
-        if (!bytesWritten) throw new Error('The render snapshot could not be written completely.')
-        offset += bytesWritten
-      }
-    })
-    if (!matches(copied, expected)) throw changed('render snapshot source')
-    await handle.chmod(mode); await handle.utimes(expected.atimeMs / 1000, expected.mtimeMs / 1000); await handle.sync()
-    const copiedNode = node(await handle.stat({ bigint: true }))
-    if (!sameNode(copiedNode, await stat(target))) throw changed('detached render snapshot')
-  } finally { await handle.close() }
-  const actual = await readRecord(target)
-  if (!matches(actual, expected)) throw changed('detached render snapshot bytes')
-  return actual
-}
-async function move(from, to, expectedNode) {
-  const before = await stat(from)
-  if (!before) throw new Error(`The render recovery source ${from} is missing.`)
-  if (expectedNode && !sameNode(before, expectedNode)) throw changed('render commit identity before atomic capture')
-  try { await exclusive.renameExclusive(from, to) } catch (error) {
-    // Reconcile a helper timeout only if the exact node has moved and source disappeared.
-    if (await stat(from) || !sameNode(before, await stat(to))) throw error
-  }
-  if (!sameNode(before, await stat(to))) throw changed('atomic render capture')
-  await syncDirectory(path.dirname(from)); if (path.dirname(from) !== path.dirname(to)) await syncDirectory(path.dirname(to))
 }
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage

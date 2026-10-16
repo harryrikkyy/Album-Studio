@@ -1,0 +1,20 @@
+{
+  "base": "41a0f464405a1e4e20629de928727815679f5906",
+  "integrated": false,
+  "status": "Publication foundation: native app123 pass; added actual UI sync/background case and five focused tests pass; Clippy all-targets warnings denied pass. Stale UI source/receipt propagation and other writers/invalidation incomplete.",
+  "files": {
+    "Cargo.lock": "c17b81c101d650c1bc282af9412d2b8c5b22738ca587ba2ed2c6221939b95e75",
+    "apps/album-studio/src/services.rs": "ba376cfcc80d5c9fa1dfc97bd939df306cb1f098e4473ed071b2e42f4b2ca048",
+    "crates/engine/Cargo.toml": "8275118e304eeb7a48b8a7b5daac0c08a636faa15aa5f2dd5b749a495ddfc460",
+    "crates/engine/src/file_cmds.rs": "174c8a982b0f15a7d6e311677559751cf1aa685709aee9cd5c45d43ea9f2d9bf",
+    "crates/engine/src/jobs.rs": "21219d8c78a76aa660d6e38192131f05d1648d3feede82bdd04c9c06d697afca",
+    "crates/engine/src/lib.rs": "631cdb054b6f830f72b68bd3866981e719cfa9700cce93c52a317d11c2534f32",
+    "crates/ui-egui/src/lib.rs": "04e454ca6a53cb4cdff309aac0474d2dee94c7d32f44f6154846359c84efbb7c",
+    "crates/ui-egui/src/save_identity_tests.rs": "92fc8aeab1175c0c13def29eb2994b725eb87afb1a5e7aba9234c99f00e120f2",
+    "apps/album-studio/src/services/album_ownership_tests.rs": "7e7098cbfdb2fb16a544f799ebe397e36b216ebeeb0c2270a7067c64cffd8ca1",
+    "apps/album-studio/src/services/publication.rs": "f65db6eab37c679fb4ca8e05444f244f4d1ac8c3a6201a961de90e5b735f6bcf",
+    "crates/engine/src/source_revision.rs": "630011a71313e9bae1b145aa93c3b5a20c1c5c61b8dcd2f2aa1d486ac1c19935"
+  },
+  "checkpoint": "123b04517bf42f8e181950632520445a4468cbaa",
+  "trackedClean": true
+}

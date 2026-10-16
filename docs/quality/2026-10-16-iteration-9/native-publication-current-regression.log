@@ -1,0 +1,514 @@
+TAP version 13
+# Subtest: commits a native document and companion file with exact detached history and receipts
+ok 1 - commits a native document and companion file with exact detached history and receipts
+  ---
+  duration_ms: 299.938959
+  type: 'test'
+  ...
+# Subtest: requires exact earlier target identity, staged bytes and authority before publication
+ok 2 - requires exact earlier target identity, staged bytes and authority before publication
+  ---
+  duration_ms: 140.211417
+  type: 'test'
+  ...
+# Subtest: rejects duplicate, escaping, reserved and unbounded entry identities
+ok 3 - rejects duplicate, escaping, reserved and unbounded entry identities
+  ---
+  duration_ms: 10.582333
+  type: 'test'
+  ...
+# Subtest: cancellation after installation restores the exact old batch and retains both revisions
+ok 4 - cancellation after installation restores the exact old batch and retains both revisions
+  ---
+  duration_ms: 321.433333
+  type: 'test'
+  ...
+# Subtest: SIGKILL at journal recovers idempotently and keeps detached history
+ok 5 - SIGKILL at journal recovers idempotently and keeps detached history
+  ---
+  duration_ms: 213.303084
+  type: 'test'
+  ...
+# Subtest: SIGKILL at captured recovers idempotently and keeps detached history
+ok 6 - SIGKILL at captured recovers idempotently and keeps detached history
+  ---
+  duration_ms: 339.3055
+  type: 'test'
+  ...
+# Subtest: SIGKILL at installed recovers idempotently and keeps detached history
+ok 7 - SIGKILL at installed recovers idempotently and keeps detached history
+  ---
+  duration_ms: 328.838959
+  type: 'test'
+  ...
+# Subtest: SIGKILL at commit recovers idempotently and keeps detached history
+ok 8 - SIGKILL at commit recovers idempotently and keeps detached history
+  ---
+  duration_ms: 264.520875
+  type: 'test'
+  ...
+# Subtest: SIGKILL at history recovers idempotently and keeps detached history
+ok 9 - SIGKILL at history recovers idempotently and keeps detached history
+  ---
+  duration_ms: 214.975542
+  type: 'test'
+  ...
+# Subtest: recovery refuses a later customer edit and preserves every retained revision
+ok 10 - recovery refuses a later customer edit and preserves every retained revision
+  ---
+  duration_ms: 205.671083
+  type: 'test'
+  ...
+# Subtest: committed recovery preserves subsequent customer edits
+ok 11 - committed recovery preserves subsequent customer edits
+  ---
+  duration_ms: 226.718
+  type: 'test'
+  ...
+# Subtest: a competing manual edit at capture is never overwritten
+ok 12 - a competing manual edit at capture is never overwritten
+  ---
+  duration_ms: 171.658625
+  type: 'test'
+  ...
+# Subtest: a competing manual edit at install is never overwritten
+ok 13 - a competing manual edit at install is never overwritten
+  ---
+  duration_ms: 125.165709
+  type: 'test'
+  ...
+# Subtest: a substituted identical-byte commit inode cannot certify a pending transaction
+ok 14 - a substituted identical-byte commit inode cannot certify a pending transaction
+  ---
+  duration_ms: 157.754042
+  type: 'test'
+  ...
+# Subtest: large document publication streams beyond the metadata buffer limit with bounded allocations
+ok 15 - large document publication streams beyond the metadata buffer limit with bounded allocations
+  ---
+  duration_ms: 2082.841209
+  type: 'test'
+  ...
+# Subtest: a killed two-file publication restores both old revisions before accepting another batch
+ok 16 - a killed two-file publication restores both old revisions before accepting another batch
+  ---
+  duration_ms: 689.634209
+  type: 'test'
+  ...
+# Subtest: target-specific capabilities receive real publication names without a synthetic sentinel
+ok 17 - target-specific capabilities receive real publication names without a synthetic sentinel
+  ---
+  duration_ms: 285.64325
+  type: 'test'
+  ...
+# Subtest: publication parents deduplicate aliases and exclude another writer without adopting files
+ok 18 - publication parents deduplicate aliases and exclude another writer without adopting files
+  ---
+  duration_ms: 439.481833
+  type: 'test'
+  ...
+# Subtest: retargeting an alias invalidates the capability while release preserves the new location
+ok 19 - retargeting an alias invalidates the capability while release preserves the new location
+  ---
+  duration_ms: 223.82425
+  type: 'test'
+  ...
+# Subtest: a hardlinked namespace marker is refused without removing its evidence or customer bytes
+ok 20 - a hardlinked namespace marker is refused without removing its evidence or customer bytes
+  ---
+  duration_ms: 172.787375
+  type: 'test'
+  ...
+# Subtest: standalone publication shares an enclosing managed sheets reservation
+ok 21 - standalone publication shares an enclosing managed sheets reservation
+  ---
+  duration_ms: 659.063
+  type: 'test'
+  ...
+# Subtest: a newly appearing managed scope invalidates an existing standalone capability
+ok 22 - a newly appearing managed scope invalidates an existing standalone capability
+  ---
+  duration_ms: 307.163792
+  type: 'test'
+  ...
+# Subtest: different live projects sharing a sheet root cannot reserve overlapping jobs
+ok 23 - different live projects sharing a sheet root cannot reserve overlapping jobs
+  ---
+  duration_ms: 1456.454708
+  type: 'test'
+  ...
+# Subtest: sibling sheet roots serialize their shared delivery parent
+ok 24 - sibling sheet roots serialize their shared delivery parent
+  ---
+  duration_ms: 987.333417
+  type: 'test'
+  ...
+# Subtest: physical sheet-folder aliases share ownership even when their logical parents differ
+ok 25 - physical sheet-folder aliases share ownership even when their logical parents differ
+  ---
+  duration_ms: 529.04575
+  type: 'test'
+  ...
+# Subtest: album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+ok 26 - album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+  ---
+  duration_ms: 1525.725916
+  type: 'test'
+  ...
+# Subtest: a killed project releases stale output reservations through verified owner recovery
+ok 27 - a killed project releases stale output reservations through verified owner recovery
+  ---
+  duration_ms: 1225.121416
+  type: 'test'
+  ...
+# Subtest: unexpected namespace records fail closed without replacing their bytes
+ok 28 - unexpected namespace records fail closed without replacing their bytes
+  ---
+  duration_ms: 178.065
+  type: 'test'
+  ...
+# Subtest: a namespace symlink cannot edit its referent or acquire an output reservation
+ok 29 - a namespace symlink cannot edit its referent or acquire an output reservation
+  ---
+  duration_ms: 201.156958
+  type: 'test'
+  ...
+# Subtest: a changed private namespace record invalidates a held job and preserves the edit
+ok 30 - a changed private namespace record invalidates a held job and preserves the edit
+  ---
+  duration_ms: 191.116625
+  type: 'test'
+  ...
+# Subtest: render records reject another project and malformed history without changing either project or cache
+ok 31 - render records reject another project and malformed history without changing either project or cache
+  ---
+  duration_ms: 544.935083
+  type: 'test'
+  ...
+# Subtest: export preparation refuses a changed output before inspecting another folder's recovery history
+ok 32 - export preparation refuses a changed output before inspecting another folder's recovery history
+  ---
+  duration_ms: 369.346875
+  type: 'test'
+  ...
+# Subtest: the actual private worker streams bytes, waits for commit and returns exact publication receipt
+ok 33 - the actual private worker streams bytes, waits for commit and returns exact publication receipt
+  ---
+  duration_ms: 616.032625
+  type: 'test'
+  ...
+# Subtest: worker admission respects a managed output lease before accepting any encoded bytes
+ok 34 - worker admission respects a managed output lease before accepting any encoded bytes
+  ---
+  duration_ms: 589.447375
+  type: 'test'
+  ...
+# Subtest: earlier decoder source and exact inode records are checked instead of rebasing onto current bytes
+ok 35 - earlier decoder source and exact inode records are checked instead of rebasing onto current bytes
+  ---
+  duration_ms: 802.023042
+  type: 'test'
+  ...
+# Subtest: parent disconnect at ready cannot publish
+ok 36 - parent disconnect at ready cannot publish
+  ---
+  duration_ms: 249.933667
+  type: 'test'
+  ...
+# Subtest: parent disconnect at partial cannot publish
+ok 37 - parent disconnect at partial cannot publish
+  ---
+  duration_ms: 221.792458
+  type: 'test'
+  ...
+# Subtest: parent disconnect at prepared cannot publish
+ok 38 - parent disconnect at prepared cannot publish
+  ---
+  duration_ms: 245.026084
+  type: 'test'
+  ...
+# Subtest: a manual edit after preparation is preserved with typed recovery metadata
+ok 39 - a manual edit after preparation is preserved with typed recovery metadata
+  ---
+  duration_ms: 277.451042
+  type: 'test'
+  ...
+# Subtest: bad payload hashes and trailing commands fail without publishing
+ok 40 - bad payload hashes and trailing commands fail without publishing
+  ---
+  duration_ms: 628.834667
+  type: 'test'
+  ...
+# Subtest: the real worker accepts a multi-chunk document larger than the GUI JSON frame limit
+ok 41 - the real worker accepts a multi-chunk document larger than the GUI JSON frame limit
+  ---
+  duration_ms: 1221.941125
+  type: 'test'
+  ...
+# Subtest: exact revision checks ignore incidental access time and JSON property order
+ok 42 - exact revision checks ignore incidental access time and JSON property order
+  ---
+  duration_ms: 906.019792
+  type: 'test'
+  ...
+# Subtest: commits exact PSD/cache revisions with detached old and next history
+ok 43 - commits exact PSD/cache revisions with detached old and next history
+  ---
+  duration_ms: 338.684417
+  type: 'test'
+  ...
+# Subtest: first render supports absent sheet and cache without adopting unrelated files
+ok 44 - first render supports absent sheet and cache without adopting unrelated files
+  ---
+  duration_ms: 273.706542
+  type: 'test'
+  ...
+# Subtest: stale cache/project/source revisions and foreign cache ownership preserve all public bytes
+ok 45 - stale cache/project/source revisions and foreign cache ownership preserve all public bytes
+  ---
+  duration_ms: 122.159833
+  type: 'test'
+  ...
+# Subtest: missing capabilities, output substitutions, symlinks and hard-linked sheets fail closed
+ok 46 - missing capabilities, output substitutions, symlinks and hard-linked sheets fail closed
+  ---
+  duration_ms: 75.639917
+  type: 'test'
+  ...
+# Subtest: preserves logical symlink output paths while reserving the physical namespace
+ok 47 - preserves logical symlink output paths while reserving the physical namespace
+  ---
+  duration_ms: 407.874667
+  type: 'test'
+  ...
+# Subtest: manual edits at sheet capture and occupied install names retain exact customer bytes
+ok 48 - manual edits at sheet capture and occupied install names retain exact customer bytes
+  ---
+  duration_ms: 456.930041
+  type: 'test'
+  ...
+# Subtest: ENOSPC before publication and after sheet installation preserves/restores the old pair
+ok 49 - ENOSPC before publication and after sheet installation preserves/restores the old pair
+  ---
+  duration_ms: 482.60725
+  type: 'test'
+  ...
+# Subtest: stop before/during publication rolls back but stop after commit keeps the committed pair
+ok 50 - stop before/during publication rolls back but stop after commit keeps the committed pair
+  ---
+  duration_ms: 517.742292
+  type: 'test'
+  ...
+# Subtest: SIGKILL at journal recovers the exact pending/committed pair idempotently
+ok 51 - SIGKILL at journal recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 213.031333
+  type: 'test'
+  ...
+# Subtest: SIGKILL at sheet-captured recovers the exact pending/committed pair idempotently
+ok 52 - SIGKILL at sheet-captured recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 256.471917
+  type: 'test'
+  ...
+# Subtest: SIGKILL at sheet-installed recovers the exact pending/committed pair idempotently
+ok 53 - SIGKILL at sheet-installed recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 475.117459
+  type: 'test'
+  ...
+# Subtest: SIGKILL at cache-captured recovers the exact pending/committed pair idempotently
+ok 54 - SIGKILL at cache-captured recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 585.757625
+  type: 'test'
+  ...
+# Subtest: SIGKILL at cache-installed recovers the exact pending/committed pair idempotently
+ok 55 - SIGKILL at cache-installed recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 547.432375
+  type: 'test'
+  ...
+# Subtest: SIGKILL at commit recovers the exact pending/committed pair idempotently
+ok 56 - SIGKILL at commit recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 424.420459
+  type: 'test'
+  ...
+# Subtest: SIGKILL at history recovers the exact pending/committed pair idempotently
+ok 57 - SIGKILL at history recovers the exact pending/committed pair idempotently
+  ---
+  duration_ms: 597.982584
+  type: 'test'
+  ...
+# Subtest: pending recovery preserves a manual public edit and a malformed/foreign journal
+ok 58 - pending recovery preserves a manual public edit and a malformed/foreign journal
+  ---
+  duration_ms: 875.616
+  type: 'test'
+  ...
+# Subtest: committed recovery preserves later manual edits and reports commit cleanup failures
+ok 59 - committed recovery preserves later manual edits and reports commit cleanup failures
+  ---
+  duration_ms: 250.258792
+  type: 'test'
+  ...
+# Subtest: streams large PSDs with a fixed read allocation instead of buffering the file
+ok 60 - streams large PSDs with a fixed read allocation instead of buffering the file
+  ---
+  duration_ms: 94.993208
+  type: 'test'
+  ...
+# Subtest: a same-stamp in-place ABA yields mismatched full passes rather than a hybrid accepted digest
+ok 61 - a same-stamp in-place ABA yields mismatched full passes rather than a hybrid accepted digest
+  ---
+  duration_ms: 18.940166
+  type: 'test'
+  ...
+# Subtest: true partial-write and precommit fsync ENOSPC leave a recoverable old pair
+ok 62 - true partial-write and precommit fsync ENOSPC leave a recoverable old pair
+  ---
+  duration_ms: 243.803209
+  type: 'test'
+  ...
+# Subtest: a stop during commit fsync is honoured before the durable marker rename
+ok 63 - a stop during commit fsync is honoured before the durable marker rename
+  ---
+  duration_ms: 162.778875
+  type: 'test'
+  ...
+# Subtest: source validator failure after sheet installation restores the old sheet/cache
+ok 64 - source validator failure after sheet installation restores the old sheet/cache
+  ---
+  duration_ms: 111.374541
+  type: 'test'
+  ...
+# Subtest: cleanup errors before/after history movement keep committed metadata and exact evidence paths
+ok 65 - cleanup errors before/after history movement keep committed metadata and exact evidence paths
+  ---
+  duration_ms: 241.493917
+  type: 'test'
+  ...
+# Subtest: a helper error after a completed exact move is reconciled without duplicate publication
+ok 66 - a helper error after a completed exact move is reconciled without duplicate publication
+  ---
+  duration_ms: 122.322
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at cache-discard can be recovered again without losing either prior revision
+ok 67 - SIGKILL during recovery at cache-discard can be recovered again without losing either prior revision
+  ---
+  duration_ms: 266.294375
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at cache-restored can be recovered again without losing either prior revision
+ok 68 - SIGKILL during recovery at cache-restored can be recovered again without losing either prior revision
+  ---
+  duration_ms: 267.044667
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at sheet-discard can be recovered again without losing either prior revision
+ok 69 - SIGKILL during recovery at sheet-discard can be recovered again without losing either prior revision
+  ---
+  duration_ms: 352.24825
+  type: 'test'
+  ...
+# Subtest: SIGKILL during recovery at sheet-restored can be recovered again without losing either prior revision
+ok 70 - SIGKILL during recovery at sheet-restored can be recovered again without losing either prior revision
+  ---
+  duration_ms: 326.79525
+  type: 'test'
+  ...
+# Subtest: writable/edited detached snapshots and oversized cache inputs fail before changing public files
+ok 71 - writable/edited detached snapshots and oversized cache inputs fail before changing public files
+  ---
+  duration_ms: 337.399375
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at before-exposure cannot become a valid commit
+ok 72 - an exact journal revision change at before-exposure cannot become a valid commit
+  ---
+  duration_ms: 116.837875
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at sheet-installed cannot become a valid commit
+ok 73 - an exact journal revision change at sheet-installed cannot become a valid commit
+  ---
+  duration_ms: 142.805375
+  type: 'test'
+  ...
+# Subtest: an exact journal revision change at commit-flush cannot become a valid commit
+ok 74 - an exact journal revision change at commit-flush cannot become a valid commit
+  ---
+  duration_ms: 171.476542
+  type: 'test'
+  ...
+# Subtest: a wrong-json commit-part substitution fails before the marker can commit
+ok 75 - a wrong-json commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 179.571292
+  type: 'test'
+  ...
+# Subtest: a same-bytes-new-inode commit-part substitution fails before the marker can commit
+ok 76 - a same-bytes-new-inode commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 172.876917
+  type: 'test'
+  ...
+# Subtest: a writable commit-part substitution fails before the marker can commit
+ok 77 - a writable commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 199.14925
+  type: 'test'
+  ...
+# Subtest: a symlink commit-part substitution fails before the marker can commit
+ok 78 - a symlink commit-part substitution fails before the marker can commit
+  ---
+  duration_ms: 111.409667
+  type: 'test'
+  ...
+# Subtest: a pending rollback failure reports existing detached history after successful restoration
+ok 79 - a pending rollback failure reports existing detached history after successful restoration
+  ---
+  duration_ms: 137.352792
+  type: 'test'
+  ...
+# Subtest: a substituted identical-byte committed marker cannot gain restart authority
+ok 80 - a substituted identical-byte committed marker cannot gain restart authority
+  ---
+  duration_ms: 163.526709
+  type: 'test'
+  ...
+# Subtest: the additive commit-node field keeps older version-one committed journals recoverable
+ok 81 - the additive commit-node field keeps older version-one committed journals recoverable
+  ---
+  duration_ms: 173.28975
+  type: 'test'
+  ...
+# Subtest: a stopped job whose rollback meets a manual edit reports recovery required instead of claiming restoration
+ok 82 - a stopped job whose rollback meets a manual edit reports recovery required instead of claiming restoration
+  ---
+  duration_ms: 69.981542
+  type: 'test'
+  ...
+# Subtest: buffered metadata cannot allocate a document-sized buffer and preserves the sparse source
+ok 83 - buffered metadata cannot allocate a document-sized buffer and preserves the sparse source
+  ---
+  duration_ms: 7.56525
+  type: 'test'
+  ...
+# Subtest: a failed descriptor close preserves the primary revision failure and reports the secondary error
+ok 84 - a failed descriptor close preserves the primary revision failure and reports the secondary error
+  ---
+  duration_ms: 3.969208
+  type: 'test'
+  ...
+1..84
+# tests 84
+# suites 0
+# pass 84
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11206.243375

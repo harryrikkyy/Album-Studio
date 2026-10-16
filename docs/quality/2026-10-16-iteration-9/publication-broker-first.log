@@ -1,0 +1,92 @@
+TAP version 13
+# Subtest: the actual private worker streams bytes, waits for commit and returns exact publication receipt
+ok 1 - the actual private worker streams bytes, waits for commit and returns exact publication receipt
+  ---
+  duration_ms: 359.647375
+  type: 'test'
+  ...
+# Subtest: worker admission respects a managed output lease before accepting any encoded bytes
+not ok 2 - worker admission respects a managed output lease before accepting any encoded bytes
+  ---
+  duration_ms: 15094.348917
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/publication_broker.test.js:50:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    null !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/publication_broker.test.js:55:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: earlier decoder source and exact inode records are checked instead of rebasing onto current bytes
+not ok 3 - earlier decoder source and exact inode records are checked instead of rebasing onto current bytes
+  ---
+  duration_ms: 15008.052167
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/publication_broker.test.js:58:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    null !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/publication_broker.test.js:66:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: parent disconnect at ready cannot publish
+ok 4 - parent disconnect at ready cannot publish
+  ---
+  duration_ms: 220.731584
+  type: 'test'
+  ...
+# Subtest: parent disconnect at partial cannot publish
+ok 5 - parent disconnect at partial cannot publish
+  ---
+  duration_ms: 169.465333
+  type: 'test'
+  ...
+# Subtest: parent disconnect at prepared cannot publish
+ok 6 - parent disconnect at prepared cannot publish
+  ---
+  duration_ms: 172.146333
+  type: 'test'
+  ...
+# Subtest: a manual edit after preparation is preserved with typed recovery metadata
+ok 7 - a manual edit after preparation is preserved with typed recovery metadata
+  ---
+  duration_ms: 174.239166
+  type: 'test'
+  ...
+# Subtest: bad payload hashes and trailing commands fail without publishing
+ok 8 - bad payload hashes and trailing commands fail without publishing
+  ---
+  duration_ms: 338.330875
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 6
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31627.7845

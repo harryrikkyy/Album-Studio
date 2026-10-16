@@ -1,0 +1,10 @@
+
+> album-studio@1.0.0 lint
+> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js" "native/contracts/**/*.js"
+
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/verified_file.js
+  57:23  error  Unsafe usage of ThrowStatement  no-unsafe-finally
+
+✖ 1 problem (1 error, 0 warnings)
+

@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: commits a native document and companion file with exact detached history and receipts
+ok 1 - commits a native document and companion file with exact detached history and receipts
+  ---
+  duration_ms: 172.483042
+  type: 'test'
+  ...
+# Subtest: requires exact earlier target identity, staged bytes and authority before publication
+ok 2 - requires exact earlier target identity, staged bytes and authority before publication
+  ---
+  duration_ms: 42.483
+  type: 'test'
+  ...
+# Subtest: rejects duplicate, escaping, reserved and unbounded entry identities
+ok 3 - rejects duplicate, escaping, reserved and unbounded entry identities
+  ---
+  duration_ms: 3.57325
+  type: 'test'
+  ...
+# Subtest: cancellation after installation restores the exact old batch and retains both revisions
+ok 4 - cancellation after installation restores the exact old batch and retains both revisions
+  ---
+  duration_ms: 179.15675
+  type: 'test'
+  ...
+# Subtest: SIGKILL at journal recovers idempotently and keeps detached history
+ok 5 - SIGKILL at journal recovers idempotently and keeps detached history
+  ---
+  duration_ms: 159.866625
+  type: 'test'
+  ...
+# Subtest: SIGKILL at captured recovers idempotently and keeps detached history
+ok 6 - SIGKILL at captured recovers idempotently and keeps detached history
+  ---
+  duration_ms: 225.859416
+  type: 'test'
+  ...
+# Subtest: SIGKILL at installed recovers idempotently and keeps detached history
+ok 7 - SIGKILL at installed recovers idempotently and keeps detached history
+  ---
+  duration_ms: 232.9895
+  type: 'test'
+  ...
+# Subtest: SIGKILL at commit recovers idempotently and keeps detached history
+ok 8 - SIGKILL at commit recovers idempotently and keeps detached history
+  ---
+  duration_ms: 196.37875
+  type: 'test'
+  ...
+# Subtest: SIGKILL at history recovers idempotently and keeps detached history
+ok 9 - SIGKILL at history recovers idempotently and keeps detached history
+  ---
+  duration_ms: 169.503458
+  type: 'test'
+  ...
+# Subtest: recovery refuses a later customer edit and preserves every retained revision
+ok 10 - recovery refuses a later customer edit and preserves every retained revision
+  ---
+  duration_ms: 139.753459
+  type: 'test'
+  ...
+# Subtest: committed recovery preserves subsequent customer edits
+ok 11 - committed recovery preserves subsequent customer edits
+  ---
+  duration_ms: 179.637542
+  type: 'test'
+  ...
+# Subtest: a competing manual edit at capture is never overwritten
+ok 12 - a competing manual edit at capture is never overwritten
+  ---
+  duration_ms: 81.603708
+  type: 'test'
+  ...
+# Subtest: a competing manual edit at install is never overwritten
+ok 13 - a competing manual edit at install is never overwritten
+  ---
+  duration_ms: 75.946417
+  type: 'test'
+  ...
+# Subtest: a substituted identical-byte commit inode cannot certify a pending transaction
+ok 14 - a substituted identical-byte commit inode cannot certify a pending transaction
+  ---
+  duration_ms: 85.19025
+  type: 'test'
+  ...
+# Subtest: publication parents deduplicate aliases and exclude another writer without adopting files
+ok 15 - publication parents deduplicate aliases and exclude another writer without adopting files
+  ---
+  duration_ms: 261.078708
+  type: 'test'
+  ...
+# Subtest: retargeting an alias invalidates the capability while release preserves the new location
+ok 16 - retargeting an alias invalidates the capability while release preserves the new location
+  ---
+  duration_ms: 142.141458
+  type: 'test'
+  ...
+# Subtest: a hardlinked namespace marker is refused without removing its evidence or customer bytes
+ok 17 - a hardlinked namespace marker is refused without removing its evidence or customer bytes
+  ---
+  duration_ms: 117.193958
+  type: 'test'
+  ...
+# Subtest: standalone publication shares an enclosing managed sheets reservation
+ok 18 - standalone publication shares an enclosing managed sheets reservation
+  ---
+  duration_ms: 435.7105
+  type: 'test'
+  ...
+# Subtest: a newly appearing managed scope invalidates an existing standalone capability
+ok 19 - a newly appearing managed scope invalidates an existing standalone capability
+  ---
+  duration_ms: 192.368833
+  type: 'test'
+  ...
+# Subtest: different live projects sharing a sheet root cannot reserve overlapping jobs
+ok 20 - different live projects sharing a sheet root cannot reserve overlapping jobs
+  ---
+  duration_ms: 965.755458
+  type: 'test'
+  ...
+# Subtest: sibling sheet roots serialize their shared delivery parent
+ok 21 - sibling sheet roots serialize their shared delivery parent
+  ---
+  duration_ms: 543.243375
+  type: 'test'
+  ...
+# Subtest: physical sheet-folder aliases share ownership even when their logical parents differ
+ok 22 - physical sheet-folder aliases share ownership even when their logical parents differ
+  ---
+  duration_ms: 389.213875
+  type: 'test'
+  ...
+# Subtest: album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+ok 23 - album cache clearing, export planning and proof refresh cannot mutate a different project-held output root
+  ---
+  duration_ms: 436.338334
+  type: 'test'
+  ...
+# Subtest: a killed project releases stale output reservations through verified owner recovery
+ok 24 - a killed project releases stale output reservations through verified owner recovery
+  ---
+  duration_ms: 359.551834
+  type: 'test'
+  ...
+# Subtest: unexpected namespace records fail closed without replacing their bytes
+ok 25 - unexpected namespace records fail closed without replacing their bytes
+  ---
+  duration_ms: 45.096833
+  type: 'test'
+  ...
+# Subtest: a namespace symlink cannot edit its referent or acquire an output reservation
+ok 26 - a namespace symlink cannot edit its referent or acquire an output reservation
+  ---
+  duration_ms: 43.188417
+  type: 'test'
+  ...
+# Subtest: a changed private namespace record invalidates a held job and preserves the edit
+ok 27 - a changed private namespace record invalidates a held job and preserves the edit
+  ---
+  duration_ms: 97.201
+  type: 'test'
+  ...
+# Subtest: render records reject another project and malformed history without changing either project or cache
+ok 28 - render records reject another project and malformed history without changing either project or cache
+  ---
+  duration_ms: 319.010833
+  type: 'test'
+  ...
+# Subtest: export preparation refuses a changed output before inspecting another folder's recovery history
+ok 29 - export preparation refuses a changed output before inspecting another folder's recovery history
+  ---
+  duration_ms: 250.03725
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3567.245166

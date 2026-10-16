@@ -1081,3 +1081,69 @@ invalidation after commit. Do not serialize an entire edit session under a perma
 silently reduce supported save features. Global/permanent/legacy ownership and migration still
 need executable acceptance. There is no current local execution limit or external blocker;
 the goal remains active and unachieved.
+
+## Iteration 9 — in progress: native document publication ownership
+
+Resumed from root6362dcacc52c1703d0ae23caabde5a5ae4c743ee and pinned engine41a0f46;
+all640 iteration8 manifest hashes verified before these edits. Architecture remains7.0/10.
+A real native Services::write regression now proves that a sheet is overwritten while a
+disposable Node process owns both project and output capabilities. The failing test and exact
+before/after bytes are retained in iteration9 native-save-owner-verified-bytes.log. This is
+an unresolved production defect, not a passed requirement. No customer files were used.
+
+The isolated candidate now retains SHA-256/length of the actual decoder input in both sync
+and background imports. Engine library1077 pass,11 existing benchmark/timing cases ignored;
+UI save-identity selection5 pass. Neither result certifies filesystem identity, write
+authority, last-published receipts, full workspace or GUI acceptance. These candidate changes
+are not yet in the shipping pin. The original shipping checkout remains at41a0f46.
+
+The streaming verified-file reader was extracted from render publication with unchanged
+identity/content checks and an explicit64MiB buffered-metadata bound. Focused42 pass and the
+full strict gate297 shared+801 backend+46 UI=1144 pass,0 fail/cancel/skip. A first extraction
+failure from removing a still-used helper and an initial lint failure remain retained.
+
+Namespace capabilities are now separated from the output/project adapter. File-publication
+parent reservation rejects competing writers, alias retargeting and hardlinked markers.
+All13 focused namespace/output-isolation tests, lint and architecture checks pass. The1144
+gate predates namespace extraction and does not certify it. These primitives alone do not
+close native ownership: the publication actor must hold shared output/project capabilities
+and perform the actual I/O; source proof, compare-and-publish, durable recovery, invalidation
+and all native write paths remain to implement and verify. User folders docs/reviews/ and
+invoice-template/ and prior evidence/binaries remain untouched. No external blocker exists.
+
+Iteration9 continuation: shared publication I/O retains the42 passing render/reader
+regressions. A new same-directory compare-and-publish transaction passes16 tests, including
+real SIGKILL recovery, two-file rollback, manual-edit preservation, stale inode rejection and
+a65MiB+1 streaming case. The actual private stdio publication worker passes8 boundary tests.
+The namespace/output/publication focus passed29 before the last two batch cases. Initial
+missing-helper test configuration, lint issues and worker failed-admission pipe lifetime
+failures remain retained alongside repairs. Lint/architecture pass at their named checkpoint.
+
+The native service adapter is compiling/testing in session45386; this is not yet a passed
+native regression or an integrated pin. Candidate WIP patch includes new native files and
+hashes. The adapter currently uses explicit interactive overwrite expectation; actual earlier
+source/receipt propagation, bundled CLI environment, structured native result metadata and
+remaining writer/invalidation/migration paths still need implementation. The iteration9 README
+records exact next executable steps. Architecture remains7.0 and uncertified; no external
+blocker has been encountered and no category score has been inflated.
+
+Iteration9 verified publication-foundation checkpoint: the reproduced actual native writer
+ownership failure now passes. Full native app123/123 passes; the subsequently added actual
+headless UI synchronous/background save case passes with all5 focused ownership cases
+(124 candidate tests in total,119 filtered in that run). Successful writes, cancellation
+after preparation, dead-child-only retry and earlier-source worker refusal are executed.
+Bundled CLI environment discovery was corrected; installed-app acceptance is not inferred.
+Native app Clippy all targets with warnings denied passes, retaining block0.1.6 future warning.
+
+The complete current strict gate passes297 shared+835 backend+46 UI=1178, zero fail/cancel/skip.
+Lint/type checks/UI build pass; UI output248.6KiB JS/54.5KiB CSS. The new default native adapter
+still uses interactive overwrite; earlier source/last-published receipts must be propagated
+through actual UI paths before stale-editor protection is claimed. Source/receipt/identity
+authority remain distinct. No pin/bundle/clean shipping checkout advancement yet. The refreshed
+WIP patch and hashes include all new native files. Architecture remains7.0/10, uncertified.
+
+Isolated foundation source is saved at123b04517bf42f8e181950632520445a4468cbaa, tracked
+clean, with a verified incremental native-publication.bundle requiring41a0f46. The shipping
+pin remains41a0f46. Iteration9 verification.json records265 root source hashes,48 artifacts
+and385 retained prior artifact/executable/pilot hashes; all385 are unchanged. Candidate
+source hashes and the complete41a-to-foundation patch are retained separately.

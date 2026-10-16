@@ -1,0 +1,4706 @@
+
+> album-studio@1.0.0 check:architecture
+> node native/scripts/check-architecture.mjs
+
+{
+  "ok": true,
+  "sourceRoot": "/Volumes/Harry/works/albumStudio-photocraft",
+  "files": [
+    "native/backend/lib/account.js",
+    "native/backend/lib/album.js",
+    "native/backend/lib/autofill.js",
+    "native/backend/lib/cache.js",
+    "native/backend/lib/color.js",
+    "native/backend/lib/deliver.js",
+    "native/backend/lib/delivery_transaction.js",
+    "native/backend/lib/exclusive_rename.js",
+    "native/backend/lib/file_publication.js",
+    "native/backend/lib/identity.js",
+    "native/backend/lib/inputs.js",
+    "native/backend/lib/jobs.js",
+    "native/backend/lib/jpeg_size.js",
+    "native/backend/lib/json_lines.js",
+    "native/backend/lib/labnaming.js",
+    "native/backend/lib/library.js",
+    "native/backend/lib/namespace_lock.js",
+    "native/backend/lib/newalbum.js",
+    "native/backend/lib/output_lock.js",
+    "native/backend/lib/output_paths.js",
+    "native/backend/lib/parity.js",
+    "native/backend/lib/pdf.js",
+    "native/backend/lib/photocraft.js",
+    "native/backend/lib/picks.js",
+    "native/backend/lib/preflight.js",
+    "native/backend/lib/print_settings.js",
+    "native/backend/lib/private_stage.js",
+    "native/backend/lib/project.js",
+    "native/backend/lib/project_domain.js",
+    "native/backend/lib/project_lock.js",
+    "native/backend/lib/project_transaction.js",
+    "native/backend/lib/proofs.js",
+    "native/backend/lib/protocol_writer.js",
+    "native/backend/lib/psd_template.js",
+    "native/backend/lib/publication_broker.js",
+    "native/backend/lib/publication_io.js",
+    "native/backend/lib/raw.js",
+    "native/backend/lib/recent.js",
+    "native/backend/lib/render.js",
+    "native/backend/lib/render_inputs.js",
+    "native/backend/lib/render_recipe.js",
+    "native/backend/lib/render_transaction.js",
+    "native/backend/lib/sheet.js",
+    "native/backend/lib/sheets.js",
+    "native/backend/lib/source_roots.js",
+    "native/backend/lib/storage.js",
+    "native/backend/lib/template_check.js",
+    "native/backend/lib/templates.js",
+    "native/backend/lib/thumbs.js",
+    "native/backend/lib/verified_file.js",
+    "native/backend/methods.js",
+    "native/backend/server.js",
+    "native/contracts/runtime.d.ts",
+    "native/contracts/runtime.js",
+    "native/contracts/types.ts",
+    "native/ui/src/account.ts",
+    "native/ui/src/account_logic.ts",
+    "native/ui/src/album_queue.ts",
+    "native/ui/src/app/About.tsx",
+    "native/ui/src/app/AlbumSettings.tsx",
+    "native/ui/src/app/Frame.tsx",
+    "native/ui/src/app/Settings.tsx",
+    "native/ui/src/app/SignIn.tsx",
+    "native/ui/src/bridge.ts",
+    "native/ui/src/delivery_logic.ts",
+    "native/ui/src/dnd.ts",
+    "native/ui/src/edit.ts",
+    "native/ui/src/env.d.ts",
+    "native/ui/src/exporting.ts",
+    "native/ui/src/format.ts",
+    "native/ui/src/job_report.ts",
+    "native/ui/src/lab_naming.ts",
+    "native/ui/src/main.tsx",
+    "native/ui/src/picks_logic.ts",
+    "native/ui/src/places/Albums.tsx",
+    "native/ui/src/places/Deliver.tsx",
+    "native/ui/src/places/Library.tsx",
+    "native/ui/src/places/Pending.tsx",
+    "native/ui/src/places/Plan.tsx",
+    "native/ui/src/places/Review.tsx",
+    "native/ui/src/places/Tools.tsx",
+    "native/ui/src/places/albums/NewAlbum.tsx",
+    "native/ui/src/places/plan/AutoFill.tsx",
+    "native/ui/src/places/plan/FrameAdjust.tsx",
+    "native/ui/src/places/plan/Inspector.tsx",
+    "native/ui/src/places/plan/Pool.tsx",
+    "native/ui/src/places/plan/SpreadView.tsx",
+    "native/ui/src/places/plan/TemplateBrowser.tsx",
+    "native/ui/src/places/tools/BestPicks.tsx",
+    "native/ui/src/places/tools/LabNaming.tsx",
+    "native/ui/src/plan_actions.ts",
+    "native/ui/src/plan_logic.ts",
+    "native/ui/src/render.ts",
+    "native/ui/src/state.ts",
+    "native/ui/src/types.ts",
+    "native/ui/src/ui/Menu.tsx",
+    "native/ui/src/ui/Thumb.tsx",
+    "native/ui/src/ui/controls.tsx",
+    "src/curation.js",
+    "src/editor_geometry.js",
+    "src/firebase_auth.js",
+    "src/license.js",
+    "src/license_signing.js",
+    "src/main/firestore_rest.js",
+    "src/overlay_ps.js",
+    "src/overlay_render.js",
+    "src/proof_renderer.js",
+    "src/psd_layers.js",
+    "src/renderer_pure.js",
+    "src/shared/domain.d.ts",
+    "src/sharp_config.js",
+    "src/shortcut_target.js",
+    "src/ui_icons.js"
+  ],
+  "edges": [
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "http",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "./recent",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/recent.js"
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "../../../src/firebase_auth",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/firebase_auth.js"
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "../../../src/license",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/license.js"
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "../../../src/main/firestore_rest",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/main/firestore_rest.js"
+    },
+    {
+      "from": "native/backend/lib/account.js",
+      "spec": "node-machine-id",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./jpeg_size",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jpeg_size.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./project_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_lock.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./source_roots",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/source_roots.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./templates",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/templates.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./identity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/identity.js"
+    },
+    {
+      "from": "native/backend/lib/album.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/autofill.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/autofill.js",
+      "spec": "../../../src/renderer_pure",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/renderer_pure.js"
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/cache.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "zlib",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "./photocraft",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/photocraft.js"
+    },
+    {
+      "from": "native/backend/lib/color.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./pdf",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/pdf.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./sheet",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheet.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./render_inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_inputs.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./jobs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jobs.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./preflight",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/preflight.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./print_settings",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/print_settings.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "./delivery_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/delivery_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/deliver.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/delivery_transaction.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/delivery_transaction.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/delivery_transaction.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/delivery_transaction.js",
+      "spec": "util",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/delivery_transaction.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/exclusive_rename.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/exclusive_rename.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/exclusive_rename.js",
+      "spec": "./photocraft",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/photocraft.js"
+    },
+    {
+      "from": "native/backend/lib/file_publication.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/file_publication.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/file_publication.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/file_publication.js",
+      "spec": "./verified_file",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/verified_file.js"
+    },
+    {
+      "from": "native/backend/lib/file_publication.js",
+      "spec": "./publication_io",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/publication_io.js"
+    },
+    {
+      "from": "native/backend/lib/identity.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/identity.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/identity.js",
+      "spec": "url",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/identity.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/inputs.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/inputs.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "./project_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_lock.js"
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/jobs.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/jpeg_size.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/labnaming.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "./recent",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/recent.js"
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "./templates",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/templates.js"
+    },
+    {
+      "from": "native/backend/lib/library.js",
+      "spec": "./recent",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/recent.js"
+    },
+    {
+      "from": "native/backend/lib/namespace_lock.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/namespace_lock.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/namespace_lock.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/namespace_lock.js",
+      "spec": "./project_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_lock.js"
+    },
+    {
+      "from": "native/backend/lib/namespace_lock.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./identity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/identity.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./recent",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/recent.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./templates",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/templates.js"
+    },
+    {
+      "from": "native/backend/lib/newalbum.js",
+      "spec": "./thumbs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/thumbs.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./namespace_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/namespace_lock.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./render_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/output_lock.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/output_paths.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/output_paths.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "./photocraft",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/photocraft.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "ag-psd",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "../../../src/overlay_render",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_render.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "../../../src/overlay_ps",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_ps.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "../../../src/proof_renderer",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/proof_renderer.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/parity.js",
+      "spec": "../../../src/proof_renderer",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/proof_renderer.js"
+    },
+    {
+      "from": "native/backend/lib/pdf.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/pdf.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/pdf.js",
+      "spec": "./jpeg_size",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jpeg_size.js"
+    },
+    {
+      "from": "native/backend/lib/pdf.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/pdf.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/photocraft.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/photocraft.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/photocraft.js",
+      "spec": "readline",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "./thumbs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/thumbs.js"
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/picks.js",
+      "spec": "../../../src/curation",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/curation.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./psd_template",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/psd_template.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./sheet",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheet.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./print_settings",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/print_settings.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/preflight.js",
+      "spec": "ag-psd",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/print_settings.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/private_stage.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/private_stage.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/private_stage.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/private_stage.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/private_stage.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./project_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_lock.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./identity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/identity.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./autofill",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/autofill.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./template_check",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/template_check.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./templates",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/templates.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./project_domain",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_domain.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./jobs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jobs.js"
+    },
+    {
+      "from": "native/backend/lib/project.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/project_domain.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/project_lock.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/project_transaction.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_transaction.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_transaction.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/project_transaction.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./psd_template",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/psd_template.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "../../../src/proof_renderer",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/proof_renderer.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "../../../src/psd_layers",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/psd_layers.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "../../../src/overlay_render",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_render.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/proofs.js",
+      "spec": "./render_inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_inputs.js"
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "ag-psd",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/psd_template.js",
+      "spec": "../../../src/proof_renderer",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/proof_renderer.js"
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "util",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "./namespace_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/namespace_lock.js"
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "./file_publication",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/file_publication.js"
+    },
+    {
+      "from": "native/backend/lib/publication_broker.js",
+      "spec": "./publication_io",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/publication_io.js"
+    },
+    {
+      "from": "native/backend/lib/publication_io.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_io.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/publication_io.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/raw.js",
+      "spec": "./jpeg_size",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jpeg_size.js"
+    },
+    {
+      "from": "native/backend/lib/recent.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/recent.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/recent.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "child_process",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./render_inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_inputs.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./render_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./photocraft",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/photocraft.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./proofs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/proofs.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./parity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/parity.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./sheet",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheet.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./sheets",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/sheets.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./jobs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/jobs.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./preflight",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/preflight.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./print_settings",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/print_settings.js"
+    },
+    {
+      "from": "native/backend/lib/render.js",
+      "spec": "./album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/lib/render_inputs.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/render_inputs.js",
+      "spec": "./render_recipe",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_recipe.js"
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "util",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "./verified_file",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/verified_file.js"
+    },
+    {
+      "from": "native/backend/lib/render_transaction.js",
+      "spec": "./publication_io",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/publication_io.js"
+    },
+    {
+      "from": "native/backend/lib/sheet.js",
+      "spec": "./photocraft",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/photocraft.js"
+    },
+    {
+      "from": "native/backend/lib/sheet.js",
+      "spec": "./parity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/parity.js"
+    },
+    {
+      "from": "native/backend/lib/sheet.js",
+      "spec": "./print_settings",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/print_settings.js"
+    },
+    {
+      "from": "native/backend/lib/sheet.js",
+      "spec": "./render_recipe",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render_recipe.js"
+    },
+    {
+      "from": "native/backend/lib/sheets.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/sheets.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/sheets.js",
+      "spec": "./inputs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/inputs.js"
+    },
+    {
+      "from": "native/backend/lib/sheets.js",
+      "spec": "./project_transaction",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project_transaction.js"
+    },
+    {
+      "from": "native/backend/lib/source_roots.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/source_roots.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/source_roots.js",
+      "spec": "./identity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/identity.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./output_paths",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_paths.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./private_stage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/private_stage.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/lib/storage.js",
+      "spec": "./output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "./color",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/color.js"
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "ag-psd",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/template_check.js",
+      "spec": "./psd_template",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/psd_template.js"
+    },
+    {
+      "from": "native/backend/lib/templates.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/templates.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/templates.js",
+      "spec": "./identity",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/identity.js"
+    },
+    {
+      "from": "native/backend/lib/templates.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/templates.js",
+      "spec": "./source_roots",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/source_roots.js"
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "./cache",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/cache.js"
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "./exclusive_rename",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/exclusive_rename.js"
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "../../../src/sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "native/backend/lib/thumbs.js",
+      "spec": "./raw",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/raw.js"
+    },
+    {
+      "from": "native/backend/lib/verified_file.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/lib/verified_file.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/account",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/account.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/album",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/album.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/newalbum",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/newalbum.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/project",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/project.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/proofs",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/proofs.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/recent",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/recent.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/deliver",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/deliver.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/render",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/render.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/library",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/library.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/labnaming",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/labnaming.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/picks",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/picks.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/storage",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/storage.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/templates",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/templates.js"
+    },
+    {
+      "from": "native/backend/methods.js",
+      "spec": "./lib/output_lock",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/output_lock.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "util",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "./lib/json_lines",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/json_lines.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "./lib/protocol_writer",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/protocol_writer.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "../contracts/runtime",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/contracts/runtime.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "./lib/account",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/account.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "./methods",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/methods.js"
+    },
+    {
+      "from": "native/backend/server.js",
+      "spec": "./lib/publication_broker",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/backend/lib/publication_broker.js"
+    },
+    {
+      "from": "native/contracts/runtime.d.ts",
+      "spec": "./types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/contracts/runtime.js",
+      "spec": "./contract-manifest.json",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/contracts/contract-manifest.json"
+    },
+    {
+      "from": "native/contracts/runtime.js",
+      "spec": "./album-studio.schema.json",
+      "runtime": true,
+      "kind": "require",
+      "target": "native/contracts/album-studio.schema.json"
+    },
+    {
+      "from": "native/ui/src/account.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/account.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/account.ts",
+      "spec": "./account_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account_logic.ts"
+    },
+    {
+      "from": "native/ui/src/account.ts",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/app/About.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/About.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/About.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/About.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/app/AlbumSettings.tsx",
+      "spec": "../../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "preact",
+      "runtime": false,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "./AlbumSettings",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/AlbumSettings.tsx"
+    },
+    {
+      "from": "native/ui/src/app/Frame.tsx",
+      "spec": "./Settings",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/Settings.tsx"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../account",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../account_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account_logic.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../../../contracts/runtime.js",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/contracts/runtime.js"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../exporting",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/exporting.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/app/Settings.tsx",
+      "spec": "../../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/app/SignIn.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/app/SignIn.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/app/SignIn.tsx",
+      "spec": "../account",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account.ts"
+    },
+    {
+      "from": "native/ui/src/app/SignIn.tsx",
+      "spec": "../account_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account_logic.ts"
+    },
+    {
+      "from": "native/ui/src/app/SignIn.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/bridge.ts",
+      "spec": "../../contracts/runtime.js",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/contracts/runtime.js"
+    },
+    {
+      "from": "native/ui/src/bridge.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/dnd.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/dnd.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./album_queue",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/album_queue.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "./types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/edit.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "./format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "./job_report",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/job_report.ts"
+    },
+    {
+      "from": "native/ui/src/exporting.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/job_report.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./account",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/account.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./app/SignIn",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/SignIn.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./app/About",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/About.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./app/AlbumSettings",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/AlbumSettings.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./app/Settings",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/Settings.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/plan/AutoFill",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/AutoFill.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./app/Frame",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/app/Frame.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Albums",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Albums.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Deliver",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Deliver.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Pending",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Pending.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Plan",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Plan.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Review",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Review.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Tools",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Tools.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/Library",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/Library.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./places/albums/NewAlbum",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/albums/NewAlbum.tsx"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./styles/tokens.css",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/styles/tokens.css"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./styles/base.css",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/styles/base.css"
+    },
+    {
+      "from": "native/ui/src/main.tsx",
+      "spec": "./styles/app.css",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/styles/app.css"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Albums.tsx",
+      "spec": "./albums/NewAlbum",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/albums/NewAlbum.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../delivery_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/delivery_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../job_report",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/job_report.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../exporting",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/exporting.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Deliver.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../exporting",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/exporting.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../plan_logic",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Library.tsx",
+      "spec": "../../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/Pending.tsx",
+      "spec": "../state",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../dnd",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/dnd.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "../ui/Menu",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/Menu.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "./plan/Inspector",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/Inspector.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "./plan/Pool",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/Pool.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "./plan/SpreadView",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/SpreadView.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Plan.tsx",
+      "spec": "./plan/TemplateBrowser",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/TemplateBrowser.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Review.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Review.tsx",
+      "spec": "../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/Review.tsx",
+      "spec": "../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/Review.tsx",
+      "spec": "../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/Tools.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Tools.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Tools.tsx",
+      "spec": "preact",
+      "runtime": false,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/Tools.tsx",
+      "spec": "./tools/BestPicks",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/tools/BestPicks.tsx"
+    },
+    {
+      "from": "native/ui/src/places/Tools.tsx",
+      "spec": "./tools/LabNaming",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/tools/LabNaming.tsx"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/albums/NewAlbum.tsx",
+      "spec": "../../../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "../../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/AutoFill.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/FrameAdjust.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/FrameAdjust.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/FrameAdjust.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/FrameAdjust.tsx",
+      "spec": "../../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/FrameAdjust.tsx",
+      "spec": "../../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../dnd",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/dnd.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../render",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/render.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/Inspector.tsx",
+      "spec": "../../ui/Thumb",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/Thumb.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../dnd",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/dnd.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "../../ui/Thumb",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/Thumb.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/Pool.tsx",
+      "spec": "./AutoFill",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/AutoFill.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../dnd",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/dnd.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "../../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/SpreadView.tsx",
+      "spec": "./FrameAdjust",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/FrameAdjust.tsx"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../plan_actions",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_actions.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/plan/TemplateBrowser.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../picks_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/picks_logic.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../plan/AutoFill",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/places/plan/AutoFill.tsx"
+    },
+    {
+      "from": "native/ui/src/places/tools/BestPicks.tsx",
+      "spec": "../../../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "lucide-preact",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "../../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "../../format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "../../lab_naming",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/lab_naming.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "../../state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/places/tools/LabNaming.tsx",
+      "spec": "../../ui/controls",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/ui/controls.tsx"
+    },
+    {
+      "from": "native/ui/src/plan_actions.ts",
+      "spec": "./edit",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/edit.ts"
+    },
+    {
+      "from": "native/ui/src/plan_actions.ts",
+      "spec": "./format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/plan_actions.ts",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/plan_actions.ts",
+      "spec": "./types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/plan_logic.ts",
+      "spec": "./types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "./format",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/format.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "./exporting",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/exporting.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "./state",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/state.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "./job_report",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/job_report.ts"
+    },
+    {
+      "from": "native/ui/src/render.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/state.ts",
+      "spec": "@preact/signals",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/state.ts",
+      "spec": "./bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/state.ts",
+      "spec": "./types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/types.ts",
+      "spec": "../../contracts/types",
+      "runtime": false,
+      "kind": "export",
+      "target": "native/contracts/types.ts"
+    },
+    {
+      "from": "native/ui/src/ui/Menu.tsx",
+      "spec": "preact",
+      "runtime": false,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/ui/Menu.tsx",
+      "spec": "preact/hooks",
+      "runtime": true,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "native/ui/src/ui/Thumb.tsx",
+      "spec": "../bridge",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/bridge.ts"
+    },
+    {
+      "from": "native/ui/src/ui/Thumb.tsx",
+      "spec": "../plan_logic",
+      "runtime": true,
+      "kind": "import",
+      "target": "native/ui/src/plan_logic.ts"
+    },
+    {
+      "from": "native/ui/src/ui/Thumb.tsx",
+      "spec": "../types",
+      "runtime": false,
+      "kind": "import",
+      "target": "native/ui/src/types.ts"
+    },
+    {
+      "from": "native/ui/src/ui/controls.tsx",
+      "spec": "preact",
+      "runtime": false,
+      "kind": "import",
+      "target": null
+    },
+    {
+      "from": "src/curation.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/curation.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/curation.js",
+      "spec": "./sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "src/firebase_auth.js",
+      "spec": "https",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/firebase_auth.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/firebase_auth.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/firebase_auth.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/license.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/license.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/license.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/license.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/license.js",
+      "spec": "./license_signing",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/license_signing.js"
+    },
+    {
+      "from": "src/license_signing.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/main/firestore_rest.js",
+      "spec": "../firebase_auth",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/firebase_auth.js"
+    },
+    {
+      "from": "src/overlay_ps.js",
+      "spec": "./overlay_render",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_render.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "./overlay_render",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_render.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "./editor_geometry",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/editor_geometry.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "./sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "./psd_layers",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/psd_layers.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "./psd_layers",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/psd_layers.js"
+    },
+    {
+      "from": "src/proof_renderer.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "fs",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "path",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "os",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "crypto",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "ag-psd",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "./sharp_config",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/sharp_config.js"
+    },
+    {
+      "from": "src/psd_layers.js",
+      "spec": "./overlay_render",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/overlay_render.js"
+    },
+    {
+      "from": "src/renderer_pure.js",
+      "spec": "./ui_icons",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/ui_icons.js"
+    },
+    {
+      "from": "src/renderer_pure.js",
+      "spec": "./ui_icons",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/ui_icons.js"
+    },
+    {
+      "from": "src/renderer_pure.js",
+      "spec": "./shortcut_target",
+      "runtime": true,
+      "kind": "require",
+      "target": "src/shortcut_target.js"
+    },
+    {
+      "from": "src/sharp_config.js",
+      "spec": "sharp",
+      "runtime": true,
+      "kind": "require",
+      "target": null
+    }
+  ],
+  "cycles": [],
+  "runtime": {
+    "files": [
+      "native/backend/lib/account.js",
+      "native/backend/lib/album.js",
+      "native/backend/lib/autofill.js",
+      "native/backend/lib/cache.js",
+      "native/backend/lib/color.js",
+      "native/backend/lib/deliver.js",
+      "native/backend/lib/delivery_transaction.js",
+      "native/backend/lib/exclusive_rename.js",
+      "native/backend/lib/file_publication.js",
+      "native/backend/lib/identity.js",
+      "native/backend/lib/inputs.js",
+      "native/backend/lib/jobs.js",
+      "native/backend/lib/jpeg_size.js",
+      "native/backend/lib/json_lines.js",
+      "native/backend/lib/labnaming.js",
+      "native/backend/lib/library.js",
+      "native/backend/lib/namespace_lock.js",
+      "native/backend/lib/newalbum.js",
+      "native/backend/lib/output_lock.js",
+      "native/backend/lib/output_paths.js",
+      "native/backend/lib/parity.js",
+      "native/backend/lib/pdf.js",
+      "native/backend/lib/photocraft.js",
+      "native/backend/lib/picks.js",
+      "native/backend/lib/preflight.js",
+      "native/backend/lib/print_settings.js",
+      "native/backend/lib/private_stage.js",
+      "native/backend/lib/project.js",
+      "native/backend/lib/project_domain.js",
+      "native/backend/lib/project_lock.js",
+      "native/backend/lib/project_transaction.js",
+      "native/backend/lib/proofs.js",
+      "native/backend/lib/protocol_writer.js",
+      "native/backend/lib/psd_template.js",
+      "native/backend/lib/publication_broker.js",
+      "native/backend/lib/publication_io.js",
+      "native/backend/lib/raw.js",
+      "native/backend/lib/recent.js",
+      "native/backend/lib/render.js",
+      "native/backend/lib/render_inputs.js",
+      "native/backend/lib/render_recipe.js",
+      "native/backend/lib/render_transaction.js",
+      "native/backend/lib/sheet.js",
+      "native/backend/lib/sheets.js",
+      "native/backend/lib/source_roots.js",
+      "native/backend/lib/storage.js",
+      "native/backend/lib/template_check.js",
+      "native/backend/lib/templates.js",
+      "native/backend/lib/thumbs.js",
+      "native/backend/lib/verified_file.js",
+      "native/backend/methods.js",
+      "native/backend/server.js",
+      "native/contracts/album-studio.schema.json",
+      "native/contracts/contract-manifest.json",
+      "native/contracts/runtime.js",
+      "src/curation.js",
+      "src/editor_geometry.js",
+      "src/firebase_auth.js",
+      "src/license.js",
+      "src/license_public_key.pem",
+      "src/license_signing.js",
+      "src/main/firestore_rest.js",
+      "src/overlay_ps.js",
+      "src/overlay_render.js",
+      "src/proof_renderer.js",
+      "src/psd_layers.js",
+      "src/renderer_pure.js",
+      "src/sharp_config.js",
+      "src/shortcut_target.js",
+      "src/ui_icons.js"
+    ],
+    "packages": [
+      "ag-psd",
+      "node-machine-id",
+      "sharp"
+    ],
+    "comparedWithCollector": true
+  },
+  "contracts": {
+    "status": "inventoried",
+    "backendMethods": [
+      "account.cancelSignIn",
+      "account.retry",
+      "account.signIn",
+      "account.signOut",
+      "account.status",
+      "album.create",
+      "album.open",
+      "album.recent",
+      "album.redo",
+      "album.setFolders",
+      "album.suggest",
+      "album.undo",
+      "album.update",
+      "export.cancel",
+      "export.plan",
+      "export.start",
+      "export.status",
+      "folders.inspect",
+      "lab.list",
+      "lab.rename",
+      "library.add",
+      "library.collections",
+      "library.remove",
+      "library.setDefaults",
+      "library.templates",
+      "picks.analyze",
+      "picks.copy",
+      "proofs.refresh",
+      "render.cancel",
+      "render.plan",
+      "render.start",
+      "render.status",
+      "spread.layout",
+      "storage.clear",
+      "storage.usage",
+      "system.ping",
+      "templates.collections",
+      "templates.inspect",
+      "templates.list"
+    ],
+    "shellMethods": [
+      "debug.queuePicks",
+      "debug.result",
+      "dialog.pickFolder",
+      "editor.inspect",
+      "editor.open",
+      "shell.activate",
+      "shell.dragWindow",
+      "shell.info",
+      "shell.log",
+      "shell.ping",
+      "shell.reveal",
+      "shell.selftestReturnAfter",
+      "shell.showAlbum",
+      "shell.zoomWindow"
+    ],
+    "events": [
+      "account.signIn",
+      "album.creating",
+      "album.folders",
+      "backend.exited",
+      "backend.ready",
+      "export.finished",
+      "export.progress",
+      "export.started",
+      "menu",
+      "picks.progress",
+      "proofs.failed",
+      "proofs.idle",
+      "proofs.updated",
+      "render.finished",
+      "render.progress",
+      "render.started",
+      "shell.albumShown"
+    ],
+    "uiCalls": [
+      "account.cancelSignIn",
+      "account.retry",
+      "account.signIn",
+      "account.signOut",
+      "account.status",
+      "album.create",
+      "album.open",
+      "album.recent",
+      "album.redo",
+      "album.setFolders",
+      "album.suggest",
+      "album.undo",
+      "album.update",
+      "dialog.pickFolder",
+      "editor.open",
+      "export.cancel",
+      "export.plan",
+      "export.start",
+      "folders.inspect",
+      "lab.list",
+      "lab.rename",
+      "library.add",
+      "library.collections",
+      "library.remove",
+      "library.setDefaults",
+      "library.templates",
+      "picks.analyze",
+      "picks.copy",
+      "render.cancel",
+      "render.plan",
+      "render.start",
+      "shell.activate",
+      "shell.dragWindow",
+      "shell.log",
+      "shell.reveal",
+      "shell.zoomWindow",
+      "spread.layout",
+      "storage.clear",
+      "storage.usage",
+      "templates.inspect",
+      "templates.list"
+    ],
+    "schemaSha256": "40bc5fb39babf0b4861e6378475e23f73219184f40e1f9708797ed6250958326",
+    "limitations": [
+      "Registry/reference/callsite parity does not prove validator semantics or migration correctness.",
+      "Rust shell inventory is source-only; opaque serde_json::Value is not a typed Rust DTO or an executed native bridge test."
+    ]
+  },
+  "violations": [],
+  "limitations": [
+    "Static source and literal call graph only; dynamic dependencies fail closed.",
+    "Behavioural contracts, compatibility migrations, native execution and complete CI remain separate required evidence."
+  ]
+}

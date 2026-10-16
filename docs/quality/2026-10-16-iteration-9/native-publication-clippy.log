@@ -1,0 +1,14 @@
+    Checking typenum v1.20.1
+    Checking cpufeatures v0.2.17
+    Checking generic-array v0.14.7
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+    Checking digest v0.10.7
+    Checking sha2 v0.10.9
+    Checking photocraft-engine v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/crates/engine)
+    Checking photocraft-automation v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/crates/automation)
+    Checking photocraft-ui-egui v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/crates/ui-egui)
+    Checking album-studio v0.6.0 (/Volumes/Harry/works/albumStudio-photocraft/bench/fixture/native-architecture-engine-10cee1b/apps/album-studio)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 19.65s
+warning: the following packages contain code that will be rejected by a future version of Rust: block v0.1.6
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`

@@ -1,0 +1,10 @@
+
+> album-studio@1.0.0 lint
+> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js" "native/contracts/**/*.js"
+
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/render_transaction.js
+  15:7  warning  'node' is assigned a value but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+

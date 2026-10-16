@@ -1,0 +1,13 @@
+
+> album-studio@1.0.0 lint
+> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js" "native/contracts/**/*.js"
+
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/file_publication.js
+  20:159  error  Unexpected control character(s) in regular expression: \x00, \x1f  no-control-regex
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/render_transaction.js
+  15:7  warning  'node' is assigned a value but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+✖ 2 problems (1 error, 1 warning)
+

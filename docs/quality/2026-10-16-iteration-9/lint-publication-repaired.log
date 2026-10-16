@@ -1,0 +1,10 @@
+
+> album-studio@1.0.0 lint
+> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js" "native/contracts/**/*.js"
+
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/file_publication.js
+  20:161  error  Unnecessary escape character: \/  no-useless-escape
+
+✖ 1 problem (1 error, 0 warnings)
+
