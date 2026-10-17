@@ -1,0 +1,158 @@
+{
+  "scope": "Production web UI with validated synthetic storage replies; no native Finder, render, editor or delivery acceptance",
+  "cases": [
+    {
+      "name": "stage limit, preserved work and one read-only action; Tab wraps to Close",
+      "passed": true,
+      "observed": {
+        "actions": [
+          "Show retained work"
+        ],
+        "focus": "Close",
+        "usage": "Saved work folders256 of 256Space used1 byte of 8.6 GB",
+        "warning": "Retained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review."
+      }
+    },
+    {
+      "name": "reveal rejection appears in Settings and action recovers",
+      "passed": true,
+      "observed": {
+        "actionEnabled": true,
+        "inDialog": true,
+        "message": "This synthetic UI preview cannot run shell.reveal. No files were changed."
+      }
+    },
+    {
+      "name": "normal",
+      "passed": true,
+      "observed": {
+        "readonly": true,
+        "text": "Retained workSaved work folders1 of 256Space used1 byte of 8.6 GBThese files are kept for recovery and are never cleared automatically. Album Studio also reserves at least 268 MB of free disk space for private work; this is a requirement, not a measurement of available space.Show retained work",
+        "warning": false
+      }
+    },
+    {
+      "name": "retention-bytes",
+      "passed": true,
+      "observed": {
+        "readonly": true,
+        "text": "Retained workSaved work folders1 of 256Space used8.6 GB of 8.6 GBRetained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review.These files are kept for recovery and are never cleared automatically. Album Studio also reserves at least 268 MB of free disk space for private work; this is a requirement, not a measurement of available space.Show retained work",
+        "warning": true
+      }
+    },
+    {
+      "name": "retention-empty",
+      "passed": true,
+      "observed": {
+        "readonly": true,
+        "text": "Retained workSaved work folders0 of 256Space used0 bytes of 8.6 GBThese files are kept for recovery and are never cleared automatically. Album Studio also reserves at least 268 MB of free disk space for private work; this is a requirement, not a measurement of available space.Show retained work",
+        "warning": false
+      }
+    },
+    {
+      "name": "retention-zero-budget",
+      "passed": true,
+      "observed": {
+        "readonly": true,
+        "text": "Retained workSaved work folders0 of 0Space used0 bytes of 0 bytesRetained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review.These files are kept for recovery and are never cleared automatically. Album Studio also reserves at least 268 MB of free disk space for private work; this is a requirement, not a measurement of available space.Show retained work",
+        "warning": true
+      }
+    },
+    {
+      "name": "retention-unavailable",
+      "passed": true,
+      "observed": {
+        "readonly": true,
+        "text": null,
+        "warning": false
+      }
+    },
+    {
+      "name": "refresh updates usage and preserves keyboard focus",
+      "passed": true,
+      "observed": {
+        "beforeRefresh": "Saved work folders1 of 256Space used1 byte of 8.6 GB",
+        "afterRefresh": {
+          "focus": "Refresh storage",
+          "text": "Saved work folders256 of 256Space used1 byte of 8.6 GB"
+        }
+      }
+    },
+    {
+      "name": "760x480 retained-work content has no horizontal overflow",
+      "passed": true,
+      "observed": {
+        "dialogScrollWidth": 665,
+        "dialogWidth": 665,
+        "retainedScrollWidth": 615,
+        "retainedWidth": 615,
+        "width": 760
+      }
+    },
+    {
+      "name": "24 forward/backward key steps stay in compact Settings",
+      "passed": true,
+      "observed": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "name": "Escape closes Settings and restores opener",
+      "passed": true,
+      "observed": {
+        "focus": "Settings (⌘,)",
+        "open": false
+      }
+    },
+    {
+      "name": "failed measurement shows no stale usage; retry restores usage and keeps focus",
+      "passed": true,
+      "observed": {
+        "measurementError": {
+          "alert": "Storage could not be measured. Reconnect the drive and try again.",
+          "staleUsage": false
+        },
+        "measurementRetry": {
+          "focus": "Refresh storage",
+          "usage": "Saved work folders1 of 256Space used1 byte of 8.6 GB"
+        }
+      }
+    },
+    {
+      "name": "final build retention warning has no delete/clear control",
+      "passed": true,
+      "observed": {
+        "actions": [
+          "Show retained work"
+        ],
+        "usage": "Saved work folders256 of 256Space used1 byte of 8.6 GB",
+        "warning": "Retained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review."
+      }
+    }
+  ],
+  "total": 13,
+  "passed": 13
+}

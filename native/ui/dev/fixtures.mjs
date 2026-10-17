@@ -46,9 +46,16 @@ createServer(async (req, res) => {
     const count = url.searchParams.get('large') === '1' ? 6000 : 36
     const scenario = url.searchParams.get('scenario') || 'normal'
     const album = fixture(count)
+    const storage = structuredClone(examples['storage.usage'][1])
+    if (scenario === 'retention-limit') storage.retention.stages = storage.retention.limits.maxHistoryStages
+    if (scenario === 'retention-bytes') storage.retention.bytes = storage.retention.limits.maxHistoryBytes
+    if (scenario === 'retention-empty') { storage.retention.stages = 0; storage.retention.bytes = 0 }
+    if (scenario === 'retention-zero-budget') { storage.retention.stages = 0; storage.retention.bytes = 0; storage.retention.limits.maxHistoryStages = 0; storage.retention.limits.maxHistoryBytes = 0 }
+    if (scenario === 'retention-unavailable') delete storage.retention
+    validateDefinition('StorageUsage', storage)
     if (scenario === 'missing-thumbs') for (const photo of Object.values(album.photos)) photo.thumb = '/sample/missing.svg'
     if (scenario === 'empty-plan') { album.spreads = []; album.stats.spreads = 0; album.stats.planned = 0; album.stats.used = 0; for (const p of Object.values(album.photos)) p.usedOn = [] }
-    const data = { album, examples, scenario }
+    const data = { album, examples, scenario, storage }
     const shim = `
       const fixture = ${JSON.stringify(data).replaceAll('<', '\\u003c')};
       let storageRequests = 0;
@@ -63,6 +70,10 @@ createServer(async (req, res) => {
           else result = fixture.scenario === 'empty' ? [] : [{...fixture.examples[method][1][0],name:fixture.album.name,photos:fixture.album.stats.photos,spreads:3}];
         }
         else if (method === 'storage.usage' && fixture.scenario === 'storage-error' && storageRequests++ === 0) error = 'Storage could not be measured. Reconnect the drive and try again.';
+        else if (method === 'storage.usage') {
+          result = structuredClone(fixture.storage);
+          if (fixture.scenario === 'retention-refresh' && storageRequests++ > 0) result.retention.stages = result.retention.limits.maxHistoryStages;
+        }
         else if (method === 'render.plan') result = {...fixture.examples[method][1],spreads:fixture.album.spreads.map(s=>({n:s.n,id:s.id,state:'missing'}))};
         else if (method === 'spread.layout') result = {...fixture.examples[method][1], n:params.n, frames:[]};
         else if (['library.collections','library.templates','folders.inspect','templates.inspect','templates.list','storage.usage','export.plan'].includes(method)) result = fixture.examples[method]?.[1];

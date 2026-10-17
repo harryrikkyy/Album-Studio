@@ -1240,6 +1240,13 @@
 .set-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); font-size: var(--fs-12); color: var(--ink-2); }
 .set-caches { display: flex; flex-direction: column; gap: 2px; }
 .set-caches li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--sp-5); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-1); background: var(--bg-well); font-size: var(--fs-12); }
+.set-storage-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-3); }
+.set-section h4 { font-size: var(--fs-12); }
+.set-retention { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-4); padding: var(--sp-4); border: 1px solid var(--line); border-radius: var(--r-2); }
+.set-storage-usage { display: flex; flex-wrap: wrap; gap: var(--sp-5) var(--sp-8); font-size: var(--fs-12); }
+.set-storage-usage dt { color: var(--ink-3); margin-bottom: var(--sp-2); }
+.set-storage-usage dd { margin: 0; font-variant-numeric: tabular-nums; }
+.set-retention-warning { background: var(--warn-soft); color: var(--ink); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-1); font-size: var(--fs-12); line-height: 1.5; }
 
 /* Sign-in: the window before the app opens */
 .signin { position: fixed; inset: 0; display: grid; grid-template-rows: 44px minmax(0, 1fr) auto; background: var(--bg-app); }

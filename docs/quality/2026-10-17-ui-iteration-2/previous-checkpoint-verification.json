@@ -1,0 +1,18 @@
+{
+  "sourceFiles": {
+    "checked": 149,
+    "mismatches": [
+      "native/ui/dev/fixtures.mjs",
+      "native/ui/src/app/Settings.tsx",
+      "native/ui/src/styles/app.css"
+    ]
+  },
+  "artifactFiles": {
+    "checked": 42,
+    "mismatches": []
+  },
+  "retainedFiles": {
+    "checked": 385,
+    "mismatches": []
+  }
+}

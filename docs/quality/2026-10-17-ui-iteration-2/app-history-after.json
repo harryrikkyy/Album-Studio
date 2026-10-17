@@ -1,0 +1,8 @@
+{
+  "stages": 256,
+  "files": 256,
+  "bytes": 1951232,
+  "contentAndNamesSha256": "8085e9d80e61208c1808938f4532399ee17e1a2ee30c0254310ca456cd9310a0",
+  "hashEncoding": "sorted relative UTF-8 name, NUL, file bytes",
+  "unchanged": true
+}

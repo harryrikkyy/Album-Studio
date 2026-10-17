@@ -15,15 +15,13 @@ import { album, setTheme, stored, store, theme, toast } from '../state'
 import { Button, IconButton, Segmented } from '../ui/controls'
 import type { StorageUsage } from '../../../contracts/types'
 
-type Cache = StorageUsage['caches'][number]
-
 const open = signal(false)
 export const openSettings = () => { open.value = true }
 
 export function SettingsDialog() {
   const ref = useRef<HTMLDialogElement>(null)
   const a = album.value
-  const [caches, setCaches] = useState<Cache[] | null>(null)
+  const [usage, setUsage] = useState<StorageUsage | null>(null)
   const [cacheError, setCacheError] = useState<string | null>(null)
   const cacheRequest = useRef(0)
   const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
@@ -31,10 +29,10 @@ export function SettingsDialog() {
 
   const load = async () => {
     const request = ++cacheRequest.current
-    setCaches(null); setCacheError(null)
+    setUsage(null); setCacheError(null)
     try {
       const r = await call('storage.usage', a ? { album: a.path } : {}, 120_000)
-      if (request === cacheRequest.current && open.peek()) setCaches(r.caches)
+      if (request === cacheRequest.current && open.peek()) setUsage(r)
     } catch (e) {
       if (request === cacheRequest.current && open.peek()) setCacheError((e as Error).message)
     }
@@ -48,14 +46,18 @@ export function SettingsDialog() {
   }, [open.value, a?.path])
 
   const s = exportSettings.value
-  const total = (caches ?? []).reduce((n, c) => n + c.bytes, 0)
+  const total = (usage?.caches ?? []).reduce((n, c) => n + c.bytes, 0)
+  const measuring = !usage && !cacheError
   const clear = async (ids: string[]) => {
+    const request = ++cacheRequest.current
     setClearing(true)
     try {
       const params = validateDefinition('StorageClearParams', { ids, ...(a ? { album: a.path } : {}) })
       const r = await call('storage.clear', params, 300_000)
-      setCaches(r.caches)
-      toast('ok', 'No cache files needed clearing.')
+      if (request === cacheRequest.current && open.peek()) {
+        setUsage(r)
+        toast('ok', 'No cache files needed clearing.')
+      }
     } catch (e) {
       toast('error', (e as Error).message)
     } finally {
@@ -108,23 +110,52 @@ export function SettingsDialog() {
         </section>
 
         <section class="set-section">
-          <h3><HardDrive size={14} class="inline-icon" /> Storage {caches ? <span class="count">{megabytes(total)}</span> : null}</h3>
-          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p><Button size="sm" onClick={() => void load()}>Try measuring again</Button></div> : !caches ? <p class="muted" role="status">Measuring…</p> : caches.length === 0 ? <p class="muted">No caches found.</p> : (
-            <ul class="set-caches">
-              {caches.map((c) => (
-                <li key={`${c.scope}-${c.id}`}>
-                  <span>{c.label}{c.scope === 'album' && a ? <span class="muted"> · {a.name}</span> : null}</span>
-                  <span class="count">{c.bytes ? megabytes(c.bytes) : 'empty'}</span>
-                  <Button size="sm" variant="ghost" disabled={!c.bytes || clearing} onClick={() => void clear([c.id])}>Clear</Button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p class="set-hint">Recovery copies and edited files are kept. Album Studio will show any cache that needs review before it can be cleared.</p>
+          <div class="set-storage-heading">
+            <h3><HardDrive size={14} class="inline-icon" /> Storage</h3>
+            <Button size="sm" variant="ghost" disabled={clearing} aria-busy={measuring || undefined} aria-disabled={measuring || undefined} onClick={() => { if (!measuring) void load() }}>{cacheError ? 'Try measuring again' : 'Refresh storage'}</Button>
+          </div>
+          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p></div> : !usage ? <p class="muted" role="status">Measuring…</p> : <>
+            <h4>Caches <span class="count">{total ? megabytes(total) : 'empty'}</span></h4>
+            {usage.caches.length === 0 ? <p class="muted">No caches found.</p> : (
+              <ul class="set-caches">
+                {usage.caches.map((c) => (
+                  <li key={`${c.scope}-${c.id}`}>
+                    <span>{c.label}{c.scope === 'album' && a ? <span class="muted"> · {a.name}</span> : null}</span>
+                    <span class="count">{c.bytes ? megabytes(c.bytes) : 'empty'}</span>
+                    <Button size="sm" variant="ghost" disabled={!c.bytes || clearing} onClick={() => void clear([c.id])}>Clear</Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p class="set-hint">Clearing preserves recovery copies, edited files and files whose ownership cannot be verified.</p>
+            {usage.retention ? <RetainedWork retention={usage.retention} /> : <p class="set-hint">Retained-work usage is unavailable. Try refreshing storage or updating Album Studio.</p>}
+          </>}
         </section>
       </div>
     </dialog>
   )
+}
+
+function RetainedWork({ retention: r }: { retention: NonNullable<StorageUsage['retention']> }) {
+  const [revealing, setRevealing] = useState(false)
+  const atLimit = r.stages >= r.limits.maxHistoryStages || r.bytes >= r.limits.maxHistoryBytes
+  const reveal = async () => {
+    setRevealing(true)
+    try { await call('shell.reveal', { path: r.historyPath }) }
+    catch (e) { toast('error', (e as Error).message) }
+    finally { setRevealing(false) }
+  }
+  const size = (bytes: number) => bytes < 1e6 ? `${bytes.toLocaleString('en-US')} ${bytes === 1 ? 'byte' : 'bytes'}` : megabytes(bytes)
+  return <section class="set-retention" aria-labelledby="retained-work-title">
+    <h4 id="retained-work-title">Retained work</h4>
+    <dl class="set-storage-usage">
+      <div><dt>Saved work folders</dt><dd>{r.stages.toLocaleString('en-US')} of {r.limits.maxHistoryStages.toLocaleString('en-US')}</dd></div>
+      <div><dt>Space used</dt><dd>{size(r.bytes)} of {size(r.limits.maxHistoryBytes)}</dd></div>
+    </dl>
+    {atLimit ? <p class="set-retention-warning" role="alert">Retained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review.</p> : null}
+    <p class="set-hint">These files are kept for recovery and are never cleared automatically. Album Studio also reserves at least {size(r.limits.minFreeBytes)} of free disk space for private work; this is a requirement, not a measurement of available space.</p>
+    <Button size="sm" busy={revealing} onClick={() => void reveal()}>Show retained work</Button>
+  </section>
 }
 
 function AccountSection() {

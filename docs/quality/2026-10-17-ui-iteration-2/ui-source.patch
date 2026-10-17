@@ -1,0 +1,239 @@
+diff --git a/QUALITY_SCORECARD.json b/QUALITY_SCORECARD.json
+index adacf8f..37ee2b9 100644
+--- a/QUALITY_SCORECARD.json
++++ b/QUALITY_SCORECARD.json
+@@ -139,7 +139,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Persistent errors enter the active modal top layer and survive its closure. Storage/template failures offer retry; missing thumbnails have explicit fallbacks. Native reconciliation, relink and approved retained-history recovery remain incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
++          "evidence": "Persistent errors enter the active modal top layer and survive its closure. Storage/template failures offer retry; missing thumbnails have explicit fallbacks. Native reconciliation, relink and approved retained-history recovery remain incomplete. See docs/quality/2026-10-16-ui-iteration-1/verification.json. UI iteration2: Settings now exposes retained-work counts and byte limits, explicit preservation/limit warnings, refresh and a read-only reveal action. Synthetic reveal rejection remains visible; safe reclamation is incomplete. See docs/quality/2026-10-17-ui-iteration-2/verification.json."
+         },
+         {
+           "id": "6",
+@@ -155,7 +155,7 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Previously unverified criterion is now partial: WebKit Tab leakage was reproduced and repaired, dialog Tab/Shift-Tab containment and Escape restoration pass, and narrow-pane/inspector/template focus returns pass. Native app host lookup timed out; busy transitions/all native dialogs remain unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
++          "evidence": "Previously unverified criterion is now partial: WebKit Tab leakage was reproduced and repaired, dialog Tab/Shift-Tab containment and Escape restoration pass, and narrow-pane/inspector/template focus returns pass. Native app host lookup timed out; busy transitions/all native dialogs remain unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json. UI iteration2: Storage refresh/retry retains focus, and24 compact-window Tab/Shift-Tab steps plus Escape return pass. See docs/quality/2026-10-17-ui-iteration-2/verification.json."
+         },
+         {
+           "id": "8",
+@@ -179,11 +179,11 @@
+           "weight": 10,
+           "points": 5,
+           "status": "partial",
+-          "evidence": "Actual browser checks distinguish failed recents from confirmed empty recents; empty plans and missing previews have next steps. Storage retry recovers; stale reads cannot overwrite the current UI. Full native account/drive/backend interruption scope remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json."
++          "evidence": "Actual browser checks distinguish failed recents from confirmed empty recents; empty plans and missing previews have next steps. Storage retry recovers; stale reads cannot overwrite the current UI. Full native account/drive/backend interruption scope remains unverified. See docs/quality/2026-10-16-ui-iteration-1/verification.json. UI iteration2: Normal, count/byte/zero limits, empty history, absent optional retention and failed-measurement retry are checked in the browser. See docs/quality/2026-10-17-ui-iteration-2/verification.json."
+         }
+       ],
+       "certified": false,
+-      "assessment": "UI/workflow55/100 on the unchanged rubric. Focus/modal and large-grid criteria gain partial evidence only. Native end-to-end, editor, VoiceOver, real-corpus and complete recovery acceptance remain unverified; target >=95/100 is unfinished."
++      "assessment": "UI/workflow remains55/100 on the unchanged rubric. Iteration2 improves storage visibility and refresh/retry focus;13 synthetic browser cases and1206 application tests pass. Native end-to-end, editor, VoiceOver, real-corpus and complete recovery acceptance remain unverified; target >=95/100 is unfinished."
+     },
+     {
+       "name": "Testing",
+@@ -847,12 +847,14 @@
+     "goalTracker": "Existing architecture entry remains usageLimited. create_goal rejected replacement; no clear tool; Codex-app computer control denied. User can issue /goal clear."
+   },
+   "latestUIAssessment": {
+-    "iteration": 1,
+-    "evidence": "docs/quality/2026-10-16-ui-iteration-1/verification.json",
+-    "previousScore": 4.5,
++    "date": "2026-10-17",
++    "iteration": 2,
++    "evidence": "docs/quality/2026-10-17-ui-iteration-2/verification.json",
++    "previousEvidence": "docs/quality/2026-10-16-ui-iteration-1/verification.json",
++    "previousScore": 5.5,
+     "currentScore": 5.5,
+     "criterionNamesAndWeightsUnchanged": true,
+-    "scoreDecision": "Only criteria7 and9 change from0 to5 partial points. All other UI point values and other categories remain unchanged.",
++    "scoreDecision": "No point changes. Retained-work visibility and focus/retry improve existing partial criteria without completing their native acceptance scopes. All other category scores are preserved.",
+     "missionComplete": false,
+     "tests": {
+       "shared": 297,
+@@ -861,7 +863,7 @@
+       "total": 1206,
+       "skipped": 0,
+       "failures": 0,
+-      "browserFixtureCases": 23
++      "browserFixtureCases": 13
+     },
+     "blockers": [
+       "Native app host lookup timed out after4242.2032 seconds and reset computer-control session. No native end-to-end acceptance pass.",
+diff --git a/native/ui/dev/fixtures.mjs b/native/ui/dev/fixtures.mjs
+index 722da2f..6e44981 100644
+--- a/native/ui/dev/fixtures.mjs
++++ b/native/ui/dev/fixtures.mjs
+@@ -46,9 +46,16 @@ createServer(async (req, res) => {
+     const count = url.searchParams.get('large') === '1' ? 6000 : 36
+     const scenario = url.searchParams.get('scenario') || 'normal'
+     const album = fixture(count)
++    const storage = structuredClone(examples['storage.usage'][1])
++    if (scenario === 'retention-limit') storage.retention.stages = storage.retention.limits.maxHistoryStages
++    if (scenario === 'retention-bytes') storage.retention.bytes = storage.retention.limits.maxHistoryBytes
++    if (scenario === 'retention-empty') { storage.retention.stages = 0; storage.retention.bytes = 0 }
++    if (scenario === 'retention-zero-budget') { storage.retention.stages = 0; storage.retention.bytes = 0; storage.retention.limits.maxHistoryStages = 0; storage.retention.limits.maxHistoryBytes = 0 }
++    if (scenario === 'retention-unavailable') delete storage.retention
++    validateDefinition('StorageUsage', storage)
+     if (scenario === 'missing-thumbs') for (const photo of Object.values(album.photos)) photo.thumb = '/sample/missing.svg'
+     if (scenario === 'empty-plan') { album.spreads = []; album.stats.spreads = 0; album.stats.planned = 0; album.stats.used = 0; for (const p of Object.values(album.photos)) p.usedOn = [] }
+-    const data = { album, examples, scenario }
++    const data = { album, examples, scenario, storage }
+     const shim = `
+       const fixture = ${JSON.stringify(data).replaceAll('<', '\\u003c')};
+       let storageRequests = 0;
+@@ -63,6 +70,10 @@ createServer(async (req, res) => {
+           else result = fixture.scenario === 'empty' ? [] : [{...fixture.examples[method][1][0],name:fixture.album.name,photos:fixture.album.stats.photos,spreads:3}];
+         }
+         else if (method === 'storage.usage' && fixture.scenario === 'storage-error' && storageRequests++ === 0) error = 'Storage could not be measured. Reconnect the drive and try again.';
++        else if (method === 'storage.usage') {
++          result = structuredClone(fixture.storage);
++          if (fixture.scenario === 'retention-refresh' && storageRequests++ > 0) result.retention.stages = result.retention.limits.maxHistoryStages;
++        }
+         else if (method === 'render.plan') result = {...fixture.examples[method][1],spreads:fixture.album.spreads.map(s=>({n:s.n,id:s.id,state:'missing'}))};
+         else if (method === 'spread.layout') result = {...fixture.examples[method][1], n:params.n, frames:[]};
+         else if (['library.collections','library.templates','folders.inspect','templates.inspect','templates.list','storage.usage','export.plan'].includes(method)) result = fixture.examples[method]?.[1];
+diff --git a/native/ui/src/app/Settings.tsx b/native/ui/src/app/Settings.tsx
+index e6544b5..978ba22 100644
+--- a/native/ui/src/app/Settings.tsx
++++ b/native/ui/src/app/Settings.tsx
+@@ -15,15 +15,13 @@ import { album, setTheme, stored, store, theme, toast } from '../state'
+ import { Button, IconButton, Segmented } from '../ui/controls'
+ import type { StorageUsage } from '../../../contracts/types'
+ 
+-type Cache = StorageUsage['caches'][number]
+-
+ const open = signal(false)
+ export const openSettings = () => { open.value = true }
+ 
+ export function SettingsDialog() {
+   const ref = useRef<HTMLDialogElement>(null)
+   const a = album.value
+-  const [caches, setCaches] = useState<Cache[] | null>(null)
++  const [usage, setUsage] = useState<StorageUsage | null>(null)
+   const [cacheError, setCacheError] = useState<string | null>(null)
+   const cacheRequest = useRef(0)
+   const [spreads, setSpreads] = useState<number>(stored<{ desiredSheets?: number }>('as.autoFill', {}).desiredSheets ?? 23)
+@@ -31,10 +29,10 @@ export function SettingsDialog() {
+ 
+   const load = async () => {
+     const request = ++cacheRequest.current
+-    setCaches(null); setCacheError(null)
++    setUsage(null); setCacheError(null)
+     try {
+       const r = await call('storage.usage', a ? { album: a.path } : {}, 120_000)
+-      if (request === cacheRequest.current && open.peek()) setCaches(r.caches)
++      if (request === cacheRequest.current && open.peek()) setUsage(r)
+     } catch (e) {
+       if (request === cacheRequest.current && open.peek()) setCacheError((e as Error).message)
+     }
+@@ -48,14 +46,18 @@ export function SettingsDialog() {
+   }, [open.value, a?.path])
+ 
+   const s = exportSettings.value
+-  const total = (caches ?? []).reduce((n, c) => n + c.bytes, 0)
++  const total = (usage?.caches ?? []).reduce((n, c) => n + c.bytes, 0)
++  const measuring = !usage && !cacheError
+   const clear = async (ids: string[]) => {
++    const request = ++cacheRequest.current
+     setClearing(true)
+     try {
+       const params = validateDefinition('StorageClearParams', { ids, ...(a ? { album: a.path } : {}) })
+       const r = await call('storage.clear', params, 300_000)
+-      setCaches(r.caches)
+-      toast('ok', 'No cache files needed clearing.')
++      if (request === cacheRequest.current && open.peek()) {
++        setUsage(r)
++        toast('ok', 'No cache files needed clearing.')
++      }
+     } catch (e) {
+       toast('error', (e as Error).message)
+     } finally {
+@@ -108,25 +110,54 @@ export function SettingsDialog() {
+         </section>
+ 
+         <section class="set-section">
+-          <h3><HardDrive size={14} class="inline-icon" /> Storage {caches ? <span class="count">{megabytes(total)}</span> : null}</h3>
+-          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p><Button size="sm" onClick={() => void load()}>Try measuring again</Button></div> : !caches ? <p class="muted" role="status">Measuring…</p> : caches.length === 0 ? <p class="muted">No caches found.</p> : (
+-            <ul class="set-caches">
+-              {caches.map((c) => (
+-                <li key={`${c.scope}-${c.id}`}>
+-                  <span>{c.label}{c.scope === 'album' && a ? <span class="muted"> · {a.name}</span> : null}</span>
+-                  <span class="count">{c.bytes ? megabytes(c.bytes) : 'empty'}</span>
+-                  <Button size="sm" variant="ghost" disabled={!c.bytes || clearing} onClick={() => void clear([c.id])}>Clear</Button>
+-                </li>
+-              ))}
+-            </ul>
+-          )}
+-          <p class="set-hint">Recovery copies and edited files are kept. Album Studio will show any cache that needs review before it can be cleared.</p>
++          <div class="set-storage-heading">
++            <h3><HardDrive size={14} class="inline-icon" /> Storage</h3>
++            <Button size="sm" variant="ghost" disabled={clearing} aria-busy={measuring || undefined} aria-disabled={measuring || undefined} onClick={() => { if (!measuring) void load() }}>{cacheError ? 'Try measuring again' : 'Refresh storage'}</Button>
++          </div>
++          {cacheError ? <div class="notice notice--error" role="alert"><p>{cacheError}</p></div> : !usage ? <p class="muted" role="status">Measuring…</p> : <>
++            <h4>Caches <span class="count">{total ? megabytes(total) : 'empty'}</span></h4>
++            {usage.caches.length === 0 ? <p class="muted">No caches found.</p> : (
++              <ul class="set-caches">
++                {usage.caches.map((c) => (
++                  <li key={`${c.scope}-${c.id}`}>
++                    <span>{c.label}{c.scope === 'album' && a ? <span class="muted"> · {a.name}</span> : null}</span>
++                    <span class="count">{c.bytes ? megabytes(c.bytes) : 'empty'}</span>
++                    <Button size="sm" variant="ghost" disabled={!c.bytes || clearing} onClick={() => void clear([c.id])}>Clear</Button>
++                  </li>
++                ))}
++              </ul>
++            )}
++            <p class="set-hint">Clearing preserves recovery copies, edited files and files whose ownership cannot be verified.</p>
++            {usage.retention ? <RetainedWork retention={usage.retention} /> : <p class="set-hint">Retained-work usage is unavailable. Try refreshing storage or updating Album Studio.</p>}
++          </>}
+         </section>
+       </div>
+     </dialog>
+   )
+ }
+ 
++function RetainedWork({ retention: r }: { retention: NonNullable<StorageUsage['retention']> }) {
++  const [revealing, setRevealing] = useState(false)
++  const atLimit = r.stages >= r.limits.maxHistoryStages || r.bytes >= r.limits.maxHistoryBytes
++  const reveal = async () => {
++    setRevealing(true)
++    try { await call('shell.reveal', { path: r.historyPath }) }
++    catch (e) { toast('error', (e as Error).message) }
++    finally { setRevealing(false) }
++  }
++  const size = (bytes: number) => bytes < 1e6 ? `${bytes.toLocaleString('en-US')} ${bytes === 1 ? 'byte' : 'bytes'}` : megabytes(bytes)
++  return <section class="set-retention" aria-labelledby="retained-work-title">
++    <h4 id="retained-work-title">Retained work</h4>
++    <dl class="set-storage-usage">
++      <div><dt>Saved work folders</dt><dd>{r.stages.toLocaleString('en-US')} of {r.limits.maxHistoryStages.toLocaleString('en-US')}</dd></div>
++      <div><dt>Space used</dt><dd>{size(r.bytes)} of {size(r.limits.maxHistoryBytes)}</dd></div>
++    </dl>
++    {atLimit ? <p class="set-retention-warning" role="alert">Retained work has reached its limit. New renders or exports may stop. Show the folder to review it; opening it does not free space. Safe cleanup requires ownership review.</p> : null}
++    <p class="set-hint">These files are kept for recovery and are never cleared automatically. Album Studio also reserves at least {size(r.limits.minFreeBytes)} of free disk space for private work; this is a requirement, not a measurement of available space.</p>
++    <Button size="sm" busy={revealing} onClick={() => void reveal()}>Show retained work</Button>
++  </section>
++}
++
+ function AccountSection() {
+   const a = account.value!
+   const warn = expiryNote(a.daysLeft)
+diff --git a/native/ui/src/styles/app.css b/native/ui/src/styles/app.css
+index 48e3567..4935acb 100644
+--- a/native/ui/src/styles/app.css
++++ b/native/ui/src/styles/app.css
+@@ -1240,6 +1240,13 @@
+ .set-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-3); font-size: var(--fs-12); color: var(--ink-2); }
+ .set-caches { display: flex; flex-direction: column; gap: 2px; }
+ .set-caches li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: var(--sp-5); padding: var(--sp-2) var(--sp-3); border-radius: var(--r-1); background: var(--bg-well); font-size: var(--fs-12); }
++.set-storage-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--sp-3); }
++.set-section h4 { font-size: var(--fs-12); }
++.set-retention { display: flex; flex-direction: column; align-items: flex-start; gap: var(--sp-4); padding: var(--sp-4); border: 1px solid var(--line); border-radius: var(--r-2); }
++.set-storage-usage { display: flex; flex-wrap: wrap; gap: var(--sp-5) var(--sp-8); font-size: var(--fs-12); }
++.set-storage-usage dt { color: var(--ink-3); margin-bottom: var(--sp-2); }
++.set-storage-usage dd { margin: 0; font-variant-numeric: tabular-nums; }
++.set-retention-warning { background: var(--warn-soft); color: var(--ink); padding: var(--sp-3) var(--sp-4); border-radius: var(--r-1); font-size: var(--fs-12); line-height: 1.5; }
+ 
+ /* Sign-in: the window before the app opens */
+ .signin { position: fixed; inset: 0; display: grid; grid-template-rows: 44px minmax(0, 1fr) auto; background: var(--bg-app); }

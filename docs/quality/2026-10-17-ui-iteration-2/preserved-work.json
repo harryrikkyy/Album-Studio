@@ -1,0 +1,21 @@
+{
+  "preexistingTrackedFiles": {
+    ".github/workflows/ci.yml": true,
+    "QUALITY_IMPROVEMENT_LOG.md": true,
+    "native/backend/lib/file_publication.js": true,
+    "native/backend/lib/namespace_lock.js": true,
+    "native/backend/lib/output_lock.js": true,
+    "native/backend/lib/publication_broker.js": true,
+    "native/backend/lib/publication_io.js": true,
+    "native/backend/lib/render_transaction.js": true,
+    "native/backend/lib/sheets.js": true,
+    "native/backend/test/namespace_lock.test.js": true,
+    "native/backend/test/publication_broker.test.js": true
+  },
+  "shippingEngine": "41a0f464405a1e4e20629de928727815679f5906",
+  "nativeUntracked": [
+    "?? .DS_Store",
+    "?? apps/.DS_Store",
+    "?? apps/photocraft/.DS_Store"
+  ]
+}
