@@ -1,0 +1,10 @@
+
+> album-studio@1.0.0 lint
+> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js" "native/contracts/**/*.js"
+
+
+/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/proofs.js
+  120:16  warning  'proofFromSheet' is defined but never used. Allowed unused vars must match /^_/u  no-unused-vars
+
+✖ 1 problem (0 errors, 1 warning)
+

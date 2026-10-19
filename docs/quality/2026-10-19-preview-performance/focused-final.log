@@ -1,0 +1,304 @@
+TAP version 13
+# Subtest: ordinary previews work with a full retained history without deleting or relocating it
+ok 1 - ordinary previews work with a full retained history without deleting or relocating it
+  ---
+  duration_ms: 643.046458
+  type: 'test'
+  ...
+# Subtest: repeated photo edits do not accumulate full-source snapshots in the preview cache
+ok 2 - repeated photo edits do not accumulate full-source snapshots in the preview cache
+  ---
+  duration_ms: 2819.500417
+  type: 'test'
+  ...
+# Subtest: a photo edit can finish while a background preview decoder is waiting
+ok 3 - a photo edit can finish while a background preview decoder is waiting
+  ---
+  duration_ms: 1380.791083
+  type: 'test'
+  ...
+# Subtest: a scoped spread refresh does not hash unrelated original photos
+ok 4 - a scoped spread refresh does not hash unrelated original photos
+  ---
+  duration_ms: 1028.859209
+  type: 'test'
+  ...
+# Subtest: dirty-spread selection includes every use of a transformed photo and structural edits fall back to all
+ok 5 - dirty-spread selection includes every use of a transformed photo and structural edits fall back to all
+  ---
+  duration_ms: 1.144333
+  type: 'test'
+  ...
+# Subtest: global clearing preserves retained histories and unknown manual files
+ok 6 - global clearing preserves retained histories and unknown manual files
+  ---
+  duration_ms: 10.089208
+  type: 'test'
+  ...
+# Subtest: global clearing cannot delete an active source snapshot
+ok 7 - global clearing cannot delete an active source snapshot
+  ---
+  duration_ms: 28.774083
+  type: 'test'
+  ...
+# Subtest: another real process cannot clear active snapshots through a cache-root alias
+ok 8 - another real process cannot clear active snapshots through a cache-root alias
+  ---
+  duration_ms: 75.848833
+  type: 'test'
+  ...
+# Subtest: source cleanup retains a complete stage when an unknown file appears
+ok 9 - source cleanup retains a complete stage when an unknown file appears
+  ---
+  duration_ms: 11.28375
+  type: 'test'
+  ...
+# Subtest: derived evidence EEXIST preserves the exact unowned record
+ok 10 - derived evidence EEXIST preserves the exact unowned record
+  ---
+  duration_ms: 16.140292
+  type: 'test'
+  ...
+# Subtest: a decoder failure preserves a substituted temporary image and primary error
+ok 11 - a decoder failure preserves a substituted temporary image and primary error
+  ---
+  duration_ms: 14.760208
+  type: 'test'
+  ...
+# Subtest: proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+ok 12 - proof cleanup preserves edited snapshots and unknown files after a real PSD draw
+  ---
+  duration_ms: 124.029625
+  type: 'test'
+  ...
+# Subtest: a template is read with its frames in drawing order, their shapes and strokes
+ok 13 - a template is read with its frames in drawing order, their shapes and strokes
+  ---
+  duration_ms: 75.033667
+  type: 'test'
+  ...
+# Subtest: erode shrinks a mask from its edges by r pixels
+ok 14 - erode shrinks a mask from its edges by r pixels
+  ---
+  duration_ms: 0.109542
+  type: 'test'
+  ...
+# Subtest: proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+ok 15 - proofs: drawn once, kept while nothing changes, moved with their spread, removed when emptied
+  ---
+  duration_ms: 3133.74575
+  type: 'test'
+  ...
+# Subtest: a spread layout says where each frame is and which photo fills it
+ok 16 - a spread layout says where each frame is and which photo fills it
+  ---
+  duration_ms: 48.646125
+  type: 'test'
+  ...
+# Subtest: a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+ok 17 - a sheet saved from the editor: marked edited, its preview redrawn from it, kept by renders
+  ---
+  duration_ms: 1933.685708
+  type: 'test'
+  ...
+# Subtest: proofs without source evidence are preserved in history and regenerated from current sources
+ok 18 - proofs without source evidence are preserved in history and regenerated from current sources
+  ---
+  duration_ms: 926.688167
+  type: 'test'
+  ...
+# Subtest: identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+ok 19 - identical Plan spreads retain their distinct hand-edited sheet proofs after swapping
+  ---
+  duration_ms: 914.618542
+  type: 'test'
+  ...
+# Subtest: the JPEG a TIFF-based RAW embeds is found, with its orientation
+ok 20 - the JPEG a TIFF-based RAW embeds is found, with its orientation
+  ---
+  duration_ms: 5.862583
+  type: 'test'
+  ...
+# Subtest: thumbnails refresh after a same-size, preserved-mtime original mutation
+ok 21 - thumbnails refresh after a same-size, preserved-mtime original mutation
+  ---
+  duration_ms: 125.924583
+  type: 'test'
+  ...
+# Subtest: an unverified legacy thumbnail is refreshed only while preserving its old bytes
+ok 22 - an unverified legacy thumbnail is refreshed only while preserving its old bytes
+  ---
+  duration_ms: 76.701708
+  type: 'test'
+  ...
+# Subtest: a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+ok 23 - a manually edited verified thumbnail is preserved and refresh reports a recoverable conflict
+  ---
+  duration_ms: 66.539084
+  type: 'test'
+  ...
+# Subtest: a source change during thumbnail decoding cannot publish a stale proxy
+ok 24 - a source change during thumbnail decoding cannot publish a stale proxy
+  ---
+  duration_ms: 56.977917
+  type: 'test'
+  ...
+# Subtest: RAW development uses source content, retains previous derived copies and rejects symlinks
+ok 25 - RAW development uses source content, retains previous derived copies and rejects symlinks
+  ---
+  duration_ms: 104.567084
+  type: 'test'
+  ...
+# Subtest: embedded RAW preview content and orientation refresh under a preserved stamp
+ok 26 - embedded RAW preview content and orientation refresh under a preserved stamp
+  ---
+  duration_ms: 151.704792
+  type: 'test'
+  ...
+# Subtest: adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+ok 27 - adjustment baking invalidates same-size, preserved-stamp sources without replacing old cache copies
+  ---
+  duration_ms: 143.496375
+  type: 'test'
+  ...
+# Subtest: source changes during adjustment decoding reject publication and preserve prior cache data
+ok 28 - source changes during adjustment decoding reject publication and preserve prior cache data
+  ---
+  duration_ms: 68.002458
+  type: 'test'
+  ...
+# Subtest: an edit racing the thumbnail capture is restored exclusively and retained in history
+ok 29 - an edit racing the thumbnail capture is restored exclusively and retained in history
+  ---
+  duration_ms: 120.264625
+  type: 'test'
+  ...
+# Subtest: a new target appearing during thumbnail publication is never replaced
+ok 30 - a new target appearing during thumbnail publication is never replaced
+  ---
+  duration_ms: 136.181542
+  type: 'test'
+  ...
+# Subtest: RAW development detects a source mutation during the converter and publishes no stale image
+ok 31 - RAW development detects a source mutation during the converter and publishes no stale image
+  ---
+  duration_ms: 70.463875
+  type: 'test'
+  ...
+# Subtest: manually changed development and adjustment outputs are rejected without replacement
+ok 32 - manually changed development and adjustment outputs are rejected without replacement
+  ---
+  duration_ms: 152.941042
+  type: 'test'
+  ...
+# Subtest: old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+ok 33 - old stamp-only RAW cache files are preserved and cannot be treated as content evidence
+  ---
+  duration_ms: 75.524375
+  type: 'test'
+  ...
+# Subtest: embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+ok 34 - embedded preview rejects symlinks and bounds corrupt JPEG offsets/lengths
+  ---
+  duration_ms: 2.602125
+  type: 'test'
+  ...
+# Subtest: different sources targeting the same thumbnail name are serialized and independently verified
+ok 35 - different sources targeting the same thumbnail name are serialized and independently verified
+  ---
+  duration_ms: 131.209917
+  type: 'test'
+  ...
+# Subtest: a racing unrelated image.jpg in thumbnail history cannot be overwritten
+ok 36 - a racing unrelated image.jpg in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 116.250958
+  type: 'test'
+  ...
+# Subtest: a racing unrelated evidence.json in thumbnail history cannot be overwritten
+ok 37 - a racing unrelated evidence.json in thumbnail history cannot be overwritten
+  ---
+  duration_ms: 132.648458
+  type: 'test'
+  ...
+# Subtest: cache publication uses atomic exclusive moves when the filesystem refuses hard links
+ok 38 - cache publication uses atomic exclusive moves when the filesystem refuses hard links
+  ---
+  duration_ms: 175.641834
+  type: 'test'
+  ...
+# Subtest: a source changed and restored during RAW decoding cannot change the verified pixels consumed
+ok 39 - a source changed and restored during RAW decoding cannot change the verified pixels consumed
+  ---
+  duration_ms: 68.627333
+  type: 'test'
+  ...
+# Subtest: spread input evidence changes when source and template bytes change with the same size and timestamps
+ok 40 - spread input evidence changes when source and template bytes change with the same size and timestamps
+  ---
+  duration_ms: 8.230458
+  type: 'test'
+  ...
+# Subtest: content evidence streams bounded buffers and does not reuse a global stamp-only digest
+ok 41 - content evidence streams bounded buffers and does not reuse a global stamp-only digest
+  ---
+  duration_ms: 18.338167
+  type: 'test'
+  ...
+# Subtest: content evidence rejects a source mutated during streaming and settles missing/symlink inputs
+ok 42 - content evidence rejects a source mutated during streaming and settles missing/symlink inputs
+  ---
+  duration_ms: 5.477375
+  type: 'test'
+  ...
+# Subtest: many requested source digests keep concurrent file handles bounded
+ok 43 - many requested source digests keep concurrent file handles bounded
+  ---
+  duration_ms: 65.827334
+  type: 'test'
+  ...
+# Subtest: CMYK 8-bit template backdrop matches independent ink TIFF
+ok 44 - CMYK 8-bit template backdrop matches independent ink TIFF
+  ---
+  duration_ms: 107.38275
+  type: 'test'
+  ...
+# Subtest: CMYK 16-bit template backdrop matches independent ink TIFF
+ok 45 - CMYK 16-bit template backdrop matches independent ink TIFF
+  ---
+  duration_ms: 72.1245
+  type: 'test'
+  ...
+# Subtest: 16-bit RGB template backdrop retains source precision and profile
+ok 46 - 16-bit RGB template backdrop retains source precision and profile
+  ---
+  duration_ms: 29.966125
+  type: 'test'
+  ...
+# Subtest: an explicit real black template composite remains usable without the engine
+ok 47 - an explicit real black template composite remains usable without the engine
+  ---
+  duration_ms: 25.716542
+  type: 'test'
+  ...
+# Subtest: a declared placeholder template composite is replaced by its actual layer render
+ok 48 - a declared placeholder template composite is replaced by its actual layer render
+  ---
+  duration_ms: 1350.667958
+  type: 'test'
+  ...
+# Subtest: unprofiled CMYK template backdrop fails with a recovery instruction
+ok 49 - unprofiled CMYK template backdrop fails with a recovery instruction
+  ---
+  duration_ms: 7.5295
+  type: 'test'
+  ...
+1..49
+# tests 49
+# suites 0
+# pass 49
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7349.913792

@@ -1,0 +1,24 @@
+{
+  "before": {
+    "openSeconds": 3.529227958,
+    "coldPreviewSeconds": 49.271369875,
+    "warmUnchangedSeconds": 10.825592333000001,
+    "medianEditSaveSeconds": 3.626953542000003,
+    "medianEditPreviewSeconds": 9.488779666000003,
+    "medianEndToEndEditSeconds": 12.821943958000004,
+    "retainedBytesAfterThreeEdits": 3660171630,
+    "maxRssMiB": 1425.984375,
+    "validJpegs": 14
+  },
+  "after": {
+    "openSeconds": 0.32010854199999994,
+    "coldPreviewSeconds": 33.617494292,
+    "warmUnchangedSeconds": 5.095242333000002,
+    "medianEditSaveSeconds": 0.39253183300000094,
+    "medianEditPreviewSeconds": 1.6152658749999973,
+    "medianEndToEndEditSeconds": 2.027028790999997,
+    "retainedBytesAfterThreeEdits": 0,
+    "maxRssMiB": 1427.359375,
+    "validJpegs": 14
+  }
+}

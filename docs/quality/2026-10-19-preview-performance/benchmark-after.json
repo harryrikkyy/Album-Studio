@@ -1,0 +1,343 @@
+{
+  "label": "after",
+  "node": "v22.23.3",
+  "phases": [
+    {
+      "name": "cold-all",
+      "ms": 33617.494292,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 3557,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 2,
+          "ms": 1773,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 3,
+          "ms": 1877,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 4,
+          "ms": 1588,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 5,
+          "ms": 2108,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 6,
+          "ms": 1654,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 7,
+          "ms": 1275,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 8,
+          "ms": 2466,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 9,
+          "ms": 1522,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 10,
+          "ms": 1640,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 11,
+          "ms": 1705,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 12,
+          "ms": 1761,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 13,
+          "ms": 1554,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 14,
+          "ms": 1585,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ]
+    },
+    {
+      "name": "warm-no-change",
+      "ms": 5095.242333000002,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "events": [
+        {
+          "event": "proofs.idle"
+        }
+      ]
+    },
+    {
+      "name": "photo-edit-1",
+      "ms": 1615.2658749999973,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 1180,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 364.1545830000032
+    },
+    {
+      "name": "photo-edit-2",
+      "ms": 1678.8976669999975,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 1242,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 392.5318330000009
+    },
+    {
+      "name": "photo-edit-3",
+      "ms": 1594.0490409999984,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 1156,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 432.9797499999986
+    },
+    {
+      "name": "photo-edit-with-full-history",
+      "ms": 1579.7013329999972,
+      "historyBefore": {
+        "files": 1,
+        "bytes": 8589934592,
+        "stages": 1
+      },
+      "historyAfter": {
+        "files": 1,
+        "bytes": 8589934592,
+        "stages": 1
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 1149,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ]
+    }
+  ],
+  "projectSourceSha256": "99a071825bda3134b733d8a7a472d3146cf1daf2eafd8d7f6b3d87137bbfa99a",
+  "started": "2026-10-19T12:08:02.265Z",
+  "openMs": 320.10854199999994,
+  "photos": 131,
+  "spreads": 14,
+  "target": {
+    "spread": 1,
+    "photoUses": 1
+  },
+  "fullHistoryPreserved": true,
+  "maxRssKiB": 1461616,
+  "proofs": [
+    {
+      "name": "live_page_001.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 350217,
+      "sha256": "4c02853549e377fa7f25c90e9988b165dcf55873fc278e87207ff6789d198f52"
+    },
+    {
+      "name": "live_page_002.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 322219,
+      "sha256": "4b15dd7a78e1d2f6b04e3ae86e901c1582bc4e8118296cf095e0cedcf844aa35"
+    },
+    {
+      "name": "live_page_003.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 330628,
+      "sha256": "1acf3e2100082934825c8b3f302430f2ebd4e35a41df7319481826b6ab2ffc23"
+    },
+    {
+      "name": "live_page_004.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 280445,
+      "sha256": "1200ab712b5728badeffe4e0b32d465f56a19107cca3111ba44f40426d4035b5"
+    },
+    {
+      "name": "live_page_005.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 369920,
+      "sha256": "143be567e8cbd57d04628380de45a48c320ce7b8b085094106774290fe2dbc35"
+    },
+    {
+      "name": "live_page_006.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 320165,
+      "sha256": "542187580959dce16ce0eba6cf5379a7e22fb5a30045b2f0766aac638a22f970"
+    },
+    {
+      "name": "live_page_007.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 338410,
+      "sha256": "6680c8c8625b50e062f410a1d1f829b5a12dca562e274d830efc57f41abdb0f4"
+    },
+    {
+      "name": "live_page_008.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 459968,
+      "sha256": "0899476af85b35ad09d0afcb83ee6cfe867cfcc2bda2ba355e566318cbbcbb62"
+    },
+    {
+      "name": "live_page_009.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 459549,
+      "sha256": "bcff3402609c0f6281df01b181b83b28c755f16f05f917a96b2635a8c6dac5fc"
+    },
+    {
+      "name": "live_page_010.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 471612,
+      "sha256": "dc64912d7e33e5bf93b31005abef1d895a3e121848710090d77681db40a9d1f7"
+    },
+    {
+      "name": "live_page_011.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 486869,
+      "sha256": "b3f601036154ebe6e59edd42901e509410bec6054c27631d2aff167d16af511a"
+    },
+    {
+      "name": "live_page_012.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 438457,
+      "sha256": "8a604026c4f388a3a6111f1daf736aa896ff2a2465f78453e448145785e0453c"
+    },
+    {
+      "name": "live_page_013.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 364883,
+      "sha256": "0d6464dd213eb0b7da188e132bc0f6a527e0a906652d6755d636708256d6aa8d"
+    },
+    {
+      "name": "live_page_014.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 418044,
+      "sha256": "3530479b15e55eb0e54807e183c5764c441523c720961607ed5bc317dcf3b56b"
+    }
+  ],
+  "finished": "2026-10-19T12:08:49.418Z"
+}

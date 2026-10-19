@@ -1,0 +1,5 @@
+{"name":"cold-all","ms":49271.369875,"updated":14,"failed":0,"history":{"files":288,"bytes":2693174115,"stages":28}}
+{"name":"warm-no-change","ms":10825.592333,"updated":0,"failed":0,"history":{"files":288,"bytes":2693174115,"stages":28}}
+{"name":"photo-edit-1","ms":9488.779666000002,"updated":1,"failed":0,"history":{"files":308,"bytes":3015506620,"stages":29}}
+{"name":"photo-edit-2","ms":10630.109000000011,"updated":1,"failed":0,"history":{"files":328,"bytes":3337839125,"stages":30}}
+{"name":"photo-edit-3","ms":8930.661334000004,"updated":1,"failed":0,"history":{"files":348,"bytes":3660171630,"stages":31}}

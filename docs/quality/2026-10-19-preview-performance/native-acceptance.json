@@ -1,0 +1,140 @@
+{
+  "app": "/Volumes/Harry/works/albumStudio-photocraft/native/dist/Album Studio Performance.app",
+  "album": "/private/tmp/album-studio-performance-acceptance-kowhbjg3/Album",
+  "photos": 131,
+  "spreads": 14,
+  "allProofsDecoded": true,
+  "checks": [
+    {
+      "n": 1,
+      "name": "live_page_001.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 348935,
+      "sha256": "c702033f8971fc890d94d74f0bf717fdc2a7f82a8cc930ea6edafd64ad433efb",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 2,
+      "name": "live_page_002.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 322219,
+      "sha256": "4b15dd7a78e1d2f6b04e3ae86e901c1582bc4e8118296cf095e0cedcf844aa35",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 3,
+      "name": "live_page_003.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 330628,
+      "sha256": "1acf3e2100082934825c8b3f302430f2ebd4e35a41df7319481826b6ab2ffc23",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 4,
+      "name": "live_page_004.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 280445,
+      "sha256": "1200ab712b5728badeffe4e0b32d465f56a19107cca3111ba44f40426d4035b5",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 5,
+      "name": "live_page_005.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 369920,
+      "sha256": "143be567e8cbd57d04628380de45a48c320ce7b8b085094106774290fe2dbc35",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 6,
+      "name": "live_page_006.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 320165,
+      "sha256": "542187580959dce16ce0eba6cf5379a7e22fb5a30045b2f0766aac638a22f970",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 7,
+      "name": "live_page_007.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 338410,
+      "sha256": "6680c8c8625b50e062f410a1d1f829b5a12dca562e274d830efc57f41abdb0f4",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 8,
+      "name": "live_page_008.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 459968,
+      "sha256": "0899476af85b35ad09d0afcb83ee6cfe867cfcc2bda2ba355e566318cbbcbb62",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 9,
+      "name": "live_page_009.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 459549,
+      "sha256": "bcff3402609c0f6281df01b181b83b28c755f16f05f917a96b2635a8c6dac5fc",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 10,
+      "name": "live_page_010.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 471612,
+      "sha256": "dc64912d7e33e5bf93b31005abef1d895a3e121848710090d77681db40a9d1f7",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 11,
+      "name": "live_page_011.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 486869,
+      "sha256": "b3f601036154ebe6e59edd42901e509410bec6054c27631d2aff167d16af511a",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 12,
+      "name": "live_page_012.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 438457,
+      "sha256": "8a604026c4f388a3a6111f1daf736aa896ff2a2465f78453e448145785e0453c",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 13,
+      "name": "live_page_013.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 364883,
+      "sha256": "0d6464dd213eb0b7da188e132bc0f6a527e0a906652d6755d636708256d6aa8d",
+      "manifestDigestMatches": true
+    },
+    {
+      "n": 14,
+      "name": "live_page_014.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 418044,
+      "sha256": "3530479b15e55eb0e54807e183c5764c441523c720961607ed5bc317dcf3b56b",
+      "manifestDigestMatches": true
+    }
+  ],
+  "rapidGuiEditVerified": false,
+  "rapidGuiEditLimitation": "Native menus and folder chooser work, but automated key events did not reach the embedded editing interface. The attempted shuffle keys left the independent project unchanged. No rapid GUI-edit or GUI-undo success is claimed.",
+  "projectUnchangedByAttemptedKeys": true,
+  "screen": "/private/tmp/album-studio-performance-acceptance-kowhbjg3/native-preview-ready-final.png",
+  "screenShows": "131 photos, 14 spreads, composed spread and populated thumbnails; Preview Ready, no error toasts visible."
+}

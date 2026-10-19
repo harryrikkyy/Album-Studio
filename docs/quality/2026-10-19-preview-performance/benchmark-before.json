@@ -1,0 +1,317 @@
+{
+  "label": "before",
+  "node": "v22.23.3",
+  "phases": [
+    {
+      "name": "cold-all",
+      "ms": 49271.369875,
+      "historyBefore": {
+        "files": 0,
+        "bytes": 0,
+        "stages": 0
+      },
+      "historyAfter": {
+        "files": 288,
+        "bytes": 2693174115,
+        "stages": 28
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 4975,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 2,
+          "ms": 2365,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 3,
+          "ms": 2415,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 4,
+          "ms": 2341,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 5,
+          "ms": 2914,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 6,
+          "ms": 2851,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 7,
+          "ms": 2063,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 8,
+          "ms": 4174,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 9,
+          "ms": 2583,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 10,
+          "ms": 2813,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 11,
+          "ms": 3065,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 12,
+          "ms": 2972,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 13,
+          "ms": 2690,
+          "skipped": []
+        },
+        {
+          "event": "proofs.updated",
+          "n": 14,
+          "ms": 3143,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ]
+    },
+    {
+      "name": "warm-no-change",
+      "ms": 10825.592333,
+      "historyBefore": {
+        "files": 288,
+        "bytes": 2693174115,
+        "stages": 28
+      },
+      "historyAfter": {
+        "files": 288,
+        "bytes": 2693174115,
+        "stages": 28
+      },
+      "events": [
+        {
+          "event": "proofs.idle"
+        }
+      ]
+    },
+    {
+      "name": "photo-edit-1",
+      "ms": 9488.779666000002,
+      "historyBefore": {
+        "files": 288,
+        "bytes": 2693174115,
+        "stages": 28
+      },
+      "historyAfter": {
+        "files": 308,
+        "bytes": 3015506620,
+        "stages": 29
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 3859,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 3333.1642920000013
+    },
+    {
+      "name": "photo-edit-2",
+      "ms": 10630.109000000011,
+      "historyBefore": {
+        "files": 308,
+        "bytes": 3015506620,
+        "stages": 29
+      },
+      "historyAfter": {
+        "files": 328,
+        "bytes": 3337839125,
+        "stages": 30
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 4286,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 3626.953542000003
+    },
+    {
+      "name": "photo-edit-3",
+      "ms": 8930.661334000004,
+      "historyBefore": {
+        "files": 328,
+        "bytes": 3337839125,
+        "stages": 30
+      },
+      "historyAfter": {
+        "files": 348,
+        "bytes": 3660171630,
+        "stages": 31
+      },
+      "events": [
+        {
+          "event": "proofs.updated",
+          "n": 1,
+          "ms": 3921,
+          "skipped": []
+        },
+        {
+          "event": "proofs.idle"
+        }
+      ],
+      "editMs": 3726.319499999998
+    }
+  ],
+  "projectSourceSha256": "99a071825bda3134b733d8a7a472d3146cf1daf2eafd8d7f6b3d87137bbfa99a",
+  "started": "2026-10-19T12:03:31.987Z",
+  "openMs": 3529.227958,
+  "photos": 131,
+  "spreads": 14,
+  "target": {
+    "spread": 1,
+    "photoUses": 1
+  },
+  "maxRssKiB": 1460208,
+  "proofs": [
+    {
+      "name": "live_page_001.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 294433,
+      "sha256": "456a86859ba7b7314c3aa38007d5d6d42c0bb0144a5b93263cb3540a909c83fa"
+    },
+    {
+      "name": "live_page_002.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 271105,
+      "sha256": "f0fb8841f2879e9636c5b92ac4c746e2fe9759bbafa2280c85a4afdd3e3ccfc3"
+    },
+    {
+      "name": "live_page_003.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 283214,
+      "sha256": "09b180a065841e01a2f6a3f4dd27f367802db6381e73128aaf6a433672b7ffc4"
+    },
+    {
+      "name": "live_page_004.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 236026,
+      "sha256": "6e357bc2ace1c5795637d2d79395195760242eb1aee4218c92a6704f3f6649c1"
+    },
+    {
+      "name": "live_page_005.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 314898,
+      "sha256": "a6d5ec0bc350b024b68331d8b67e8e09fca5b4412248a689763fc845da5754f8"
+    },
+    {
+      "name": "live_page_006.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 270829,
+      "sha256": "a5bddd31d92a61a266c59bedde384b52a3dfc348cb1b0152102e21e744e4d9b4"
+    },
+    {
+      "name": "live_page_007.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 286489,
+      "sha256": "bce74f47c772c19d3c6642b1f69d5ed05a1d2a124da1dd910a5bf2f51015f08a"
+    },
+    {
+      "name": "live_page_008.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 380614,
+      "sha256": "bfae019e09e737cfca2b55e1a78313e866cd69f85fe91fcc95f546757be100d2"
+    },
+    {
+      "name": "live_page_009.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 379923,
+      "sha256": "0830730ac119007713b54002f21edc053c204538089a5cde5a5b4ad4bb5a985b"
+    },
+    {
+      "name": "live_page_010.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 389840,
+      "sha256": "68ef4472e057966767fe35665cfc0174d4ee77d976b1b8f72a2f1629c419b232"
+    },
+    {
+      "name": "live_page_011.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 404440,
+      "sha256": "0cb16f2b18249f0d59ec3d5d270fc7006bc74ddf421320f7fc553362d69dc4df"
+    },
+    {
+      "name": "live_page_012.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 368567,
+      "sha256": "87bbb637e3363c81061bec6bdc70053b98c051a6d278512ebd147b0489380ffc"
+    },
+    {
+      "name": "live_page_013.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 306763,
+      "sha256": "56d49034fc1df3d765ad4ca0748a87646c47fa1f6519ef3446640226698f298a"
+    },
+    {
+      "name": "live_page_014.jpg",
+      "width": 2400,
+      "height": 800,
+      "bytes": 344434,
+      "sha256": "c10aa77cbbb2646b1a4b3fe4c6fd8140dba1b4a567cd5acd761397ee0992ecce"
+    }
+  ],
+  "finished": "2026-10-19T12:05:15.504Z"
+}

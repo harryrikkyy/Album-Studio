@@ -1,0 +1,41 @@
+{
+  "originalProjectSha256": "99a071825bda3134b733d8a7a472d3146cf1daf2eafd8d7f6b3d87137bbfa99a",
+  "originalProjectUnchanged": true,
+  "preexistingTrackedChangesUnchangedBeforeLogAppend": {
+    ".github/workflows/ci.yml": true,
+    "QUALITY_IMPROVEMENT_LOG.md": true,
+    "native/backend/lib/file_publication.js": true,
+    "native/backend/lib/namespace_lock.js": true,
+    "native/backend/lib/output_lock.js": true,
+    "native/backend/lib/publication_broker.js": true,
+    "native/backend/lib/publication_io.js": true,
+    "native/backend/lib/render_transaction.js": true,
+    "native/backend/lib/sheets.js": true,
+    "native/backend/test/namespace_lock.test.js": true,
+    "native/backend/test/publication_broker.test.js": true
+  },
+  "liveHistoryExactMetadataInventoryUnchanged": true,
+  "liveHistoryStages": 74,
+  "liveHistoryFiles": 1204,
+  "liveHistoryBytes": 8589743103,
+  "frozenExecutablesUnchanged": {
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/photocraft-cli": true,
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/album-studio": true,
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/pinned-reconstruction/release/album-studio-rename-exclusive": true,
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/photocraft-cli": true,
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/album-studio": true,
+    "/Volumes/Harry/works/albumStudio-photocraft/native/photocraft/target/architecture-20261016/release/album-studio-rename-exclusive": true
+  },
+  "engineCheckoutHead": "41a0f464405a1e4e20629de928727815679f5906",
+  "engineTrackedStatus": "",
+  "enginePinUnchanged": true,
+  "sourceHistoryDeleted": false,
+  "historyMoved": false,
+  "limitsRaised": false,
+  "unrelatedUserFoldersModifiedByThisWork": false,
+  "approvedSyntheticBackupFilesVerified": 256,
+  "approvedSyntheticBackupHashesUnchanged": true,
+  "diagnosticAppClosed": true,
+  "olderUserAppLeftRunning": true,
+  "missionLogOriginalPrefixPreservedAfterAppend": true
+}
