@@ -69,6 +69,39 @@ async function fileEvidence(file, { prefixBytes = 0, expectedDigest } = {}) {
 
 async function fileDigest(file) { return (await fileEvidence(file)).digest }
 
+/** Read metadata only, without claiming a revision of the rest of the file. Two matching
+ * bounded reads and descriptor/name checks reject unstable headers. Rendering and publication
+ * must continue to use full fileEvidence/readVerifiedBuffer/snapshotFile evidence. */
+async function readFileHeader(file, maximum) {
+  if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 1024 * 1024) throw new Error('Choose a header budget from 1 byte to 1 MiB.')
+  return withDigestSlot(async () => {
+    const same = (a, b) => ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].every(key => a[key] === b[key])
+    const changed = () => Object.assign(new Error(`The source ${file} changed while its header was read. Retry from a stable source file.`), { code: 'SOURCE_CHANGED' })
+    const before = await fs.promises.lstat(file, { bigint: true })
+    if (!before.isFile()) throw new Error(`The source ${file} is not a regular file. Resolve its symlink or restore the original before continuing.`)
+    const handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
+    try {
+      const opened = await handle.stat({ bigint: true })
+      if (!same(before, opened)) throw changed()
+      const length = Number(opened.size < BigInt(maximum) ? opened.size : BigInt(maximum))
+      const pass = async () => {
+        const bytes = Buffer.alloc(length)
+        let position = 0
+        while (position < length) {
+          const { bytesRead } = await handle.read(bytes, position, length - position, position)
+          if (!bytesRead) throw changed()
+          position += bytesRead
+        }
+        return bytes
+      }
+      const first = await pass(), second = await pass()
+      const after = await handle.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
+      if (!first.equals(second) || !same(opened, after) || !same(after, named)) throw changed()
+      return first
+    } finally { await handle.close() }
+  })
+}
+
 /** Decode bytes from the exact verified revision, rather than reopening a mutable path. */
 async function readVerifiedBuffer(file, expectedDigest, maximum = 512 * 1024 * 1024) {
   if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 512 * 1024 * 1024 || !/^[a-f0-9]{64}$/.test(expectedDigest || '')) throw new Error('Buffered source consumption requires an expected revision and a budget up to 512 MiB.')
@@ -208,4 +241,4 @@ async function writeAtomic(file, data) {
   await fs.promises.rename(tmp, file)
 }
 
-module.exports = { cacheRoot, fileKey, fileStamp, writeAtomic, fileDigest, fileEvidence, readVerifiedBuffer, contentFileKey, contentKey, snapshotFile }
+module.exports = { cacheRoot, fileKey, fileStamp, writeAtomic, fileDigest, fileEvidence, readFileHeader, readVerifiedBuffer, contentFileKey, contentKey, snapshotFile }

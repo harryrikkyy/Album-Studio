@@ -11,7 +11,7 @@
 const fs = require('fs')
 const path = require('path')
 const { sanitize, assignAssetIds } = require('./identity')
-const { fileEvidence } = require('./cache')
+const { readFileHeader } = require('./cache')
 const { prepareSourceAliases } = require('./source_roots')
 
 async function readdirSafe(dir) {
@@ -27,7 +27,7 @@ function slotsFromName(name) {
 /** A PSD's canvas size from its header ("8BPS", height at byte 14, width at 18); null if unreadable. */
 async function canvasOf(file) {
   try {
-    const { prefix: b } = await fileEvidence(file, { prefixBytes: 26 })
+    const b = await readFileHeader(file, 26)
     if (b.length < 26 || b.toString('latin1', 0, 4) !== '8BPS' || ![1, 2].includes(b.readUInt16BE(4))) return null
     return { width: b.readUInt32BE(18), height: b.readUInt32BE(14) }
   } catch (error) {

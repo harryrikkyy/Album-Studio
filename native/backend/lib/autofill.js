@@ -6,7 +6,8 @@
 
 'use strict'
 
-const { fileEvidence, contentKey } = require('./cache')
+const crypto = require('crypto')
+const { readFileHeader, contentKey } = require('./cache')
 const { planAutoFillCounts, _parseExifDateFromBuffer } = require('../../../src/renderer_pure')
 
 const exifCache = new Map()
@@ -16,9 +17,11 @@ const MAX_EXIF_CACHE = 4096
 async function captureTime(file) {
   if (!file) return null
   try {
-    const evidence = await fileEvidence(file, { prefixBytes: 256 * 1024 }), key = contentKey(file, evidence.digest)
+    const prefix = await readFileHeader(file, 256 * 1024)
+    // Only this header is parsed; its digest is a metadata-cache key, never source evidence.
+    const key = contentKey(file, crypto.createHash('sha256').update(prefix).digest('hex'))
     if (exifCache.has(key)) { const hit = exifCache.get(key); exifCache.delete(key); exifCache.set(key, hit); return hit }
-    const parsed = _parseExifDateFromBuffer(evidence.prefix), ts = Number.isFinite(parsed) ? parsed : null
+    const parsed = _parseExifDateFromBuffer(prefix), ts = Number.isFinite(parsed) ? parsed : null
     exifCache.set(key, ts)
     if (exifCache.size > MAX_EXIF_CACHE) exifCache.delete(exifCache.keys().next().value)
     return ts
