@@ -1,0 +1,130 @@
+{
+  "album": "/private/tmp/album-studio-loading-acceptance-5sqwuza0/proofs/pages",
+  "proofs": 15,
+  "manifestSpreads": 15,
+  "allJPEGMetadataValid": true,
+  "allExpectedPagesPresent": true,
+  "printDeliveryCertified": false,
+  "pages": [
+    {
+      "n": 1,
+      "bytes": 293452,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "8dfe44791031dbdff5df906b528369dbb13473bab26e08ef56b5c667a194f4d4"
+    },
+    {
+      "n": 2,
+      "bytes": 271105,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "f0fb8841f2879e9636c5b92ac4c746e2fe9759bbafa2280c85a4afdd3e3ccfc3"
+    },
+    {
+      "n": 3,
+      "bytes": 283214,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "09b180a065841e01a2f6a3f4dd27f367802db6381e73128aaf6a433672b7ffc4"
+    },
+    {
+      "n": 4,
+      "bytes": 236026,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "6e357bc2ace1c5795637d2d79395195760242eb1aee4218c92a6704f3f6649c1"
+    },
+    {
+      "n": 5,
+      "bytes": 314898,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "a6d5ec0bc350b024b68331d8b67e8e09fca5b4412248a689763fc845da5754f8"
+    },
+    {
+      "n": 6,
+      "bytes": 270829,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "a5bddd31d92a61a266c59bedde384b52a3dfc348cb1b0152102e21e744e4d9b4"
+    },
+    {
+      "n": 7,
+      "bytes": 286489,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "bce74f47c772c19d3c6642b1f69d5ed05a1d2a124da1dd910a5bf2f51015f08a"
+    },
+    {
+      "n": 8,
+      "bytes": 380614,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "bfae019e09e737cfca2b55e1a78313e866cd69f85fe91fcc95f546757be100d2"
+    },
+    {
+      "n": 9,
+      "bytes": 379923,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "0830730ac119007713b54002f21edc053c204538089a5cde5a5b4ad4bb5a985b"
+    },
+    {
+      "n": 10,
+      "bytes": 277434,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "18af0e10807ef218dfc24db64647d1ad3d1e76a65fac2d12b2de86b3e4c74b3f"
+    },
+    {
+      "n": 11,
+      "bytes": 404440,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "0cb16f2b18249f0d59ec3d5d270fc7006bc74ddf421320f7fc553362d69dc4df"
+    },
+    {
+      "n": 12,
+      "bytes": 333823,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "640689a57a15b5c41d794435df99304abef17ed6d04f5624020d72113e8e7ab7"
+    },
+    {
+      "n": 13,
+      "bytes": 377700,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "9d16de861305f2da83f46c4104d59731e9143c639469d04d2f92e01644d443ae"
+    },
+    {
+      "n": 14,
+      "bytes": 306763,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "56d49034fc1df3d765ad4ca0748a87646c47fa1f6519ef3446640226698f298a"
+    },
+    {
+      "n": 15,
+      "bytes": 344434,
+      "width": 2400,
+      "height": 800,
+      "format": "jpeg",
+      "sha256": "c10aa77cbbb2646b1a4b3fe4c6fd8140dba1b4a567cd5acd761397ee0992ecce"
+    }
+  ]
+}

@@ -1,0 +1,1807 @@
+{
+  "authorization": "User explicitly approved backup move on2026-10-19",
+  "source": "/Users/harry/Library/Caches/Album Studio/.album-studio-stage-history",
+  "archive": "/Users/harry/Library/Caches/Album Studio/.album-studio-test-history-backup-20261019-419a7850-17b7-4609-8d50-4b8dda5ac5a4",
+  "reason": "All retained composites match independently regenerated synthetic RGB unit-test fixtures. Packaged writers were stopped. The complete directory was moved atomically without replacement.",
+  "files": 256,
+  "bytes": 1951232,
+  "allFileHashesVerifiedBeforeAndAfter": true,
+  "sameDirectoryInodePreserved": true,
+  "filesDeleted": false,
+  "retentionLimitsChanged": false,
+  "restore": "Stop all Album Studio writers. Preserve any new history directory first. Atomically move this complete archive to the source path with the no-replace helper; never overwrite new recovery history.",
+  "stages": [
+    {
+      "name": "00f532dc-0d35-4511-b28f-ce063d2a6985",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "02b9d197-a4d6-416d-bb9d-e8c28868bece",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0500204f-8ec1-4315-a264-4526b188d429",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "05a8946b-0a4e-4e5d-85e4-8b0434f3bac6",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "076c3064-74df-47c0-ba6f-7958cf688f3b",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "09f63bf3-e999-4cf3-a50f-e59a145a1737",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0ac0def9-c875-41d6-b09e-9b24971b0e03",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0b4e6913-7236-45e7-ad67-fcb3f3b62bfc",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0bce6cd5-5c8a-4146-b188-4d8746a5664d",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0c821832-725f-4fe9-91e1-ad62a1da6a8e",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0d264335-1d4d-44ba-90aa-83d8afcdc76e",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0d8d2813-c84a-475f-ac65-c453901f2d5a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0e75cf6e-61d9-4a22-be1a-262ef1dc2885",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "0fc4a72f-5a0c-41f4-9413-a231391b7ed1",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "10404677-34b7-4ccd-b974-97e749a91537",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "10b5da40-b917-4e4a-93be-972394cbd38e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "12e5067f-1d11-49c0-bb1b-80a487063af7",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "13157d4a-719a-4085-82b6-b2829afe15a2",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "13fdf669-0c2e-4b33-b4fc-06b97cc2737a",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1486797b-1407-4686-87b1-f120dd3967df",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1499671e-e453-4196-9f2b-b1c727df3c9f",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "15223c37-a1b6-4496-b388-64b802d2dec4",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1586927e-04b2-4a53-93b1-f48048084efa",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "159be1af-10dc-4813-b8f0-bfa417ca1154",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "162e84ed-f871-4eda-a901-39aa211f2fdb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "187f7e91-cf6f-4e15-830a-9f1111286e6d",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "189f3746-d8e3-4f90-a6c5-8bc1bbb376b4",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "19a138a6-cb2e-4634-9b69-45401e214412",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "19ba364f-a82e-473b-9289-35e76500acd7",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1aa58137-bafd-48fd-b947-281446f88d7b",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1afd0597-dffb-4b78-9140-202d6bfb5b18",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1b0db125-9435-42d7-a7fc-fae67e934d12",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1b9606fe-bf51-4b94-9cef-2b9ea4abb67a",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1bb6cea0-07f9-43a5-a230-bdb2a437a320",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1d25a4fe-228a-4398-8d2c-5721896e417e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1d857d34-5251-4c52-9544-fbcb2d3fd917",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1e6f0ee4-2446-452a-93ef-f6b0ab9615a0",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1e81e86a-8cd2-4015-a129-93607a862d06",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "1f1263b4-0cc2-46a8-93c7-e616f7a190fd",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "207300c7-5cfd-435f-83bb-8337b5c6c5a4",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "209d9e34-aa7a-4320-a0cf-d4abf41ef1bb",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "229cceb5-761d-4637-b4eb-f9dbceca0e5b",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "23d83919-4b58-472f-846f-d91114135f51",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "245ad5f7-c9d3-43ab-a206-f66e01c709e1",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "24a9de20-2bb3-49b7-948c-f1051284fd26",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "25679c44-411a-4392-ae7e-f72ca3bd07d7",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "26d21a32-7655-41e0-8d63-e0dc78f017b2",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "26d7a954-6ad1-47fa-9c3f-52d1b839a3f8",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "27caa957-295c-412a-a9e7-a5f8409e9a64",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "284676de-0714-4fd7-b3b8-34a2b13ab929",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2935c585-c194-4875-b7e1-7212debd1ab1",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "293aea4e-1eb8-4447-bce9-ad621fdca0e8",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "29ec2c99-0800-44e5-b0a0-a7aea6366438",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2ae9e7d9-09de-48ea-b3bf-33933081c02f",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2b03e1ec-907b-4dca-aa18-d9a1ad6f70d0",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2bd979ce-ec66-4f4a-8967-21b8ec6f4b90",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2c448966-4ff2-4433-8e0f-85169da0d049",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2c9c8073-6f35-44cc-bf0b-fd688ebc3915",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2d80a785-9768-4763-bf49-b202c1c94de1",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "2de5d22f-3a69-4a8a-b9a2-61529381b0bc",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3003a274-a0c8-4a91-aaba-27a76e6cf7fd",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3355c70d-1552-41d8-90d9-4e39ec296833",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3376561d-673b-4d71-9423-e99d0d743a0b",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "33a4f617-cd63-4fbb-8ddd-36af7697c05e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "34cced93-b908-42a5-a66c-cefb9ba6d26e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "371c811b-d26b-4cdd-bd3f-1268a518d3e9",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3980cc0f-ca87-4fed-a0dd-311f6ae00230",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3d6337e3-18cf-4f45-9236-dd0f1a8d032f",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3eafaec3-3dcf-4967-8dc0-e193cacdb425",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3ef0bab8-75ec-40e6-8ded-deee3f511754",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "3f512ef1-320c-47f8-b1f7-cd335be53409",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "421a5601-c1b4-412d-a453-ac2d9171e2d8",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4272e5c7-eb27-4dcd-85bb-9bb85f3e116a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "44e48586-6049-46ce-84f2-207046eecafc",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "48152cb6-6547-4135-ad9c-c5fbbb1e30c0",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4a25971e-a47b-47dd-b868-2dab91135ddb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4a3479d1-7052-4503-926a-96a35f4ea304",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4a52998f-029e-4028-8812-935c4e13820d",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4aa17eac-e573-46b5-9825-c83c2895d47b",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4ac575ba-0e14-4c3b-8ead-f1a879330991",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4b037781-4363-496b-ace9-5d8b64b5fc23",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4b28f402-d29e-48d8-a94e-bd12f7df8ac0",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4dd26952-61b9-4be7-9356-7df350910974",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4eb14fbb-f173-4cb9-98d8-4d7e49e2fb54",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "4fc10f89-9f4f-4932-9453-fe9df2daca75",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "525a7c30-95cf-49cf-90d8-19b40523ac58",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "525e1f68-640a-4ccf-91a9-39e8cbc305c0",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "527c15a3-7f31-4813-b733-00fef46b21e8",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "53144365-ceac-47bc-9c8d-5192188d7a1c",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "537aab3d-d946-4db8-bdc5-9204eeb93cb5",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "542f8e49-be4b-454b-90a3-7afc645b708f",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "551799ea-86d8-4cfc-a55a-e1d2ab399cb0",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "5530c27c-0e53-4252-924c-dae848fe9ffd",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "559557b6-ab1c-45d1-b71f-b61e12f8036e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "55cc5dcf-01b2-41a1-9bdb-70c33ca4cc79",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "572c1793-83df-46d9-87f8-f2945696f03a",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "577d3bb1-ed18-4d37-affe-b647390b3f84",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "58bc4e83-8e4a-4f8f-a725-6f59f3f8c7dd",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "58c91ef6-025c-493b-bc47-2cedce3d09c8",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "59197a53-ca3d-4db2-b74f-af1a7d549340",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "5bc8ea33-fbab-40c5-a21c-bfe5558dc7f6",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "5d10f462-3eaf-4641-a303-32ff800e4ccb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "60ce3e20-d502-4280-8c58-02779ddaea34",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6181c6a7-3d24-4bf7-a05f-9fc81ba7d8bf",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "61dca1b3-3768-4e69-8082-0d4683d4e3d4",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "681114cf-9e0e-48cf-a794-93278ca83641",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "68d6f557-58fb-4c33-adc6-07ad3e5909d1",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "68d794c3-f698-4c29-b45f-84d6e9f8d019",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6adfd088-d330-4064-91d0-b1d73a333382",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6b219b7c-12d1-4e67-9ba4-77425fe5dc34",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6c4f295d-e282-4cb1-b006-0ee16c7429ed",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6cb9ceaf-5a57-4992-ab9a-9bdb12377511",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6f272bef-5976-4f35-a0cb-94afe9792378",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "6f5718da-2751-45d5-b56c-c88cdcd8e48c",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "701486ed-0dae-4003-b178-fd13701a1920",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "7017b373-4041-4ab5-827b-a0ce4200e419",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "718e3f2f-1aa3-4340-8d35-a6e0dda9eef2",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "71cdc52d-46dc-45ff-9eb6-2adda3da6a8e",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "727ea193-425d-4eca-8e50-0887770ea897",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "753bbf89-1a2a-4163-a159-8f548b6587da",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "76016c69-a334-4049-ac5e-af1ad647a34a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "76d136c9-82fe-4a93-a17f-a90c5a441229",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "77fd694b-19d9-41ab-a71a-522d7997fab6",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "792eacf4-0cb2-40f4-b75c-3320d763455e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "793494ee-0286-4701-bd9b-e025f4b56296",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "796a5246-ace7-41d5-8798-c81cf204a744",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "79761cc8-b244-4f1b-9c84-7411df66c3ba",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "79a33222-8b9c-40ab-9131-a090b88bf55c",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "7b9154fb-e81e-46e7-ae3b-73dd11366ddf",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "7c07dc00-d7c2-4825-b691-08f6c22ebf48",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "7fc6dff9-b1b2-4edb-8c58-38e08c33c9a9",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "80dc7304-895d-43c5-ab26-70522835532d",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "83515db8-9c5d-47cb-bb6e-78332d89b7dc",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "848fb0ec-f9da-4516-a6ef-2d1f45f06916",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "84a63962-f362-4f4c-81ce-180aee8fdc1a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "84b678be-fe37-421b-8aae-10f20b44ea87",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "85942222-9d8a-459c-a7c7-b2c73d20e0c2",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "87fcfa53-9a21-44d2-8c65-cfb4b2381cbb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "89a23d05-d16a-43a8-98d7-a68fafea1d27",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "8aa49ae7-a878-4fad-abcd-46fe94877571",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "8b5b7f1e-8522-4d83-b547-d635d4664244",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "8c304b16-1545-4531-a216-da348ace02d3",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "8d699784-36e5-4a0d-bb79-1d992b9e9c55",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "8ff0fc10-fd31-49ef-a42f-38b04ba4ac04",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9368cb09-0985-4b44-9e00-098ca4408e3a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "94ac33d0-d2e4-46e2-8e90-89c7dcebbbeb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "95ce7089-3deb-4bc1-a13b-2d57c4f66ef7",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "95fb98ed-836f-4a25-8935-ef4b7dae910a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "977ca451-0399-46a1-8ece-3e6a4787a350",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "97bf74f1-9ea5-475e-8302-76d7b5850002",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "97e44a49-55c7-431c-a7e7-d3e72db9300c",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9889ea8d-8034-4148-8f49-1e1fb36a08ad",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9a6b892f-282c-41de-a1ed-8f9ea07df537",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9ae2ff2c-9d07-49ae-80ab-5bbf9341b4fd",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9b916143-4b18-412e-bb85-7c07f2e6a529",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9be70cda-d46c-46b8-b972-1b011a03a1e1",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9daedbc6-3a1a-4df0-88f9-b082027cc8c0",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "9e5027e3-6058-4984-b27b-729e6b37ee80",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a0a4bb7b-c21d-4319-b5d7-5c5e655ef791",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a2b5db95-b07a-4ca9-bfb4-ff6585754e5d",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a3ef0d93-0745-487f-aadb-fc96b8ae102f",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a440ee04-a159-41a7-b106-ca136121d069",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a54e68bf-c765-40f4-ad29-9b299a66941b",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "a6032b06-fce3-4132-bf98-fcff3462c0cc",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ad3e5cdc-7d81-4ce6-8220-b2bbcca0025e",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ae03d3dd-3db6-4315-811e-5f0d621e1e72",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ae40e7d2-bd08-4be2-adc6-45d81b523831",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "aecc1e23-251f-4198-9a58-0b6a36b5e9a3",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "af9c6586-2009-4d1c-8016-fbf1431f2fcc",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "afabfeee-ca29-421d-9575-b0430174be6e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b17feb8e-73a8-45fb-b386-b694a4d1f67b",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b182f87b-31f7-4d94-b742-859c14a6e4c5",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b1c8e54b-e004-4a1f-a0f3-a8b85b33b27c",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b1d5ae71-63a3-419d-8ea6-bf2f3fbff742",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b4053141-ff36-42fb-9165-257f9169826e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b42fe2d2-215a-4ebd-9dcb-bcfcb8850462",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b62872f0-ca41-4c7c-bc7b-e9eda56d62ce",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b6e27fa2-d11f-45e3-9ad0-37775172fc0f",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "b811f585-a781-4a21-a85c-87c4367852bf",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "bbf67d6b-6f68-4378-b8fe-ab29db0b119c",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "bcf11c66-2d79-410f-ae79-4777992239c3",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "be88fab9-5dfd-48ab-8a13-2d4fb8a280cc",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c0a2e52d-d1f0-4e48-b9b9-00772e7a6e59",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c0fcaae0-3779-4afa-8198-5f9582f87829",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c1343c80-a239-4f04-a235-3855c9484295",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c35a758a-6013-4f95-be9d-76bc4b00eda0",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c4a37c48-7438-42fb-aad1-14df570f9956",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c5aee05a-7ec8-45f6-afd7-0747db23b4d1",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c602992d-c0d6-419c-8f73-594eb554ba40",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c6064222-25ae-4c0d-96dd-4f25dc66b5de",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c6173d90-b1a9-4a29-9c50-d9dcb39fc3a8",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c64be382-d422-45f7-ab0a-e72aed879648",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c684b44d-67a9-47bc-bde4-d52fbf7d2e5f",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c708e2ad-064e-4740-a133-cb74bc4ce703",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "c8ed1660-4143-405f-b924-8b128bcb86bd",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "caa15acb-2bf2-4f2b-9b26-e898d2a251b9",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "cb48b2f9-15a4-4613-a3f7-2829f573ae59",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "cc95e32f-13c0-4b8b-9225-166d59b97834",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ce79b474-c633-4103-b5e2-ae426a211be1",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "cee84cc9-d78b-4a16-993b-3d94aa2c41c9",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "cf204480-187f-4154-9c1d-ab382461897c",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d0566f42-9586-4b9d-ac8b-a6b421d194bb",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d1633fcb-f488-4861-a1a2-5816eafc3fd2",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d2da2951-c8e5-4dc7-9d9a-84caf259d081",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d3828b07-2fad-4da0-9d09-6dcdef7ed8e6",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d3a5ce9b-a77e-4430-ae72-99a2b59efd98",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d428854c-ddfe-4111-b6cc-d75eb463e5a2",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d44e3dd9-006e-4288-808a-32600b313c56",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d566a9f9-d138-45fa-a579-da4e97f5404b",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d5b4c50e-8619-4471-9d09-2fd3a38b89bf",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d628ad8c-c072-411b-bb17-324bffb4c80a",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d6bb7b51-d206-4015-940e-401ac5f142e9",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d6f94925-1e39-48bd-859f-02a5f69e31a8",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d783faa0-01e1-4cae-bb52-340e5a28780c",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d82b7106-ea73-48a4-93ec-35b0beb18006",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "d9557e13-8a93-44bb-a840-4c11ec9cf33c",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "db4bf040-342c-4820-b0e6-bc06d620fa07",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "dcea7ecb-79d2-434f-8506-c15efef321ba",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ddb097ea-4e24-425d-9268-d983c0fd8fda",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ddff53d1-e9ca-4c59-90c6-27e429939108",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "de1ad4c1-2f72-4d62-abba-d6633483dd12",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e157ce85-a49b-46a3-95b1-958054165f34",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e53a0e83-b1b5-4a5c-9a33-9771c27665cf",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e6a8df8d-ce4c-4649-a519-9b8a7caf3ced",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e6dee7ac-4d60-4b75-8235-7736e4f923fd",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e70447db-2c18-4d10-bb7c-918beac1391a",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e78ea394-c7ef-48c4-b066-e6aa4462ed6f",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e8b52b64-4974-4f8c-91b4-3ff86d9b88ba",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "e8fc0da3-b409-4c0c-a187-8af1ae68364e",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ec57cacc-8ff0-4d0d-986c-3a0aa5de87e5",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ec989c70-fa47-426b-b251-916164f430ba",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ee13e4fc-592d-4edc-8c6f-4043fe5e3a17",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ee60529d-f85c-4762-82d6-09434f6ada66",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "eec8237d-0990-4a13-b810-c1d5ce531353",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ef481ab4-e13f-4432-97e4-5fe2a4b92c30",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "ef4fce81-35b3-458b-af08-739694bd9438",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f07f967c-205b-4b1b-b40b-f655525e3f73",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f10e48f7-9905-4e62-821c-5d91067ee9fd",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f1cb9a1f-2add-4471-8292-9e09b9226f24",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f26a15cb-c9a1-4a3b-b54c-304566dc0434",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f34793da-6d6f-49ca-a533-121c283fc36d",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f3bad8ac-be9f-4245-be80-ca1a59e6dda6",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f3fa6d8a-7b1f-4ac2-ab29-74d45df3c908",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f63ed6e9-824c-4c16-b41a-7fa3019294b6",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f84cfe2b-9544-4303-8cbc-757bce8e3de1",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f8648a1d-7adc-47d9-a2cc-66060631f9b2",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f8a34985-038c-42f5-b3c2-3efe5b019ae3",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f8e6fc2f-571b-49e0-93d0-d334da2e7982",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f949a61c-9bb5-4813-8def-3def7fb9f2d5",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "f955e20c-90c9-4df7-8f3b-bca8a8309d69",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fa2a50b5-7f9d-47a4-bb7f-81dac165e984",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "f6e79fa5f449fe99bbaa931bff221d240af37fb2edbd3962b614bb3e643988b5",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fbd18125-bcaa-41e8-8c57-3c1e52a2fc49",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fc21eae2-d5d2-4077-bdbb-c84001faae07",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "b968359c570a531444b8df35fd29dd0b77c8ee586ca4ca98680c2393735c8736",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fc238bed-11ee-4840-aaa2-a385759557c4",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fc3c4aa7-da70-49b8-a782-abebdc986c01",
+      "file": "composite.tif",
+      "bytes": 9926,
+      "sha256": "0c7a766d267abca744a60674a0000d328ef195e833e446983bc4c1e59861644f",
+      "matchesKnownFixture": true
+    },
+    {
+      "name": "fd006a81-3cc9-4080-a15b-d20826615405",
+      "file": "composite.tif",
+      "bytes": 5318,
+      "sha256": "c889e0cd0d7a7e290a40f3769afb6cf736169cf5087d0db3892fa98fc22a8d9b",
+      "matchesKnownFixture": true
+    }
+  ]
+}

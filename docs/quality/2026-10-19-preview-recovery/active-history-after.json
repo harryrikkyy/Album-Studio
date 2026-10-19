@@ -1,0 +1,11 @@
+{
+  "historyPath": "/Users/harry/Library/Caches/Album Studio/.album-studio-stage-history",
+  "bytes": 3029728335,
+  "stages": 30,
+  "limits": {
+    "maxHistoryBytes": 8589934592,
+    "maxHistoryStages": 256,
+    "minFreeBytes": 268435456
+  },
+  "automaticPruning": false
+}
