@@ -72,6 +72,21 @@ test('actionable errors remain until dismissed even when a caller supplies an ex
   assert.equal(f.timers.size, 1)
 })
 
+test('repeated preview failures update one persistent notification without hiding later failures', async t => {
+  const f = await fixture(t)
+  for (let n = 1; n <= 15; n++) f.state.toast('error', `Preview paused ${n}`, 0, 'preview-storage:/album')
+  assert.equal(f.state.toasts.value.length, 1)
+  assert.equal(f.state.toasts.value[0]!.text, 'Preview paused 15')
+  assert.equal(f.timers.size, 0)
+  const id = f.state.toasts.value[0]!.id
+  f.state.dismissToast(id)
+  f.state.toast('error', 'A later failure', 0, 'preview-storage:/album')
+  assert.equal(f.state.toasts.value.length, 1)
+  assert.notEqual(f.state.toasts.value[0]!.id, id)
+  f.state.toast('error', 'Another album', 0, 'preview-storage:/other')
+  assert.equal(f.state.toasts.value.length, 2)
+})
+
 test('a quiet refresh cannot replace an edit applied while the read was pending', async t => {
   const f = await fixture(t), initial = albumAt('/A')
   f.state.album.value = initial

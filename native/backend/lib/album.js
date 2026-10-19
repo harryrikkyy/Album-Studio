@@ -141,7 +141,9 @@ async function openAlbum({ path: projectPath }, options = {}) {
 
   // Templates referenced by spreads → their PSD and preview.
   const identityConflicts = [...sources.conflicts]
-  const catalogue = await listTemplates(ws.templateTokens || [], registry, { onConflict: conflict => identityConflicts.push(conflict) })
+  // The album model needs identities and paths, not every template's canvas size. Still
+  // inventory the folders on each read; fitting/autofill request verified dimensions separately.
+  const catalogue = await listTemplates(ws.templateTokens || [], registry, { dimensions: false, onConflict: conflict => identityConflicts.push(conflict) })
   const photoIndex = referenceIndex(assets, 'photo', registry)
   const templateIndex = referenceIndex(catalogue, 'template', registry)
   const blockedAliases = new Set()

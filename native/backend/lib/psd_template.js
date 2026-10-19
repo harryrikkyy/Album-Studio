@@ -200,33 +200,29 @@ const inflight = new Map()
  *   opacity: number, hidden: boolean, mask: string|null,
  *   stroke: { size: number, position: string, color: string, opacity: number, revealed?: boolean } | null }} Frame
  */
-async function templateArt(psdPath, maxEdge = 2400) {
+async function templateArt(psdPath, maxEdge = 2400, { sourceDigest } = {}) {
   const st = await fs.promises.stat(psdPath).catch(() => null)
   if (!st) throw new Error(`The template ${path.basename(psdPath)} isn't on disk.`)
-  const key = await contentFileKey(psdPath)
+  // A preview already captured the expected source revision and verifies it again before
+  // publishing. Reuse that evidence instead of hashing the same PSD repeatedly here.
+  const key = sourceDigest ? contentKey(psdPath, sourceDigest) : await contentFileKey(psdPath)
   const dir = path.join(cacheRoot(), 'templates', key)
   const infoFile = path.join(dir, `art-${maxEdge}.json`)
   if (inflight.has(infoFile)) return inflight.get(infoFile)
   const job = (async () => {
-    let sourceStage = null
-    try {
     try {
       const cached = JSON.parse(await fs.promises.readFile(infoFile, 'utf8'))
       const files = [cached.backdrop, ...cached.frames.map((f) => f.mask)].filter(Boolean)
       const allowed = (p) => p === path.join(dir, `backdrop-${maxEdge}.jpg`) || path.dirname(p) === dir && /^mask-[0-9]+-[0-9]+\.png$/.test(path.basename(p))
       if (cached.schema === SCHEMA && cached.sourceKey === key && files.every(allowed) && cached.artifactDigests && (await Promise.all(files.map(async (p) => cached.artifactDigests[p] === await fileDigest(p)))).every(Boolean)) {
-        if (await contentFileKey(psdPath) !== key) throw new Error('The template changed while its cached backdrop was checked. Retry from a stable source.')
+        if (!sourceDigest && await contentFileKey(psdPath) !== key) throw new Error('The template changed while its cached backdrop was checked. Retry from a stable source.')
         return cached
       }
     } catch (_) { /* not cached yet */ }
     const ag = getAgPsd()
     const buf = await readPsdBuffer(psdPath)
-    const sourceDigest = crypto.createHash('sha256').update(buf).digest('hex')
-    if (contentKey(psdPath, sourceDigest) !== key) throw new Error('The template changed before its verified bytes were read. Retry from a stable original.')
-    await fs.promises.mkdir(cacheRoot(), { recursive: true })
-    sourceStage = await fs.promises.mkdtemp(path.join(cacheRoot(), 'template-source-'))
-    const frozen = path.join(sourceStage, `template${path.extname(psdPath)}`)
-    await fs.promises.writeFile(frozen, buf, { flag: 'wx', mode: 0o400 })
+    const decodedDigest = crypto.createHash('sha256').update(buf).digest('hex')
+    if (contentKey(psdPath, decodedDigest) !== key) throw new Error('The template changed before its verified bytes were read. Retry from a stable original.')
     const cmyk = buf.length >= 26 && buf.readUInt16BE(24) === 4
     // ag-psd refuses CMYK at its header before metadata parsing. Only the colour-mode
     // header in this private metadata copy is substituted; no colour samples are read here.
@@ -247,7 +243,7 @@ async function templateArt(psdPath, maxEdge = 2400) {
       if (made === 'stroke') f.stroke.revealed = true
     }
     const art = { schema: SCHEMA, sourceKey: key, width: psd.width, height: psd.height, scale, frames, backdrop: null }
-    const source = await psdPixels(frozen, { buffer: buf })
+    const source = await psdPixels(psdPath, { buffer: buf, inMemory: true })
     {
       const sharp = getSharp()
       try {
@@ -265,7 +261,6 @@ async function templateArt(psdPath, maxEdge = 2400) {
     art.artifactDigests = Object.fromEntries(await Promise.all([art.backdrop, ...art.frames.map((f) => f.mask)].filter(Boolean).map(async (p) => [p, await fileDigest(p)])))
     await writeAtomic(infoFile, JSON.stringify(art))
     return art
-    } finally { if (sourceStage) await fs.promises.rm(sourceStage, { recursive: true, force: true }).catch(() => {}) }
   })()
   inflight.set(infoFile, job)
   try { return await job } finally { inflight.delete(infoFile) }

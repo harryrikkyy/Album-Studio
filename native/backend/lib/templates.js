@@ -62,7 +62,7 @@ function commonShape(list, tiebreak = []) {
   return best
 }
 
-async function scanCollection(dir) {
+async function scanCollection(dir, dimensions) {
   const display = path.basename(dir)
   const psds = []
   const images = new Map() // lower-case base name → path
@@ -89,7 +89,7 @@ async function scanCollection(dir) {
     return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, sourceRoot: dir, ...slotsFromName(name), width: null, height: null }
   })
   // Hashing reads are bounded globally; do not enqueue thousands of full-file reads.
-  for (let i = 0; i < list.length; i += 4) {
+  for (let i = 0; dimensions && i < list.length; i += 4) {
     await Promise.all(list.slice(i, i + 4).map(async (t) => {
       const c = await canvasOf(t.file)
       if (c) { t.width = c.width; t.height = c.height }
@@ -100,12 +100,12 @@ async function scanCollection(dir) {
 }
 
 /** All templates of these collection folders. */
-async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }, { onConflict } = {}) {
+async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }, { onConflict, dimensions = true } = {}) {
   const out = []
   for (const dir of collections || []) {
     const st = await fs.promises.stat(dir).catch(error => { if (error.code === 'ENOENT') return null; throw error })
     if (!st) continue
-    const list = await scanCollection(dir)
+    const list = await scanCollection(dir, dimensions)
     out.push(...list)
   }
   const sources = await prepareSourceAliases(out, 'template', registry)

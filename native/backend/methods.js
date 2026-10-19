@@ -23,7 +23,9 @@ const { listTemplates } = require('./lib/templates')
 function withProofs(fn) {
   return async (p, ctx) => {
     const result = await fn(p, ctx)
-    refreshProofs(result.album ? result.album.path : result.path, ctx.emit)
+    const album = result.album || result
+    const scope = p.ops ? require('./lib/proof_scope').proofScope(p.ops, album) : null
+    refreshProofs(album.path, ctx.emit, scope ? { spreads: scope } : undefined)
     return result
   }
 }

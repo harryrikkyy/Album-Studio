@@ -344,18 +344,22 @@ function rgbaTiffHeader(width, height, profile, depth = 8) {
 }
 
 /** Write header and borrowed pixel buffer separately; no extra full-size PNG encode/copy. */
-async function profiledRgba(input, width, height, profile, depth = 8) {
+async function profiledRgba(input, width, height, profile, depth = 8, options) {
   const header = rgbaTiffHeader(width, height, profile, depth)
   await assertProfileUsable(profile)
   if (input.length !== width * height * 4 * (depth / 8)) throw new Error('The sheet composite has an invalid pixel length.')
-  return writeProfiledTiff(header, input, width, height)
+  return writeProfiledTiff(header, input, width, height, options)
 }
 
 function colourCleanup(stage) {
   let completion
   return () => completion || (completion = finishPrivateStage(stage))
 }
-async function writeProfiledTiff(header, pixels, width, height) {
+async function writeProfiledTiff(header, pixels, width, height, { inMemory = false } = {}) {
+  if (inMemory) {
+    if (header.length + pixels.length > MAX_COMPOSITE_BYTES) throw new Error('The preview composite exceeds its 512 MiB memory budget.')
+    return { input: Buffer.concat([header, pixels]), width, height }
+  }
   const stage = await createPrivateStage(cacheRoot(), 'as-colour-'), file = path.join(stage.path, 'composite.tif')
   let handle, failure
   try {
@@ -439,7 +443,7 @@ function decodeCmykComposite(buf) {
   return { data, width, height, channels, depth, alpha }
 }
 
-async function profiledCmyk(composite, profile) {
+async function profiledCmyk(composite, profile, options) {
   await assertProfileUsable(profile)
   if (profile.toString('ascii', 16, 20) !== 'CMYK') throw cmykError('source profile is not CMYK')
   const { data, width, height, channels, depth, alpha } = composite
@@ -454,7 +458,7 @@ async function profiledCmyk(composite, profile) {
   tag(34675, 7, profile.length, profileAt)
   for (let i = 0; i < channels; i++) header.writeUInt16LE(depth, bitsAt + i * 2)
   profile.copy(header, profileAt)
-  return writeProfiledTiff(header, data, width, height)
+  return writeProfiledTiff(header, data, width, height, options)
 }
 
 let defaultRgbProfile = null
@@ -468,14 +472,14 @@ async function untaggedRgbProfile() {
 }
 
 /** Shared verified PSD pixels for production sheets and original template backdrops. */
-async function psdPixels(psdPath, { buffer } = {}) {
+async function psdPixels(psdPath, { buffer, inMemory = false } = {}) {
   const buf = buffer || await readPsdBuffer(psdPath)
   if (buf.length > MAX_PSD_SOURCE_BYTES) throw compositeError('source file exceeds the 512 MiB source-reading policy; save a smaller compatibility sheet or template in the editor')
   const source = compositeMetadata(buf), profile = psdProfile(buf)
   if (profile) await assertProfileUsable(profile)
   if (buf.length >= 26 && buf.toString('ascii', 0, 4) === '8BPS' && buf.readUInt16BE(24) === 4) {
     if (!profile) throw cmykError('the actual source profile is absent')
-    return profiledCmyk(decodeCmykComposite(buf), profile)
+    return profiledCmyk(decodeCmykComposite(buf), profile, { inMemory })
   }
   if (source.mode === 3 && profile && profile.toString('ascii', 16, 20) !== 'RGB ') throw compositeError('the RGB source profile does not match its channels')
   if (source.mode === 3 && source.realMerged !== false && [8, 16].includes(source.depth)) {
@@ -485,7 +489,7 @@ async function psdPixels(psdPath, { buffer } = {}) {
       for (let c = 0; c < 3 && !nonBlack; c++) nonBlack = source.depth === 8 ? !!img.data[i + c] : !!img.data.readUInt16LE(i + c * 2)
     }
     if (source.realMerged === true || nonBlack) {
-      if (profile || source.depth === 16) return profiledRgba(img.data, img.width, img.height, profile || await untaggedRgbProfile(), source.depth)
+      if (profile || source.depth === 16) return profiledRgba(img.data, img.width, img.height, profile || await untaggedRgbProfile(), source.depth, { inMemory })
       return { input: img.data, raw: { width: img.width, height: img.height, channels: 4 }, width: img.width, height: img.height }
     }
   }

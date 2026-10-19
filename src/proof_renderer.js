@@ -315,7 +315,7 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
         : null
       if (vig) pipe = sharp(await pipe.png().toBuffer()).composite([{ input: vig, top: 0, left: 0 }])
 
-      const buf = await pipe.jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+      const buf = await pipe.jpeg({ quality: 82, mozjpeg: !photo.fastEncode }).toBuffer()
 
       return {
         input: buf,

@@ -57,7 +57,7 @@ export const selectionFocus = signal<'pool' | 'spread'>('pool')
 /** The photo being moved and zoomed in its frame on the spread (its id), if any. */
 export const frameAdjusting = signal<string | null>(null)
 
-export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string }
+export type Toast = { id: number; kind: 'info' | 'ok' | 'error'; text: string; key?: string }
 export const toasts = signal<Toast[]>([])
 let toastId = 1
 
@@ -119,8 +119,13 @@ export function toggleInspector() {
   store('as.inspectorOpen', inspectorOpen.value)
 }
 
-export function toast(kind: Toast['kind'], text: string, ms = 4500) {
-  const t = { id: toastId++, kind, text }
+export function toast(kind: Toast['kind'], text: string, ms = 4500, key?: string) {
+  const existing = key && toasts.value.find(t => t.key === key)
+  if (existing) {
+    toasts.value = toasts.value.map(t => t.id === existing.id ? { ...t, kind, text } : t)
+    return
+  }
+  const t = { id: toastId++, kind, text, ...(key ? { key } : {}) }
   toasts.value = [...toasts.value, t]
   // Errors must remain available while a photographer investigates or reconnects a drive.
   if (kind !== 'error' && ms > 0) window.setTimeout(() => dismissToast(t.id), ms)

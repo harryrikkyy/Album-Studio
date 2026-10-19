@@ -14,7 +14,7 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { openAlbum } = require('./album')
-const { cacheRoot, fileDigest, contentKey, writeAtomic } = require('./cache')
+const { cacheRoot, fileDigest, readVerifiedBuffer, contentKey, writeAtomic } = require('./cache')
 const { withPrivateStage } = require('./private_stage')
 const { renameExclusive } = require('./exclusive_rename')
 const { inputsHash, spreadInputs, hashInputValues } = require('./inputs')
@@ -22,7 +22,7 @@ const { templateArt, framesByName } = require('./psd_template')
 const { isRaw, previewable, readEvidence } = require('./raw')
 
 /** Bump when proofs are drawn differently, so every proof is redrawn once. */
-const PROOF_VERSION = 'proof-3-frozen'
+const PROOF_VERSION = 'proof-4-buffered'
 const MAX_EDGE = 2400
 const MANIFEST = '.album-studio-proofs.json'
 const SHARP_READS = /\.(jpe?g|png|tiff?|webp|avif|heic|heif)$/i
@@ -116,24 +116,16 @@ async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedH
   await saveManifest(m)
 }
 
-/** A proof from a sheet's own flattened image (after it was edited in the editor). */
-async function proofFromSheet(sheetPath, out, digest) {
-  return withPrivateStage(cacheRoot(), 'proof-sheet-', async stage => {
-  const frozen = await stage.snapshot(sheetPath, digest || await fileDigest(sheetPath))
-  const sharp = getSharp()
-  const px = await require('./color').psdPixels(frozen)
+/** A verified sheet composite decoded without retaining another full-size source copy. */
+async function bufferedSheetProof(sheetPath, digest) {
+  const bytes = await readVerifiedBuffer(sheetPath, digest || await fileDigest(sheetPath))
+  const px = await require('./color').psdPixels(sheetPath, { buffer: bytes, inMemory: true })
   try {
-    let p = sharp(px.input, px.raw ? { raw: px.raw } : { failOn: 'none' })
-    p = p.withIccProfile('srgb')
-    p = p.flatten({ background: '#ffffff' })
-    const tmp = path.join(stage.path, 'proof.jpg')
-    await p.resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' }).jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
-    await stage.register(tmp)
-    await renameExclusive(tmp, out); stage.forget(tmp)
-  } finally {
-    if (px.cleanup) await px.cleanup()
-  }
-  })
+    const jpeg = await getSharp()(px.input, px.raw ? { raw: px.raw } : { failOn: 'warning' })
+      .withIccProfile('srgb').flatten({ background: '#ffffff' })
+      .resize({ width: MAX_EDGE, height: MAX_EDGE, fit: 'inside' }).jpeg({ quality: 85 }).toBuffer()
+    return jpeg
+  } finally { if (px.cleanup) await px.cleanup() }
 }
 
 // ── drawing ─────────────────────────────────────────────────────────────────
@@ -244,14 +236,18 @@ async function spreadLayout({ album: albumPath, n }) {
  * Draw spread `spread` to `out`.
  * @returns {Promise<{ skipped: string[] }>}
  */
-async function drawProof(spread, album, ws, out) {
-  return withPrivateStage(cacheRoot(), 'proof-sources-', async sourceStage => {
-  const inputValues = await spreadInputs(spread, album, ws)
-  const template = await sourceStage.snapshot(spread.template.file, inputValues[1])
+async function drawProof(spread, album, ws, out, { buffered = false, inputs } = {}) {
+  // The legacy layer renderer consumes filesystem paths. Keep its exact snapshot policy;
+  // ordinary interactive proofs need no persistent decoder copies or cleanup at all.
+  const layerEdits = (ws.pageLayerEdits || {})[spread.n] || null
+  if (buffered && layerEdits && Object.keys(layerEdits).length) return drawProof(spread, album, ws, out, { inputs })
+  const draw = async sourceStage => {
+  const inputValues = inputs || await spreadInputs(spread, album, ws)
+  const template = buffered ? null : await sourceStage.snapshot(spread.template.file, inputValues[1])
   const sharp = getSharp()
   const pr = proofRenderer()
   const n = spread.n
-  const originalArt = await templateArt(spread.template.file, MAX_EDGE)
+  const originalArt = await templateArt(spread.template.file, MAX_EDGE, buffered ? { sourceDigest: inputValues[1] } : undefined)
   if (originalArt.sourceKey !== contentKey(spread.template.file, inputValues[1])) throw new Error('The template changed before its proof snapshot was made.')
   const art = { ...originalArt, frames: originalArt.frames.map((f) => ({ ...f })) }
   if (art.backdrop) art.backdrop = await sourceStage.snapshot(art.backdrop, originalArt.artifactDigests[art.backdrop])
@@ -277,11 +273,11 @@ async function drawProof(spread, album, ws, out) {
       rotation: (src.rotation + (Number((ws.imageRotations || {})[id]) || 0)) % 360,
       placement: (ws.imagePlacements || {})[id] || null,
       adjust: (ws.imageAdjustments || {})[id] || null,
+      fastEncode: buffered,
     })
   }
   const overlays = (ws.pageOverlays || {})[n] || []
   const background = (ws.pageBackgrounds || {})[n] || null
-  const layerEdits = (ws.pageLayerEdits || {})[n] || null
 
   // Template layers switched off or retyped: the Electron renderer rebuilds the page from the
   // layer stack, so hand those spreads to it unchanged.
@@ -318,7 +314,7 @@ async function drawProof(spread, album, ws, out) {
 
   const pairs = pairFrames(art.frames, photos)
   const skipped = []
-  const drawn = await Promise.all(pairs.map(async ({ frame, photo }) => {
+  const renderFrame = async ({ frame, photo }) => {
     if (frame.hidden) return [] // clipped to a hidden layer: hidden in the sheet too
     try {
       const layer = await pr.buildPhotoLayer(sharp, photo, frame, dims.scale, false)
@@ -334,25 +330,51 @@ async function drawProof(spread, album, ws, out) {
       skipped.push(e.message)
       return []
     }
-  }))
+  }
+  const drawn = []
+  // A bounded number of decoders avoids multiplying full-resolution pixel allocations.
+  for (let i = 0; i < pairs.length; i += 3) drawn.push(...await Promise.all(pairs.slice(i, i + 3).map(renderFrame)))
   const layers = drawn.flat().filter(Boolean)
 
   const svg = require('../../../src/overlay_render').buildOverlaySvg(overlays, W, H)
   if (svg) layers.push({ input: Buffer.from(svg), top: 0, left: 0 })
 
-  const tmp = path.join(sourceStage.path, 'proof.jpg')
-  await fs.promises.mkdir(path.dirname(out), { recursive: true })
+  const tmp = buffered ? out : path.join(sourceStage.path, 'proof.jpg')
+  if (!buffered) await fs.promises.mkdir(path.dirname(out), { recursive: true })
   if (layers.length) base = sharp(await base.toBuffer()).composite(layers)
-  await base.jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
-  await sourceStage.register(tmp)
-  await renameExclusive(tmp, out); sourceStage.forget(tmp)
+  if (buffered) return { skipped, jpeg: await base.jpeg({ quality: 85 }).toBuffer() }
+  else {
+    await base.jpeg({ quality: 85, mozjpeg: true }).toFile(tmp)
+    await sourceStage.register(tmp)
+    await renameExclusive(tmp, out); sourceStage.forget(tmp)
+  }
   return { skipped }
-  })
+  }
+  if (!buffered) return withPrivateStage(cacheRoot(), 'proof-sources-', draw)
+  let total = 0
+  return draw({ snapshot: async (file, digest) => {
+    const remaining = 256 * 1024 * 1024 - total
+    if (remaining < 1) throw new Error('This preview exceeds its 256 MiB source-buffer budget. Use smaller photo proxies.')
+    const bytes = await readVerifiedBuffer(file, digest, remaining)
+    total += bytes.length
+    return bytes
+  } })
 }
 
 // ── refreshing ──────────────────────────────────────────────────────────────
 
 const runners = new Map() // album folder → { running, again, emit }
+let decoding = false
+const decoderWaiters = []
+async function previewDecoder(work) {
+  if (decoding) await new Promise(resolve => decoderWaiters.push(resolve))
+  decoding = true
+  try { return await work() } finally {
+    const next = decoderWaiters.shift()
+    if (next) next()
+    else decoding = false
+  }
+}
 
 /**
  * Bring every proof of an album up to date, in the background. Calls made while a refresh runs
@@ -360,15 +382,18 @@ const runners = new Map() // album folder → { running, again, emit }
  * @param {string} albumPath
  * @param {(event: string, data: object) => void} emit
  */
-function refreshProofs(albumPath, emit) {
+function refreshProofs(albumPath, emit, { spreads } = {}) {
   const key = path.resolve(albumPath)
+  const targets = spreads ? new Set(spreads) : null
   let r = runners.get(key)
-  if (!r) runners.set(key, (r = { running: null, again: false, emit }))
+  if (!r) runners.set(key, (r = { running: null, again: false, emit, targets }))
   r.emit = emit
   if (r.running) {
     r.again = true
+    r.targets = r.targets && targets ? new Set([...r.targets, ...targets]) : null
     return { queued: true }
   }
+  r.targets = targets
   r.running = (async () => {
     try {
       do {
@@ -377,6 +402,7 @@ function refreshProofs(albumPath, emit) {
       } while (r.again)
     } finally {
       r.running = null
+      if (runners.get(key) === r) runners.delete(key)
     }
   })()
   return { queued: true }
@@ -388,20 +414,85 @@ async function proofsSettled(albumPath) {
   while (r && r.running) await r.running
 }
 
-async function refreshOnce(albumPath, r) {
-  return require('./project').withProjectLease(albumPath, ({ file, lease }) => require('./output_lock').withProjectOutputs(lease, () => refreshUnderLease(file, r, lease), { kind: 'proof-refresh' }), { kind: 'proof-refresh' })
+async function proofLease(albumPath, work) {
+  return require('./project').withProjectLease(albumPath, ({ file, lease }) => require('./output_lock').withProjectOutputs(lease, () => work(file, lease), { kind: 'proof-refresh' }), { kind: 'proof-refresh' })
 }
 
-async function refreshUnderLease(albumPath, r, lease) {
+async function refreshOnce(albumPath, r) {
+  // Capture the project quickly. Source verification and pixel decoding do not own the edit
+  // queue; a newer project is detected before publication and rendered by the next pass.
+  const captured = await proofLease(albumPath, async (file) => ({ file, text: await fs.promises.readFile(file, 'utf8') }))
+  const plan = await prepareRefresh(captured.file, captured.text, r.targets)
+  const { album, ws, projectText, todo, reuse, removed } = plan
+  const stale = () => { r.again = true; r.targets = null }
+  let rendered = 0, failed = 0
+  if (removed.length) await proofLease(album.file, async (_file, lease) => {
+    if (await fs.promises.readFile(album.file, 'utf8') !== projectText) { stale(); return }
+    const m = await freshManifest(album.path)
+    for (const n of removed) { await lease.assertOwned(); await preserveProof(album.path, proofPath(album.path, n)); delete m.data.spreads[n] }
+    await saveManifest(m)
+  })
+  for (const t of todo) {
+    if (r.again) break
+    const n = t.s.n, out = proofPath(album.path, n), started = Date.now(), re = reuse.get(n)
+    let skipped = [], jpeg, source
+    try {
+      const layers = (ws.pageLayerEdits || {})[n]
+      const legacyLayers = layers && Object.keys(layers).length
+      if (!t.remove && !legacyLayers) {
+        await previewDecoder(async () => {
+          if (r.again) return
+          if (re) jpeg = re.buf
+          else if (t.fromSheet) jpeg = await bufferedSheetProof(t.fromSheet, t.sheetDigest)
+          else ({ skipped, jpeg } = await drawProof(t.s, album, ws, null, { buffered: true, inputs: t.inputs }))
+        })
+      }
+      const published = await proofLease(album.file, async (_file, lease) => {
+        if (r.again || await fs.promises.readFile(album.file, 'utf8') !== projectText) { stale(); return false }
+        const m = await freshManifest(album.path)
+        // A native save or another producer may have replaced this proof while decoding.
+        if (JSON.stringify(m.data.spreads[n]) !== t.previous) { stale(); return false }
+        if (t.remove) {
+          await lease.assertOwned(); await preserveProof(album.path, out); delete m.data.spreads[n]; await saveManifest(m)
+          return true
+        }
+        if (await proofHash(t.s, album, ws) !== t.hash || t.fromSheet && await optionalDigest(t.fromSheet) !== t.sheetDigest) { stale(); return false }
+        const ready = await withPrivateStage(path.dirname(out), '.proof-publication-', async stage => {
+          const staging = path.join(stage.path, 'proof.jpg')
+          if (jpeg) await fs.promises.writeFile(staging, jpeg, { flag: 'wx' })
+          else ({ skipped } = await drawProof(t.s, album, ws, staging, { inputs: t.inputs }))
+          await stage.register(staging)
+          // The legacy layer path still consumes snapshots under this lease.
+          if (await fs.promises.readFile(album.file, 'utf8') !== projectText || await proofHash(t.s, album, ws) !== t.hash) { stale(); return }
+          const digest = await fileDigest(staging)
+          await lease.assertOwned(); await preserveProof(album.path, out); await renameExclusive(staging, out); stage.forget(staging)
+          m.data.spreads[n] = t.fromSheet ? { id: t.s.id, hash: t.hash, digest, source: 'sheet', sheetPath: t.fromSheet, sheetDigest: t.sheetDigest } : { id: t.s.id, hash: t.hash, digest, source: re ? re.source : 'live', ...(re && re.source === 'sheet' ? { sheetDigest: re.sheetDigest, sheetPath: re.sheetPath } : {}) }
+          source = m.data.spreads[n].source
+          return true
+        })
+        if (!ready) return false
+        await saveManifest(m)
+        return true
+      })
+      if (!published) break
+      rendered++
+      r.emit('proofs.updated', { album: album.path, n, proof: t.remove ? null : out, ...(source ? { source } : {}), ms: Date.now() - started, skipped })
+    } catch (error) {
+      failed++
+      r.emit('proofs.failed', { album: album.path, n, error: error.message || String(error) })
+      if (error.code === 'PRIVATE_STAGE_BUDGET') break
+    }
+  }
+  if (!r.again) r.emit('proofs.idle', { album: album.path, rendered, failed })
+}
+
+async function prepareRefresh(albumPath, projectText, targets) {
   await require('./output_paths').validateProofPaths(path.dirname(albumPath))
-  let album = await openAlbum({ path: albumPath })
-  const projectText = await fs.promises.readFile(album.file, 'utf8'), data = JSON.parse(projectText)
-  album = await openAlbum({ path: albumPath }, { data })
-  const ws = data.workspace || data
-  await lease.outputNamespace.assertFor(ws.outputToken || path.join(album.path, 'exports'))
-  const m = await freshManifest(album.path)
-  const known = m.data.spreads
-  const hashes = await Promise.all(album.spreads.map((s) => proofHash(s, album, ws)))
+  const data = JSON.parse(projectText), album = await openAlbum({ path: albumPath }, { data }), ws = data.workspace || data
+  const m = await freshManifest(album.path), known = m.data.spreads
+  const selected = album.spreads.filter(s => !targets || targets.has(s.n))
+  const values = new Map(await Promise.all(selected.map(async s => [s.n, await spreadInputs(s, album, ws)])))
+  const hashes = new Map([...values].map(([n, inputs]) => [n, proofInputHash(inputs)]))
 
   // Pictures already drawn, by what they show; read before anything is overwritten, so a spread
   // that moved takes its picture along instead of being drawn again.
@@ -413,27 +504,24 @@ async function refreshUnderLease(albumPath, r, lease) {
   }
 
   const todo = []
-  let changed = false
-  for (let i = 0; i < album.spreads.length; i++) {
-    const s = album.spreads[i]
+  for (const s of selected) {
     const e = known[s.n]
     if (!s.template) {
       // An empty spread has no picture: an old one would show photos it no longer has.
       if (e || s.proof === proofPath(album.path, s.n)) todo.push({ s, remove: true })
-    } else if (e && e.hash === hashes[i] && (e.id === s.id || !e.id && e.source !== 'sheet')) {
+    } else if (e && e.hash === hashes.get(s.n) && (e.id === s.id || !e.id && e.source !== 'sheet')) {
       if (!e.digest || await optionalDigest(proofPath(album.path, s.n)) !== e.digest) {
-        todo.push({ s, hash: hashes[i], ...(e.source === 'sheet' && s.sheet ? { fromSheet: s.sheet, sheetDigest: await optionalDigest(s.sheet) } : {}) })
+        todo.push({ s, hash: hashes.get(s.n), ...(e.source === 'sheet' && s.sheet ? { fromSheet: s.sheet, sheetDigest: await optionalDigest(s.sheet) } : {}) })
         continue
       }
       // A sheet saved from the editor since its proof was made: show what the sheet looks like now.
       if (e.source === 'sheet' && s.sheet) {
         const digest = await optionalDigest(s.sheet)
-        if (digest !== e.sheetDigest || e.sheetPath !== s.sheet) todo.push({ s, hash: hashes[i], fromSheet: s.sheet, sheetDigest: digest })
+        if (digest !== e.sheetDigest || e.sheetPath !== s.sheet) todo.push({ s, hash: hashes.get(s.n), fromSheet: s.sheet, sheetDigest: digest })
       }
-      if (!e.id) { e.id = s.id; changed = true }
       continue
     } else if (s.template.file) {
-      todo.push({ s, hash: hashes[i] })
+      todo.push({ s, hash: hashes.get(s.n) })
     }
     // A template that isn't on disk (drive unplugged): keep whatever picture there is.
   }
@@ -460,58 +548,9 @@ async function refreshUnderLease(albumPath, r, lease) {
       }
     }
   }
-  // Spreads past the end (the album got shorter): their pictures and records go.
-  for (const n of Object.keys(known).map(Number)) {
-    if (n > album.spreads.length) {
-      await lease.assertOwned()
-      delete known[n]
-      await preserveProof(album.path, proofPath(album.path, n))
-      changed = true
-    }
-  }
-  if (changed) await saveManifest(m)
-
-  let rendered = 0
-  let failed = 0
-  for (const t of todo) {
-    if (r.again) break // the album changed again: start over with the new state
-    const n = t.s.n
-    const out = proofPath(album.path, n)
-    const t0 = Date.now()
-    try {
-      if (t.remove) {
-        await lease.assertOwned()
-        await preserveProof(album.path, out)
-        delete known[n]
-        await saveManifest(m)
-        r.emit('proofs.updated', { album: album.path, n, proof: null })
-        continue
-      }
-      const re = reuse.get(n)
-      let skipped = []
-      await withPrivateStage(path.dirname(out), '.proof-publication-', async publicationStage => {
-      const staging = path.join(publicationStage.path, 'proof.jpg')
-      if (t.fromSheet) await proofFromSheet(t.fromSheet, staging, t.sheetDigest)
-      else if (re) await fs.promises.writeFile(staging, re.buf, { flag: 'wx' })
-      else ({ skipped } = await drawProof(t.s, album, ws, staging))
-      await publicationStage.register(staging)
-      if (await fs.promises.readFile(album.file, 'utf8') !== projectText || await proofHash(t.s, album, ws) !== t.hash || t.fromSheet && await optionalDigest(t.fromSheet) !== t.sheetDigest) throw new Error('The project or proof sources changed while drawing. Retry from the current revision.')
-      const digest = await fileDigest(staging)
-      await lease.assertOwned()
-      await preserveProof(album.path, out)
-      await renameExclusive(staging, out)
-      publicationStage.forget(staging)
-      known[n] = t.fromSheet ? { id: t.s.id, hash: t.hash, digest, source: 'sheet', sheetPath: t.fromSheet, sheetDigest: t.sheetDigest } : { id: t.s.id, hash: t.hash, digest, source: re ? re.source : 'live', ...(re && re.source === 'sheet' ? { sheetDigest: re.sheetDigest, sheetPath: re.sheetPath } : {}) }
-      })
-      await saveManifest(m)
-      rendered++
-      r.emit('proofs.updated', { album: album.path, n, proof: out, source: known[n].source, ms: Date.now() - t0, skipped })
-    } catch (e) {
-      failed++
-      r.emit('proofs.failed', { album: album.path, n, error: e && e.message ? e.message : String(e) })
-    }
-  }
-  r.emit('proofs.idle', { album: album.path, rendered, failed })
+  const removed = Object.keys(known).map(Number).filter(n => n > album.spreads.length)
+  for (const t of todo) { t.inputs = values.get(t.s.n); t.previous = JSON.stringify(known[t.s.n]) }
+  return { album, ws, projectText, todo, reuse, removed }
 }
 
 module.exports = { refreshProofs, proofsSettled, recordSheetProof, drawProof, proofHash, proofInputHash, spreadLayout, pairFrames, PROOF_VERSION }

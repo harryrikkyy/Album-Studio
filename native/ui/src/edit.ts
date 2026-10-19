@@ -139,7 +139,8 @@ onEvent('proofs.failed', (d) => {
   const e = d
   if (album.value?.path !== e.album) return
   setPending([], [e.n])
-  toast('error', `The preview of spread ${e.n} couldn’t be drawn: ${e.error}`, 8000)
+  const budget = e.error.includes('retention budget') || e.error.includes('free-space reserve')
+  toast('error', budget ? 'Preview generation paused because recovery storage is full. Your album is saved. Review retained work in Settings.' : `The preview of spread ${e.n} couldn’t be drawn: ${e.error}`, 0, budget ? `preview-storage:${e.album}` : `preview:${e.album}:${e.n}`)
 })
 
 onEvent('proofs.idle', (d) => {

@@ -64,3 +64,24 @@ test('album photo dimensions refresh after in-place thumbnail edits with unchang
   fs.writeFileSync(file, fakeJpeg(266, 400)); fs.utimesSync(file, stamp.atime, stamp.mtime); fs.utimesSync(folder, dirStamp.atime, dirStamp.mtime)
   assert.equal((await openAlbum({ path: f.proj })).photos.img_My_Shoot_A1_jpg.width, 266)
 })
+
+test('album hydration skips unused canvas reads while still observing nested template additions and removals', async t => {
+  const f = makeProject(); t.after(() => fs.rmSync(f.root, { recursive: true, force: true }))
+  const { openAlbum } = require('../lib/album'), open = fs.promises.open.bind(fs.promises)
+  let templateReads = 0
+  t.mock.method(fs.promises, 'open', async (...args) => {
+    if (String(args[0]).startsWith(f.tpls + path.sep) && /\.psd$/i.test(String(args[0]))) templateReads++
+    return open(...args)
+  })
+  const first = await openAlbum({ path: f.proj })
+  assert.equal(first.spreads[0].template.file, path.join(f.tpls, '1h1v_0001.psd'))
+  const nested = path.join(f.tpls, 'Nested'); fs.mkdirSync(nested)
+  const added = path.join(nested, '1h1v_0002.psd'), project = path.join(f.proj, 'project.json'), data = JSON.parse(fs.readFileSync(project))
+  fs.writeFileSync(added, header(900, 300))
+  data.albumPages[1].template = { id: 'tpl_Templates_2026_1h1v_0002_psd', name: '1h1v_0002.psd', h: 1, v: 1 }
+  fs.writeFileSync(project, JSON.stringify(data))
+  assert.equal((await openAlbum({ path: f.proj })).spreads[0].template.file, added)
+  fs.unlinkSync(added)
+  assert.equal((await openAlbum({ path: f.proj })).spreads[0].template.file, null)
+  assert.equal(templateReads, 0)
+})
