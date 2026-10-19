@@ -1,0 +1,27 @@
+{
+  "readOnly": true,
+  "elapsedMs": 4260.0275,
+  "stats": {
+    "spreads": 15,
+    "photos": 131,
+    "used": 131,
+    "planned": 15
+  },
+  "photoFolders": [
+    {
+      "exists": true,
+      "count": 131,
+      "hasThumbs": true
+    }
+  ],
+  "templateCollections": 4,
+  "spreadTemplatesResolved": 15,
+  "spreadCount": 15,
+  "missingPhotos": 0,
+  "psdFilesRead": 3955,
+  "psdBytesRead": 205660,
+  "largestPSDRead": 52,
+  "projectBefore": "4b6623317ec53d682195fc0e044744f08a0ca31298f8e290ee0efc143f4fb3a3",
+  "projectAfter": "4b6623317ec53d682195fc0e044744f08a0ca31298f8e290ee0efc143f4fb3a3",
+  "projectUnchanged": true
+}

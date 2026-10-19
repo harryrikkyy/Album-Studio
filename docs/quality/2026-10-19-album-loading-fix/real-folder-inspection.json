@@ -1,0 +1,31 @@
+{
+  "photoMs": 6588.674375,
+  "collectionMs": 2951.5052909999995,
+  "photos": [
+    {
+      "exists": true,
+      "photos": 131,
+      "thumbs": 0,
+      "missing": 131
+    }
+  ],
+  "collections": [
+    {
+      "exists": true,
+      "templates": 1214
+    },
+    {
+      "exists": true,
+      "templates": 1394
+    },
+    {
+      "exists": true,
+      "templates": 417
+    },
+    {
+      "exists": true,
+      "templates": 930
+    }
+  ],
+  "totalTemplates": 3955
+}

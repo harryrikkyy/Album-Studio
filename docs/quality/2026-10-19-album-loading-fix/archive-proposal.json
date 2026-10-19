@@ -1,0 +1,9 @@
+{
+  "source": "/Users/harry/Library/Caches/Album Studio/.album-studio-stage-history",
+  "proposedDestination": "/Users/harry/Library/Caches/Album Studio/.album-studio-test-history-backup-20261019-419a7850-17b7-4609-8d50-4b8dda5ac5a4",
+  "files": 256,
+  "bytes": 1951232,
+  "allMatchRegeneratedSyntheticFixtures": true,
+  "state": "Automatic approval review rejected move before execution; explicit user approval requested and pending.",
+  "preservation": "Atomic no-replace whole-directory move with before/after hash verification and restore receipt. No deletion or limit changes."
+}

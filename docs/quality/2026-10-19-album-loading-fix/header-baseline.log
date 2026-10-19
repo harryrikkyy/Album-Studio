@@ -1,0 +1,155 @@
+TAP version 13
+# Subtest: a large PSD catalogue entry reads only its canvas header
+not ok 1 - a large PSD catalogue entry reads only its canvas header
+  ---
+  duration_ms: 8.809416
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:33:1'
+  failureType: 'testCodeFailure'
+  error: 'Metadata requested 1048576 bytes; budget is 52'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    handle.read (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:26:14)
+    pass (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:54:46)
+    /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:62:27
+    async withDigestSlot (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:17:16)
+    async canvasOf (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/templates.js:30:27)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:36:20)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: large JPEG dimensions do not read the pixel payload
+not ok 2 - large JPEG dimensions do not read the pixel payload
+  ---
+  duration_ms: 2.143791
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:39:1'
+  failureType: 'testCodeFailure'
+  error: 'Metadata requested 1048576 bytes; budget is 262144'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    handle.read (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:26:14)
+    pass (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:54:46)
+    /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:62:27
+    async withDigestSlot (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:17:16)
+    async jpegSize (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/jpeg_size.js:61:24)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:41:20)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: capture metadata reads its bounded prefix rather than hashing all pixels
+not ok 3 - capture metadata reads its bounded prefix rather than hashing all pixels
+  ---
+  duration_ms: 1.124917
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:44:1'
+  failureType: 'testCodeFailure'
+  error: 'Metadata requested 1048576 bytes; budget is 524288'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    handle.read (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:26:14)
+    pass (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:54:46)
+    /Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:62:27
+    async withDigestSlot (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/cache.js:17:16)
+    async captureTime (/Volumes/Harry/works/albumStudio-photocraft/native/backend/lib/autofill.js:19:22)
+    async TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:46:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: headers reject a transient prefix that disagrees with the second read
+not ok 4 - headers reject a transient prefix that disagrees with the second read
+  ---
+  duration_ms: 0.491292
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:49:1'
+  failureType: 'testCodeFailure'
+  error: 'readFileHeader is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:61:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: headers refuse symbolic sources and invalid budgets before consumption
+not ok 5 - headers refuse symbolic sources and invalid budgets before consumption
+  ---
+  duration_ms: 0.745875
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:64:1'
+  failureType: 'testCodeFailure'
+  error: 'readFileHeader is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:67:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: short and empty metadata files retain exact lengths
+not ok 6 - short and empty metadata files retain exact lengths
+  ---
+  duration_ms: 0.365459
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:70:1'
+  failureType: 'testCodeFailure'
+  error: 'readFileHeader is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:71:86)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: a replaced header path is refused rather than borrowed from an old descriptor
+not ok 7 - a replaced header path is refused rather than borrowed from an old descriptor
+  ---
+  duration_ms: 0.366167
+  type: 'test'
+  location: '/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:73:1'
+  failureType: 'testCodeFailure'
+  error: 'readFileHeader is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    TestContext.<anonymous> (/Volumes/Harry/works/albumStudio-photocraft/native/backend/test/header_reads.test.js:85:24)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 0
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100.570333

@@ -1,0 +1,20 @@
+{
+  "app": "/Volumes/Harry/works/albumStudio-photocraft/native/dist/Album Studio Fixed.app",
+  "sourceCommit": "31998ff",
+  "runtimeFilesVerified": 72,
+  "interfaceMatches": true,
+  "signature": "deep strict verification passed",
+  "bundledHelper": {
+    "id": 1,
+    "ok": true,
+    "result": {
+      "pong": 7,
+      "node": "v22.23.3"
+    }
+  },
+  "protocolEvents": [
+    "backend.ready"
+  ],
+  "nativeReadyAlbumOpen": "Observed131 photos and15 spreads after opening an independent project/output copy through native File menu.",
+  "remainingBlocker": "Preview generation is blocked by full live retained history; an atomic backup proposal was rejected by automatic approval review pending explicit user approval. No history moved or deleted."
+}
