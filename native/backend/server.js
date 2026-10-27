@@ -9,6 +9,7 @@
 
 'use strict'
 
+const fs = require('fs')
 const util = require('util')
 const { jsonLines, MAX_LINE_BYTES } = require('./lib/json_lines')
 const { createProtocolWriter } = require('./lib/protocol_writer')
@@ -110,8 +111,14 @@ if (require.main === module && process.argv[2] === '--native-publication') {
       input.end()
       Promise.allSettled([...inFlight]).then(() => output.flush()).catch(outputFailed).finally(() => { process.exitCode = channelFailure ? 1 : 0 })
     })
-    process.on('uncaughtException', (e) => process.stderr.write(`backend: uncaught ${e && e.stack || e}\n`))
-    process.on('unhandledRejection', (e) => process.stderr.write(`backend: unhandled ${e && e.stack || e}\n`))
+    // An unexpected error leaves this process in an unknown state, possibly holding project locks
+    // for work that can no longer finish. Log it and exit at once: the shell restarts the helper,
+    // whose leases reclaim a dead owner's locks and recover interrupted journals.
+    const fatal = kind => (e) => {
+      try { fs.writeSync(2, `backend: ${kind} ${e && e.stack || e}\n`) } finally { process.exit(1) }
+    }
+    process.on('uncaughtException', fatal('uncaught'))
+    process.on('unhandledRejection', fatal('unhandled'))
     emit('backend.ready', { pid: process.pid, node: process.version })
   }
 

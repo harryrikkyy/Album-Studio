@@ -96,3 +96,20 @@ test('a broken output channel stops admission and terminates visibly instead of 
   assert.deepEqual(terminal, { code: 1, signal: null }, diagnostic)
   assert.match(diagnostic, /protocol output failed.*completed operations must be verified/i)
 })
+test('an unexpected error ends the helper visibly instead of leaving it running in an unknown state', async t => {
+  for (const [kind, fault] of [['uncaught', 'throw new Error("injected fault")'], ['unhandled', 'Promise.reject(new Error("injected fault"))']]) {
+    const root = tmpdir(); t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+    const preload = path.join(root, 'fault.js')
+    fs.writeFileSync(preload, `setTimeout(() => { ${fault} }, 50)\n`)
+    const child = spawn(process.execPath, ['--require', preload, path.join(__dirname, '../server.js')], { env: { ...process.env, ALBUM_STUDIO_DATA_DIR: path.join(root, 'data'), ALBUM_STUDIO_CACHE_DIR: path.join(root, 'cache') }, stdio: ['pipe', 'pipe', 'pipe'] })
+    let diagnostic = '', timer
+    child.stderr.on('data', bytes => { diagnostic += bytes }); child.stdin.on('error', () => {})
+    const exited = new Promise((resolve, reject) => {
+      child.on('error', reject); child.on('exit', (code, signal) => resolve({ code, signal }))
+      timer = setTimeout(() => { child.kill('SIGKILL'); reject(new Error(`the helper kept running after an ${kind} error: ${diagnostic}`)) }, 10000)
+    })
+    const terminal = await exited.finally(() => clearTimeout(timer))
+    assert.deepEqual(terminal, { code: 1, signal: null }, diagnostic)
+    assert.match(diagnostic, new RegExp(`backend: ${kind} Error: injected fault`))
+  }
+})
