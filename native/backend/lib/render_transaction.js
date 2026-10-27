@@ -22,7 +22,7 @@ function stopped(check) { if (check && check()) { const error = new Error('Rende
 // The same stream/revision primitive will guard native document publication.
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Render', changed })
 
-const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
+const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
 const fingerprintRenderFile = file => readRecord(file)
 const description = r => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
 async function contextOf(p, capabilities) {
@@ -50,7 +50,7 @@ function failureAt(stage, error, committed = false, result) {
 }
 const validNode = n => n && /^\d+$/.test(n.dev) && /^\d+$/.test(n.ino)
 const validRecord = (r, maximum) => r && SHA.test(r.digest || '') && /^\d+$/.test(r.size || '') && BigInt(r.size) <= BigInt(maximum) && /^\d+:\d+$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
-async function journalOf(c, stage, known) {
+async function journalOf(c, stage, known, contents = true) {
   const stageNode = await directory(stage), raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL_BYTES, true)
   if (!raw) throw new Error('The render recovery journal is missing.')
   if (raw.mode & 0o222) throw changed('immutable render journal permissions')
@@ -64,13 +64,15 @@ async function journalOf(c, stage, known) {
     const old = `old-${kind}${i ? '.json' : '.psd'}`, next = `next-${kind}${i ? '.json' : '.psd'}`, install = `install-${kind}${i ? '.json' : '.psd'}`
     if (!entry || entry.kind !== kind || entry.target !== targets[i] || entry.old !== old || entry.next !== next || entry.install !== install || entry.capture !== `captured-${kind}` || entry.discard !== `discard-${kind}` || entry.before !== null && !validRecord(entry.before, limit) || !validRecord(entry.after, limit)) throw new Error('Invalid render snapshot paths or revisions; no public files were changed.')
     for (const name of [old, next, install, entry.capture, entry.discard]) allowed.add(name)
+    if (!contents) continue
     for (const [name, expected, identity] of [[old, entry.before, false], [next, entry.after, false], [install, entry.after, true], [entry.capture, entry.before, true], [entry.discard, entry.after, true]]) {
       const actual = await retainedRecord(known, path.join(stage, name), limit)
       if ((!expected && actual) || expected && [old, next].includes(name) && !actual || actual && !(identity ? owned(actual, expected) : matches(actual, expected))) throw changed(`retained render ${name}`)
       if (actual && [old, next].includes(name) && actual.mode & 0o222) throw changed(`immutable render ${name} permissions`)
     }
   }
-  for (const name of await fs.promises.readdir(stage)) {
+  const present = await fs.promises.readdir(stage)
+  for (const name of present) {
     if (!allowed.has(name) && !/^restore-(sheet|cache)-[a-f0-9-]{36}$/.test(name)) throw new Error(`Unexpected render recovery entry ${path.join(stage, name)} was preserved.`)
     const info = await stat(path.join(stage, name))
     if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n) throw changed('render recovery entry')
@@ -84,7 +86,7 @@ async function journalOf(c, stage, known) {
     try { value = JSON.parse(marker.bytes) } catch (_) { throw new Error('The render commit marker is invalid JSON.') }
     if (!value || value.version !== 1 || value.journal !== raw.digest) throw new Error('The render commit marker does not match the exact journal revision.')
   }
-  return { journal, digest: raw.digest, committed: !!marker }
+  return { journal, digest: raw.digest, committed: !!marker, names: present }
 }
 async function optionalPublic(file, maximum, expectedDigest) {
   const info = await stat(file)
@@ -119,6 +121,22 @@ async function retire(c, stage, known) {
   }
   try { await journalOf(c, destination, known) } catch (error) { throw failureAt(destination, error) }
   return destination
+}
+// A publication keeps its spread's newest committed history and removes the older committed ones,
+// so retained snapshots stay bounded per spread. A history goes only when its committed journal
+// records that exact directory and names every entry in it; restored, unreadable or changed
+// histories are kept. A failed removal keeps the rest: the publication has committed.
+async function pruneHistory(c, kept, spreadId) {
+  try {
+    const history = path.dirname(kept)
+    for (const name of (await fs.promises.readdir(history)).sort()) {
+      const stage = path.join(history, name)
+      if (stage === kept || !STAGE.test(name)) continue
+      const state = await journalOf(c, stage, undefined, false).catch(() => null)
+      if (!state || !state.committed || state.journal.spreadId !== spreadId) continue
+      await assertContext(c); await removeRetired(stage, state.names)
+    }
+  } catch (_) { /* The remaining histories are retained. */ }
 }
 async function recoverStage(c, stage) {
   let committed = false
@@ -258,7 +276,9 @@ async function publishRender(p, capabilities) {
     if (!marker || marker.digest !== markerDigest || marker.size !== String(markerBytes.length) || !sameNode(marker.node, commitNode) || marker.mode & 0o222) throw changed('exact render commit preparation bytes or identity')
     await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
     await exactJournal(); committed = true
-    return { ...result, historyPath: await retire(c, stage, known) }
+    const historyPath = await retire(c, stage, known)
+    await pruneHistory(c, historyPath, p.spreadId)
+    return { ...result, historyPath }
   } catch (error) {
     if (!exposed && !await stat(prepared) && await stat(stage)) exposed = true
     if (exposed && await stat(stage)) {

@@ -71,6 +71,18 @@ function createPublicationIO({ subject, changed, readRecord }) {
     const seen = known && known.get(path.basename(file))
     return seen && sameRead(seen.info, await stat(file)) ? seen.record : readRecord(file, maximum)
   }
+  // Remove a retired stage once its caller has validated the committed journal that names these
+  // entries. Each must still be a regular single-link file; the marker and journal go last, so an
+  // interrupted removal stays recognisable, and a name that appeared meanwhile keeps the directory.
+  async function removeRetired(stage, names) {
+    const rank = name => ['commit.json', 'journal.json'].indexOf(name)
+    for (const name of [...names].sort((a, b) => rank(a) - rank(b))) {
+      const file = path.join(stage, name), info = await stat(file)
+      if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n) throw changed(`retired ${subject} entry ${file}`)
+      await fs.promises.unlink(file)
+    }
+    await fs.promises.rmdir(stage); await syncDirectory(path.dirname(stage))
+  }
   async function move(from, to, expectedNode) {
     const before = await stat(from)
     if (!before) throw new Error(`The ${subject} recovery source ${from} is missing.`)
@@ -82,6 +94,6 @@ function createPublicationIO({ subject, changed, readRecord }) {
     if (!sameNode(before, await stat(to))) throw changed(`atomic ${subject} capture`)
     await syncDirectory(path.dirname(from)); if (path.dirname(from) !== path.dirname(to)) await syncDirectory(path.dirname(to))
   }
-  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity }
+  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity }
 }
 module.exports = { createPublicationIO }

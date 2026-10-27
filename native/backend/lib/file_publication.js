@@ -14,7 +14,7 @@ const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.si
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
-const { directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
+const { directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
 const validNode = n => !!n && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
 const validRecord = r => !!r && SHA.test(r.digest || '') && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
 const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !n.startsWith('.album-studio')
@@ -44,7 +44,7 @@ async function checkSnapshot(c) {
   if (c.capabilities.validateSnapshot) await c.capabilities.validateSnapshot()
   if (c.capabilities.isCancelled && c.capabilities.isCancelled()) throw Object.assign(new Error('File publication was cancelled before commit.'), { code: 'PUBLICATION_CANCELLED' })
 }
-async function journalOf(c, stage, known) {
+async function journalOf(c, stage, known, contents = true) {
   const stageNode = await directory(stage), raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
   if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
   let journal
@@ -55,12 +55,15 @@ async function journalOf(c, stage, known) {
     if (!entry || !validName(entry.name) || names.has(entry.name) || entry.before !== null && !validRecord(entry.before) || !validRecord(entry.after)) throw changed('publication entry identity')
     names.add(entry.name)
     for (const prefix of ['old', 'next', 'install', 'captured', 'discard']) {
-      const name = `${prefix}-${i}`, actual = await retainedRecord(known, path.join(stage, name)), expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
+      const name = `${prefix}-${i}`
       allowed.add(name)
+      if (!contents) continue
+      const actual = await retainedRecord(known, path.join(stage, name)), expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
       if (!expected && actual || expected && ['old', 'next'].includes(prefix) && !actual || actual && !(prefix === 'old' || prefix === 'next' ? matches(actual, expected) && !(actual.mode & 0o222) : owned(actual, expected))) throw changed(`retained publication ${name}`)
     }
   }
-  for (const name of await fs.promises.readdir(stage)) {
+  const present = await fs.promises.readdir(stage)
+  for (const name of present) {
     if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw changed('unexpected publication recovery entry')
     const info = await stat(path.join(stage, name))
     if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n || name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL)) throw changed('publication recovery file identity')
@@ -72,7 +75,7 @@ async function journalOf(c, stage, known) {
     try { value = JSON.parse(marker.bytes) } catch (_) { throw changed('publication commit JSON') }
     if (!value || value.version !== 1 || value.journal !== raw.digest) throw changed('exact publication commit revision')
   }
-  return { journal, digest: raw.digest, committed: !!marker }
+  return { journal, digest: raw.digest, committed: !!marker, names: present }
 }
 async function inspect(c, journal, pending) {
   await assertContext(c)
@@ -97,6 +100,22 @@ async function retire(c, stage, known) {
   }
   try { await journalOf(c, destination, known) } catch (error) { throw failureAt(destination, error) }
   return destination
+}
+// A publication removes the older committed histories it supersedes, those whose every file it has
+// just published again, so retained copies stay bounded per file. A history goes only when its
+// committed journal records that exact directory and names every entry in it; restored, unreadable
+// or changed histories are kept. A failed removal keeps the rest: the publication has committed.
+async function pruneHistory(c, kept, published) {
+  try {
+    const history = path.dirname(kept)
+    for (const name of (await fs.promises.readdir(history)).sort()) {
+      const stage = path.join(history, name)
+      if (stage === kept || !STAGE.test(name)) continue
+      const state = await journalOf(c, stage, undefined, false).catch(() => null)
+      if (!state || !state.committed || !state.journal.entries.every(entry => published.includes(entry.name))) continue
+      await assertContext(c); await removeRetired(stage, state.names)
+    }
+  } catch (_) { /* The remaining histories are retained. */ }
 }
 async function returnCaptured(c, stage, i, file, target, actual) {
   if (!actual || await stat(target)) return
@@ -205,7 +224,9 @@ async function publishFiles({ folder, entries }, capabilities) {
     if (!marker || marker.digest !== markerDigest || marker.size !== String(markerBytes.length) || !sameNode(marker.node, commitNode) || marker.mode & 0o222) throw changed('exact publication commit preparation')
     await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
     await exactJournal(); committed = true
-    return { ...result, historyPath: await retire(c, stage, known) }
+    const historyPath = await retire(c, stage, known)
+    await pruneHistory(c, historyPath, records.map(record => record.name))
+    return { ...result, historyPath }
   } catch (error) {
     if (!exposed && !await stat(prepared) && await stat(stage)) exposed = true
     if (exposed && await stat(stage)) {

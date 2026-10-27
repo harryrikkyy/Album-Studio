@@ -257,3 +257,22 @@ test('a public file replaced after its install stops the batch before the next f
   assert.equal(fs.statSync(second).ino, secondNode)
   assert.equal(fs.readFileSync(second, 'utf8'), 'second customer layers')
 })
+test('each file keeps only its newest committed publication history, and other files keep theirs', async t => {
+  const f = fixture(t), other = path.join(f.folder, 'other.psd'), versions = [Buffer.from('second revision'), Buffer.from('third revision')]
+  fs.writeFileSync(other, 'other customer layers')
+  await publishFiles(await input(f), caps)
+  const kept = await publishFiles({ folder: f.folder, entries: [{ name: 'other.psd', source: f.source, sourceDigest: sha(f.next), before: await fingerprintFile(other) }] }, caps)
+  const publish = async (bytes, capabilities = caps) => {
+    fs.writeFileSync(f.source, bytes)
+    return publishFiles({ folder: f.folder, entries: [{ name: 'manual.psd', source: f.source, sourceDigest: sha(bytes), before: await fingerprintFile(f.file) }] }, capabilities)
+  }
+  let stopped = false
+  const stop = { ...caps, validateSnapshot: async () => { if (!stopped && stages(f).length) { stopped = true; throw new Error('injected stop after exposure') } } }
+  await assert.rejects(publish(Buffer.from('abandoned revision'), stop), /injected stop after exposure/)
+  const restored = history(f).find(h => !fs.existsSync(path.join(h, 'commit.json')))
+  assert.ok(restored, 'the stopped publication left a restored history')
+  let last
+  for (const bytes of versions) last = await publish(bytes)
+  assert.deepEqual(history(f).sort(), [kept.historyPath, restored, last.historyPath].sort())
+  assert.deepEqual(fs.readFileSync(path.join(last.historyPath, 'captured-0')), versions[0])
+})

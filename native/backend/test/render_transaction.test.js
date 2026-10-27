@@ -457,3 +457,33 @@ test('a stopped job whose rollback meets a manual edit reports recovery required
   assert.match(error.message, /rollback conflict/i); assert.doesNotMatch(error.message, /previous sheet and cache were restored/i)
   assert.deepEqual(fs.readFileSync(f.sheet), manual); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache); assert.ok(fs.existsSync(error.recoveryJournal))
 })
+
+async function renderNext(f, spreadId, bytes, caps = capabilities) {
+  const { publishRender, fingerprintRenderFile } = require(modulePath)
+  const sheet = path.join(path.dirname(f.sheet), `${spreadId}.psd`), cache = fs.readFileSync(f.cache), cacheData = JSON.parse(cache)
+  fs.writeFileSync(f.source, bytes)
+  return publishRender({ albumFile: f.albumFile, outputFolder: f.outputFolder, spreadId, source: f.source, sourceDigest: sha(bytes), sheetBefore: await fingerprintRenderFile(sheet), cacheBefore: sha(cache), expectedProjectRevision: sha(fs.readFileSync(f.albumFile)), cacheNext: { ...cacheData, spreads: { ...cacheData.spreads, [spreadId]: { path: sheet, outputFolder: f.outputFolder, hash: sha(bytes) } } } }, caps)
+}
+const renderHistory = f => { const root = path.join(path.dirname(f.cache), 'render-history'); return fs.readdirSync(root).map(n => path.join(root, n)).sort() }
+
+test('each spread keeps only its newest committed render history, which holds the previous sheet', async t => {
+  const f = fixture(t), versions = [crypto.randomBytes(4096), crypto.randomBytes(4096), crypto.randomBytes(4096)]
+  let last
+  for (const bytes of versions) last = await renderNext(f, f.spreadId, bytes)
+  assert.deepEqual(renderHistory(f), [last.historyPath])
+  assert.deepEqual(fs.readFileSync(path.join(last.historyPath, 'captured-sheet')), versions[1])
+  assert.deepEqual(fs.readFileSync(f.sheet), versions[2])
+})
+
+test('a render keeps restored, other-spread and modified histories', async t => {
+  const f = fixture(t), first = await renderNext(f, f.spreadId, crypto.randomBytes(4096)), other = await renderNext(f, 'spread_other', crypto.randomBytes(4096))
+  let stopped = false
+  const stop = { ...capabilities, validateSnapshot: async () => { if (!stopped && pending(f).length) { stopped = true; throw new Error('injected stop after exposure') } } }
+  await assert.rejects(renderNext(f, f.spreadId, crypto.randomBytes(4096), stop), /injected stop after exposure/)
+  const restored = renderHistory(f).find(h => !fs.existsSync(path.join(h, 'commit.json')))
+  assert.ok(restored, 'the stopped render left a restored history')
+  fs.writeFileSync(path.join(first.historyPath, 'notes.txt'), 'kept by the photographer')
+  const last = await renderNext(f, f.spreadId, crypto.randomBytes(4096))
+  assert.deepEqual(renderHistory(f), [first.historyPath, other.historyPath, restored, last.historyPath].sort())
+  assert.equal(fs.readFileSync(path.join(first.historyPath, 'notes.txt'), 'utf8'), 'kept by the photographer')
+})
