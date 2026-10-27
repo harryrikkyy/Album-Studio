@@ -6,21 +6,24 @@ protect it. Keep it in sync with `firestore.rules` and `src/license.js`.
 
 ## Authentication model
 
-The desktop app **does not sign in to Firebase**. The flow is:
+The desktop app **signs in to Firebase with Google**. The flow is:
 
-1. Google OAuth (local loopback redirect on `127.0.0.1:9842`) is used **only**
-   to read the user's email + profile.
-2. The app then calls the **Firestore REST API** with the public `FIREBASE_API_KEY`
-   to read/write the user's `/users/{userKey}` document.
+1. Google OAuth (local loopback redirect on `127.0.0.1:9842`, with PKCE) reads
+   the user's email + profile and returns a Google ID token.
+2. The app exchanges that token for a Firebase session (Identity Toolkit
+   `accounts:signInWithIdp`) and sends the Firebase ID token with every
+   **Firestore REST API** call on the user's `/users/{userKey}` document.
 
-Because there is no Firebase Auth session, every request the app makes has
-`request.auth == null`. The security rules are therefore written to gate
-reads/creates/updates on **data shape**, not on auth — see `firestore.rules`.
+So every request the app makes carries `request.auth`, with the user's
+Google-verified email. The security rules scope each read and write to the
+signed-in user's own record, and gate creates/updates on **data shape** as
+well — see `firestore.rules`.
 
 The **owner's activation tool** is the only thing that may flip `activated` or
 set `expiresOn`. It must either:
 
-- authenticate to Firebase Auth as `creativehubb2@gmail.com`, or
+- authenticate to Firebase Auth as `creativehubb2@gmail.com`, with a verified
+  email (Google sign-in reports Gmail addresses as verified), or
 - use the Firebase **Admin SDK** (which bypasses security rules entirely).
 
 ## What the app writes
@@ -45,21 +48,24 @@ The rules live in version control at [`firestore.rules`](./firestore.rules).
 - Firebase Console → Firestore Database → **Rules** tab → paste → **Publish**, or
 - `firebase deploy --only firestore:rules` (Firebase CLI).
 
-The rules close two attacks that the naive ruleset left open:
+The rules close three attacks that the naive ruleset left open:
 
 1. **Self-activation bypass** — `create` now requires `activated:false` and no
    `expiresOn`, so nobody can craft a pre-activated doc and skip payment.
 2. **License theft** — `update` may only set `machineId` when it is empty; an
    attacker can't repoint another user's license at their own machine. The
    owner can still move a machine via the owner-write rule.
+3. **Email impersonation** — every rule that trusts the signed-in email,
+   including the owner's, requires `email_verified`. A password account
+   registered with someone else's address cannot read their record, claim
+   their machine binding or act as the owner.
 
-## Known, accepted tradeoff
+## Read access
 
-`allow read: if true` exposes user docs (email, machine name, photo URL) to
-anyone holding the API key. This is inherent to the app not using Firebase
-Auth. Closing it requires real per-user authentication, which is a much larger
-change than this distribution warrants. It is a conscious decision, recorded
-here so it is not mistaken for an oversight.
+A signed-in user can read only their own record, and only the owner can list
+the collection. Earlier rules allowed `read: if true`, which exposed every user
+doc (email, machine name, photo URL) to anyone holding the public API key; the
+app's Firebase sign-in closed that, so do not reopen it.
 
 ## Local license (offline)
 

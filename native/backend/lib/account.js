@@ -274,9 +274,10 @@ function page(res, status, title, text) {
 }
 
 /** The answer from Google → a Firebase session, the user's record, and the subscription check. */
-async function complete(code, redirectUri, expectedGeneration) {
+async function complete(code, redirectUri, verifier, expectedGeneration) {
   const token = await postForm('https://oauth2.googleapis.com/token', {
     code,
+    code_verifier: verifier,
     client_id: process.env.GOOGLE_CLIENT_ID,
     client_secret: process.env.GOOGLE_CLIENT_SECRET,
     redirect_uri: redirectUri,
@@ -347,6 +348,9 @@ async function signIn(_p = {}, { emit } = {}) {
 
 async function run(me, emit) {
   const state = crypto.randomBytes(16).toString('hex')
+  // PKCE (RFC 7636): Google redeems the code only with this verifier, so another app on this Mac
+  // that catches the loopback redirect cannot use the code it sees.
+  const verifier = crypto.randomBytes(32).toString('base64url')
   const server = http.createServer()
   await new Promise((resolve, reject) => {
     server.once('error', (e) => reject(e.code === 'EADDRINUSE'
@@ -366,6 +370,8 @@ async function run(me, emit) {
     scope: 'openid email profile',
     prompt: 'select_account',
     state,
+    code_challenge: crypto.createHash('sha256').update(verifier).digest('base64url'),
+    code_challenge_method: 'S256',
   })
 
   let finishFlow
@@ -413,7 +419,7 @@ async function run(me, emit) {
       if (!code) { page(res, 400, 'Sign-in didn’t finish', 'Go back to Album Studio and try again.'); return }
       processing = true
       try {
-        const result = await complete(code, redirectUri, me.generation)
+        const result = await complete(code, redirectUri, verifier, me.generation)
         page(res, 200, 'You’re signed in', 'Return to Album Studio. You can close this tab.')
         finish(null, result)
       } catch (e) {

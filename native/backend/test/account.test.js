@@ -43,18 +43,23 @@ function signedFields(expiresOn, activatedOn = new Date().toISOString()) {
   return { licExpiresOn: field(expiresOn), licActivatedOn: field(activatedOn), sig: field(sig) }
 }
 
+/** Google's token endpoint. PKCE: a code is redeemed only with the verifier behind the challenge the browser was given. */
+async function fakeToken(init, reply) {
+  if (tokenHook) await tokenHook()
+  const p = new URLSearchParams(init.body)
+  assert.equal(p.get('client_secret'), 'test-secret')
+  const challenge = new URL(opened.at(-1)).searchParams.get('code_challenge')
+  const proof = require('crypto').createHash('sha256').update(p.get('code_verifier') || '').digest('base64url')
+  return p.get('code') === 'good' && proof === challenge ? reply({ access_token: 'access', id_token: 'google-id' }) : reply({ error: 'invalid_grant' }, 400)
+}
+
 async function fakeFetch(url, init = {}) {
   if (offline) throw new TypeError('fetch failed')
   const u = new URL(url)
   const method = init.method || 'GET'
   calls.push(`${method} ${u.hostname}${u.pathname}`)
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
-  if (u.hostname === 'oauth2.googleapis.com') {
-    if (tokenHook) await tokenHook()
-    const p = new URLSearchParams(init.body)
-    assert.equal(p.get('client_secret'), 'test-secret')
-    return p.get('code') === 'good' ? reply({ access_token: 'access', id_token: 'google-id' }) : reply({ error: 'invalid_grant' }, 400)
-  }
+  if (u.hostname === 'oauth2.googleapis.com') return fakeToken(init, reply)
   if (u.pathname === '/oauth2/v2/userinfo') return reply({ email: 'ana@studio.in', name: 'Ana Rao', picture: '' })
   if (u.hostname === 'identitytoolkit.googleapis.com') return reply({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in', expiresIn: '3600' })
   if (u.hostname === 'firestore.googleapis.com') {
@@ -126,6 +131,8 @@ test('sign-in in the browser: a new user gets a record, not yet activated', asyn
   const { done, back, state } = await startSignIn()
   assert.match(opened[0], /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/)
   assert.match(back, /^http:\/\/127\.0\.0\.1:\d+$/)
+  const pkce = new URL(opened[0]).searchParams
+  assert.deepEqual([pkce.get('code_challenge_method'), /^[A-Za-z0-9_-]{43}$/.test(pkce.get('code_challenge'))], ['S256', true])
 
   const stale = await fetch(`${back}/?code=good&state=old`)
   assert.equal(stale.status, 400, 'an answer for another sign-in is turned away')

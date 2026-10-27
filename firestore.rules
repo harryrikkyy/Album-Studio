@@ -24,26 +24,36 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Every rule below trusts the signed-in email, so it must be verified: an
+    // unverified email (say, a password account registered with someone else's
+    // address) proves nothing about who is asking. The app signs in with Google,
+    // which reports Gmail addresses as verified; the admin panel's sign-in must
+    // carry a verified email too.
+    function verified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function isOwner() {
+      return verified() && request.auth.token.email == "creativehubb2@gmail.com";
+    }
+
     match /users/{userId} {
 
       // READ (single doc): a user may read ONLY their own record; owner reads any.
-      allow get: if request.auth != null
-                 && (request.auth.token.email == resource.data.email
-                     || request.auth.token.email == "creativehubb2@gmail.com");
+      allow get: if verified()
+                 && (request.auth.token.email == resource.data.email || isOwner());
 
       // LIST (enumerate the whole collection): owner only — the admin panel.
       // This is what closes bulk customer-list harvesting.
-      allow list: if request.auth != null
-                  && request.auth.token.email == "creativehubb2@gmail.com";
+      allow list: if isOwner();
 
       // OWNER: full write access — activate, set expiry, store the signature,
       // move machine, delete. The ONLY path that changes activated/expiresOn/sig.
-      allow write: if request.auth != null
-                   && request.auth.token.email == "creativehubb2@gmail.com";
+      allow write: if isOwner();
 
       // NEW USER: the app may create its OWN record, but NEVER pre-activated and
       // NEVER with an expiry (closes the self-activation / free-license bypass).
-      allow create: if request.auth != null
+      allow create: if verified()
                     && request.auth.token.email == request.resource.data.email
                     && request.resource.data.activated == false
                     && !("expiresOn" in request.resource.data);
@@ -53,7 +63,7 @@ service cloud.firestore {
       //   - cannot change the account's email               (identity)
       //   - may only claim machineId when it is currently unbound (anti-theft);
       //     the owner can still re-assign the machine via the owner rule above.
-      allow update: if request.auth != null
+      allow update: if verified()
                     && request.auth.token.email == resource.data.email
                     && !request.resource.data.diff(resource.data).affectedKeys()
                          .hasAny(['activated', 'expiresOn', 'email', 'sig', 'licExpiresOn', 'licActivatedOn'])
