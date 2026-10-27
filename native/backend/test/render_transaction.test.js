@@ -196,9 +196,10 @@ async function sheetBytesRead(t, run) {
 
 test('publication hashes each retained sheet once instead of at every journal check', async t => {
   const { publishRender } = require(modulePath), size = 1024 * 1024
-  // Reads per sheet byte: source gate, verified detached copies, the captured original and the
-  // public pair just before commit. Journal checks between steps compare identities, not bytes.
-  for (const [missing, budget] of [[true, 12], [false, 20]]) {
+  // Reads per sheet byte, one pass each because every read is checked against a known digest: the
+  // previous sheet and source gates, each detached copy's source and copy, the captured original and
+  // the public pair just before commit. Journal checks between steps compare identities, not bytes.
+  for (const [missing, budget] of [[true, 6], [false, 10]]) {
     const f = fixture(t, { missing, size }), p = await input(f)
     const reads = await sheetBytesRead(t, () => publishRender(p, capabilities)) / size
     assert.ok(reads <= budget, `${missing ? 'a first' : 'a repeated'} render read its sheets ${reads} times; the budget is ${budget}`)

@@ -34,3 +34,44 @@ test('a failed descriptor close preserves the primary revision failure and repor
     assert.equal(fs.readFileSync(file, 'utf8'), 'original source bytes')
   } finally { fs.promises.open = original }
 })
+async function bytesRead(t, file, run) {
+  const open = fs.promises.open, owners = new WeakMap(), probe = await open(__filename), proto = Object.getPrototypeOf(probe)
+  await probe.close()
+  const read = proto.read; let bytes = 0
+  t.mock.method(fs.promises, 'open', async (name, ...args) => { const handle = await open(name, ...args); owners.set(handle, String(name)); return handle })
+  t.mock.method(proto, 'read', async function (...args) { const result = await read.apply(this, args); if (owners.get(this) === file) bytes += result.bytesRead; return result })
+  try { await run() } finally { t.mock.restoreAll() }
+  return bytes
+}
+test('a read that matches the digest its caller requires makes one pass; any other read makes two', async t => {
+  const file = fixture(t), size = fs.statSync(file).size, digest = (await read(file)).digest
+  assert.equal(await bytesRead(t, file, () => read(file, undefined, false, { expectedDigest: digest })), size)
+  assert.equal(await bytesRead(t, file, () => read(file)), 2 * size)
+  let other
+  assert.equal(await bytesRead(t, file, async () => { other = await read(file, undefined, false, { expectedDigest: 'f'.repeat(64) }) }), 2 * size)
+  assert.equal(other.digest, digest)
+})
+test('a required digest never admits a same-stamp in-place A/B/A hybrid', async t => {
+  const file = fixture(t), chunk = 1024 * 1024, original = Buffer.alloc(3 * chunk, 0x41), mutation = Buffer.alloc(chunk, 0x42)
+  fs.writeFileSync(file, original)
+  const digest = require('node:crypto').createHash('sha256').update(original).digest('hex')
+  const baseline = fs.lstatSync(file, { bigint: true }), open = fs.promises.open, lstat = fs.promises.lstat
+  t.mock.method(fs.promises, 'lstat', async (target, ...args) => target === file ? baseline : lstat(target, ...args))
+  t.mock.method(fs.promises, 'open', async (target, ...args) => {
+    const handle = await open(target, ...args)
+    if (target !== file) return handle
+    const pass = handle.read.bind(handle); let first = true
+    handle.stat = async () => baseline // Coarse-time oracle: the rewrite leaves every stamp unchanged.
+    handle.read = async (buffer, offset, length, position) => {
+      if (first && position === chunk) { const fd = fs.openSync(file, 'r+'); fs.writeSync(fd, mutation, 0, chunk, chunk); fs.closeSync(fd) }
+      const result = await pass(buffer, offset, length, position)
+      if (first && position === 2 * chunk) { const fd = fs.openSync(file, 'r+'); fs.writeSync(fd, original, chunk, chunk, chunk); fs.closeSync(fd) }
+      if (position === original.length) first = false
+      return result
+    }
+    return handle
+  })
+  await assert.rejects(read(file, undefined, false, { expectedDigest: digest }), /content or identity changed/)
+  t.mock.restoreAll()
+  assert.deepEqual(fs.readFileSync(file), original)
+})

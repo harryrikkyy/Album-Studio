@@ -9,6 +9,8 @@ const node = st => ({ dev: String(st.dev), ino: String(st.ino) })
 const sameNode = (a, b) => !!a && !!b && String(a.dev) === String(b.dev) && String(a.ino) === String(b.ino)
 const sameRead = (a, b) => sameNode(a, b) && ['size', 'mtimeNs', 'ctimeNs', 'mode', 'nlink'].every(k => a[k] === b[k])
 const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.size && a.stamp === b.stamp
+// An lstat that still describes a verified record: the same regular inode, size, mtime and mode. No bytes are read.
+const sameIdentity = (info, r) => !!info && info.isFile() && info.nlink === 1n && sameNode(info, r.node) && String(info.size) === r.size && Number(info.mtimeNs) / 1e6 === r.mtimeMs && (Number(info.mode) & 0o777) === r.mode
 function createPublicationIO({ subject, changed, readRecord }) {
   async function syncDirectory(folder) {
     const handle = await fs.promises.open(folder, 'r')
@@ -41,22 +43,33 @@ function createPublicationIO({ subject, changed, readRecord }) {
   async function copyDetached(source, target, expected, mode = expected.mode) {
     const handle = await fs.promises.open(target, fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_EXCL | (fs.constants.O_NOFOLLOW || 0), mode)
     try {
-      const copied = await readRecord(source, Number.MAX_SAFE_INTEGER, false, async (bytes, position) => {
+      const copied = await readRecord(source, Number.MAX_SAFE_INTEGER, false, { expectedDigest: expected.digest, sink: async (bytes, position) => {
         let offset = 0
         while (offset < bytes.length) {
           const { bytesWritten } = await handle.write(bytes, offset, bytes.length - offset, position + offset)
           if (!bytesWritten) throw new Error(`The ${subject} snapshot could not be written completely.`)
           offset += bytesWritten
         }
-      })
+      } })
       if (!matches(copied, expected)) throw changed(`${subject} snapshot source`)
       await handle.chmod(mode); await handle.utimes(expected.atimeMs / 1000, expected.mtimeMs / 1000); await handle.sync()
       const copiedNode = node(await handle.stat({ bigint: true }))
       if (!sameNode(copiedNode, await stat(target))) throw changed(`detached ${subject} snapshot`)
     } finally { await handle.close() }
-    const actual = await readRecord(target)
+    const actual = await readRecord(target, Number.MAX_SAFE_INTEGER, false, { expectedDigest: expected.digest })
     if (!matches(actual, expected)) throw changed(`detached ${subject} snapshot bytes`)
     return actual
+  }
+  // A publication hashes each retained snapshot once. Its later journal checks skip a snapshot whose
+  // lstat identity (inode, size, mtime, ctime, mode, links) is unchanged; recovery re-hashes every byte.
+  // With one-second timestamps (HFS+), only recovery sees a same-size rewrite within that second.
+  async function remember(known, file, record) {
+    const info = await stat(file)
+    if (sameIdentity(info, record)) known.set(path.basename(file), { info, record })
+  }
+  async function retainedRecord(known, file, maximum) {
+    const seen = known && known.get(path.basename(file))
+    return seen && sameRead(seen.info, await stat(file)) ? seen.record : readRecord(file, maximum)
   }
   async function move(from, to, expectedNode) {
     const before = await stat(from)
@@ -69,6 +82,6 @@ function createPublicationIO({ subject, changed, readRecord }) {
     if (!sameNode(before, await stat(to))) throw changed(`atomic ${subject} capture`)
     await syncDirectory(path.dirname(from)); if (path.dirname(from) !== path.dirname(to)) await syncDirectory(path.dirname(to))
   }
-  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move }
+  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity }
 }
 module.exports = { createPublicationIO }

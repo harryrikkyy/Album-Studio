@@ -16,29 +16,15 @@ const sameNode = (a, b) => !!a && !!b && String(a.dev) === String(b.dev) && Stri
 const content = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.size
 const matches = (a, b) => content(a, b) && a.stamp === b.stamp
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
-const sameRead = (a, b) => sameNode(a, b) && ['size', 'mtimeNs', 'ctimeNs', 'mode', 'nlink'].every(k => a[k] === b[k])
-// An lstat that still describes a verified record: the same regular inode, size, mtime and mode. No bytes are read.
-const sameIdentity = (info, r) => !!info && info.isFile() && info.nlink === 1n && sameNode(info, r.node) && String(info.size) === r.size && Number(info.mtimeNs) / 1e6 === r.mtimeMs && (Number(info.mode) & 0o777) === r.mode
 const changed = what => new Error(`The ${what} changed during rendering. Existing files and detached recovery snapshots were preserved; review them before retrying.`)
 function stopped(check) { if (check && check()) { const error = new Error('Rendering was cancelled before commit.'); error.code = 'RENDER_CANCELLED'; throw error } }
 
 // The same stream/revision primitive will guard native document publication.
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Render', changed })
 
-const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
+const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
 const fingerprintRenderFile = file => readRecord(file)
 const description = r => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
-// A publication hashes each retained snapshot once. Its later journal checks skip a snapshot whose
-// lstat identity (inode, size, mtime, ctime, mode, links) is unchanged; recovery re-hashes every byte.
-// With one-second timestamps (HFS+), only recovery sees a same-size rewrite within that second.
-async function remember(known, file, record) {
-  const info = await stat(file)
-  if (sameIdentity(info, record)) known.set(path.basename(file), { info, record })
-}
-async function retainedRecord(file, maximum, known) {
-  const seen = known && known.get(path.basename(file))
-  return seen && sameRead(seen.info, await stat(file)) ? seen.record : readRecord(file, maximum)
-}
 async function contextOf(p, capabilities) {
   if (!capabilities || typeof capabilities.assertOwned !== 'function' || typeof capabilities.assertOutput !== 'function') throw new Error('Render publication/recovery requires owned project and output capabilities.')
   if (!p || typeof p.albumFile !== 'string' || !path.isAbsolute(p.albumFile) || typeof p.outputFolder !== 'string' || !path.isAbsolute(p.outputFolder)) throw new Error('Render project and output paths must be absolute.')
@@ -79,7 +65,7 @@ async function journalOf(c, stage, known) {
     if (!entry || entry.kind !== kind || entry.target !== targets[i] || entry.old !== old || entry.next !== next || entry.install !== install || entry.capture !== `captured-${kind}` || entry.discard !== `discard-${kind}` || entry.before !== null && !validRecord(entry.before, limit) || !validRecord(entry.after, limit)) throw new Error('Invalid render snapshot paths or revisions; no public files were changed.')
     for (const name of [old, next, install, entry.capture, entry.discard]) allowed.add(name)
     for (const [name, expected, identity] of [[old, entry.before, false], [next, entry.after, false], [install, entry.after, true], [entry.capture, entry.before, true], [entry.discard, entry.after, true]]) {
-      const actual = await retainedRecord(path.join(stage, name), limit, known)
+      const actual = await retainedRecord(known, path.join(stage, name), limit)
       if ((!expected && actual) || expected && [old, next].includes(name) && !actual || actual && !(identity ? owned(actual, expected) : matches(actual, expected))) throw changed(`retained render ${name}`)
       if (actual && [old, next].includes(name) && actual.mode & 0o222) throw changed(`immutable render ${name} permissions`)
     }
@@ -100,17 +86,17 @@ async function journalOf(c, stage, known) {
   }
   return { journal, digest: raw.digest, committed: !!marker }
 }
-async function optionalPublic(file, maximum) {
+async function optionalPublic(file, maximum, expectedDigest) {
   const info = await stat(file)
   if (!info) return null
   if (!info.isFile() || info.isSymbolicLink() || info.nlink !== 1n) return { foreign: true }
-  return readRecord(file, maximum)
+  return readRecord(file, maximum, false, { expectedDigest })
 }
 async function inspect(c, journal, pending) {
   await assertContext(c)
   const results = []
   for (const [i, entry] of journal.entries.entries()) {
-    const current = await optionalPublic(entry.target, i ? MAX_CACHE_BYTES : MAX_SHEET_BYTES)
+    const current = await optionalPublic(entry.target, i ? MAX_CACHE_BYTES : MAX_SHEET_BYTES, entry.after.digest)
     const old = matches(current, entry.before), next = owned(current, entry.after)
     if (pending && current && !old && !next) throw new Error(`Render rollback conflict at ${entry.target}. A manual or unrelated file was preserved.`)
     results.push({ entry, current, old, next })
@@ -176,7 +162,7 @@ async function recoverInContext(c) {
 async function recoverRenders(p, capabilities) { return recoverInContext(await contextOf(p, capabilities)) }
 async function checkSnapshot(c, p) {
   await assertContext(c); stopped(c.capabilities.isCancelled)
-  const project = await readRecord(c.albumFile, MAX_CACHE_BYTES)
+  const project = await readRecord(c.albumFile, MAX_CACHE_BYTES, false, { expectedDigest: p.expectedProjectRevision })
   if (!project || project.digest !== p.expectedProjectRevision) throw changed('project revision')
   if (c.capabilities.validateSnapshot) await c.capabilities.validateSnapshot()
   stopped(c.capabilities.isCancelled)
@@ -202,10 +188,11 @@ async function publishRender(p, capabilities) {
   if (capabilities && capabilities.validateSnapshot !== undefined && typeof capabilities.validateSnapshot !== 'function' || capabilities && capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function') throw new Error('Render snapshot/cancellation validators must be functions.')
   const c = await contextOf(p, capabilities); await recoverInContext(c); await checkSnapshot(c, p)
   const sheet = path.join(c.sheets, `${p.spreadId}.psd`), cacheFile = path.join(c.metadata, 'render-cache.json')
-  const beforeSheet = await readRecord(sheet), beforeCache = await readRecord(cacheFile, MAX_CACHE_BYTES, true)
+  const beforeSheet = await readRecord(sheet, MAX_SHEET_BYTES, false, { expectedDigest: p.sheetBefore && p.sheetBefore.digest })
+  const beforeCache = await readRecord(cacheFile, MAX_CACHE_BYTES, true, { expectedDigest: p.cacheBefore })
   if (p.sheetBefore ? !matches(beforeSheet, { ...p.sheetBefore, size: p.sheetBefore.size || p.sheetBefore.stamp.split(':')[0] }) : beforeSheet) throw changed('previous sheet revision')
   if (p.cacheBefore ? !beforeCache || beforeCache.digest !== p.cacheBefore : beforeCache) throw changed('render-cache revision')
-  const oldCache = parseCache(beforeCache, c.albumFile), source = await readRecord(p.source)
+  const oldCache = parseCache(beforeCache, c.albumFile), source = await readRecord(p.source, MAX_SHEET_BYTES, false, { expectedDigest: p.sourceDigest })
   if (!source || source.digest !== p.sourceDigest) throw changed('staged source revision')
   if (!p.cacheNext || p.cacheNext.version !== 2 || p.cacheNext.albumFile !== c.albumFile || !p.cacheNext.spreads || typeof p.cacheNext.spreads !== 'object' || Array.isArray(p.cacheNext.spreads) || !p.cacheNext.spreads[p.spreadId]) throw new Error('The next render cache must identify the canonical project and rendered spread.')
   if (oldCache.version === 2) {
@@ -252,7 +239,7 @@ async function publishRender(p, capabilities) {
       if (entry.before ? !sameIdentity(current, entry.before) : current) throw changed(`existing ${entry.kind} at publication`)
       if (entry.before) {
         await move(entry.target, path.join(stage, entry.capture))
-        const captured = await readRecord(path.join(stage, entry.capture))
+        const captured = await readRecord(path.join(stage, entry.capture), undefined, false, { expectedDigest: entry.before.digest })
         if (!owned(captured, entry.before)) { await returnCaptured(c, stage, entry, path.join(stage, entry.capture), captured); throw changed(`${entry.kind} at atomic capture`) }
         await remember(known, path.join(stage, entry.capture), captured)
       }

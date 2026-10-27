@@ -14,7 +14,7 @@ function createVerifiedFileReader({ label, changed }) {
   if (typeof label !== 'string' || !label || typeof changed !== 'function') throw new Error('Verified publication reads require a label and conflict factory.')
   const subject = `${label.toLowerCase()} file`
   /** Fixed allocation, declared-length reads, no-follow handle, identity/growth checks. */
-  async function readRecord(file, maximum = MAX_FILE_BYTES, retain = false, sink) {
+  async function readRecord(file, maximum = MAX_FILE_BYTES, retain = false, { sink, expectedDigest } = {}) {
     const before = await stat(file)
     if (!before) return null
     if (!before.isFile() || before.isSymbolicLink() || before.nlink !== 1n || before.size < 0n || before.size > BigInt(maximum)) throw new Error(`${label} file ${file} must be a regular, independent file within the ${maximum}-byte policy. Preserve it before retrying.`)
@@ -38,20 +38,25 @@ function createVerifiedFileReader({ label, changed }) {
         position += bytesRead
       }
       const extra = await handle.read(buffer, 0, 1, length)
-      const firstEnd = await handle.stat({ bigint: true })
-      if (extra.bytesRead || !sameRead(opened, firstEnd) || !sameRead(firstEnd, await stat(file))) throw changed(`${subject} identity or length`)
-      const firstDigest = hash.digest('hex'), check = crypto.createHash('sha256')
+      let after = await handle.stat({ bigint: true })
+      if (extra.bytesRead || !sameRead(opened, after) || !sameRead(after, await stat(file))) throw changed(`${subject} identity or length`)
+      const firstDigest = hash.digest('hex')
       // HFS timestamps can be coarse enough to miss an in-place A/B/A write. Verify all
-      // bytes again through the same handle before accepting the first pass or its copy.
-      position = 0
-      while (position < length) {
-        const { bytesRead } = await handle.read(buffer, 0, Math.min(buffer.length, length - position), position)
-        if (!bytesRead) throw changed(`${subject} verification length`)
-        check.update(buffer.subarray(0, bytesRead)); position += bytesRead
+      // bytes again through the same handle before accepting the first pass or its copy,
+      // unless that pass hashed to the digest the caller requires: it then read exactly
+      // those bytes, never a hybrid of two revisions.
+      if (firstDigest !== expectedDigest) {
+        const check = crypto.createHash('sha256')
+        position = 0
+        while (position < length) {
+          const { bytesRead } = await handle.read(buffer, 0, Math.min(buffer.length, length - position), position)
+          if (!bytesRead) throw changed(`${subject} verification length`)
+          check.update(buffer.subarray(0, bytesRead)); position += bytesRead
+        }
+        const verificationExtra = await handle.read(buffer, 0, 1, length)
+        after = await handle.stat({ bigint: true })
+        if (verificationExtra.bytesRead || check.digest('hex') !== firstDigest || !sameRead(opened, after) || !sameRead(after, await stat(file))) throw changed(`${subject} content or identity`)
       }
-      const verificationExtra = await handle.read(buffer, 0, 1, length)
-      const after = await handle.stat({ bigint: true }), named = await stat(file)
-      if (verificationExtra.bytesRead || check.digest('hex') !== firstDigest || !sameRead(opened, after) || !sameRead(after, named)) throw changed(`${subject} content or identity`)
       result = { digest: firstDigest, size: String(after.size), stamp: `${after.size}:${Math.round(Number(after.mtimeNs) / 1e6)}`, node: node(after), mode: Number(after.mode) & 0o777, mtimeMs: Number(after.mtimeNs) / 1e6, atimeMs: Number(after.atimeNs) / 1e6, ...(retain ? { bytes: Buffer.concat(chunks, length) } : {}) }
     } catch (error) { failure = error; failed = true }
     try { await handle.close() } catch (closeError) {

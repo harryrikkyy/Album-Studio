@@ -14,7 +14,7 @@ const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.si
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
-const { directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
+const { directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
 const validNode = n => !!n && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
 const validRecord = r => !!r && SHA.test(r.digest || '') && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
 const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !n.startsWith('.album-studio')
@@ -44,7 +44,7 @@ async function checkSnapshot(c) {
   if (c.capabilities.validateSnapshot) await c.capabilities.validateSnapshot()
   if (c.capabilities.isCancelled && c.capabilities.isCancelled()) throw Object.assign(new Error('File publication was cancelled before commit.'), { code: 'PUBLICATION_CANCELLED' })
 }
-async function journalOf(c, stage) {
+async function journalOf(c, stage, known) {
   const stageNode = await directory(stage), raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
   if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
   let journal
@@ -55,7 +55,7 @@ async function journalOf(c, stage) {
     if (!entry || !validName(entry.name) || names.has(entry.name) || entry.before !== null && !validRecord(entry.before) || !validRecord(entry.after)) throw changed('publication entry identity')
     names.add(entry.name)
     for (const prefix of ['old', 'next', 'install', 'captured', 'discard']) {
-      const name = `${prefix}-${i}`, actual = await readRecord(path.join(stage, name)), expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
+      const name = `${prefix}-${i}`, actual = await retainedRecord(known, path.join(stage, name)), expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
       allowed.add(name)
       if (!expected && actual || expected && ['old', 'next'].includes(prefix) && !actual || actual && !(prefix === 'old' || prefix === 'next' ? matches(actual, expected) && !(actual.mode & 0o222) : owned(actual, expected))) throw changed(`retained publication ${name}`)
     }
@@ -80,22 +80,22 @@ async function inspect(c, journal, pending) {
   for (const [i, entry] of journal.entries.entries()) {
     await assertContext(c, entry.name)
     const target = path.join(c.physical, entry.name), info = await stat(target)
-    const current = !info ? null : info.isFile() && !info.isSymbolicLink() && info.nlink === 1n ? await readRecord(target) : { foreign: true }
+    const current = !info ? null : info.isFile() && !info.isSymbolicLink() && info.nlink === 1n ? await readRecord(target, undefined, false, { expectedDigest: entry.after.digest }) : { foreign: true }
     const old = matches(current, entry.before), next = owned(current, entry.after)
     if (pending && current && !old && !next) throw changed(`manual or unrelated public file ${target}`)
     results.push({ i, entry, target, current, old, next })
   }
   return results
 }
-async function retire(c, stage) {
-  await journalOf(c, stage); await assertContext(c)
+async function retire(c, stage, known) {
+  await journalOf(c, stage, known); await assertContext(c)
   const history = path.join(c.metadata, 'history'); await directory(history, true)
   const destination = path.join(history, path.basename(stage)), before = await stat(stage)
   try { await move(stage, destination) } catch (error) {
     if (!await stat(stage) && sameNode(before, await stat(destination))) throw failureAt(destination, error)
     throw error
   }
-  try { await journalOf(c, destination) } catch (error) { throw failureAt(destination, error) }
+  try { await journalOf(c, destination, known) } catch (error) { throw failureAt(destination, error) }
   return destination
 }
 async function returnCaptured(c, stage, i, file, target, actual) {
@@ -152,19 +152,22 @@ async function publishFiles({ folder, entries }, capabilities) {
   const before = [], sources = []
   for (const entry of entries) {
     await assertContext(c, entry.name)
-    const current = await readRecord(path.join(c.physical, entry.name)), source = await readRecord(entry.source)
+    const current = await readRecord(path.join(c.physical, entry.name), undefined, false, { expectedDigest: entry.before && entry.before.digest })
+    const source = await readRecord(entry.source, undefined, false, { expectedDigest: entry.sourceDigest })
     if (entry.before ? !owned(current, entry.before) : current) throw changed(`previous revision of ${entry.name}`)
     if (!source || source.digest !== entry.sourceDigest) throw changed(`staged source ${entry.name}`)
     before.push(current); sources.push(source)
   }
   const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')), name = `files-${crypto.randomUUID()}`, stage = path.join(c.metadata, name)
+  const known = new Map()
+  const retainCopy = async (from, file, expected, mode) => { const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode); await remember(known, target, record); return record }
   let exposed = false, committed = false, result
   try {
     const records = []
     for (const [i, entry] of entries.entries()) {
-      const next = await copyDetached(entry.source, path.join(prepared, `next-${i}`), sources[i], 0o400)
-      const after = await copyDetached(path.join(prepared, `next-${i}`), path.join(prepared, `install-${i}`), { ...next, mode: before[i] ? before[i].mode : 0o600 })
-      if (before[i]) await copyDetached(path.join(c.physical, entry.name), path.join(prepared, `old-${i}`), before[i], 0o400)
+      const next = await retainCopy(entry.source, `next-${i}`, sources[i], 0o400)
+      const after = await retainCopy(path.join(prepared, `next-${i}`), `install-${i}`, { ...next, mode: before[i] ? before[i].mode : 0o600 })
+      if (before[i]) await retainCopy(path.join(c.physical, entry.name), `old-${i}`, before[i], 0o400)
       records.push({ name: entry.name, before: before[i], after })
     }
     const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
@@ -172,22 +175,25 @@ async function publishFiles({ folder, entries }, capabilities) {
     const bytes = Buffer.from(JSON.stringify(journal)), revision = crypto.createHash('sha256').update(bytes).digest('hex')
     if (bytes.length > MAX_JOURNAL) throw new Error('The publication journal exceeds its 1 MiB limit.')
     await writeNew(path.join(prepared, 'journal.json'), bytes, 0o400); await syncDirectory(prepared)
-    const exactJournal = async () => { const state = await journalOf(c, stage); if (state.digest !== revision) throw changed('durable publication journal revision'); return state }
+    const exactJournal = async () => { const state = await journalOf(c, stage, known); if (state.digest !== revision) throw changed('durable publication journal revision'); return state }
     await checkSnapshot(c); await move(prepared, stage); exposed = true
     await exactJournal()
     result = { committed: true, records: records.map(e => ({ name: e.name, ...e.after })) }
     for (const [i, entry] of records.entries()) {
       await checkSnapshot(c); await assertContext(c, entry.name); await exactJournal()
-      const target = path.join(c.physical, entry.name), current = await readRecord(target)
-      if (entry.before ? !owned(current, entry.before) : current) throw changed(`public revision of ${entry.name}`)
+      // Identity checks around the moves: the captured original is re-read once captured, and the
+      // published batch is re-read just before the commit marker.
+      const target = path.join(c.physical, entry.name), current = await stat(target)
+      if (entry.before ? !sameIdentity(current, entry.before) : current) throw changed(`public revision of ${entry.name}`)
       if (entry.before) {
         const capture = path.join(stage, `captured-${i}`)
         await move(target, capture)
-        const actual = await readRecord(capture)
+        const actual = await readRecord(capture, undefined, false, { expectedDigest: entry.before.digest })
         if (!owned(actual, entry.before)) { await returnCaptured(c, stage, i, capture, target, actual); throw changed(`atomic capture of ${entry.name}`) }
+        await remember(known, capture, actual)
       }
       await checkSnapshot(c); await move(path.join(stage, `install-${i}`), target)
-      if (!owned(await readRecord(target), entry.after)) throw changed(`installed revision of ${entry.name}`)
+      if (!sameIdentity(await stat(target), entry.after)) throw changed(`installed revision of ${entry.name}`)
     }
     await exactJournal()
     if ((await inspect(c, journal, true)).some(({ next }) => !next)) throw changed('published batch ownership')
@@ -199,7 +205,7 @@ async function publishFiles({ folder, entries }, capabilities) {
     if (!marker || marker.digest !== markerDigest || marker.size !== String(markerBytes.length) || !sameNode(marker.node, commitNode) || marker.mode & 0o222) throw changed('exact publication commit preparation')
     await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
     await exactJournal(); committed = true
-    return { ...result, historyPath: await retire(c, stage) }
+    return { ...result, historyPath: await retire(c, stage, known) }
   } catch (error) {
     if (!exposed && !await stat(prepared) && await stat(stage)) exposed = true
     if (exposed && await stat(stage)) {

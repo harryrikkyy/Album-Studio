@@ -197,3 +197,63 @@ test('filesystem-valid Unicode names preserve normal native save behaviour', asy
   const r = await publishFiles(p, caps)
   assert.equal(r.committed, true); assert.deepEqual(fs.readFileSync(target), f.next)
 })
+
+async function payloadBytesRead(t, run) {
+  const open = fs.promises.open, owners = new WeakMap(), probe = await open(__filename), proto = Object.getPrototypeOf(probe)
+  await probe.close()
+  const read = proto.read; let bytes = 0
+  t.mock.method(fs.promises, 'open', async (file, ...args) => { const handle = await open(file, ...args); owners.set(handle, String(file)); return handle })
+  t.mock.method(proto, 'read', async function (...args) { const result = await read.apply(this, args); if (!/\.json$/.test(owners.get(this) || '')) bytes += result.bytesRead; return result })
+  try { await run() } finally { t.mock.restoreAll() }
+  return bytes
+}
+test('a batch hashes each retained file once, so its reads per byte do not grow with the batch', async t => {
+  const size = 1024 * 1024, root = tmpdir(), folder = path.join(root, 'Output')
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  fs.mkdirSync(folder)
+  // Reads per payload byte, one pass each because every read is checked against a known digest: the
+  // source gate, each detached copy's source and copy, and the public batch before commit. A repeated
+  // publication adds the previous revision, its detached copy and the captured original.
+  for (const count of [1, 3]) {
+    const batch = (tag, repeated) => Promise.all(Array.from({ length: count }, async (_, i) => {
+      const name = `batch-${count}-${i}.psd`, source = path.join(root, `${tag}-${count}-${i}.bin`), bytes = crypto.randomBytes(size)
+      fs.writeFileSync(source, bytes)
+      return { name, source, sourceDigest: sha(bytes), before: repeated ? await fingerprintFile(path.join(folder, name)) : null }
+    }))
+    for (const [tag, repeated, budget] of [['first', false, 6], ['again', true, 10]]) {
+      const entries = await batch(tag, repeated)
+      const reads = await payloadBytesRead(t, () => publishFiles({ folder, entries }, caps)) / (count * size)
+      assert.ok(reads <= budget, `a ${repeated ? 'repeated' : 'first'} ${count}-file publication read each byte ${reads} times; the budget is ${budget}`)
+      for (const entry of entries) assert.equal(sha(fs.readFileSync(path.join(folder, entry.name))), entry.sourceDigest)
+    }
+  }
+})
+function replaceWith(file, bytes) { const temp = path.join(path.dirname(file), '.replacement'); fs.writeFileSync(temp, bytes); fs.renameSync(temp, file); return fs.statSync(file).ino }
+test('a public file replaced after its revision gate stays published instead of being captured', async t => {
+  const f = fixture(t), p = await input(f), move = exclusive.renameExclusive
+  let node
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    const result = await move(from, to)
+    if (/^files-/.test(path.basename(to)) && !node) node = replaceWith(f.file, 'replacement saved by another app')
+    return result
+  })
+  await assert.rejects(publishFiles(p, caps), /public revision of manual\.psd/)
+  assert.equal(fs.readFileSync(f.file, 'utf8'), 'replacement saved by another app')
+  assert.equal(fs.statSync(f.file).ino, node)
+})
+test('a public file replaced after its install stops the batch before the next file is captured', async t => {
+  const f = fixture(t), p = await input(f), move = exclusive.renameExclusive, second = path.join(f.folder, 'second.psd')
+  fs.writeFileSync(second, 'second customer layers')
+  p.entries.push({ name: 'second.psd', source: f.source, sourceDigest: sha(f.next), before: await fingerprintFile(second) })
+  const secondNode = fs.statSync(second).ino, open = fs.promises.open, folder = fs.realpathSync(f.folder)
+  let installed = false, replaced = false
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => { const result = await move(from, to); if (path.basename(from) === 'install-0') installed = true; return result })
+  t.mock.method(fs.promises, 'open', async (name, ...args) => {
+    // The install's folder sync runs after its rename is verified and before the identity check.
+    if (installed && !replaced && name === folder) { replaced = true; replaceWith(f.file, 'replacement saved by another app') }
+    return open(name, ...args)
+  })
+  await assert.rejects(publishFiles(p, caps), /installed revision of manual\.psd/)
+  assert.equal(fs.statSync(second).ino, secondNode)
+  assert.equal(fs.readFileSync(second, 'utf8'), 'second customer layers')
+})
