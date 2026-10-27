@@ -10,7 +10,7 @@ const path = require('path')
 // Never read or modify a customer's saved licence during a regression test.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as-license-test-'))
 process.env.CH_LICENSE_FILE = path.join(dir, 'license.json')
-const { getDaysRemaining, saveLicense, loadLicense, validateOfflineLicense, clearLicense, _usePublicKey } = require('../src/license')
+const { getDaysRemaining, licenseFromRecord, saveLicense, loadLicense, validateOfflineLicense, clearLicense, _usePublicKey } = require('../src/license')
 const { signLicense } = require('../src/license_signing')
 const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519')
 _usePublicKey(publicKey)
@@ -85,4 +85,18 @@ test('valid signed licences retain machine, account and whole-day offline policy
   assert.ok(Number.isFinite(valid.daysLeft) && valid.daysLeft >= 29)
   write(new Date(Date.now() + DAY / 2).toISOString())
   assert.deepEqual(validateOfflineLicense('machine-A', 'ana@studio.in'), { allowed: false, reason: 'expired' })
+})
+
+test('a record renamed after signing still opens offline: the signed name is kept in licName', () => {
+  for (const [signedName, nameNow] of [['Ana Rao', 'Ana Mehta'], ['', 'Ana Rao']]) {
+    const expiresOn = new Date(Date.now() + 30 * DAY).toISOString(), activatedOn = new Date().toISOString()
+    const signed = { email: 'ana@studio.in', name: signedName, expiresOn, activatedOn }
+    // The record as the admin panel left it, after a sign-in rewrote `name` with the Google name.
+    const record = {
+      email: { stringValue: signed.email }, name: { stringValue: nameNow }, licName: { stringValue: signedName },
+      licExpiresOn: { stringValue: expiresOn }, licActivatedOn: { stringValue: activatedOn }, sig: { stringValue: signLicense(signed, privateKey) },
+    }
+    saveLicense(licenseFromRecord(record, 'ana@studio.in', 'machine-A'))
+    assert.equal(validateOfflineLicense('machine-A', 'ana@studio.in').allowed, true, `signed as "${signedName}", now "${nameNow}"`)
+  }
 })

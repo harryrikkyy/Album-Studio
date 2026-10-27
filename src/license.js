@@ -16,6 +16,25 @@ try { PUBLIC_KEY = fs.readFileSync(PUBLIC_KEY_FILE, 'utf8') } catch (_) { /* not
 // Overridable for tests.
 const LICENSE_FILE = process.env.CH_LICENSE_FILE || path.join(os.homedir(), '.ch_toolkit_license')
 
+/**
+ * The license an account record (Firestore REST fields) grants this machine, as saveLicense
+ * takes it. A signed record carries the exact strings the owner's admin panel signed: save
+ * those, so the offline check verifies the bytes that were signed. A record signed before the
+ * panel stored one of them falls back to the record's own value.
+ */
+function licenseFromRecord(fields, email, machineId) {
+  return {
+    email,
+    // Every sign-in rewrites `name` with the Google profile name, so a renamed account would no
+    // longer match its signature. licName keeps the name as signed, even an empty one.
+    name: fields.licName?.stringValue ?? (fields.name?.stringValue || ''),
+    machineId,
+    expiresOn: fields.licExpiresOn?.stringValue || fields.expiresOn?.timestampValue,
+    activatedOn: fields.licActivatedOn?.stringValue || fields.activatedOn?.timestampValue || new Date().toISOString(),
+    sig: fields.sig?.stringValue,
+  }
+}
+
 /** Save offline access for a signed license; without a signature, any saved license goes. */
 function saveLicense(licenseData) {
   if (!licenseData.sig) {
@@ -94,4 +113,4 @@ function validateOfflineLicense(currentMachineId, email) {
 // Tests verify licenses they sign with their own key pair.
 function _usePublicKey(key) { PUBLIC_KEY = key }
 
-module.exports = { saveLicense, loadLicense, getDaysRemaining, clearLicense, validateOfflineLicense, _usePublicKey }
+module.exports = { licenseFromRecord, saveLicense, loadLicense, getDaysRemaining, clearLicense, validateOfflineLicense, _usePublicKey }

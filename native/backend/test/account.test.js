@@ -35,9 +35,10 @@ let offline = false
 let readHook = null
 let patchHook = null
 let tokenHook = null
+let googleName = 'Ana Rao' // the name on the Google account, which its owner may change
 const day = 24 * 3600 * 1000
 const field = (v) => (typeof v === 'boolean' ? { booleanValue: v } : { stringValue: v })
-/** The fields Creative Hubb's admin panel adds when it signs an activation. */
+/** The fields Creative Hubb's admin panel added when it signed an activation, before it also kept licName. */
 function signedFields(expiresOn, activatedOn = new Date().toISOString()) {
   const sig = signLicense({ email: 'ana@studio.in', name: 'Ana Rao', expiresOn, activatedOn }, signingKey)
   return { licExpiresOn: field(expiresOn), licActivatedOn: field(activatedOn), sig: field(sig) }
@@ -60,7 +61,7 @@ async function fakeFetch(url, init = {}) {
   calls.push(`${method} ${u.hostname}${u.pathname}`)
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
   if (u.hostname === 'oauth2.googleapis.com') return fakeToken(init, reply)
-  if (u.pathname === '/oauth2/v2/userinfo') return reply({ email: 'ana@studio.in', name: 'Ana Rao', picture: '' })
+  if (u.pathname === '/oauth2/v2/userinfo') return reply({ email: 'ana@studio.in', name: googleName, picture: '' })
   if (u.hostname === 'identitytoolkit.googleapis.com') return reply({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in', expiresIn: '3600' })
   if (u.hostname === 'firestore.googleapis.com') {
     assert.equal(init.headers?.Authorization, 'Bearer fb-id', 'every record read and write is authenticated')
@@ -272,6 +273,28 @@ test('an unsigned activation opens the app online only, and a forged licence nev
     assert.notEqual((await account.verify('ana@studio.in')).state, 'allowed')
     assert.equal(account.permits('album.open'), false)
   } finally {
+    offline = false
+  }
+})
+
+test('renaming the Google account after activation keeps the saved licence, at launch and offline', async () => {
+  const doc = await activatedAccount({ machineId: 'machine-A' })
+  doc.licName = field('Ana Rao') // the name Creative Hubb's admin panel signed
+  googleName = 'Ana Mehta'
+  try {
+    const { done, back, state } = await startSignIn()
+    await fetch(`${back}/?code=good&state=${state}`)
+    assert.equal((await done).state, 'allowed')
+    assert.deepEqual(doc.name, field('Ana Mehta'), 'each sign-in records the Google name')
+
+    account._reset()
+    assert.equal((await account.status()).state, 'allowed', 'the next launch still finds the saved licence')
+    account._reset()
+    offline = true
+    const r = await account.status()
+    assert.deepEqual([r.state, r.offline], ['allowed', true])
+  } finally {
+    googleName = 'Ana Rao'
     offline = false
   }
 })

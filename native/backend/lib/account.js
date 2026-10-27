@@ -196,18 +196,11 @@ async function verify(email, expectedGeneration = generation) {
       }
       const f = doc.fields
       const expiresOn = f.expiresOn.timestampValue
-      // A signed record carries the exact signed strings; save those so the offline check
-      // verifies the bytes that were signed. An unsigned record opens the app online only:
-      // saveLicense keeps no offline licence without a signature.
+      // A signed record carries the exact signed strings, which licenseFromRecord saves. An
+      // unsigned record opens the app online only: saveLicense keeps no offline licence without
+      // a signature.
       requireGeneration(expectedGeneration)
-      licence.saveLicense({
-        email,
-        name: f.name?.stringValue || '',
-        machineId: machine,
-        expiresOn: f.licExpiresOn?.stringValue || expiresOn,
-        activatedOn: f.licActivatedOn?.stringValue || f.activatedOn?.timestampValue || new Date().toISOString(),
-        sig: f.sig?.stringValue,
-      })
+      licence.saveLicense(licence.licenseFromRecord(f, email, machine))
       return allowed(email, f.name?.stringValue, licence.getDaysRemaining(expiresOn), false, Date.parse(expiresOn))
     }
     // The read worked but there is no record: not activated (not "offline").
