@@ -16,7 +16,6 @@ Object.assign(process.env, {
   FIREBASE_PROJECT_ID: 'test-project',
   GOOGLE_CLIENT_ID: 'test-client',
   GOOGLE_CLIENT_SECRET: 'test-secret',
-  LICENSE_SECRET_KEY: 'test-licence-key',
 })
 delete process.env.ALBUM_STUDIO_ACCOUNT
 
@@ -24,6 +23,9 @@ const account = require('../lib/account')
 const { dispatch } = require('../server')
 const fbAuth = require('../../../src/firebase_auth')
 const licence = require('../../../src/license')
+const { signLicense } = require('../../../src/license_signing')
+const { publicKey: licenceKey, privateKey: signingKey } = require('crypto').generateKeyPairSync('ed25519')
+licence._usePublicKey(licenceKey)
 
 // Google and Firestore, as far as the sign-in uses them. `docs` holds user records by key.
 const docs = new Map()
@@ -35,6 +37,11 @@ let patchHook = null
 let tokenHook = null
 const day = 24 * 3600 * 1000
 const field = (v) => (typeof v === 'boolean' ? { booleanValue: v } : { stringValue: v })
+/** The fields Creative Hubb's admin panel adds when it signs an activation. */
+function signedFields(expiresOn, activatedOn = new Date().toISOString()) {
+  const sig = signLicense({ email: 'ana@studio.in', name: 'Ana Rao', expiresOn, activatedOn }, signingKey)
+  return { licExpiresOn: field(expiresOn), licActivatedOn: field(activatedOn), sig: field(sig) }
+}
 
 async function fakeFetch(url, init = {}) {
   if (offline) throw new TypeError('fetch failed')
@@ -134,8 +141,8 @@ test('sign-in in the browser: a new user gets a record, not yet activated', asyn
 })
 
 test('activated by Creative Hubb: retry opens the app, binds this Mac, saves the licence', async () => {
-  const doc = docs.get('ana@studio_in')
-  Object.assign(doc, { activated: field(true), expiresOn: { timestampValue: new Date(Date.now() + 30 * day).toISOString() } })
+  const doc = docs.get('ana@studio_in'), expiresOn = new Date(Date.now() + 30 * day).toISOString()
+  Object.assign(doc, { activated: field(true), expiresOn: { timestampValue: expiresOn }, ...signedFields(expiresOn) })
   const r = await account.retry()
   assert.equal(r.state, 'allowed')
   assert.ok(r.daysLeft >= 29 && r.daysLeft <= 30)
@@ -230,14 +237,37 @@ async function activatedAccount({ machineId = '', expiresOn = new Date(Date.now(
   docs.clear()
   versions.clear()
   fbAuth.setSession(fbAuth.mapSignInResponse({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in' }))
-  const doc = { activated: field(true), expiresOn: { timestampValue: expiresOn }, name: field('Ana Rao'), machineId: field(machineId) }
+  const doc = { activated: field(true), expiresOn: { timestampValue: expiresOn }, name: field('Ana Rao'), machineId: field(machineId), ...signedFields(expiresOn) }
   docs.set('ana@studio_in', doc)
   return doc
 }
 
 function saveExistingLicense(expiresOn = new Date(Date.now() + 30 * day).toISOString()) {
-  licence.saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: new Date().toISOString() })
+  const signed = signedFields(expiresOn)
+  licence.saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: signed.licActivatedOn.stringValue, sig: signed.sig.stringValue })
 }
+
+test('an unsigned activation opens the app online only, and a forged licence never opens it offline', async () => {
+  const doc = await activatedAccount({ machineId: 'machine-A' })
+  saveExistingLicense()
+  for (const key of ['sig', 'licExpiresOn', 'licActivatedOn']) delete doc[key]
+  const online = await account.verify('ana@studio.in')
+  assert.deepEqual([online.state, online.offline], ['allowed', false])
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false, 'the earlier signed licence goes with the signature')
+
+  const data = { email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn: new Date(Date.now() + 3650 * day).toISOString(), activatedOn: new Date().toISOString(), savedAt: new Date().toISOString() }
+  const checksum = require('crypto').createHmac('sha256', 'CH-TOOLKIT-PRO-2025-SECRET').update(JSON.stringify(data)).digest('hex')
+  fs.writeFileSync(process.env.CH_LICENSE_FILE, JSON.stringify({ ...data, checksum }))
+  account._reset()
+  offline = true
+  try {
+    assert.notEqual((await account.status()).state, 'allowed')
+    assert.notEqual((await account.verify('ana@studio.in')).state, 'allowed')
+    assert.equal(account.permits('album.open'), false)
+  } finally {
+    offline = false
+  }
+})
 
 test('rejected or unconfirmed device binding cannot grant access or save a licence', async (t) => {
   for (const [label, respond] of [

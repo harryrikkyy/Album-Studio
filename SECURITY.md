@@ -63,14 +63,16 @@ here so it is not mistaken for an oversight.
 
 ## Local license (offline)
 
-When offline, the app falls back to a signed local license file at
+When offline, the app falls back to a local license file at
 `~/.ch_toolkit_license`, validated by `validateOfflineLicense()` in
-`src/license.js` (HMAC-SHA256 over the payload). The signing secret comes from
-`LICENSE_SECRET_KEY`.
+`src/license.js`. Only a license signed by the license server (`server/`,
+Ed25519 over the canonical fields) is accepted. The app verifies it with the
+bundled public key `src/license_public_key.pem`; the private key never ships.
 
-> **Before distributing a build, set a real `LICENSE_SECRET_KEY` in `.env`.**
-> The in-source fallback secret is forgeable; the app logs a warning at startup
-> when it is used.
+A Firestore record without a signature opens the app online only. Licenses
+saved by older builds carry an HMAC checksum whose secret shipped inside the
+app, so they are no longer accepted. Those customers need one online check,
+and offline access again needs a signed record: re-issue it with `server/`.
 
 ## Environment variables
 
@@ -78,6 +80,5 @@ See `.env.example`. The security-relevant ones:
 
 - `FIREBASE_API_KEY` — public Firestore REST key.
 - `FIREBASE_PROJECT_ID` — Firestore project (defaults to `creative-hubb-toolkit`).
-- `LICENSE_SECRET_KEY` — **must** be set to a strong secret before distribution.
 - Google OAuth client id/secret — from the Google Cloud Console. The redirect
   URI `http://127.0.0.1:9842` must be registered there.

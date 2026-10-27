@@ -24,7 +24,7 @@ const { dataDir } = require('./recent')
 // the environment or the first of these files that gives it a value: Album Studio's data folder,
 // the app itself (built in on request; the repository root when run from source), the Album
 // Toolkit's folder. A key left empty in one file is looked for in the next.
-const SETTINGS = ['FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'LICENSE_SECRET_KEY']
+const SETTINGS = ['FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']
 const settingsFiles = () => [
   path.join(dataDir(), '.env'),
   path.resolve(__dirname, '../../../.env'),
@@ -197,17 +197,16 @@ async function verify(email, expectedGeneration = generation) {
       const f = doc.fields
       const expiresOn = f.expiresOn.timestampValue
       // A signed record carries the exact signed strings; save those so the offline check
-      // verifies the bytes that were signed.
-      const sig = f.sig?.stringValue
-      const activatedOn = f.activatedOn?.timestampValue || new Date().toISOString()
+      // verifies the bytes that were signed. An unsigned record opens the app online only:
+      // saveLicense keeps no offline licence without a signature.
       requireGeneration(expectedGeneration)
       licence.saveLicense({
         email,
         name: f.name?.stringValue || '',
         machineId: machine,
-        expiresOn: sig ? (f.licExpiresOn?.stringValue || expiresOn) : expiresOn,
-        activatedOn: sig ? (f.licActivatedOn?.stringValue || activatedOn) : activatedOn,
-        sig,
+        expiresOn: f.licExpiresOn?.stringValue || expiresOn,
+        activatedOn: f.licActivatedOn?.stringValue || f.activatedOn?.timestampValue || new Date().toISOString(),
+        sig: f.sig?.stringValue,
       })
       return allowed(email, f.name?.stringValue, licence.getDaysRemaining(expiresOn), false, Date.parse(expiresOn))
     }

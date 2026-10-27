@@ -2,6 +2,7 @@
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const crypto = require('crypto')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
@@ -9,11 +10,17 @@ const path = require('path')
 // Never read or modify a customer's saved licence during a regression test.
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as-license-test-'))
 process.env.CH_LICENSE_FILE = path.join(dir, 'license.json')
-process.env.LICENSE_SECRET_KEY = 'isolated-test-license-key'
-const { getDaysRemaining, saveLicense, loadLicense, validateOfflineLicense, clearLicense } = require('../src/license')
+const { getDaysRemaining, saveLicense, loadLicense, validateOfflineLicense, clearLicense, _usePublicKey } = require('../src/license')
+const { signLicense } = require('../src/license_signing')
+const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519')
+_usePublicKey(publicKey)
 test.after(() => { clearLicense(); fs.rmdirSync(dir) })
 
 const DAY = 24 * 60 * 60 * 1000
+function saveSigned(expiresOn, key = privateKey) {
+  const fields = { email: 'ana@studio.in', name: 'Ana Rao', expiresOn, activatedOn: new Date().toISOString() }
+  return saveLicense({ ...fields, machineId: 'machine-A', sig: signLicense(fields, key) })
+}
 
 test('getDaysRemaining floors whole days until expiry', () => {
   const in3Days = new Date(Date.now() + 3 * DAY + 60 * 1000).toISOString()
@@ -35,17 +42,40 @@ test('malformed or nonfinite expiry dates report zero remaining days', () => {
   }
 })
 
-test('legacy offline licences with malformed expiry cannot grant access', () => {
+test('signed offline licences with malformed expiry cannot grant access', () => {
   for (const expiresOn of ['invalid date', '', undefined, '2026-99-99T00:00:00Z']) {
-    saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: new Date().toISOString() })
-    assert.ok(loadLicense(), 'the saved checksum remains compatible; validation must enforce expiry')
+    saveSigned(expiresOn)
+    assert.ok(loadLicense(), 'the signature verifies; validation must enforce expiry')
     assert.deepEqual(validateOfflineLicense('machine-A', 'ana@studio.in'), { allowed: false, reason: 'expired' })
     assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
   }
 })
 
-test('valid legacy licences retain machine, account and whole-day offline policy', () => {
-  const write = (expiresOn) => saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: new Date().toISOString() })
+test('a licence forged with the secret older builds shipped never grants offline access', () => {
+  const data = { email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn: new Date(Date.now() + 3650 * DAY).toISOString(), activatedOn: new Date().toISOString(), savedAt: new Date().toISOString() }
+  const checksum = crypto.createHmac('sha256', 'CH-TOOLKIT-PRO-2025-SECRET').update(JSON.stringify(data)).digest('hex')
+  fs.writeFileSync(process.env.CH_LICENSE_FILE, JSON.stringify({ ...data, checksum }))
+  assert.equal(loadLicense(), null)
+  assert.deepEqual(validateOfflineLicense('machine-A', 'ana@studio.in'), { allowed: false, reason: 'no_internet' })
+})
+
+test('only a signature from the bundled key, over the saved fields, verifies', () => {
+  saveSigned(new Date(Date.now() + 30 * DAY).toISOString(), crypto.generateKeyPairSync('ed25519').privateKey)
+  assert.equal(loadLicense(), null, 'another key pair signed it')
+  saveSigned(new Date(Date.now() + 30 * DAY).toISOString())
+  const saved = JSON.parse(fs.readFileSync(process.env.CH_LICENSE_FILE, 'utf8'))
+  fs.writeFileSync(process.env.CH_LICENSE_FILE, JSON.stringify({ ...saved, expiresOn: new Date(Date.now() + 3650 * DAY).toISOString() }))
+  assert.equal(loadLicense(), null, 'its expiry was extended after signing')
+})
+
+test('saving an unsigned licence keeps no offline access and removes the saved one', () => {
+  saveSigned(new Date(Date.now() + 30 * DAY).toISOString())
+  assert.equal(saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn: new Date(Date.now() + 30 * DAY).toISOString(), activatedOn: new Date().toISOString() }), false)
+  assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
+})
+
+test('valid signed licences retain machine, account and whole-day offline policy', () => {
+  const write = saveSigned
   write(new Date(Date.now() + 30 * DAY).toISOString())
   assert.deepEqual(validateOfflineLicense('machine-B', 'ana@studio.in'), { allowed: false, reason: 'wrong_machine' })
   assert.deepEqual(validateOfflineLicense('machine-A', 'other@studio.in'), { allowed: false, reason: 'wrong_account' })
