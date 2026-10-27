@@ -1,0 +1,11 @@
+{
+  "// note": "Type-checking only (noEmit) of the background helper; opt-in per file via `// @ts-check`, as in the root tsconfig.",
+  "extends": "../../tsconfig.json",
+  "include": [
+    "*.js",
+    "lib/**/*.js"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

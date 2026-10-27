@@ -22,7 +22,9 @@ function stopped(check) { if (check && check()) { const error = new Error('Rende
 // The same stream/revision primitive will guard native document publication.
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Render', changed })
 
-const { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
+const {
+  syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity,
+} = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
 const fingerprintRenderFile = file => readRecord(file)
 const description = r => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
 async function contextOf(p, capabilities) {
@@ -50,13 +52,28 @@ function failureAt(stage, error, committed = false, result) {
 }
 const validNode = n => n && /^\d+$/.test(n.dev) && /^\d+$/.test(n.ino)
 const validRecord = (r, maximum) => r && SHA.test(r.digest || '') && /^\d+$/.test(r.size || '') && BigInt(r.size) <= BigInt(maximum) && /^\d+:\d+$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
+const validSpreadId = id => typeof id === 'string' && /^spread_[a-zA-Z0-9_-]+$/.test(id) && id.length <= 200
+// A journal of this context's project and output, written in this exact stage directory.
+function ownJournal(journal, c, stage, stageNode) {
+  return !!journal && journal.version === 1 && journal.albumFile === c.albumFile && journal.output === c.output &&
+    journal.name === path.basename(stage) && STAGE.test(journal.name) && sameNode(journal.stageNode, stageNode) &&
+    (journal.commitNode === undefined || validNode(journal.commitNode)) && SHA.test(journal.projectRevision || '') &&
+    validSpreadId(journal.spreadId) && Array.isArray(journal.entries) && journal.entries.length === 2
+}
+// A publication names a stable spread, an absolute staged source and exact prior, source and project revisions.
+function validPublication(p) {
+  return !!p && validSpreadId(p.spreadId) && typeof p.source === 'string' && path.isAbsolute(p.source) &&
+    SHA.test(p.sourceDigest || '') && SHA.test(p.expectedProjectRevision || '') &&
+    (p.cacheBefore === null || SHA.test(p.cacheBefore || '')) &&
+    (p.sheetBefore === null || !!p.sheetBefore && SHA.test(p.sheetBefore.digest || '') && /^\d+:\d+$/.test(p.sheetBefore.stamp || ''))
+}
 async function journalOf(c, stage, known, contents = true) {
   const stageNode = await directory(stage), raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL_BYTES, true)
   if (!raw) throw new Error('The render recovery journal is missing.')
   if (raw.mode & 0o222) throw changed('immutable render journal permissions')
   let journal
   try { journal = JSON.parse(raw.bytes) } catch (_) { throw new Error('The render recovery journal is invalid JSON.') }
-  if (!journal || journal.version !== 1 || journal.albumFile !== c.albumFile || journal.output !== c.output || journal.name !== path.basename(stage) || !STAGE.test(journal.name) || !sameNode(journal.stageNode, stageNode) || journal.commitNode !== undefined && !validNode(journal.commitNode) || !SHA.test(journal.projectRevision || '') || typeof journal.spreadId !== 'string' || !/^spread_[a-zA-Z0-9_-]+$/.test(journal.spreadId) || journal.spreadId.length > 200 || !Array.isArray(journal.entries) || journal.entries.length !== 2) throw new Error('Invalid render recovery identity; no public files were changed.')
+  if (!ownJournal(journal, c, stage, stageNode)) throw new Error('Invalid render recovery identity; no public files were changed.')
   const targets = [path.join(c.sheets, `${journal.spreadId}.psd`), path.join(c.metadata, 'render-cache.json')]
   const allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
   for (const [i, entry] of journal.entries.entries()) {
@@ -202,7 +219,7 @@ function parseCache(record, albumFile) {
  * paths stay logical in the cache; physical paths are journal capability checks only.
  */
 async function publishRender(p, capabilities) {
-  if (!p || !/^spread_[a-zA-Z0-9_-]+$/.test(p.spreadId || '') || p.spreadId.length > 200 || typeof p.source !== 'string' || !path.isAbsolute(p.source) || !SHA.test(p.sourceDigest || '') || !SHA.test(p.expectedProjectRevision || '') || p.cacheBefore !== null && !SHA.test(p.cacheBefore || '') || p.sheetBefore !== null && (!p.sheetBefore || !SHA.test(p.sheetBefore.digest || '') || !/^\d+:\d+$/.test(p.sheetBefore.stamp || ''))) throw new Error('Render publication requires stable spread identity and exact prior/source/project revisions.')
+  if (!validPublication(p)) throw new Error('Render publication requires stable spread identity and exact prior/source/project revisions.')
   if (capabilities && capabilities.validateSnapshot !== undefined && typeof capabilities.validateSnapshot !== 'function' || capabilities && capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function') throw new Error('Render snapshot/cancellation validators must be functions.')
   const c = await contextOf(p, capabilities); await recoverInContext(c); await checkSnapshot(c, p)
   const sheet = path.join(c.sheets, `${p.spreadId}.psd`), cacheFile = path.join(c.metadata, 'render-cache.json')
@@ -222,7 +239,11 @@ async function publishRender(p, capabilities) {
   if (proposed.path !== undefined && path.resolve(proposed.path) !== path.resolve(logicalSheet) || proposed.outputFolder !== undefined && path.resolve(proposed.outputFolder) !== path.resolve(c.logicalOutput)) throw new Error('The next sheet record is outside the reserved logical output path.')
   const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.render-prepare-')), name = `render-${crypto.randomUUID()}`, stage = path.join(c.metadata, name)
   const known = new Map()
-  const retainCopy = async (from, file, expected, mode) => { const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode); await remember(known, target, record); return record }
+  const retainCopy = async (from, file, expected, mode) => {
+    const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode)
+    await remember(known, target, record)
+    return record
+  }
   let exposed = false, committed = false, result
   try {
     const snapshot = await retainCopy(p.source, 'next-sheet.psd', source, 0o400)

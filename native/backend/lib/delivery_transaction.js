@@ -256,12 +256,22 @@ function recoveryError(stage, error) {
   return out
 }
 
+// A plain stage-local source name that cannot alias the journal, a backup or a discard.
+const plainSource = (source) => typeof source === 'string' && !source.includes('\\') && ![...source].some((c) => c.charCodeAt(0) < 32) &&
+  path.basename(source) === source && !['.', '..', JOURNAL, `${JOURNAL}.new`].includes(source) && !source.startsWith('backup-') && !source.startsWith('discard-')
+function validEntry(context, entry, i, cache) {
+  return !!entry && plainSource(entry.source) && (!cache || entry.source === 'cache.next.json') &&
+    entry.backup === `backup-${i}` && entry.discard === `discard-${i}` &&
+    typeof entry.target === 'string' && allowedTarget(context, entry.target, cache) &&
+    (entry.before === null || validFingerprint(entry.before)) && validFingerprint(entry.after)
+}
+
 function validateJournal(context, stage, journal, albumFile) {
   if (!journal || journal.version !== 1 || journal.root !== context.root || journal.metadata !== context.metadata || journal.stage !== stage || typeof journal.albumFile !== 'string' || !path.isAbsolute(journal.albumFile) || albumFile && journal.albumFile !== albumFile || !['pending', 'rollingBack', 'committed'].includes(journal.phase) || !Array.isArray(journal.entries) || !journal.entries.length) throw new Error('Invalid delivery recovery journal or album identity; no files were changed.')
   const targets = new Set(), sources = new Set()
   for (const [i, entry] of journal.entries.entries()) {
     const cache = i === journal.entries.length - 1
-    if (!entry || typeof entry.source !== 'string' || entry.source.includes('\\') || [...entry.source].some((c) => c.charCodeAt(0) < 32) || path.basename(entry.source) !== entry.source || ['.', '..', JOURNAL, `${JOURNAL}.new`].includes(entry.source) || entry.source.startsWith('backup-') || entry.source.startsWith('discard-') || cache && entry.source !== 'cache.next.json' || entry.backup !== `backup-${i}` || entry.discard !== `discard-${i}` || typeof entry.target !== 'string' || !allowedTarget(context, entry.target, cache) || entry.before !== null && !validFingerprint(entry.before) || !validFingerprint(entry.after)) throw new Error('Invalid delivery entry; no files were changed.')
+    if (!validEntry(context, entry, i, cache)) throw new Error('Invalid delivery entry; no files were changed.')
     if (targets.has(entry.target.toLowerCase()) || sources.has(entry.source.toLowerCase())) throw new Error('Duplicate delivery recovery entry; no files were changed.')
     targets.add(entry.target.toLowerCase()); sources.add(entry.source.toLowerCase())
   }

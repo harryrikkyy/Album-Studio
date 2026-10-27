@@ -7,14 +7,15 @@
   "license": "MIT",
   "scripts": {
     "check:architecture": "node native/scripts/check-architecture.mjs",
+    "check:readability": "node native/scripts/check-readability.mjs",
     "pretest": "npm run check:architecture",
     "build": "native/scripts/package-mac.sh",
     "start": "open \"native/dist/Album Studio.app\"",
     "test": "node --test test/*.test.js && npm --prefix native/backend test && npm --prefix native/ui test",
     "test:shared": "node --test test/*.test.js",
     "test:coverage": "node --experimental-test-coverage --test test/*.test.js",
-    "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"native/backend/**/*.js\" \"native/contracts/**/*.js\"",
-    "typecheck": "tsc --noEmit && npm --prefix native/ui run typecheck"
+    "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"native/backend/**/*.js\" \"native/contracts/**/*.js\" && npm run check:readability",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p native/backend && npm --prefix native/ui run typecheck"
   },
   "dependencies": {
     "ag-psd": "^31.0.2",

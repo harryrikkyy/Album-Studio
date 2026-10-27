@@ -14,7 +14,9 @@ const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.si
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
-const { directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
+const {
+  directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity,
+} = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
 const validNode = n => !!n && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
 const validRecord = r => !!r && SHA.test(r.digest || '') && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
 const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !n.startsWith('.album-studio')
@@ -179,7 +181,11 @@ async function publishFiles({ folder, entries }, capabilities) {
   }
   const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')), name = `files-${crypto.randomUUID()}`, stage = path.join(c.metadata, name)
   const known = new Map()
-  const retainCopy = async (from, file, expected, mode) => { const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode); await remember(known, target, record); return record }
+  const retainCopy = async (from, file, expected, mode) => {
+    const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode)
+    await remember(known, target, record)
+    return record
+  }
   let exposed = false, committed = false, result
   try {
     const records = []

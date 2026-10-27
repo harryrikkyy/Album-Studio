@@ -118,14 +118,22 @@ async function realDirectory(folder, create = false) {
   if (!info.isDirectory() || info.isSymbolicLink() || await fs.promises.realpath(folder) !== folder) throw conflict('A project lock directory is a symlink or changed.', folder, 'PROJECT_LOCK_UNCERTAIN')
   return info
 }
+const OWNER_FIELDS = ['version', 'file', 'folder', 'pid', 'host', 'boot', 'start', 'token', 'kind', 'createdAt']
+// An owner record with exactly the expected fields, for this project file and folder.
+function validOwner(owner, context) {
+  return !!owner && Object.keys(owner).length === OWNER_FIELDS.length && OWNER_FIELDS.every((key) => Object.hasOwn(owner, key)) &&
+    owner.version === 1 && owner.file === context.file && owner.folder === context.folder &&
+    Number.isSafeInteger(owner.pid) && owner.pid >= 1 && ['host', 'boot', 'start', 'token'].every((key) => /^[a-f0-9]{64}$/.test(owner[key])) &&
+    typeof owner.kind === 'string' && !!owner.kind && owner.kind.length <= 80 && ![...owner.kind].some((c) => c.charCodeAt(0) < 32) &&
+    typeof owner.createdAt === 'string' && Number.isFinite(Date.parse(owner.createdAt))
+}
 async function readOwner(folder, context) {
   const before = await realDirectory(folder)
   if (JSON.stringify((await fs.promises.readdir(folder)).sort()) !== '["owner.json"]') throw conflict('Unexpected files in the project lock directory.', folder, 'PROJECT_LOCK_UNCERTAIN')
   const read = await boundedText(path.join(folder, 'owner.json'))
   let owner
   try { owner = JSON.parse(read.text) } catch (_) { throw conflict('Invalid project lock owner JSON.', folder, 'PROJECT_LOCK_UNCERTAIN') }
-  const fields = ['version', 'file', 'folder', 'pid', 'host', 'boot', 'start', 'token', 'kind', 'createdAt']
-  if (!owner || Object.keys(owner).length !== fields.length || !fields.every((key) => Object.hasOwn(owner, key)) || owner.version !== 1 || owner.file !== context.file || owner.folder !== context.folder || !Number.isSafeInteger(owner.pid) || owner.pid < 1 || !['host', 'boot', 'start', 'token'].every((key) => /^[a-f0-9]{64}$/.test(owner[key])) || typeof owner.kind !== 'string' || !owner.kind || owner.kind.length > 80 || [...owner.kind].some((c) => c.charCodeAt(0) < 32) || typeof owner.createdAt !== 'string' || !Number.isFinite(Date.parse(owner.createdAt))) throw conflict('Invalid project lock owner identity.', folder, 'PROJECT_LOCK_UNCERTAIN')
+  if (!validOwner(owner, context)) throw conflict('Invalid project lock owner identity.', folder, 'PROJECT_LOCK_UNCERTAIN')
   if (!same(before, await realDirectory(folder))) throw conflict('The project lock directory changed while reading it.', folder, 'PROJECT_LOCK_UNCERTAIN')
   return { owner, text: read.text, directory: before, record: read.identity }
 }

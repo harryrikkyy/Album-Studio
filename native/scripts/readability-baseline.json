@@ -1,0 +1,361 @@
+{
+  "native/backend/lib/account.js": {
+    "max-len": 4,
+    "complexity": 1
+  },
+  "native/backend/lib/album.js": {
+    "complexity": 1,
+    "max-len": 1
+  },
+  "native/backend/lib/cache.js": {
+    "max-len": 13,
+    "complexity": 1
+  },
+  "native/backend/lib/color.js": {
+    "max-len": 23,
+    "complexity": 5
+  },
+  "native/backend/lib/deliver.js": {
+    "max-len": 16,
+    "complexity": 1
+  },
+  "native/backend/lib/delivery_transaction.js": {
+    "max-len": 40,
+    "complexity": 1
+  },
+  "native/backend/lib/exclusive_rename.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/file_publication.js": {
+    "max-len": 20,
+    "complexity": 2
+  },
+  "native/backend/lib/identity.js": {
+    "max-len": 3
+  },
+  "native/backend/lib/jobs.js": {
+    "max-len": 2
+  },
+  "native/backend/lib/labnaming.js": {
+    "max-len": 16,
+    "complexity": 2
+  },
+  "native/backend/lib/library.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/namespace_lock.js": {
+    "max-len": 7
+  },
+  "native/backend/lib/newalbum.js": {
+    "max-len": 3,
+    "complexity": 1
+  },
+  "native/backend/lib/output_lock.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/output_paths.js": {
+    "max-len": 5
+  },
+  "native/backend/lib/parity.js": {
+    "complexity": 2,
+    "max-len": 1
+  },
+  "native/backend/lib/pdf.js": {
+    "max-len": 5,
+    "complexity": 1
+  },
+  "native/backend/lib/photocraft.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/picks.js": {
+    "max-len": 13
+  },
+  "native/backend/lib/preflight.js": {
+    "max-len": 25,
+    "complexity": 1
+  },
+  "native/backend/lib/print_settings.js": {
+    "max-len": 5
+  },
+  "native/backend/lib/private_stage.js": {
+    "max-len": 18,
+    "complexity": 1
+  },
+  "native/backend/lib/project.js": {
+    "max-len": 3
+  },
+  "native/backend/lib/project_domain.js": {
+    "max-len": 25,
+    "complexity": 2
+  },
+  "native/backend/lib/project_lock.js": {
+    "max-len": 18
+  },
+  "native/backend/lib/project_transaction.js": {
+    "max-len": 16,
+    "complexity": 2
+  },
+  "native/backend/lib/proofs.js": {
+    "max-len": 10,
+    "complexity": 2
+  },
+  "native/backend/lib/protocol_writer.js": {
+    "max-len": 13
+  },
+  "native/backend/lib/psd_template.js": {
+    "max-len": 8,
+    "complexity": 2
+  },
+  "native/backend/lib/publication_broker.js": {
+    "max-len": 10,
+    "complexity": 1
+  },
+  "native/backend/lib/publication_io.js": {
+    "max-len": 3
+  },
+  "native/backend/lib/raw.js": {
+    "max-len": 5
+  },
+  "native/backend/lib/render.js": {
+    "max-len": 14,
+    "complexity": 1
+  },
+  "native/backend/lib/render_transaction.js": {
+    "max-len": 30,
+    "complexity": 2
+  },
+  "native/backend/lib/sheet.js": {
+    "max-len": 2
+  },
+  "native/backend/lib/sheets.js": {
+    "max-len": 5
+  },
+  "native/backend/lib/source_roots.js": {
+    "complexity": 1,
+    "max-len": 2
+  },
+  "native/backend/lib/storage.js": {
+    "max-len": 2
+  },
+  "native/backend/lib/templates.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/thumbs.js": {
+    "max-len": 6
+  },
+  "native/backend/lib/verified_file.js": {
+    "max-len": 7,
+    "complexity": 1
+  },
+  "native/backend/methods.js": {
+    "max-len": 1
+  },
+  "native/backend/server.js": {
+    "complexity": 1,
+    "max-len": 3
+  },
+  "native/backend/test/account.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/album.test.js": {
+    "max-len": 2
+  },
+  "native/backend/test/cache_snapshot_safety.test.js": {
+    "max-len": 9
+  },
+  "native/backend/test/catalogue_invalidation.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/color.test.js": {
+    "max-len": 2
+  },
+  "native/backend/test/color_composite_boundaries.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/color_edge_fixtures.js": {
+    "max-len": 6,
+    "complexity": 1
+  },
+  "native/backend/test/color_edges.test.js": {
+    "max-len": 7
+  },
+  "native/backend/test/color_fallback_snapshot.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/color_private_stage.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/contracts.test.js": {
+    "max-len": 12
+  },
+  "native/backend/test/contracts_dispatch.test.js": {
+    "max-len": 8
+  },
+  "native/backend/test/deliver.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/delivery_cleanup.test.js": {
+    "max-len": 14
+  },
+  "native/backend/test/delivery_integrity.test.js": {
+    "max-len": 9
+  },
+  "native/backend/test/delivery_transaction.test.js": {
+    "max-len": 27
+  },
+  "native/backend/test/file_publication.test.js": {
+    "max-len": 13
+  },
+  "native/backend/test/fixtures.js": {
+    "max-len": 2
+  },
+  "native/backend/test/identity.test.js": {
+    "max-len": 5
+  },
+  "native/backend/test/identity_alias_rules.test.js": {
+    "max-len": 2
+  },
+  "native/backend/test/job_isolation.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/labnaming.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/labnaming_recovery.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/newalbum.test.js": {
+    "max-len": 5
+  },
+  "native/backend/test/output_isolation.test.js": {
+    "max-len": 2
+  },
+  "native/backend/test/output_paths.test.js": {
+    "max-len": 14
+  },
+  "native/backend/test/parity.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/pdf_color.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/pdf_input_validation.test.js": {
+    "max-len": 4
+  },
+  "native/backend/test/pdf_render_oracle.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/picks_lab_freshness.test.js": {
+    "max-len": 4
+  },
+  "native/backend/test/preflight.test.js": {
+    "max-len": 5
+  },
+  "native/backend/test/preview_performance.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/print_metadata_revision.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/print_render.test.js": {
+    "max-len": 5
+  },
+  "native/backend/test/private_stage.test.js": {
+    "max-len": 18
+  },
+  "native/backend/test/private_stage_cleanup.test.js": {
+    "max-len": 11
+  },
+  "native/backend/test/project.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/project_domain.test.js": {
+    "max-len": 20
+  },
+  "native/backend/test/project_lock.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/project_transaction.test.js": {
+    "max-len": 11
+  },
+  "native/backend/test/proofs.test.js": {
+    "max-len": 10
+  },
+  "native/backend/test/protocol_writer.test.js": {
+    "max-len": 2
+  },
+  "native/backend/test/publication_broker.test.js": {
+    "max-len": 3
+  },
+  "native/backend/test/render_finish.test.js": {
+    "max-len": 8
+  },
+  "native/backend/test/render_private_stage.test.js": {
+    "max-len": 6
+  },
+  "native/backend/test/render_recovery_integration.test.js": {
+    "max-len": 8
+  },
+  "native/backend/test/render_transaction.test.js": {
+    "max-len": 51
+  },
+  "native/backend/test/rgb_composite_formats.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/rpc_contract.test.js": {
+    "max-len": 7
+  },
+  "native/backend/test/sheet_ownership.test.js": {
+    "max-len": 1
+  },
+  "native/backend/test/source_alias_identity.test.js": {
+    "max-len": 4
+  },
+  "native/backend/test/source_cache_freshness.test.js": {
+    "max-len": 4
+  },
+  "native/backend/test/verified_file.test.js": {
+    "max-len": 2
+  },
+  "native/contracts/runtime.js": {
+    "complexity": 4,
+    "max-len": 24
+  },
+  "src/overlay_ps.js": {
+    "max-len": 4
+  },
+  "src/overlay_render.js": {
+    "max-len": 1,
+    "complexity": 1
+  },
+  "src/proof_renderer.js": {
+    "complexity": 3
+  },
+  "src/psd_layers.js": {
+    "complexity": 2
+  },
+  "src/renderer_pure.js": {
+    "complexity": 1
+  },
+  "src/shortcut_target.js": {
+    "complexity": 1
+  },
+  "src/ui_icons.js": {
+    "max-len": 16
+  },
+  "test/architecture_boundaries.test.js": {
+    "max-len": 11
+  },
+  "test/contract_types.test.js": {
+    "max-len": 3
+  },
+  "test/engine_pin.test.js": {
+    "max-len": 4
+  },
+  "test/license.test.js": {
+    "max-len": 2
+  },
+  "test/native_contracts.test.js": {
+    "max-len": 3
+  }
+}
