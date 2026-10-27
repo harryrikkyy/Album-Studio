@@ -10,12 +10,13 @@ const { spawn } = require('child_process')
 const modulePath = path.resolve(__dirname, '../lib/render_transaction')
 const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex')
 const capabilities = { assertOwned: async () => {}, assertOutput: async () => {} }
-function fixture(t, { missing = false } = {}) {
+function fixture(t, { missing = false, size } = {}) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'as-render-transaction-')))
   const albumFile = path.join(root, 'project.json'), outputFolder = path.join(root, 'output'), spreadId = 'spread_fixture'
   const sheet = path.join(outputFolder, '.album-studio', 'sheets', `${spreadId}.psd`)
   const cache = path.join(outputFolder, '.album-studio', 'render-cache.json'), source = path.join(root, 'source.psd')
-  const old = Buffer.from('old customer PSD with manual layer bytes'), next = Buffer.from('next rendered PSD with new full-resolution layers')
+  const old = size ? crypto.randomBytes(size) : Buffer.from('old customer PSD with manual layer bytes')
+  const next = size ? crypto.randomBytes(size) : Buffer.from('next rendered PSD with new full-resolution layers')
   fs.mkdirSync(path.dirname(sheet), { recursive: true })
   fs.writeFileSync(albumFile, '{"marker":"project revision"}\n'); fs.writeFileSync(source, next)
   const cacheData = { version: 2, albumFile, spreads: { untouched: { marker: 'preserve other spreads' } } }
@@ -180,6 +181,58 @@ test('streams large PSDs with a fixed read allocation instead of buffering the f
   const fd = fs.openSync(file, 'wx'); fs.ftruncateSync(fd, 96 * 1024 * 1024); fs.closeSync(fd)
   const alloc = Buffer.alloc, sizes = []; t.mock.method(Buffer, 'alloc', (size, ...args) => { sizes.push(size); assert.ok(size <= 1024 * 1024, 'stream allocation must be fixed'); return alloc(size, ...args) })
   const r = await fingerprintRenderFile(file); assert.equal(r.size, String(96 * 1024 * 1024)); assert.ok(sizes.length)
+})
+
+/** Bytes read from sheet-sized files (PSDs and captured/discarded sheets) while `run` executes. */
+async function sheetBytesRead(t, run) {
+  const open = fs.promises.open, owners = new WeakMap(), probe = await open(__filename), proto = Object.getPrototypeOf(probe)
+  await probe.close()
+  const read = proto.read; let bytes = 0
+  t.mock.method(fs.promises, 'open', async (file, ...args) => { const handle = await open(file, ...args); owners.set(handle, String(file)); return handle })
+  t.mock.method(proto, 'read', async function (...args) { const result = await read.apply(this, args); if (/\.psd$|-sheet$/.test(owners.get(this) || '')) bytes += result.bytesRead; return result })
+  try { await run() } finally { t.mock.restoreAll() }
+  return bytes
+}
+
+test('publication hashes each retained sheet once instead of at every journal check', async t => {
+  const { publishRender } = require(modulePath), size = 1024 * 1024
+  // Reads per sheet byte: source gate, verified detached copies, the captured original and the
+  // public pair just before commit. Journal checks between steps compare identities, not bytes.
+  for (const [missing, budget] of [[true, 12], [false, 20]]) {
+    const f = fixture(t, { missing, size }), p = await input(f)
+    const reads = await sheetBytesRead(t, () => publishRender(p, capabilities)) / size
+    assert.ok(reads <= budget, `${missing ? 'a first' : 'a repeated'} render read its sheets ${reads} times; the budget is ${budget}`)
+    assert.deepEqual(fs.readFileSync(f.sheet), f.next)
+  }
+})
+
+test('a retained snapshot rewritten in place during publication is hashed again and blocks the commit', async t => {
+  const { publishRender } = require(modulePath), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive, f = fixture(t), p = await input(f)
+  let edited
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    await rename(from, to)
+    if (edited || to !== f.sheet || path.basename(from) !== 'install-sheet.psd') return
+    edited = path.join(path.dirname(from), 'old-sheet.psd') // Same size and mode, different bytes.
+    const bytes = fs.readFileSync(edited); bytes[0] ^= 0xff
+    fs.chmodSync(edited, 0o600); fs.writeFileSync(edited, bytes); fs.chmodSync(edited, 0o400)
+  })
+  const error = await publishRender(p, capabilities).then(() => null, e => e)
+  assert.ok(edited); assert.ok(error); assert.ok(!error.renderCommitted); assert.match(error.message, /retained render old-sheet/)
+  assert.ok(files(path.dirname(f.cache)).every(file => path.basename(file) !== 'commit.json'))
+  assert.ok(files(f.root).some(file => fs.readFileSync(file).equals(f.old)), 'the captured original keeps the previous sheet')
+})
+
+test('a sheet replaced after its revision gate stays published instead of being captured', async t => {
+  const { publishRender } = require(modulePath), exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive, f = fixture(t), p = await input(f)
+  const replacement = Buffer.from('sheet saved by another editor'), saved = path.join(path.dirname(f.sheet), 'saved-by-editor.psd')
+  let node
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    await rename(from, to)
+    if (!node && /^render-[a-f0-9-]{36}$/.test(path.basename(to))) { fs.writeFileSync(saved, replacement); fs.renameSync(saved, f.sheet); node = fs.statSync(f.sheet).ino }
+  })
+  const error = await publishRender(p, capabilities).then(() => null, e => e)
+  assert.ok(node); assert.ok(error); assert.ok(!error.renderCommitted); assert.match(error.message, /existing sheet/)
+  assert.equal(fs.statSync(f.sheet).ino, node); assert.deepEqual(fs.readFileSync(f.sheet), replacement); assert.deepEqual(fs.readFileSync(f.cache), f.oldCache)
 })
 
 test('a same-stamp in-place ABA yields mismatched full passes rather than a hybrid accepted digest', async t => {
