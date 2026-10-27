@@ -109,68 +109,6 @@ function _hashPage(pageData) {
     return parts.join('§');
 }
 
-// Tiny, dependency-free JPEG EXIF parser. Reads a buffer (the first ~256 KB of
-// a JPEG is plenty — EXIF lives in the APP1 marker right after SOI), finds tag
-// 0x9003 (DateTimeOriginal), parses "YYYY:MM:DD HH:MM:SS" → epoch ms, or null.
-// Byte math only (no Buffer methods) so it accepts the bare Uint8Array the
-// bundled renderer gets from the preload bridge; node Buffers still work
-// (Buffer IS a Uint8Array). Out-of-range reads yield NaN and fall through to
-// the null returns, which is stricter than Buffer's throwing reads.
-/** @param {Uint8Array} buf @returns {number | null} */
-function _parseExifDateFromBuffer(buf) {
-    const ascii = (/** @type {number} */ start, /** @type {number} */ end) => {
-        let str = '';
-        for (let i = start; i < end && i < buf.length; i++) str += String.fromCharCode(buf[i]);
-        return str;
-    };
-    const be16 = (/** @type {number} */ p) => (buf[p] << 8) | buf[p + 1];
-    const le16 = (/** @type {number} */ p) => buf[p] | (buf[p + 1] << 8);
-    const be32 = (/** @type {number} */ p) => (((buf[p] << 24) | (buf[p + 1] << 16) | (buf[p + 2] << 8) | buf[p + 3]) >>> 0);
-    const le32 = (/** @type {number} */ p) => ((buf[p] | (buf[p + 1] << 8) | (buf[p + 2] << 16) | (buf[p + 3] << 24)) >>> 0);
-
-    // JPEG SOI must be 0xFFD8
-    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return null;
-    let off = 2;
-    while (off < buf.length - 8) {
-        if (buf[off] !== 0xFF) return null;
-        const marker = buf[off + 1];
-        const size = be16(off + 2);
-        // APP1 (0xE1) holds EXIF.
-        if (marker === 0xE1) {
-            // EXIF\0\0 magic
-            if (ascii(off + 4, off + 10) === 'Exif\u0000\u0000') {
-                const tiff = off + 10;
-                const little = ascii(tiff, tiff + 2) === 'II';
-                const u16 = (/** @type {number} */ p) => little ? le16(p) : be16(p);
-                const u32 = (/** @type {number} */ p) => little ? le32(p) : be32(p);
-                const ifd0 = tiff + u32(tiff + 4);
-                const numEntries = u16(ifd0);
-                let exifIfd = 0;
-                for (let i = 0; i < numEntries; i++) {
-                    const e = ifd0 + 2 + i * 12;
-                    if (u16(e) === 0x8769) { exifIfd = tiff + u32(e + 8); break; }
-                }
-                if (!exifIfd) return null;
-                const n2 = u16(exifIfd);
-                for (let i = 0; i < n2; i++) {
-                    const e = exifIfd + 2 + i * 12;
-                    if (u16(e) === 0x9003) { // DateTimeOriginal
-                        const valOff = tiff + u32(e + 8);
-                        const str = ascii(valOff, valOff + 19);
-                        // "YYYY:MM:DD HH:MM:SS"
-                        const m = str.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
-                        if (!m) return null;
-                        return new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}`).getTime();
-                    }
-                }
-                return null;
-            }
-        }
-        off += 2 + size;
-    }
-    return null;
-}
-
 // A template entry carries a `url` (file://…) pointing at its JPG/PNG sibling
 // preview. Decode it back to a filesystem path so sharp can read it. Returns
 // null when there's no url or it isn't a file: URL.
@@ -381,78 +319,6 @@ function effectiveOrientation(naturalWidth, naturalHeight, rotation) {
 }
 
 /**
- * Decide how many photos land on each page in an Auto-Fill run.
- *
- * Two modes:
- *   desired — spread ALL photos across exactly N sheets. Every sheet gets
- *             floor(total/N); the remainder is handed out one-per-sheet to a
- *             shuffled subset, so the heavy pages aren't always the first few.
- *   range   — take a random count in [min, max] per page until photos run out.
- *
- * `rng` is injectable purely so the distribution can be tested deterministically.
- *
- * Guarantees, whatever the input: the counts sum to exactly `total` (no photo
- * lost or placed twice) and the function always terminates. The previous
- * inline version did neither — min = max = 0 passed validation (0 > 0 is
- * false), pushed a 0 forever and never decremented the remaining count, so
- * the app hung and the array grew until it ran out of memory. Negative values
- * were worse: `remaining` grew.
- *
- * @param {number} total  photos available to place
- * @param {{ mode?: 'desired'|'range', desiredSheets?: number, min?: number, max?: number }} opts
- * @param {() => number} [rng]
- * @returns {{ counts: number[], cappedTo: number|null, error: string|null }}
- */
-function planAutoFillCounts(total, opts, rng = Math.random) {
-    const n = Math.floor(Number(total) || 0);
-    if (n <= 0) return { counts: [], cappedTo: null, error: 'No photos available to place.' };
-
-    if (opts && opts.mode === 'desired') {
-        const want = Math.floor(Number(opts.desiredSheets));
-        if (!Number.isFinite(want) || want < 1) {
-            return { counts: [], cappedTo: null, error: 'Enter a valid number of desired sheets (1 or more).' };
-        }
-        // Never more sheets than photos — an empty sheet helps nobody.
-        const sheets = Math.min(want, n);
-        const base = Math.floor(n / sheets);
-        const remainder = n - base * sheets;
-
-        const order = Array.from({ length: sheets }, (_, i) => i);
-        for (let i = order.length - 1; i > 0; i--) {           // Fisher–Yates
-            const j = Math.floor(rng() * (i + 1));
-            [order[i], order[j]] = [order[j], order[i]];
-        }
-        const bonus = new Set(order.slice(0, remainder));
-        const counts = [];
-        for (let i = 0; i < sheets; i++) counts.push(base + (bonus.has(i) ? 1 : 0));
-        return { counts, cappedTo: sheets < want ? sheets : null, error: null };
-    }
-
-    const min = Math.floor(Number(opts && opts.min));
-    const max = Math.floor(Number(opts && opts.max));
-    if (!Number.isFinite(min) || !Number.isFinite(max) || min > max) {
-        return { counts: [], cappedTo: null, error: 'Invalid Min/Max values.' };
-    }
-    // A page must take at least one photo, or the loop below cannot converge.
-    if (max < 1) {
-        return { counts: [], cappedTo: null, error: 'Max photos per page must be at least 1.' };
-    }
-    const lo = Math.max(1, min);
-
-    const counts = [];
-    let remaining = n;
-    while (remaining > 0) {
-        let take = Math.floor(rng() * (max - lo + 1)) + lo;
-        // Belt and braces: even a misbehaving rng cannot stall this loop.
-        if (!Number.isFinite(take) || take < 1) take = 1;
-        if (take > remaining) take = remaining;
-        counts.push(take);
-        remaining -= take;
-    }
-    return { counts, cappedTo: null, error: null };
-}
-
-/**
  * Read the result string a build JSX returns.
  *
  * The scripts answer with one of:
@@ -494,14 +360,12 @@ module.exports = {
     escapeHtml,
     parsePageSpec,
     parseBatchResult,
-    planAutoFillCounts,
     effectiveOrientation,
     _generativePreviewSvg,
     getPanelHeaderHTML,
     getDisplayName,
     _hashPage,
     _renderedOutputPath,
-    _parseExifDateFromBuffer,
     _proofTemplatePreviewPath,
     _isEditingTarget,
     _compactPage,

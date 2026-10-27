@@ -8,7 +8,8 @@
 
 const crypto = require('crypto')
 const { readFileHeader, contentKey } = require('./cache')
-const { planAutoFillCounts, _parseExifDateFromBuffer } = require('../../../src/renderer_pure')
+const { planAutoFillCounts } = require('../../../src/autofill_counts')
+const { parseExifDateFromBuffer } = require('../../../src/exif_date')
 
 const exifCache = new Map()
 const MAX_EXIF_CACHE = 4096
@@ -21,7 +22,7 @@ async function captureTime(file) {
     // Only this header is parsed; its digest is a metadata-cache key, never source evidence.
     const key = contentKey(file, crypto.createHash('sha256').update(prefix).digest('hex'))
     if (exifCache.has(key)) { const hit = exifCache.get(key); exifCache.delete(key); exifCache.set(key, hit); return hit }
-    const parsed = _parseExifDateFromBuffer(prefix), ts = Number.isFinite(parsed) ? parsed : null
+    const parsed = parseExifDateFromBuffer(prefix), ts = Number.isFinite(parsed) ? parsed : null
     exifCache.set(key, ts)
     if (exifCache.size > MAX_EXIF_CACHE) exifCache.delete(exifCache.keys().next().value)
     return ts

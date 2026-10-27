@@ -9,12 +9,12 @@ const {
   getPanelHeaderHTML,
   getDisplayName,
   _hashPage,
-  _parseExifDateFromBuffer,
   _proofTemplatePreviewPath,
   _isEditingTarget,
   _compactPage,
   _hydratePage,
 } = require('../src/renderer_pure')
+const { parseExifDateFromBuffer } = require('../src/exif_date')
 
 // ─── escapeHtml ──────────────────────────────────────────────────────────────
 test('escapeHtml neutralizes the HTML metacharacters', () => {
@@ -111,7 +111,7 @@ test('_hashPage distinguishes placement (zoom/pan) edits', () => {
   assert.notEqual(_hashPage(a), _hashPage(b))
 })
 
-// ─── _parseExifDateFromBuffer ────────────────────────────────────────────────
+// ─── parseExifDateFromBuffer ────────────────────────────────────────────────
 // Build a minimal big-endian JPEG with an APP1/EXIF block carrying one
 // DateTimeOriginal (0x9003) tag, to exercise the parser end-to-end.
 function buildJpegWithExifDate(dateStr /* "YYYY:MM:DD HH:MM:SS" */) {
@@ -141,19 +141,19 @@ function buildJpegWithExifDate(dateStr /* "YYYY:MM:DD HH:MM:SS" */) {
   return Buffer.concat([Buffer.from([0xFF, 0xD8]), app1, exifPayload, Buffer.from([0xFF, 0xD9])])
 }
 
-test('_parseExifDateFromBuffer reads DateTimeOriginal from a real APP1 block', () => {
+test('parseExifDateFromBuffer reads DateTimeOriginal from a real APP1 block', () => {
   const jpeg = buildJpegWithExifDate('2026:07:04 13:45:30')
-  const ts = _parseExifDateFromBuffer(jpeg)
+  const ts = parseExifDateFromBuffer(jpeg)
   assert.equal(ts, new Date('2026-07-04T13:45:30').getTime())
 })
 
-test('_parseExifDateFromBuffer returns null for a non-JPEG buffer', () => {
-  assert.equal(_parseExifDateFromBuffer(Buffer.from([0x00, 0x01, 0x02, 0x03])), null)
+test('parseExifDateFromBuffer returns null for a non-JPEG buffer', () => {
+  assert.equal(parseExifDateFromBuffer(Buffer.from([0x00, 0x01, 0x02, 0x03])), null)
 })
 
-test('_parseExifDateFromBuffer returns null for a JPEG with no EXIF date', () => {
+test('parseExifDateFromBuffer returns null for a JPEG with no EXIF date', () => {
   const plain = Buffer.from([0xFF, 0xD8, 0xFF, 0xD9])
-  assert.equal(_parseExifDateFromBuffer(plain), null)
+  assert.equal(parseExifDateFromBuffer(plain), null)
 })
 
 // ─── _proofTemplatePreviewPath ───────────────────────────────────────────────
@@ -306,7 +306,8 @@ test('parsePageSpec refuses an absurd range rather than looping', () => {
 // Getting this wrong sends a portrait photo into a landscape frame, where it
 // is cropped to ribbons.
 
-const { effectiveOrientation, planAutoFillCounts } = require('../src/renderer_pure')
+const { effectiveOrientation } = require('../src/renderer_pure')
+const { planAutoFillCounts } = require('../src/autofill_counts')
 
 test('effectiveOrientation reads the decoded pixels when unrotated', () => {
   assert.equal(effectiveOrientation(4000, 3000, 0), 'h')

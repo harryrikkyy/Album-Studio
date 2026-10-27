@@ -334,9 +334,6 @@
   "src/psd_layers.js": {
     "complexity": 2
   },
-  "src/renderer_pure.js": {
-    "complexity": 1
-  },
   "src/shortcut_target.js": {
     "complexity": 1
   },
