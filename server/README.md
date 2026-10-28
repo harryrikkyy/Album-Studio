@@ -1,6 +1,6 @@
 # License-signing server
 
-Stateless Ed25519 signer for Creative Hubb Album Toolkit Pro licenses.
+Stateless Ed25519 signer for Album Studio licenses (shared with the earlier Album Toolkit Pro app).
 The private key lives only here; the app bundles the public key
 (`src/license_public_key.pem`) and verifies licenses fully offline —
 unlike the legacy HMAC checksum, nothing shipped with the app can forge

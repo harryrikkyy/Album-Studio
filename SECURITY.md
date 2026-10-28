@@ -1,8 +1,8 @@
 # Security & Licensing Notes
 
-This document explains how Creative Hubb Album Toolkit Pro handles sign-in,
-licensing, and Firestore access — and how to deploy the database rules that
-protect it. Keep it in sync with `firestore.rules` and `src/license.js`.
+This document explains how Album Studio handles sign-in, licensing, and
+Firestore access — and how to deploy the database rules that protect it.
+Licences are shared with the earlier Album Toolkit Pro app. Keep it in sync with `firestore.rules` and `src/license.js`.
 
 ## Authentication model
 
