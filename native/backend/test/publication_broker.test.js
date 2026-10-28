@@ -223,3 +223,13 @@ test('a document save whose deciding paths are relative is refused before anythi
   }
   assert.deepEqual(fs.readFileSync(f.target), f.old)
 })
+for (const variant of ['.Album-Studio-Namespace-Files.json', '.album-ſtudio-namespace-files.json']) {
+  test(`a save to the look-alike private name ${variant} is refused and the real marker is untouched`, async t => {
+    const f = fixture(t)
+    await finishDocument(worker(t, request(f)), f)
+    const marker = path.join(f.output, '.album-studio-namespace-files.json'), before = fs.readFileSync(marker)
+    const w = worker(t, request({ ...f, target: path.join(f.output, variant) })), r = await w.next()
+    assert.equal(r.state, 'failed'); assert.equal(r.error.code, 'PUBLICATION_PROTOCOL'); assert.equal(await w.exit, 1)
+    assert.deepEqual(fs.readFileSync(marker), before)
+  })
+}

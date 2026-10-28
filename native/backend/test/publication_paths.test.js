@@ -27,3 +27,10 @@ test('private metadata refuses saves at any depth and in any letter case', () =>
     '/Volumes/Work/.album-studio-old/Client',
   ]) assert.throws(() => assertPublicationParent(folder), refused, folder)
 })
+
+test('private names match in any letter case and through the long s macOS folds onto s', () => {
+  const { isPrivateName } = require('../lib/publication_paths')
+  for (const name of ['.album-studio', '.Album-Studio-Namespace-Files.json', '.album-ſtudio-publications']) assert.equal(isPrivateName(name), true, name)
+  for (const name of ['album-studio', 'My.album-studio', 'Page_001.psd']) assert.equal(isPrivateName(name), false, name)
+  assert.throws(() => assertPublicationParent('/Users/ana/Out/.album-ſtudio-publications/history'), refused)
+})

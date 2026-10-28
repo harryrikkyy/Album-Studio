@@ -8,6 +8,7 @@ const crypto = require('crypto')
 const { TextDecoder } = require('util')
 const { acquirePublicationDirectories } = require('./namespace_lock')
 const { publishFiles, recoverFiles, fingerprintFile, matchesFileRevision } = require('./file_publication')
+const { isPrivateName } = require('./publication_paths')
 const { createPublicationIO } = require('./publication_io')
 const MAX_HEADER = 65536
 const SHA = /^[a-f0-9]{64}$/
@@ -99,7 +100,11 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
   deadline.unref()
   try {
     const request = requestOf(await reader.json()), folder = path.dirname(request.target), name = path.basename(request.target)
-    if (name.startsWith('.album-studio') || name === '.' || name === '..' || name.length > 255) throw invalid('The publication target is reserved or has an invalid file name.')
+    const reserved = () => invalid('The publication target is reserved or has an invalid file name.')
+    if (isPrivateName(name) || name === '.' || name === '..' || name.length > 255) throw reserved()
+    // An existing target is also judged by its name on disk, which macOS may spell differently.
+    const existing = await fs.promises.realpath(request.target).catch(error => { if (error.code === 'ENOENT') return null; throw error })
+    if (existing && isPrivateName(path.basename(existing))) throw reserved()
     clearTimeout(deadline)
     deadline = setTimeout(() => input.destroy(invalid('Native publication preparation timed out.')), 6 * 60 * 60 * 1000)
     deadline.unref()

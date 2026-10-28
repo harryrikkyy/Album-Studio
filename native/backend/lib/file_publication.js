@@ -5,7 +5,7 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
-const { assertPublicationParent } = require('./publication_paths')
+const { assertPublicationParent, isPrivateName } = require('./publication_paths')
 const MAX_JOURNAL = 1024 * 1024
 const SHA = /^[a-f0-9]{64}$/
 const STAGE = /^files-[a-f0-9-]{36}$/
@@ -20,7 +20,7 @@ const {
 } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
 const validNode = n => !!n && typeof n.dev === 'string' && typeof n.ino === 'string' && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
 const validRecord = r => !!r && typeof r.digest === 'string' && typeof r.size === 'string' && typeof r.stamp === 'string' && SHA.test(r.digest) && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
-const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !n.startsWith('.album-studio')
+const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !isPrivateName(n)
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
   const failure = new Error(`${error.message} File publication evidence is retained at ${retained}.`, { cause: error })
