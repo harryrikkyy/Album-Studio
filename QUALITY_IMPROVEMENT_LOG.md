@@ -10,7 +10,7 @@ Re-scored after every phase from measurements; an area that misses its target sa
 
 | Area | Baseline (2026-10-27) | Now | Target |
 |---|---:|---:|---:|
-| Architecture & structure | 8 | 8 | 9 |
+| Architecture & structure | 8 | 9 | 9 |
 | Testing | 8 | 8 | 9.5 |
 | UI code | 7.5 | 7.5 | 9 |
 | Tooling & CI | 7.5 | 7.5 | 9.5 |
@@ -19,12 +19,16 @@ Re-scored after every phase from measurements; an area that misses its target sa
 | Security & licensing | 7.5 | 7.5 | 9 |
 | Performance | 7.5 | 7.5 | 9 |
 | Docs & repo hygiene | 5 | 9 | 9 |
-| **Average** | **7.2** | **7.6** | **9.1** |
+| **Average** | **7.2** | **7.7** | **9.1** |
 
 Docs reached 9 in phase 1: tracked `docs/` fell from 19.5 MB to 2.4 MB with no raw logs (all
 archived with checksums), the 1,368-line log became this page, `PRODUCT.md`, the licence server
 README and the dev guide match the code, 7 untrue comments were fixed, and every relative link
 in the living docs resolves.
+
+Architecture reached 9 in phase 2: three Electron-era modules nothing reached (631 lines) are
+gone, the architecture gate now rejects any runtime module no entry point reaches, and the module
+map is in `docs/ARCHITECTURE.md`.
 
 ## Phases
 
@@ -32,12 +36,11 @@ in the living docs resolves.
 |---|---|
 | 0. Commit Codex's work | Done 2026-10-28 |
 | 1. Docs and repo hygiene | Done 2026-10-28 |
-| 2–7 | Not started |
+| 2. Architecture | Done 2026-10-28 |
+| 3–7 | Not started |
 
 ## Open items
 
-- Phase 2: delete `src/renderer_pure.js`, `src/shortcut_target.js` and `src/ui_icons.js`;
-  `src/editor_geometry.js` stays, since `src/proof_renderer.js` uses it.
 - Phase 3: the Google-rename fix is already on this branch (`97b4c96`); no merge is needed.
 - Phase 4: Codex's code added 26 long lines and two over-complex functions (`requestOf`,
   `validateExpectation`); the 10,000-entry message names the wrong operation in some paths;
