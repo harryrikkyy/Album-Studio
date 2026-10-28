@@ -193,6 +193,13 @@ async function assertFilesSettled(folder) {
   if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
 }
 async function recoverFiles(folder, capabilities) { return recoverInContext(await context(folder, capabilities)) }
+/** Whether an interrupted save left a stage in this folder's publication records. Read-only. */
+async function hasInterruptedSave(folder) {
+  const metadata = path.join(folder, '.album-studio-publications'), info = await stat(metadata)
+  if (!info) return false
+  if (!info.isDirectory()) return true
+  return (await boundedNames(metadata)).some(name => STAGE.test(name))
+}
 
 /** Sources are private regular files, streamed into independent snapshots. The caller
  * supplies exact prior records (or null), never a fresh-at-save overwrite permission. */
@@ -274,4 +281,4 @@ async function publishFiles({ folder, entries }, capabilities) {
     throw failureAt(exposed ? stage : prepared, error, committed, result)
   }
 }
-module.exports = { publishFiles, recoverFiles, assertFilesSettled, fingerprintFile: readRecord, matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected) }
+module.exports = { publishFiles, recoverFiles, hasInterruptedSave, assertFilesSettled, fingerprintFile: readRecord, matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected) }

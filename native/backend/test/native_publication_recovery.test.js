@@ -119,3 +119,18 @@ test('an entry Album Studio did not create in its publication records is named p
   await assert.rejects(readRenderCache(f.output), plain)
   await assert.rejects(withProjectLease(f.album, ({ lease }) => withProjectOutputs(lease, async () => readRenderCache(f.output))), plain)
 })
+test('repeated album operations after a native save add no lock records inside the private .album-studio folder', async t => {
+  const f = fixture(t, true), { acquirePublicationDirectories } = require('../lib/namespace_lock'), files = require('../lib/file_publication')
+  const outputs = await acquireOutputLease(f.output); await outputs.release()
+  const lease = await acquirePublicationDirectories([f.target])
+  try {
+    const before = await files.fingerprintFile(f.target), sourceDigest = crypto.createHash('sha256').update(f.after).digest('hex')
+    await files.publishFiles({ folder: f.folder, entries: [{ name: path.basename(f.target), source: f.source, sourceDigest, before }] }, lease)
+  } finally { await lease.release() }
+  const count = () => fs.readdirSync(path.join(f.output, '.album-studio'), { recursive: true }).length
+  const admit = () => withProjectLease(f.album, ({ lease }) => withProjectOutputs(lease, async () => {}))
+  await admit()
+  const settled = count()
+  await admit(); await admit()
+  assert.equal(count(), settled)
+})
