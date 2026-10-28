@@ -97,7 +97,8 @@ Two environment settings help with testing:
 strict gate requires a provenance-tagged CLI and the current atomic helper. Poppler is required
 and absence fails its PDF test. A successful Node gate does not imply full native workspace,
 corpus, hosted CI or installed-app checks passed. Exact evidence and open requirements are in
-[the quality log](../QUALITY_IMPROVEMENT_LOG.md) and [recovery guidance](quality/RECOVERY_AND_VERIFICATION.md).
+[the archived quality log](quality/archive/QUALITY_IMPROVEMENT_LOG-2026-10.md), [the evidence archive](quality/ARCHIVE.md)
+and [recovery guidance](quality/RECOVERY_AND_VERIFICATION.md).
 
 Backend test files run with concurrency 2. In-file job/process races still run concurrently;
 this bounds simultaneous engines and decoder allocations on the 16 GiB verification Mac.

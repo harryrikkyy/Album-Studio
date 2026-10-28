@@ -1,6 +1,6 @@
 # Quality checkpoint: operating rules and remaining verification
 
-This document describes the source on `codex/album-quality-improvement`. It does not certify an installed application or print-lab approval. The fixed acceptance rubric is in `QUALITY_SCORECARD.json`; the continuing work record is in `QUALITY_IMPROVEMENT_LOG.md`.
+This document describes the source on `codex/album-quality-improvement`. It does not certify an installed application or print-lab approval. Current status is in `QUALITY_IMPROVEMENT_LOG.md`; the earlier acceptance rubric and work record (to 2026-10-19) are archived in `docs/quality/archive/` as `QUALITY_SCORECARD-2026-10.json` and `QUALITY_IMPROVEMENT_LOG-2026-10.md`.
 
 Latest source/test checkpoint: `docs/quality/2026-10-14-iteration-5/verification.json`.
 Earlier evidence remains historical; its coverage numbers do not describe the latest changed modules.
@@ -163,7 +163,7 @@ visible to the command; current access to Developer ID/notarisation credentials 
 
 ## Resume without repeating the audit
 
-1. Read the latest log and scorecard, check the current branch/diff and verify the saved evidence checksums. Preserve `invoice-template/`, the previous audit and engine `.DS_Store` files.
+1. Read the status page and the archived log and scorecard, check the current branch/diff and verify the archived evidence checksums (see `docs/quality/ARCHIVE.md`). Preserve `invoice-template/`, the previous audit and engine `.DS_Store` files.
 2. Complete independent review of the final project transaction/lease and HFS snapshot changes,
    plus unresolved review from earlier iterations. All three workers terminated at the provider
    usage limit, reporting `10:00 PM` without a date/timezone. This is the verbatim provider report,
