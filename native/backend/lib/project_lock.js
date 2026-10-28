@@ -148,6 +148,15 @@ async function ownerAlive(record, local) {
   }
   return start === record.start
 }
+/** Whether a live process holds the lease on `input` now. Read-only: never creates, reclaims or waits. */
+async function leaseHeld(input) {
+  let canonical
+  try { canonical = await canonicalProject(input) } catch (error) { if (error.code === 'ENOENT') return false; throw error }
+  const base = `.album-studio-project-${digest(path.basename(canonical.file)).slice(0, 24)}`
+  const context = { ...canonical, base }, lockPath = path.join(canonical.folder, `${base}.lock`)
+  if (!await exists(lockPath)) return false
+  return ownerAlive((await readOwner(lockPath, context)).owner, await hostIdentity())
+}
 async function candidate(context, local, kind) {
   const token = crypto.randomBytes(32).toString('hex')
   const folder = await fs.promises.mkdtemp(path.join(context.folder, `${context.base}.candidate-`))
@@ -275,4 +284,4 @@ async function acquireProjectLease(input, { kind = 'project' } = {}) {
   return lease
 }
 
-module.exports = { canonicalProject, acquireProjectLease, serializeProject }
+module.exports = { canonicalProject, acquireProjectLease, leaseHeld, serializeProject }

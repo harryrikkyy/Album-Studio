@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const { assertPublicationParent, isPrivateName } = require('./publication_paths')
+const { leaseHeld } = require('./project_lock')
 const MAX_JOURNAL = 1024 * 1024
 const SHA = /^[a-f0-9]{64}$/
 const STAGE = /^files-[a-f0-9-]{36}$/
@@ -175,22 +176,47 @@ async function recoverInContext(c) {
   }
   return { recovered, orphanStages }
 }
-/** Read-only callers must not interpret a temporarily missing native target as a new file. */
-async function assertFilesSettled(folder) {
-  let physical
-  try { physical = await fs.promises.realpath(folder) } catch (error) { if (error.code === 'ENOENT') return; throw error }
-  const metadata = path.join(physical, '.album-studio-publications')
-  if (!await stat(metadata)) return
-  const identity = await directory(metadata)
+const SETTLE_POLL_MS = 100
+/** The first save stage in a folder's records, or null; anything Album Studio didn't create is refused. */
+async function pendingStage(metadata) {
   for (const name of await boundedNames(metadata)) {
     if (ignorable(name)) continue
-    if (STAGE.test(name)) {
-      const stage = path.join(metadata, name)
-      throw Object.assign(new Error(`An interrupted native save must be recovered before reading these files. Reopen the album's render/export plan; preserve the evidence at ${stage}.`), { code: 'PUBLICATION_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
-    }
+    if (STAGE.test(name)) return path.join(metadata, name)
     if (!['history', 'inputs'].includes(name) && !name.startsWith('.prepare-')) throw unexpectedEntry(metadata, name)
   }
-  if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
+  return null
+}
+/** Whether another process is saving into this folder now, i.e. holds the folder's file lease. */
+async function saveRunning(physical) {
+  // An owner that can't be checked counts as running: waiting is safer than declaring a crash.
+  return leaseHeld(path.join(physical, '.album-studio-namespace-files.json'))
+    .catch(error => { if (error.code === 'PROJECT_LOCK_UNCERTAIN') return true; throw error })
+}
+const interruptedSave = stage => Object.assign(new Error('An interrupted native save must be recovered before reading these files. '
+  + `Reopen the album's render/export plan; preserve the evidence at ${stage}.`),
+{ code: 'PUBLICATION_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
+const saveStillRunning = stage => Object.assign(new Error('A save to these files is still running. Try again when it finishes.'),
+  { code: 'PUBLICATION_IN_PROGRESS', retryable: true, recoveryStage: stage })
+/**
+ * Read-only callers must not interpret a temporarily missing native target as a new file. A save
+ * that another process is still running is waited for, up to `waitMs`; a stage nobody holds is an
+ * interrupted save, which album admission recovers.
+ */
+async function assertFilesSettled(folder, { waitMs = 30000 } = {}) {
+  let physical
+  try { physical = await fs.promises.realpath(folder) } catch (error) { if (error.code === 'ENOENT') return; throw error }
+  const metadata = path.join(physical, '.album-studio-publications'), deadline = Date.now() + waitMs
+  for (;;) {
+    if (!await stat(metadata)) return
+    const identity = await directory(metadata), stage = await pendingStage(metadata)
+    if (!stage) {
+      if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
+      return
+    }
+    if (!await saveRunning(physical)) throw interruptedSave(stage)
+    if (Date.now() >= deadline) throw saveStillRunning(stage)
+    await new Promise(resolve => setTimeout(resolve, SETTLE_POLL_MS))
+  }
 }
 async function recoverFiles(folder, capabilities) { return recoverInContext(await context(folder, capabilities)) }
 /** Whether an interrupted save left a stage in this folder's publication records. Read-only. */

@@ -134,3 +134,23 @@ test('repeated album operations after a native save add no lock records inside t
   await admit(); await admit()
   assert.equal(count(), settled)
 })
+test('a reader waits for a save that is still running instead of reporting an interrupted one', async t => {
+  const f = fixture(t, false), { acquirePublicationDirectories } = require('../lib/namespace_lock')
+  const lease = await acquirePublicationDirectories([f.target])
+  try {
+    const stage = path.join(f.folder, '.album-studio-publications', `files-${crypto.randomUUID()}`)
+    fs.mkdirSync(stage, { recursive: true })
+    setTimeout(() => fs.rmSync(stage, { recursive: true, force: true }), 300)
+    await readRenderCache(f.output)
+    assert.equal(fs.existsSync(stage), false)
+  } finally { await lease.release() }
+})
+test('a save still running past the reader wait is reported as in progress and retryable', async t => {
+  const f = fixture(t, false), { acquirePublicationDirectories } = require('../lib/namespace_lock')
+  const { assertFilesSettled } = require('../lib/file_publication')
+  const lease = await acquirePublicationDirectories([f.target])
+  try {
+    fs.mkdirSync(path.join(f.folder, '.album-studio-publications', `files-${crypto.randomUUID()}`), { recursive: true })
+    await assert.rejects(assertFilesSettled(f.output, { waitMs: 300 }), { code: 'PUBLICATION_IN_PROGRESS', retryable: true })
+  } finally { await lease.release() }
+})
