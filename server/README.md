@@ -20,13 +20,13 @@ losing it means re-issuing every license against a new keypair.
 
 ```sh
 LICENSE_ADMIN_TOKEN=<long random secret> node server/index.js
-# optional: LICENSE_SIGNING_KEY_PATH, PORT (default 8787)
+# optional: LICENSE_SIGNING_KEY_PATH, PORT (default 8791)
 ```
 
 ## Issue a license (owner's activation tool)
 
 ```sh
-curl -s -X POST http://localhost:8787/sign \
+curl -s -X POST http://localhost:8791/sign \
   -H 'x-admin-token: <token>' \
   -H 'content-type: application/json' \
   -d '{"email":"customer@example.com","name":"Customer","machineId":"abc123",
@@ -40,11 +40,13 @@ against the bundled public key on every load.
 ## How it fits together
 
 The owner's admin panel (outside this repository) calls `/sign` when it activates or extends a
-licence, and stores the response's `sig`, `licExpiresOn` and `licActivatedOn` in the customer's
-Firestore user record, with `licName`, the exact name the licence was signed with. The app signs
-in to Firebase with Google, reads its own record, and keeps offline access only for a licence
-whose `sig` verifies against the bundled public key; an unsigned record opens the app online
-only. Firestore rules let only the owner write those fields.
+licence. It stores the signature and the signed values in the customer's Firestore user record:
+`sig`, plus the response's `expiresOn`, `activatedOn` and `name` as `licExpiresOn`,
+`licActivatedOn` and `licName` (the exact name the licence was signed with). The app signs in
+to Firebase with Google, reads its own record, and keeps offline access only for a licence whose
+`sig` verifies against the bundled public key; an unsigned record opens the app online only.
+Firestore rules stop a customer's own updates from changing those fields; only the owner may
+update them. (The create rule doesn't exclude them, but a self-made signature can't verify.)
 
 The app verifies with `licName`, so a later Google profile-name change (which rewrites `name` at
 sign-in) doesn't break offline access. A record without `licName`, signed before it existed or

@@ -34,6 +34,20 @@ in the living docs resolves.
 | 1. Docs and repo hygiene | Done 2026-10-28 |
 | 2–7 | Not started |
 
+## Open items
+
+- Phase 2: delete `src/renderer_pure.js`, `src/shortcut_target.js` and `src/ui_icons.js`;
+  `src/editor_geometry.js` stays, since `src/proof_renderer.js` uses it.
+- Phase 3: the Google-rename fix is already on this branch (`97b4c96`); no merge is needed.
+- Phase 4: Codex's code added 26 long lines and two over-complex functions (`requestOf`,
+  `validateExpectation`); the 10,000-entry message names the wrong operation in some paths;
+  render recovery lists `.album-studio` without an entry bound.
+- Phase 6: the broker accepts `project.json` as a target without the project lease;
+  `replacesSource` is misnamed; hard-link aliases are untested.
+- Phase 7: lock histories, `inputs/` and orphan stages grow without bound; opening an album runs
+  four settled checks per spread.
+- Production requirements still open: [docs/quality/RECOVERY_AND_VERIFICATION.md](docs/quality/RECOVERY_AND_VERIFICATION.md).
+
 ## History
 
 - The full log of earlier iterations (to 2026-10-19) and Codex's scorecard:

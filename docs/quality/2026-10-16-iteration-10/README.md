@@ -116,3 +116,8 @@ source changes; do not modify candidate source while a native build/test is live
 
 The architecture target is unachieved. There is no current external execution
 blocker: Metal access was resolved through an authorized synthetic host test.
+
+
+The raw files this README names were moved out of git on 2026-10-28 to
+`/Volumes/Harry/works/albumStudio-quality-archive/docs/quality/2026-10-16-iteration-10/`; see
+[the archive note](../ARCHIVE.md).

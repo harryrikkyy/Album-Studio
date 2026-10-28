@@ -24,7 +24,7 @@ node native/scripts/engine.mjs setup
 node native/scripts/engine.mjs check
 node native/scripts/engine.mjs build
 node native/scripts/engine.mjs test-node
-cp .env.example .env         # sign-in settings: Firebase project, Google OAuth client, licence key
+cp .env.example .env         # sign-in settings: Firebase project and Google OAuth client
 ```
 
 `.env` is git-ignored, and by default it isn't built into the app. Each Mac supplies its own:
@@ -130,14 +130,31 @@ source hashes and aborts at its time/RSS ceilings. Those ceilings are test safet
 accepted production budgets. Synthetic textures and simple rectangular templates do not
 certify camera RAW, layered customer templates, actual UI responsiveness or real lab output.
 
+## Run one suite
+
+The backend tests drive the real PhotoCraft engine through two variables. The packaged app's
+copies work:
+
+    export ALBUM_STUDIO_PHOTOCRAFT_CLI="$PWD/native/dist/Album Studio Latest.app/Contents/Resources/bin/photocraft-cli"
+    export ALBUM_STUDIO_RENAME_CLI="$PWD/native/dist/Album Studio Latest.app/Contents/Resources/bin/album-studio-rename-exclusive"
+
+`ALBUM_STUDIO_PHOTOCRAFT_CLI` is the engine's command-line renderer; `ALBUM_STUDIO_RENAME_CLI` is the
+atomic-rename helper that publication uses. Then run any one suite or file:
+
+    node --test test/*.test.js                                   # shared modules
+    npm --prefix native/backend test                             # backend helper
+    npm --prefix native/ui test                                  # interface logic
+    node --test native/backend/test/publication_broker.test.js   # one file
+
 ## Accounts
 
 Sign-in uses the same Creative Hubb accounts as the Album Toolkit:
 - Google sign-in happens in the user's browser.
 - The user's record lives in Firestore (`firestore.rules`): activated, an expiry date, one
   machine.
-- The licence is saved to `~/.ch_toolkit_license`, signed with the key in
-  `src/license_public_key.pem`. The owner's activation tool is in `server/`.
+- The licence is saved to `~/.ch_toolkit_license`. The licence server in `server/` signs it and the
+  app verifies it with `src/license_public_key.pem`; the owner's admin panel, outside this
+  repository, calls that server.
 
 The code is in `native/backend/lib/account.js`, and the helper refuses album work until the
 check passes.

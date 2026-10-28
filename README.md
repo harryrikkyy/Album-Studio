@@ -40,10 +40,10 @@ the lab and the client. Photoshop isn't needed at any step.
 `docs/native-shell/PLAN.md` has the status and what's still open. `docs/DEVELOPMENT.md`
 covers building, running and testing.
 
-Quality status and the improvement programme are in
-[QUALITY_IMPROVEMENT_LOG.md](QUALITY_IMPROVEMENT_LOG.md). Earlier verified results and open
-production requirements are archived in [docs/quality/archive/](docs/quality/archive/), with
-operating and recovery notes in [docs/quality/RECOVERY_AND_VERIFICATION.md](docs/quality/RECOVERY_AND_VERIFICATION.md).
+Quality status, the improvement programme and its open items are in
+[QUALITY_IMPROVEMENT_LOG.md](QUALITY_IMPROVEMENT_LOG.md). Earlier verified results are archived in
+[docs/quality/archive/](docs/quality/archive/); operating and recovery notes, including the
+production requirements still open, are in [docs/quality/RECOVERY_AND_VERIFICATION.md](docs/quality/RECOVERY_AND_VERIFICATION.md).
 
 ## Quick start
 

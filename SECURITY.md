@@ -37,7 +37,7 @@ The app performs exactly three Firestore writes, all verified to pass the rules:
 | Machine lock           | machineId, machineName (only when currently unbound) |
 
 The document id (`userKey`) is the email with `.` replaced by `_`
-(see `emailToUserKey()` in `app.js`). **This transform must stay byte-for-byte
+(see `emailToUserKey()` in `src/main/firestore_rest.js`). **This transform must stay byte-for-byte
 in sync with the activation tool.** Changing it would orphan every existing
 activated account.
 
@@ -78,7 +78,9 @@ bundled public key `src/license_public_key.pem`; the private key never ships.
 A Firestore record without a signature opens the app online only. Licenses
 saved by older builds carry an HMAC checksum whose secret shipped inside the
 app, so they are no longer accepted. Those customers need one online check,
-and offline access again needs a signed record: re-issue it with `server/`.
+and offline access again needs a signed record: re-issue it with `server/`. The record's
+`licName` keeps the exact name the licence was signed with, so a later Google rename doesn't
+break verification; customers' own updates can't change `sig` or the `lic*` fields.
 
 ## Environment variables
 

@@ -8,7 +8,9 @@ On 2026-10-28, raw evidence moved out of git to keep the repository small:
 - `native/scripts/engine/architecture-publication-20261016.bundle`
 
 They live in `/Volumes/Harry/works/albumStudio-quality-archive/`, each at its original
-repository-relative path. Tracked files also remain in git history. To verify the archive:
+repository-relative path. Tracked files also remain in git history (`205090a` is the last commit
+that holds them), but 42 of the files were never tracked and have no other copy: back the archive
+up and don't delete it. To verify the archive:
 
     cd /Volumes/Harry/works/albumStudio-quality-archive
     shasum -a 256 -c archive-manifest.sha256

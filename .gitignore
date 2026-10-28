@@ -50,8 +50,9 @@ psd files/
 /native/ui/node_modules/
 /native/ui/dist/
 
-# Raw quality evidence lives outside git (docs/quality/ARCHIVE.md); *.log above already covers logs
-native/scripts/engine/*.bundle
+# Raw quality evidence lives outside git (docs/quality/ARCHIVE.md); *.log above already covers logs.
+# Only the architecture-publication evidence bundles: pinned engine bundles beside pin.json stay tracked.
+native/scripts/engine/architecture-publication-*.bundle
 
 # Local tool and business files, never part of the app
 .kiro/

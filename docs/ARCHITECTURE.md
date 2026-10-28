@@ -110,8 +110,8 @@ state ownership; central business invariants; error contracts; testable domains;
 invalidation; dependency and layering gates; compatibility migration design. Evidence must cover
 each criterion's complete relevant scope. Current source tests, synthetic vectors, an authored
 CI job or a source inventory alone cannot establish native or whole-application completion.
-The quality log records the latest executed checks, failed attempts, exact blockers and the
-remaining executable steps.
+The status page (`QUALITY_IMPROVEMENT_LOG.md`) records the current scorecard and open items; the
+archived log in `docs/quality/archive/` records earlier checks, failed attempts and blockers.
 
 ## Native architecture continuation
 
