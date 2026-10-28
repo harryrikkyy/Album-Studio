@@ -487,3 +487,12 @@ test('a render keeps restored, other-spread and modified histories', async t => 
   assert.deepEqual(renderHistory(f), [first.historyPath, other.historyPath, restored, last.historyPath].sort())
   assert.equal(fs.readFileSync(path.join(first.historyPath, 'notes.txt'), 'utf8'), 'kept by the photographer')
 })
+
+test('a render folder with more than 10000 entries stops with a plain message and changes nothing', async t => {
+  const { tmpdir } = require('./fixtures'), { assertRendersSettled } = require('../lib/render_transaction')
+  const output = tmpdir(); t.after(() => fs.rmSync(output, { recursive: true, force: true }))
+  const metadata = path.join(output, '.album-studio'); fs.mkdirSync(metadata)
+  for (let i = 0; i <= 10000; i++) fs.writeFileSync(path.join(metadata, `entry-${i}`), '')
+  await assert.rejects(assertRendersSettled(output), error => /holds more than 10000 entries/.test(error.message) && !/changed during/.test(error.message))
+  assert.equal(fs.readdirSync(metadata).length, 10001)
+})

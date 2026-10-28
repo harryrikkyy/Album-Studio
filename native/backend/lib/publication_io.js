@@ -5,6 +5,7 @@
 const fs = require('fs')
 const path = require('path')
 const exclusive = require('./exclusive_rename')
+const MAX_LISTED = 10000
 /**
  * @typedef {import('./verified_file').FileNode} FileNode
  * @typedef {import('./verified_file').FileRecord} FileRecord
@@ -126,10 +127,20 @@ function createPublicationIO({ subject, changed, readRecord }) {
   async function boundedNames(folder) {
     const names = [], entries = await fs.promises.opendir(folder)
     for await (const entry of entries) {
-      if (names.length >= 10000) throw changed(`${subject} directory exceeds the 10000-entry inspection limit`)
+      if (names.length >= MAX_LISTED) throw tooManyEntries(folder)
       names.push(entry.name)
     }
     return names.sort()
+  }
+  /**
+   * The caller's own conflict error (type and code), with a message that names the actual problem.
+   * @param {string} folder
+   */
+  function tooManyEntries(folder) {
+    const error = changed('folder listing')
+    error.message = `${folder} holds more than ${MAX_LISTED} entries, so the ${subject} stopped before changing anything. `
+      + 'Existing files and recovery evidence were preserved.'
+    return error
   }
   return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity }
 }

@@ -276,3 +276,13 @@ test('each file keeps only its newest committed publication history, and other f
   assert.deepEqual(history(f).sort(), [kept.historyPath, restored, last.historyPath].sort())
   assert.deepEqual(fs.readFileSync(path.join(last.historyPath, 'captured-0')), versions[0])
 })
+
+test('a publication folder with more than 10000 entries stops with a plain message and changes nothing', async t => {
+  const { tmpdir } = require('./fixtures'), { assertFilesSettled } = require('../lib/file_publication')
+  const root = tmpdir(); t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const metadata = path.join(root, '.album-studio-publications'); fs.mkdirSync(metadata)
+  for (let i = 0; i <= 10000; i++) fs.writeFileSync(path.join(metadata, `.prepare-${i}`), '')
+  const plain = error => error.code === 'PUBLICATION_CONFLICT' && /holds more than 10000 entries/.test(error.message) && !/changed during/.test(error.message)
+  await assert.rejects(assertFilesSettled(root), plain)
+  assert.equal(fs.readdirSync(metadata).length, 10001)
+})
