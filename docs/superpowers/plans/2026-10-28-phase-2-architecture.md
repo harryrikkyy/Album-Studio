@@ -112,7 +112,7 @@ git add test/exif_date.test.js test/autofill_counts.test.js native/scripts/reada
 git commit -q -F - <<'EOF'
 refactor: delete three Electron-era modules nothing reaches
 
-src/renderer_pure.js, src/shortcut_target.js and src/ui_icons.js (631 lines)
+src/renderer_pure.js, src/shortcut_target.js and src/ui_icons.js (628 lines)
 are imported by no application entry point, directly or indirectly; they
 built the Electron renderer's HTML. Their tests go with them. The Exif-date
 and Auto-Fill tests that lived in renderer_pure's test file move, verbatim,
