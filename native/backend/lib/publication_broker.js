@@ -47,7 +47,12 @@ function errorValue(error) {
   for (const key of ['recoveryStage', 'recoveryJournal', 'publicationCommitted', 'publicationRestored', 'recoveryRequired']) if (['string', 'boolean'].includes(typeof error[key])) out[key] = typeof error[key] === 'string' ? error[key].slice(0, 32768) : error[key]
   return out
 }
-function optionalPath(value) { return value === null || typeof value === 'string' && value.length > 0 && value.length <= 32768 && value.isWellFormed() && !value.includes('\0') }
+// Absolute only: these paths decide whether the conflict check runs, so they must not resolve
+// against the broker's working directory.
+function optionalPath(value) {
+  return value === null || typeof value === 'string' && value.length > 0 && value.length <= 32768 && value.isWellFormed()
+    && !value.includes('\0') && path.isAbsolute(value)
+}
 function sourceRevision(e) { return typeof e.digest === 'string' && typeof e.size === 'string' && SHA.test(e.digest) && /^(0|[1-9]\d{0,15})$/.test(e.size || '') && BigInt(e.size) <= BigInt(Number.MAX_SAFE_INTEGER) }
 function requestOf(request) {
   if (!exactKeys(request, ['version', 'target', 'expected']) || request.version !== 1 || typeof request.target !== 'string' || request.target.length > 32768 || request.target.includes('\0') || !request.target.isWellFormed() || !path.isAbsolute(request.target) || !request.expected) throw invalid('Native publication requires an absolute target and explicit overwrite expectation.')

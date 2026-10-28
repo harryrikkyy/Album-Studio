@@ -215,3 +215,11 @@ test('a publication request with fields its mode does not define is refused befo
   ]) assert.throws(() => requestOf(request(f, expected)), { code: 'PUBLICATION_PROTOCOL' })
   assert.deepEqual(fs.readFileSync(f.target), f.old)
 })
+test('a document save whose deciding paths are relative is refused before anything is written', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), { requestOf } = require('../lib/publication_broker')
+  const e = documentExpectation(f, record), relative = path.relative(process.cwd(), f.target)
+  for (const patch of [{ currentPath: relative }, { sourcePath: relative }]) {
+    assert.throws(() => requestOf(request(f, { ...e, ...patch })), { code: 'PUBLICATION_PROTOCOL' }, JSON.stringify(patch))
+  }
+  assert.deepEqual(fs.readFileSync(f.target), f.old)
+})
