@@ -105,3 +105,17 @@ test('a brand-new album with no output folder yet passes the settled checks', as
   await assertRendersSettled(missing)
   assert.equal(fs.existsSync(missing), false)
 })
+test("Finder's .DS_Store and AppleDouble files in publication records block neither reads nor album operations", async t => {
+  const f = fixture(t, false), metadata = path.join(f.output, '.album-studio-publications')
+  fs.mkdirSync(metadata); fs.writeFileSync(path.join(metadata, '.DS_Store'), 'finder'); fs.writeFileSync(path.join(metadata, '._history'), 'appledouble')
+  await readRenderCache(f.output)
+  await withProjectLease(f.album, ({ lease }) => withProjectOutputs(lease, async () => readRenderCache(f.output)))
+})
+test('an entry Album Studio did not create in its publication records is named plainly', async t => {
+  const f = fixture(t, false), metadata = path.join(f.output, '.album-studio-publications')
+  fs.mkdirSync(metadata); fs.writeFileSync(path.join(metadata, 'notes.txt'), 'mine')
+  const plain = error => error.code === 'PUBLICATION_CONFLICT' && error.message.includes('.album-studio-publications')
+    && error.message.includes('"notes.txt"') && !/changed during/.test(error.message)
+  await assert.rejects(readRenderCache(f.output), plain)
+  await assert.rejects(withProjectLease(f.album, ({ lease }) => withProjectOutputs(lease, async () => readRenderCache(f.output))), plain)
+})

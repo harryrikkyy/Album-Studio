@@ -14,6 +14,15 @@ const sameNode = (a, b) => !!a && !!b && String(a.dev) === String(b.dev) && Stri
 const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.size && a.stamp === b.stamp
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
 const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
+// Finder and network volumes drop these into any folder a person browses; they are never records.
+const ignorable = name => name === '.DS_Store' || name.startsWith('._')
+/** A conflict naming an entry Album Studio didn't create, and what to do about it. */
+function unexpectedEntry(folder, name) {
+  const error = changed('folder listing')
+  error.message = `${folder} contains "${name}", an unexpected entry Album Studio didn't create. If you put it there, move it out `
+    + 'and try again; otherwise keep it as evidence. Existing files and recovery evidence were preserved.'
+  return error
+}
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
 const {
   directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity,
@@ -68,7 +77,7 @@ async function journalOf(c, stage, known, contents = true) {
   }
   const present = await boundedNames(stage)
   for (const name of present) {
-    if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw changed('unexpected publication recovery entry')
+    if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw unexpectedEntry(stage, name)
     const info = await stat(path.join(stage, name))
     if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n || name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL)) throw changed('publication recovery file identity')
   }
@@ -158,10 +167,11 @@ async function recoverInContext(c) {
   await assertContext(c)
   const recovered = [], orphanStages = []
   for (const name of await boundedNames(c.metadata)) {
+    if (ignorable(name)) continue
     if (name.startsWith('.prepare-')) orphanStages.push(path.join(c.metadata, name))
     else if (STAGE.test(name)) recovered.push({ stage: path.join(c.metadata, name), ...await recoverStage(c, path.join(c.metadata, name)) })
     else if (['history', 'inputs'].includes(name)) await directory(path.join(c.metadata, name))
-    else throw changed('unknown publication metadata entry')
+    else throw unexpectedEntry(c.metadata, name)
   }
   return { recovered, orphanStages }
 }
@@ -173,11 +183,12 @@ async function assertFilesSettled(folder) {
   if (!await stat(metadata)) return
   const identity = await directory(metadata)
   for (const name of await boundedNames(metadata)) {
+    if (ignorable(name)) continue
     if (STAGE.test(name)) {
       const stage = path.join(metadata, name)
       throw Object.assign(new Error(`An interrupted native save must be recovered before reading these files. Reopen the album's render/export plan; preserve the evidence at ${stage}.`), { code: 'PUBLICATION_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
     }
-    if (!['history', 'inputs'].includes(name) && !name.startsWith('.prepare-')) throw changed('unknown native publication metadata')
+    if (!['history', 'inputs'].includes(name) && !name.startsWith('.prepare-')) throw unexpectedEntry(metadata, name)
   }
   if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
 }
