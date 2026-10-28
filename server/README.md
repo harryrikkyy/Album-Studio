@@ -41,10 +41,12 @@ against the bundled public key on every load.
 
 The owner's admin panel (outside this repository) calls `/sign` when it activates or extends a
 licence, and stores the response's `sig`, `licExpiresOn` and `licActivatedOn` in the customer's
-Firestore user record. The app signs in to Firebase with Google, reads its own record, and keeps
-offline access only for a licence whose `sig` verifies against the bundled public key; an unsigned
-record opens the app online only. Firestore rules let only the owner write those fields.
+Firestore user record, with `licName`, the exact name the licence was signed with. The app signs
+in to Firebase with Google, reads its own record, and keeps offline access only for a licence
+whose `sig` verifies against the bundled public key; an unsigned record opens the app online
+only. Firestore rules let only the owner write those fields.
 
-Known limit: the signature covers the customer's `name`, which the app refreshes from Google at
-every sign-in, so a Google profile-name change breaks offline verification until the licence is
-signed again (Extend in the admin panel does that).
+The app verifies with `licName`, so a later Google profile-name change (which rewrites `name` at
+sign-in) doesn't break offline access. A record without `licName`, signed before it existed or
+before the admin panel stores it, falls back to the current `name`, so a rename breaks it until
+the licence is signed again (Extend in the admin panel) or the record is given `licName`.
