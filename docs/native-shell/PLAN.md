@@ -29,8 +29,9 @@
 
 Shared with the Electron app and used by the helper today (`src/`): `proof_renderer.js`,
 `psd_layers.js`, `overlay_render.js`, `overlay_ps.js`, `editor_geometry.js`, `curation.js`,
-`sharp_config.js`, `license.js`, `firebase_auth.js`, `autofill_counts.js` and `exif_date.js`; the
-licence issuer uses `license_signing.js`. The other Electron-only modules have been removed.
+`sharp_config.js`, `license.js`, `license_signing.js`, `firebase_auth.js`,
+`main/firestore_rest.js`, `autofill_counts.js` and `exif_date.js`; the licence issuer also uses
+`license_signing.js`. The other Electron-only modules have been removed.
 
 ## Next, in order
 

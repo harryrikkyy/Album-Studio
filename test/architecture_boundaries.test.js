@@ -172,3 +172,21 @@ test('a module no application entry point reaches is reported; type declarations
     assert.equal(unreachable.includes(live), false, live)
   }
 })
+
+test('tool scripts are entry points, type-only and multi-step issuer imports count, and a missing entry is reported', async t => {
+  const f = await fixture(t)
+  f.policy.reachability = {
+    entries: ['native/backend/server.js', 'native/ui/src/main.ts', 'server/index.js', 'server/keygen.js'], entryDirectories: ['bench'],
+  }
+  f.write('bench/tool.js', "require('../src/tool_only')\n")
+  f.write('src/tool_only.js', 'module.exports = {}\n')
+  f.write('server/index.js', "require('./lib/issue')\n")
+  f.write('server/lib/issue.js', "require('../../src/signing')\n")
+  f.write('src/signing.js', 'module.exports = {}\n')
+  f.write('native/ui/src/shapes.ts', 'export type Shape = { width: number }\n')
+  f.write('native/ui/src/main.ts', "import type { Shape } from './shapes'\nimport {call as rpc,onEvent} from './bridge';rpc('alpha');"
+    + "onEvent('alpha.done',()=>{})\nexport const none: Shape | null = null\n")
+  const violations = f.check().violations, unreachable = violations.filter(v => v.code === 'UNREACHABLE_MODULE').map(v => v.file)
+  for (const live of ['src/tool_only.js', 'src/signing.js', 'native/ui/src/shapes.ts']) assert.equal(unreachable.includes(live), false, live)
+  assert.deepEqual(violations.filter(v => v.code === 'REACHABILITY_ENTRY_MISSING').map(v => v.file), ['server/keygen.js'])
+})

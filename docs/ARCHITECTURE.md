@@ -47,13 +47,14 @@ execution require their own verification; request byte limits alone do not estab
 ## Module reachability
 
 Every runtime module under `src/`, `native/backend/`, `native/ui/src/` and `native/contracts/`
-must be reachable, through `require`/`import`, from an application entry point:
+must be reachable, through `require`/`import` (type-only imports included), from an entry point:
 `native/backend/server.js` (the helper), `native/ui/src/main.tsx` (the interface),
-`server/index.js` or `server/keygen.js` (the licence issuer). `npm run check:architecture`
-reports any other module as `UNREACHABLE_MODULE`. Type declarations (`*.d.ts`) are exempt, and
-tests are not entry points, so a module only tests use counts as dead. Shared modules in `src/`
-are used by the helper (proofs, PSD layers, curation, licensing, Auto-Fill counts, Exif dates)
-and by the licence issuer (`license_signing.js`).
+`server/index.js` or `server/keygen.js` (the licence issuer), or a top-level tool script in
+`native/scripts/`, `scripts/` or `bench/`. `npm run check:architecture` reports any other module
+as `UNREACHABLE_MODULE`, and a configured entry that doesn't exist as `REACHABILITY_ENTRY_MISSING`.
+Type declarations (`*.d.ts`) are exempt, and tests are not entry points, so a module only tests use
+counts as dead. The helper uses every shared module in `src/`; the licence issuer also uses
+`license_signing.js`.
 
 ## State and ownership
 
@@ -106,11 +107,12 @@ content revisions, including nested changes and edits with preserved timestamps.
 
 ## Gates and acceptance evidence
 
-Run `npm run check:architecture` for source dependency, registry, schema-reference, generated-type
-and packaged-runtime closure checks. Root `npm test` and CI invoke this gate. Its mutation tests
-exercise forbidden imports, dynamic dependencies, omitted packaged resources, missing contracts,
-unused validator imports and generated drift. The gate reports strongly connected components;
-passing it cannot substitute for runtime, migration or native adapter tests.
+Run `npm run check:architecture` for source dependency, module reachability, registry,
+schema-reference, generated-type and packaged-runtime closure checks. Root `npm test` and CI
+invoke this gate. Its mutation tests exercise forbidden imports, dynamic dependencies, omitted
+packaged resources, missing contracts, unused validator imports and generated drift. The gate
+reports strongly connected components; passing it cannot substitute for runtime, migration or
+native adapter tests.
 
 Run `npm run lint`, `npm run typecheck`, the pinned real-engine Node gate documented in
 `docs/quality/ENGINE_PIN_AND_CI.md`, and the interface production build. Native dependency layering

@@ -27,7 +27,11 @@ export const defaultPolicy = {
   forbiddenPackages: ['electron', '@electron/', 'firebase-admin'],
   allowCycles: false,
   runtime: { entries: ['native/backend/server.js'], resources: ['src/license_public_key.pem', 'native/contracts/contract-manifest.json', 'native/contracts/album-studio.schema.json'], collector: 'native/scripts/collect-backend.mjs' },
-  reachability: { entries: ['native/backend/server.js', 'native/ui/src/main.tsx', 'server/index.js', 'server/keygen.js'] },
+  reachability: {
+    entries: ['native/backend/server.js', 'native/ui/src/main.tsx', 'server/index.js', 'server/keygen.js'],
+    // Top-level tool scripts are entry points too: a module only a tool uses is still live.
+    entryDirectories: ['native/scripts', 'scripts', 'bench'],
+  },
   contracts: {
     manifest: 'native/contracts/contract-manifest.json', schema: 'native/contracts/album-studio.schema.json',
     methodRegistry: { file: 'native/backend/methods.js', variable: 'methods' },
@@ -228,9 +232,16 @@ export function checkArchitecture(root = ROOT, { policy = defaultPolicy, package
     }
   }
   if (policy.reachability) {
-    // Every module under the roots must be reachable from an application entry point. Entries
-    // outside the roots (the licence server) contribute their imports only; .d.ts files are types.
-    const reached = new Set(), queue = [...policy.reachability.entries]
+    // Every module under the roots must be reachable from an application or tool entry point.
+    // Entries outside the roots contribute their imports only; .d.ts files are types, and
+    // non-code files (styles, JSON) have no imports to follow.
+    const { entries = [], entryDirectories = [] } = policy.reachability
+    for (const entry of entries) {
+      if (!fs.existsSync(path.join(root, entry))) add('REACHABILITY_ENTRY_MISSING', 'A configured entry point does not exist.', { file: entry })
+    }
+    const tools = entryDirectories.flatMap(dir => !fs.existsSync(path.join(root, dir)) ? []
+      : fs.readdirSync(path.join(root, dir)).filter(name => js.test(name) && !name.endsWith('.d.ts')).map(name => `${dir}/${name}`))
+    const reached = new Set(), queue = [...entries, ...tools]
     const outgoing = file => sources.has(file) ? edges.filter(edge => edge.from === file)
       : refsIn(sourceOf(file, fs.readFileSync(path.join(root, file), 'utf8'))).edges
         .map(ref => ({ ...ref, target: ref.spec.startsWith('.') ? resolveLocal(root, file, ref.spec) : null }))
@@ -238,10 +249,12 @@ export function checkArchitecture(root = ROOT, { policy = defaultPolicy, package
       const file = queue.pop()
       if (reached.has(file) || !fs.existsSync(path.join(root, file))) continue
       reached.add(file)
+      if (!js.test(file)) continue
       for (const edge of outgoing(file)) if (edge.target) queue.push(edge.target)
     }
     for (const file of nodes) {
-      if (!reached.has(file) && !file.endsWith('.d.ts')) add('UNREACHABLE_MODULE', 'No application entry point reaches this module; import it or delete it.', { file })
+      if (reached.has(file) || file.endsWith('.d.ts')) continue
+      add('UNREACHABLE_MODULE', 'No application or tool entry point reaches this module; import it or delete it.', { file })
     }
   }
   const runtimeFiles = new Set(policy.runtime?.resources || []), runtimePackages = new Set(), queue = [...policy.runtime?.entries || []]
