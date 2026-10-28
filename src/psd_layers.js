@@ -8,7 +8,7 @@
 // than the template itself — you could not see the layer stack, could not tell
 // what was clipped into what, and could not turn anything off.
 //
-// This reads the PSD directly in the main process (no Photoshop round-trip, so
+// This reads the PSD directly in the backend helper (no Photoshop round-trip, so
 // it is fast enough to run on template load) and produces:
 //   • the layer TREE — groups, nesting, clipping, blend mode, opacity, bounds
 //   • one PNG per raster layer, cached on disk next to the template's key

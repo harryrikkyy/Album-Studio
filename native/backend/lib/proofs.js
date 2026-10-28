@@ -279,8 +279,8 @@ async function drawProof(spread, album, ws, out, { buffered = false, inputs } = 
   const overlays = (ws.pageOverlays || {})[n] || []
   const background = (ws.pageBackgrounds || {})[n] || null
 
-  // Template layers switched off or retyped: the Electron renderer rebuilds the page from the
-  // layer stack, so hand those spreads to it unchanged.
+  // Template layers switched off or retyped: the shared proof renderer (src/proof_renderer.js)
+  // rebuilds the page from the PSD's layer stack, so hand those spreads to it unchanged.
   if (layerEdits && Object.keys(layerEdits).length) {
     const tree = await require('../../../src/psd_layers').readPsdLayerTree(template)
     const r = await pr.renderPageProof({

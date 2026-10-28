@@ -13,8 +13,8 @@
 //   • RMSE, max delta, % pixels over a visible threshold
 //   • ICC profile / colourspace of each input (the prime suspect)
 //
-// Usage (must run under Electron's Node — sharp is built for the Electron ABI):
-//   ELECTRON_RUN_AS_NODE=1 npx electron scripts/colormatch.js <reference> <candidate> [--out <dir>] [--threshold N]
+// Usage (plain Node; sharp comes from src/sharp_config):
+//   node scripts/colormatch.js <reference> <candidate> [--out <dir>] [--threshold N]
 //
 //   <reference>  the Photoshop export (the ground truth)
 //   <candidate>  the libvips proof composite

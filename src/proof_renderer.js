@@ -1,8 +1,7 @@
 // proof_renderer.js
 //
-// Fast page composite renderer. Runs in the Electron main process so we can
-// use sharp / libvips (native binaries unavailable to the UXP renderer
-// sandbox).
+// Fast page composite renderer. Runs in the backend helper (Node) so it can
+// use sharp / libvips.
 //
 // Job model:
 //   {

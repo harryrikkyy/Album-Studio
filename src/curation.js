@@ -1,6 +1,6 @@
 // curation.js
 //
-// Photo curation engine. Runs in the Electron main process so we can use
+// Photo curation engine. Runs in the backend helper (Node) so it can use
 // sharp/libvips for the heavy stats. Reduces 2,000 raw photos to a curated
 // set of ~200–300 keepers based on:
 //   - Sharpness (Laplacian-of-Gaussian variance proxy via sharp's image stats)

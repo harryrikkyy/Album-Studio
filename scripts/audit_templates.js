@@ -10,9 +10,9 @@
 // than stored as pixels — layer effects, adjustment layers, four blend modes
 // libvips has no operator for, and smart objects.
 //
-// Whether "run without Photoshop" is a week of work or a quarter depends
-// entirely on how many of those a real template library actually uses. This
-// answers that question with counts instead of guesses.
+// The app already renders without Photoshop; this survey counts how many
+// templates in a real library use those features, so the ones that may not
+// render exactly as Photoshop would are known, with counts instead of guesses.
 //
 // Reading is STRUCTURE-ONLY (no pixel decode), so a 60-template library is
 // seconds, not minutes, and memory stays flat.

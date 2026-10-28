@@ -6,9 +6,8 @@
 // Tiny, dependency-free JPEG EXIF parser. Reads a buffer (the first ~256 KB of
 // a JPEG is plenty — EXIF lives in the APP1 marker right after SOI), finds tag
 // 0x9003 (DateTimeOriginal), parses "YYYY:MM:DD HH:MM:SS" → epoch ms, or null.
-// Byte math only (no Buffer methods) so it accepts the bare Uint8Array the
-// bundled renderer gets from the preload bridge; node Buffers still work
-// (Buffer IS a Uint8Array). Out-of-range reads yield NaN and fall through to
+// Byte math only (no Buffer methods) so it accepts any Uint8Array as well as a
+// Node Buffer (Buffer IS a Uint8Array). Out-of-range reads yield NaN and fall through to
 // the null returns, which is stricter than Buffer's throwing reads.
 /** @param {Uint8Array} buf @returns {number | null} */
 function parseExifDateFromBuffer(buf) {
