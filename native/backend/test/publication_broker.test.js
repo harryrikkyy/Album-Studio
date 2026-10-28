@@ -206,3 +206,12 @@ test('the actual managed sheets directory remains a valid native document destin
   const receipt = await finishDocument(worker(t, request(sheet, documentExpectation(sheet, record))), sheet)
   assert.equal(receipt.replacesSource, true); assert.deepEqual(fs.readFileSync(target), f.next)
 })
+test('a publication request with fields its mode does not define is refused before anything is written', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), { requestOf } = require('../lib/publication_broker')
+  for (const expected of [
+    { mode: 'overwrite', extra: true },
+    { mode: 'source', digest: record.digest, size: record.size, record },
+    { mode: 'exact', record, digest: record.digest },
+  ]) assert.throws(() => requestOf(request(f, expected)), { code: 'PUBLICATION_PROTOCOL' })
+  assert.deepEqual(fs.readFileSync(f.target), f.old)
+})

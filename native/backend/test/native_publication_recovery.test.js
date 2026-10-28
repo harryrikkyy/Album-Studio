@@ -86,3 +86,22 @@ test('native save admission refuses an interrupted render before trusting its sh
   assert.deepEqual(fs.readFileSync(f.target), f.before)
   assert.equal(fs.readdirSync(path.join(f.output, '.album-studio')).filter(n => /^render-/.test(n)).length, 1)
 })
+for (const point of ['capture', 'commit']) test(`delivery admission recovers a native save killed at ${point} in a delivery folder`, async t => {
+  const f = fixture(t, false), jpegs = path.join(f.root, 'JPEG-High-Res')
+  fs.mkdirSync(jpegs)
+  const delivery = { ...f, folder: jpegs, target: path.join(jpegs, 'Page_001.jpg') }
+  fs.writeFileSync(delivery.target, f.before)
+  await interrupt(delivery, point)
+  const read = () => fs.readFileSync(delivery.target)
+  const bytes = await withProjectLease(f.album, ({ lease }) => withProjectOutputs(lease, async () => read(), { delivery: true }))
+  assert.deepEqual(bytes, point === 'commit' ? f.after : f.before)
+  assert.equal(fs.readdirSync(path.join(jpegs, '.album-studio-publications')).some(n => /^files-/.test(n)), false)
+})
+test('a brand-new album with no output folder yet passes the settled checks', async t => {
+  const { assertFilesSettled } = require('../lib/file_publication'), { assertRendersSettled } = require('../lib/render_transaction')
+  const root = tmpdir(); t.after(() => fs.rmSync(root, { recursive: true, force: true }))
+  const missing = path.join(root, 'Not yet created')
+  await assertFilesSettled(missing)
+  await assertRendersSettled(missing)
+  assert.equal(fs.existsSync(missing), false)
+})
