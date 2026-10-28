@@ -1147,3 +1147,222 @@ clean, with a verified incremental native-publication.bundle requiring41a0f46. T
 pin remains41a0f46. Iteration9 verification.json records265 root source hashes,48 artifacts
 and385 retained prior artifact/executable/pilot hashes; all385 are unchanged. Candidate
 source hashes and the complete41a-to-foundation patch are retained separately.
+
+## Iteration 10 — in progress: stale editor source and publication receipts
+
+Resumed directly from rootcdd52fc77532444c83b365289af29b875d0a33e3 and isolated native
+123b04517bf42f8e181950632520445a4468cbaa. All698 iteration9 root source/artifact/retained
+hashes and11 candidate source hashes verified before these edits; no audit restart. Shipping
+engine remains41a0f46, Architecture7.0/10. The next actual-native-UI regression opens original
+bytes, makes an editor change, replaces the on-disk file externally and tries to save. Its
+baseline is compiling/running in session64288, not a passed requirement. No customer files or
+user settings are involved. The highest priority remains carrying earlier decoded-source
+proof and typed successful-publication receipts through synchronous/background Save and Copy,
+without rebasing stale editors onto newer files. Remaining writers, album association and
+invalidation/migration still require work. No external blocker has been encountered.
+
+Iteration10 baseline reproducer failed through the actual native synchronous UI: newer
+customer fixture bytes were replaced by a stale editor. Raw failure is retained. The repair
+now introduces validated typed FileRevision/FilePublication receipts and distinct immutable
+decoder origin/current document path/last publication evidence. A dedicated sync document
+publisher and the background SaveCtl carry this evidence; successful jobs return receipts
+without changing Save Copy dirty-state semantics. The private worker's14 real boundary tests
+pass, including source-to-receipt transition, physical path aliases, later manual edits, Save
+Copy and refusing an unverified current path while permitting a differently named recovered
+copy. Lint passes. Native source is currently compiling/testing as session92885; no UI fix
+is claimed verified yet. A complete WIP patch and hashes preserve new native source files.
+Shipping pin/source and previous iteration manifests remain unchanged. Architecture7.0.
+
+Iteration10 progress: the actual stale UI regression now passes in synchronous/background
+modes (native-document-identity-first.log:6 focused pass). Review found the actual Save a
+Copy menu used a separate ambient writer; it now invokes document publication with the
+ask-time source/receipt snapshot and records a new source receipt only when its current
+destination still agrees. The real native Save/Save As/menu Copy sequence passes7 focused
+cases, including copying onto the current path while keeping dirty state, a later Save,
+Save As, Copy to the former origin, and another current Save. Decoder origin/hash stay
+immutable. Root worker15 pass includes the same former-origin transition. Two earlier copy
+runs failed because parallel fixture names used a coarse clock; an attempted repair did not
+apply, so the first rerun was still broken. Atomic fixture counters fixed it; both raw failures
+remain retained and no production guard or test concurrency was weakened.
+
+The native CI setup now explicitly invokes the existing checksum-tagged C-helper builder
+and uses its release path; that command passes locally. Hosted CI remains unexecuted.
+The full engine/UI library run is currently session78102 with2 test threads and2 build jobs;
+source is frozen while it runs. It includes final canonical size validation and preserving
+legacy job-result shape by omitting absent receipts. Native app all-current/full Node gates,
+Clippy, bundle/pin/reconstruction/build advancement still remain. Shipping engine41a0f46 and
+Architecture7.0 are unchanged. No external blocker has stopped local progress.
+
+Iteration10 broader verification: engine library1078 pass,11 ignored. The first combined UI
+library run passed1473, failed2 and ignored8: the sandbox lacked a Metal adapter. Host access
+made the shortcut test pass and exposed a pre-existing mask-test lookup that hardcoded Alt
+instead of the Mac Option label. Correcting only that expected platform label preserves its
+mask/layer assertions. The complete host UI library now passes1475,0 failures,8 existing
+manual/benchmark cases ignored. All19 ignored engine/UI cases remain unverified. Full current
+native app126 passes with the locally CI-built helper; app Clippy all targets with warnings
+denied and workspace formatting pass. The block0.1.6 future-compiler warning remains visible.
+
+Additional actual boundaries were reproduced and repaired: revision inputs coerced arrays/
+numbers instead of preserving string wire types; native file admission accepted protected
+recovery folders and could add metadata there. Strict types and a shared resolved-directory
+policy now reject those locations before reservations are written, while canonical managed
+sheets remain editable. Focused51 passed at that checkpoint.
+
+Integration then reproduced missing shared recovery: interrupted numbered/canonical native
+saves were not recovered before backend sheet consumers read them. Output admission now
+retains project/output capabilities while acquiring additional file reservations; covered
+enclosing scopes are proven and rechecked, not reacquired or assumed. Native pending saves
+restore/retire before cache/render/export admission; read-only sheet-cache calls reject pending
+publications. Conversely, an actual interrupted render was accepted by native save admission;
+that boundary now refuses it until the project coordinator recovers it. The complete focused
+publication/namespace/render/recovery run passes97,0 failure/cancel/skip; lint and architecture
+pass (115 files,0 violations). Directory enumeration in the shared publication primitive is
+bounded at10000 entries. The full current strict Node gate is running as session50108; no full-gate pass is claimed
+until it finishes. Previous iteration manifests and shipping engine41a0f46 remain unchanged.
+
+
+## UI/workflow iteration 1 — mission switched by user
+
+Architecture work was stopped, not completed. Its production changes, isolated native candidate,
+shipping41a0f46 pin and prior evidence remain preserved. The active requested outcome is now
+UI/workflow >=9.5/10. The app goal entry could not be cleared by available tools: replacement
+was rejected while its prior usage-limited goal remains unfinished, and computer control of
+Codex itself was denied. The user command is /goal clear; no false completion was recorded.
+
+Implemented keyboard/modal isolation, WebKit Tab containment, accessible radios/menus and
+focus restoration; persistent dialog-visible errors; bounded/searchable photo browsing with
+file names and missing-thumbnail fallbacks; narrow Photos/Spread/inspector/template/placement
+routes; empty-plan entry; distinct failed/empty recents and retry states; and stale-open/refresh
+protection. Three actual quiet-refresh failures and genuine contrast failures are retained
+before their repairs. Photo actions remain available in the accessible selection toolbar.
+
+Final strict gate in a fresh temporary cache/data profile:297 shared+848 backend+61 UI=1206,
+zero failures/cancellations/skips. Browser fixture23 checks pass; no native end-to-end claim.
+Type/build checks pass. Earlier unisolated gate failed32 RGB tests after the existing test
+file filled the app cache's256-stage history. That test now uses a disposable cache;37 focused
+RGB cases pass. Production retention limits are unchanged. Existing app history is preserved
+byte-for-byte through the isolated gate (256 files,1951232 bytes). No history was pruned.
+
+The isolated native-window lookup timed out after4242.2032 seconds and reset UI control.
+Browser verification recovered; native launch/interaction remains unverified. The source binary
+copy had matching hashes and a disposable config/refusing helper, but is not an acceptance pass.
+All385 prior retained evidence/executable/benchmark hashes pass; user docs/reviews and
+invoice-template folders were not changed. UI score is55/100=5.5/10: criteria7 and9 move from
+unverified0 to partial5; no other category score changes. The9.5 goal remains unfinished.
+Exact evidence, limits, all ten criteria and next steps are in
+docs/quality/2026-10-16-ui-iteration-1/README.md and verification.json.
+
+## UI/workflow iteration 2 — retained-work visibility (2026-10-17)
+
+Resumed UI checkpoint5b41bfa without restarting the audit. Verified42 prior UI artifacts
+and385 retained evidence/binary hashes;146 of149 prior source hashes matched before metadata
+updates, with only this iteration's three UI files differing. Existing architecture WIP and
+shipping41a pin remain preserved. Preexisting tracked change hashes matched the new baseline
+before this append; no user docs/reviews or invoice-template files were changed.
+
+Settings keeps the validated full storage result and exposes retained-work folder/byte usage,
+limits, explicit cap warnings, an accurately described free-space reserve, measurement refresh,
+empty/unavailable states and read-only folder reveal with persistent errors. The refresh/retry
+control stays focused while measurement replaces the readings. No history deletion action,
+production retention limit change or safe-reclamation claim was introduced.
+
+Final isolated full gate passes297 shared+848 backend+61 UI=1206,0 failures/cancellations/skips.
+Final types, lint and production build pass.13 browser fixture checks pass, including caps,
+zero budgets, missing optional data, refresh/retry focus, reveal rejection, compact overflow,
+24 forward/backward Tab steps and Escape return. Actual app history remains256 folders,
+256 files/1951232 bytes with matching before/after names/content hashes. It is still at its limit.
+
+All90 criterion names, weights, points and statuses remain unchanged. UI/workflow stays5.5/10;
+no other category score changes. Native control remains blocked by the previously recorded
+4242-second app-lookup timeout; no native GUI acceptance is inferred. The9.5 target remains
+unfinished. Next steps: restore permitted native control or record human-assisted acceptance,
+resolve preserved native-save integration, execute the complete Mac workflow/editor/VoiceOver/
+real-photo acceptance scopes, and verify ownership/preservation before offering reclamation.
+The old unfinished architecture goal entry still needs the user's /goal clear operation.
+Exact evidence and executable next steps: docs/quality/2026-10-17-ui-iteration-2/README.md.
+
+## Packaged album loading repair — 2026-10-19
+
+User reports folders and ready albums hang in the latest app. Template dimension scanning was
+hashing every complete PSD twice for a26-byte header; the linked catalogue has3955 PSDs across
+roughly138GB of files. Commit31998ff introduces a bounded two-pass metadata reader shared by
+canvas/JPEG/EXIF inspection; complete render/save source evidence remains unchanged. Seven
+fail-first regressions and the26 focused source/header/invalidation tests pass. Full isolated
+pinned gate:297 shared+855 backend+61 UI=1213,0 failure/cancel/skip. Lint and types pass.
+
+Actual read-only album model load takes4260ms for15 spreads/131 photos with all15 templates
+resolved and0 missing spread photos. PSD header reads total205660 bytes. Original project
+contents match before/after. Photo inspection6589ms; four collection counts2952ms. Rebuilt
+native/dist/Album Studio Fixed.app passes deep strict signature, plist,72-file runtime closure,
+interface and bundled Node22.23.3 helper checks. Original app bundles remain preserved.
+
+Native app control now successfully launches and opens an independent album/output copy via
+the native File menu/chooser. Plan displays131 photos and15 spreads. A separate real preview
+blocker remains: cache history is full at256 folders. Independently regenerated RGB synthetic
+fixtures exactly match every retained composite.tif (four hashes,48x24,1951232 bytes total).
+These are artifacts from the earlier unisolated tests. An atomic whole-history backup with
+all-file hash verification was proposed; automatic approval review rejected it before process
+creation because relocating the live recovery path needs explicit human approval and may
+affect recovery/concurrent writers. A concrete approval question is pending. No history was
+moved/deleted, no budget was raised, and no production-cache bypass was applied. The native
+diagnostic window was closed normally. The independent copy remains for the next check.
+
+No quality score changes or full preview/delivery acceptance is claimed. Source/evidence:
+docs/quality/2026-10-19-album-loading-fix/README.md and verification.json. On approval, revalidate
+writers/inventory, preserve the verified test artifacts by no-replace backup, verify all hashes,
+retain the restore receipt and retest actual native previews. On refusal, preserve history and
+report the remaining preview block while providing the metadata-loading repair.
+
+## Approved retained-test backup and native previews — 2026-10-19
+
+The user explicitly approved moving the256 verified synthetic test folders to a backup beside
+live history. After confirming packaged writers stopped, the exact inventory was revalidated
+and the complete directory moved atomically without replacement to the proposed dated UUID
+backup. Its directory inode and all256 file hashes were preserved. A full receipt/restore
+procedure is saved beside it and in docs/quality/2026-10-19-preview-recovery. Nothing was deleted;
+no limits changed and no new production cache bypassed the refusal policy. The earlier
+approval-review rejection is resolved by the explicit human authorization, not a workaround.
+
+The corrected native app reopened the independent album/output copy and displayed131 photos
+and15 spreads. All15 JPEG previews and manifest entries were generated; packaged Sharp
+metadata/dimensions and hashes verify every expected page. The final native screen shows a
+composited spread, populated thumbnails and Preview Ready with no visible budget error.
+The diagnostic window was closed normally. The original customer project remains unchanged.
+New production recovery history30 folders/3029728335 bytes is preserved below unchanged limits;
+only the identified old test artifacts were backed up. Existing architecture WIP and frozen
+executables remain unchanged. No source changes, quality-score increase or full delivery
+certification is claimed. Album Studio Fixed.app remains the current launchable corrected app.
+
+## Interactive preview performance repair — 2026-10-19
+
+The user's new screenshot identifies the live 8 GiB retained-work budget, now occupied by
+customer-derived decoder work rather than the previously approved synthetic fixtures. Nothing
+in that history was deleted or moved. Three isolated failures confirmed ordinary preview refusal,
+full-source accumulation, and edits blocked behind background decoding. Code7d321ad replaces
+ordinary preview snapshots/colour TIFF intermediates with bounded, exact verified buffers,
+releases edit leases during pixel work, coalesces changes, scopes safe local edits and groups
+repeated storage notifications. Album hydration inventories fresh identities/paths without
+opening thousands of unused template canvas headers; fitting/autofill still verify dimensions.
+
+Final source gate:1220 tests (297 shared/861 backend/62 UI), zero failures/cancellations/skips;
+lint/type checks clean. Real131-photo current14-spread project copies measured model open
+3.529s→0.320s, full previews49.271s→33.617s, unchanged refresh10.826s→5.095s, median complete
+photo-edit+preview12.822s→2.027s. Global retained source copies after all previews/three edits
+fell3.66GB→0; a further preview succeeded with8GiB fixture history intact. Peak RSS remains
+about1.39GiB; no RAM improvement or fastest-in-market claim is made.
+
+New Album Studio Performance.app is237MB, deep strict signature/plist checks pass, bundled
+Node22.23.3 and all73 runtime files match tested sources. Native open against the actual full
+live history generated14 valid JPEGs; the screen shows131 photos, Preview Ready and no errors.
+Automated keyboard events did not exercise embedded editing controls reliably; rapid GUI edits
+and GUI undo remain unverified, despite passing backend concurrency/edit measurements. The
+owned diagnostic app was closed; the older user-owned Fixed.app session remains untouched.
+
+The original customer project and exact live-history metadata inventory remain unchanged
+(74stages/1204files/8589743103bytes). All256 approved synthetic backup hashes, six frozen native
+executables, engine41a0f4644 pin, and existing tracked WIP are preserved. The log prefix was
+preserved before this appended record. Engine fallback/layer-stack/print paths still have their
+existing retention constraints; no universal editor/delivery certification is inferred. All nine
+quality scores remain unchanged. Continue from docs/quality/2026-10-19-preview-performance;
+next optimize verified all-page refresh/large-template memory and complete manual rapid-edit,
+editor and print/delivery acceptance before raising any score.

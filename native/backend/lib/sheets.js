@@ -5,6 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const { contentVerified } = require('./inputs')
 const { readProjectSnapshot } = require('./project_transaction')
+const { assertFilesSettled } = require('./file_publication')
 const verifiedSheetRecord = (record) => !!(contentVerified(record) && !record.unverified && /^[a-f0-9]{64}$/.test(record.sheetDigest || ''))
 
 const workspace = (data) => data.workspace || data
@@ -22,6 +23,8 @@ const inside = (folder, file) => {
 }
 
 async function readRenderCacheSnapshot(output, { albumFile } = {}) {
+  await assertFilesSettled(output)
+  await assertFilesSettled(path.join(output, '.album-studio', 'sheets'))
   let data, revision
   try {
     ;({ data, revision } = await readProjectSnapshot(renderCachePath(output)))

@@ -122,6 +122,15 @@ function createPublicationIO({ subject, changed, readRecord }) {
     if (!sameNode(before, await stat(to))) throw changed(`atomic ${subject} capture`)
     await syncDirectory(path.dirname(from)); if (path.dirname(from) !== path.dirname(to)) await syncDirectory(path.dirname(to))
   }
-  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity }
+  /** @param {string} folder @returns {Promise<string[]>} */
+  async function boundedNames(folder) {
+    const names = [], entries = await fs.promises.opendir(folder)
+    for await (const entry of entries) {
+      if (names.length >= 10000) throw changed(`${subject} directory exceeds the 10000-entry inspection limit`)
+      names.push(entry.name)
+    }
+    return names.sort()
+  }
+  return { syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity }
 }
 module.exports = { createPublicationIO }

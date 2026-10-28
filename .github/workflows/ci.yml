@@ -101,6 +101,7 @@ jobs:
     timeout-minutes: 120
     env:
       CARGO_TARGET_DIR: ${{ github.workspace }}/native/photocraft/target/ci-native
+      ALBUM_STUDIO_RENAME_CLI: ${{ github.workspace }}/native/photocraft/target/ci-native/release/album-studio-rename-exclusive
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -123,6 +124,8 @@ jobs:
       - name: Format
         working-directory: native/photocraft
         run: cargo fmt --all -- --check
+      - name: Build the atomic publisher used by native integration tests
+        run: node native/scripts/engine.mjs build-rename
       - name: Workspace tests
         working-directory: native/photocraft
         run: cargo test --workspace --locked --features heif

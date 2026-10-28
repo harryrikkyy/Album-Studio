@@ -5,6 +5,7 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
+const { assertPublicationParent } = require('./publication_paths')
 const MAX_JOURNAL = 1024 * 1024
 const SHA = /^[a-f0-9]{64}$/
 const STAGE = /^files-[a-f0-9-]{36}$/
@@ -15,10 +16,10 @@ const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === 
 const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
 const {
-  directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity,
+  directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity,
 } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
-const validNode = n => !!n && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
-const validRecord = r => !!r && SHA.test(r.digest || '') && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
+const validNode = n => !!n && typeof n.dev === 'string' && typeof n.ino === 'string' && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
+const validRecord = r => !!r && typeof r.digest === 'string' && typeof r.size === 'string' && typeof r.stamp === 'string' && SHA.test(r.digest) && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
 const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !n.startsWith('.album-studio')
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
@@ -33,6 +34,7 @@ async function context(folder, capabilities) {
   if (typeof folder !== 'string' || !path.isAbsolute(folder) || !capabilities || typeof capabilities.assertOwned !== 'function' || typeof capabilities.assertTarget !== 'function' || capabilities.validateSnapshot !== undefined && typeof capabilities.validateSnapshot !== 'function' || capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function') throw new Error('File publication requires an absolute directory and owned namespace/domain capabilities.')
   await capabilities.assertOwned()
   const physical = await fs.promises.realpath(folder), parentNode = await directory(physical)
+  assertPublicationParent(physical)
   const metadata = path.join(physical, '.album-studio-publications'), metadataNode = await directory(metadata, true)
   return { logical: folder, physical, parentNode, metadata, metadataNode, capabilities }
 }
@@ -64,7 +66,7 @@ async function journalOf(c, stage, known, contents = true) {
       if (!expected && actual || expected && ['old', 'next'].includes(prefix) && !actual || actual && !(prefix === 'old' || prefix === 'next' ? matches(actual, expected) && !(actual.mode & 0o222) : owned(actual, expected))) throw changed(`retained publication ${name}`)
     }
   }
-  const present = await fs.promises.readdir(stage)
+  const present = await boundedNames(stage)
   for (const name of present) {
     if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw changed('unexpected publication recovery entry')
     const info = await stat(path.join(stage, name))
@@ -110,7 +112,7 @@ async function retire(c, stage, known) {
 async function pruneHistory(c, kept, published) {
   try {
     const history = path.dirname(kept)
-    for (const name of (await fs.promises.readdir(history)).sort()) {
+    for (const name of await boundedNames(history)) {
       const stage = path.join(history, name)
       if (stage === kept || !STAGE.test(name)) continue
       const state = await journalOf(c, stage, undefined, false).catch(() => null)
@@ -155,13 +157,29 @@ async function recoverStage(c, stage) {
 async function recoverInContext(c) {
   await assertContext(c)
   const recovered = [], orphanStages = []
-  for (const name of (await fs.promises.readdir(c.metadata)).sort()) {
+  for (const name of await boundedNames(c.metadata)) {
     if (name.startsWith('.prepare-')) orphanStages.push(path.join(c.metadata, name))
     else if (STAGE.test(name)) recovered.push({ stage: path.join(c.metadata, name), ...await recoverStage(c, path.join(c.metadata, name)) })
     else if (['history', 'inputs'].includes(name)) await directory(path.join(c.metadata, name))
     else throw changed('unknown publication metadata entry')
   }
   return { recovered, orphanStages }
+}
+/** Read-only callers must not interpret a temporarily missing native target as a new file. */
+async function assertFilesSettled(folder) {
+  let physical
+  try { physical = await fs.promises.realpath(folder) } catch (error) { if (error.code === 'ENOENT') return; throw error }
+  const metadata = path.join(physical, '.album-studio-publications')
+  if (!await stat(metadata)) return
+  const identity = await directory(metadata)
+  for (const name of await boundedNames(metadata)) {
+    if (STAGE.test(name)) {
+      const stage = path.join(metadata, name)
+      throw Object.assign(new Error(`An interrupted native save must be recovered before reading these files. Reopen the album's render/export plan; preserve the evidence at ${stage}.`), { code: 'PUBLICATION_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
+    }
+    if (!['history', 'inputs'].includes(name) && !name.startsWith('.prepare-')) throw changed('unknown native publication metadata')
+  }
+  if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
 }
 async function recoverFiles(folder, capabilities) { return recoverInContext(await context(folder, capabilities)) }
 
@@ -245,4 +263,4 @@ async function publishFiles({ folder, entries }, capabilities) {
     throw failureAt(exposed ? stage : prepared, error, committed, result)
   }
 }
-module.exports = { publishFiles, recoverFiles, fingerprintFile: readRecord, matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected) }
+module.exports = { publishFiles, recoverFiles, assertFilesSettled, fingerprintFile: readRecord, matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected) }

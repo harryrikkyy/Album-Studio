@@ -6,6 +6,7 @@ const path = require('path')
 const crypto = require('crypto')
 const { acquireProjectLease } = require('./project_lock')
 const exclusive = require('./exclusive_rename')
+const { assertPublicationParent } = require('./publication_paths')
 const sameNode = (a, b) => a && b && a.dev === b.dev && a.ino === b.ino
 const stat = file => fs.promises.lstat(file, { bigint: true }).catch(error => { if (error.code === 'ENOENT') return null; throw error })
 function uncertain(file) {
@@ -83,11 +84,15 @@ async function acquireNamespaceGroup(contexts, { validateExtra } = {}) {
         if (resolved.folder !== context.folder || !sameNode(resolved.identity, context.identity) || !sameNode(current, context.markerIdentity)) throw uncertain(context.file)
       }
       if (validateExtra) await validateExtra()
-    }, async assertDirectory(requested, scope) {
+    }, async coversNamespace(requested, scope) {
       const resolved = await directory(requested, false)
       const context = held.find(item => item.context.scope === scope && item.context.folder === resolved.folder)?.context
-      if (!context || !sameNode(resolved.identity, context.identity)) throw uncertain(requested)
+      if (!context) return false
+      if (!sameNode(resolved.identity, context.identity)) throw uncertain(requested)
       await this.assertOwned()
+      return true
+    }, async assertDirectory(requested, scope) {
+      if (!await this.coversNamespace(requested, scope)) throw uncertain(requested)
     }, release }
     await group.assertOwned()
     return group
@@ -117,15 +122,25 @@ async function managedScopes(parents) {
   return [...contexts.values()]
 }
 /** File publishers reserve physical parents plus existing enclosing managed scopes. */
-async function acquirePublicationDirectories(targets) {
+async function acquirePublicationDirectories(targets, { enclosing } = {}) {
+  if (enclosing !== undefined && (!enclosing || typeof enclosing.coversNamespace !== 'function')) throw new Error('An enclosing namespace capability must prove its held scopes.')
   if (!Array.isArray(targets) || !targets.length || targets.length > 10000 || targets.some(file => typeof file !== 'string' || file.length > 32768 || file.includes('\0') || !file.isWellFormed() || !path.isAbsolute(file))) throw new Error('File publication requires bounded absolute targets.')
   const parents = [...new Set(targets.map(file => path.dirname(file)))], contexts = []
-  for (const parent of parents) contexts.push(await marker(await directory(parent, false), 'files'))
-  const managed = await managedScopes(parents)
-  const group = await acquireNamespaceGroup([...contexts, ...managed], { validateExtra: async () => {
+  for (const parent of parents) {
+    const resolved = await directory(parent, false)
+    assertPublicationParent(resolved.folder)
+    contexts.push(await marker(resolved, 'files'))
+  }
+  const managed = await managedScopes(parents), additional = [], covered = []
+  for (const context of managed) {
+    if (enclosing && await enclosing.coversNamespace(context.folder, context.scope)) covered.push(context)
+    else additional.push(context)
+  }
+  const group = await acquireNamespaceGroup([...contexts, ...additional], { validateExtra: async () => {
     const current = await managedScopes(parents)
     if (current.length !== managed.length || current.some(item => !managed.some(prior => prior.file === item.file && sameNode(prior.markerIdentity, item.markerIdentity) && sameNode(prior.identity, item.identity)))) throw uncertain(parents.join(', '))
+    for (const context of covered) if (!await enclosing.coversNamespace(context.folder, context.scope)) throw uncertain(context.folder)
   } })
-  return { assertOwned: () => group.assertOwned(), assertTarget: file => group.assertDirectory(path.dirname(file), 'files'), release: () => group.release() }
+  return { assertOwned: () => group.assertOwned(), assertTarget: file => group.assertDirectory(path.dirname(file), 'files'), release: () => group.release(), async managedDirectories() { await group.assertOwned(); return managed.map(({ folder, scope }) => ({ folder, scope })) } }
 }
 module.exports = { directory, marker, acquireNamespaceGroup, acquirePublicationDirectories }

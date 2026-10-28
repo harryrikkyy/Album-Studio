@@ -135,3 +135,74 @@ test('malformed Unicode target names cannot alias a different replacement-charac
   assert.equal(r.state, 'failed'); assert.equal(r.error.code, 'PUBLICATION_PROTOCOL'); assert.equal(await w.exit, 1)
   assert.deepEqual(fs.readFileSync(target), f.old)
 })
+const documentExpectation = (f, record) => ({ mode: 'document', currentPath: f.target, sourcePath: f.target, digest: record.digest, size: record.size, publication: null })
+async function finishDocument(w, f) {
+  assert.equal((await w.next()).state, 'ready'); payload(w, f); assert.equal((await w.next()).state, 'prepared')
+  w.child.stdin.end(frame({ commit: true }))
+  const r = await w.next(); assert.equal(r.state, 'committed'); assert.equal(await w.exit, 0)
+  return r.result.fileReceipt
+}
+test('document source proof and subsequent receipts guard the actual current file across saves', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), e = documentExpectation(f, record)
+  const first = await finishDocument(worker(t, request(f, e)), f)
+  assert.equal(first.replacesSource, true); assert.equal(first.revision.digest, sha(f.next))
+  const second = await finishDocument(worker(t, request(f, { ...e, publication: first })), f)
+  assert.equal(second.replacesSource, true)
+  fs.writeFileSync(f.target, 'newer external document revision')
+  const w = worker(t, request(f, { ...e, publication: second })), r = await w.next()
+  assert.equal(r.state, 'failed'); assert.equal(r.error.code, 'PUBLICATION_CONFLICT'); assert.equal(await w.exit, 1)
+  assert.equal(fs.readFileSync(f.target, 'utf8'), 'newer external document revision')
+})
+test('document paths resolve aliases while a different Save Copy preserves the source receipt', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), e = documentExpectation(f, record), alias = path.join(f.root, 'Alias')
+  fs.symlinkSync(f.output, alias, 'dir')
+  const first = await finishDocument(worker(t, { ...request(f, e), target: path.join(alias, 'manual.psd') }), f)
+  assert.equal(first.replacesSource, true)
+  const copy = { ...f, target: path.join(f.output, 'copy.psd') }, receipt = await finishDocument(worker(t, request(copy, { ...e, publication: first })), copy)
+  assert.equal(receipt.replacesSource, false)
+  const r = await finishDocument(worker(t, request(f, { ...e, publication: first })), f)
+  assert.equal(r.replacesSource, true); assert.equal(fs.readFileSync(copy.target, 'utf8'), f.next.toString())
+})
+test('a current file without earlier source or receipt cannot be silently adopted', async t => {
+  const f = fixture(t), expected = { mode: 'document', currentPath: f.target, sourcePath: null, digest: null, size: null, publication: null }
+  const w = worker(t, request(f, expected)), r = await w.next()
+  assert.equal(r.state, 'failed'); assert.equal(r.error.code, 'PUBLICATION_CONFLICT'); assert.equal(await w.exit, 1)
+  assert.deepEqual(fs.readFileSync(f.target), f.old)
+  const copy = { ...f, target: path.join(f.output, 'recovered-copy.psd') }
+  const receipt = await finishDocument(worker(t, request(copy, expected)), copy)
+  assert.equal(receipt.replacesSource, false); assert.deepEqual(fs.readFileSync(f.target), f.old)
+})
+test('Save Copy to a former source after Save As keeps the current file receipt', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), origin = documentExpectation(f, record)
+  const first = await finishDocument(worker(t, request(f, origin)), f)
+  const renamed = { ...f, target: path.join(f.output, 'renamed.psd') }, current = await finishDocument(worker(t, request(renamed, { ...origin, publication: first })), renamed)
+  const e = { ...origin, currentPath: renamed.target, publication: current }
+  const copy = await finishDocument(worker(t, request(f, e)), f)
+  assert.equal(copy.replacesSource, false)
+  const saved = await finishDocument(worker(t, request(renamed, e)), renamed)
+  assert.equal(saved.replacesSource, true)
+})
+test('private revision expectations preserve string wire types instead of coercing arrays or numbers', async t => {
+  const f = fixture(t), record = await fingerprintFile(f.target), { requestOf } = require('../lib/publication_broker')
+  for (const patch of [{ size: [record.size] }, { node: { ...record.node, dev: Number(record.node.dev) } }]) {
+    assert.throws(() => requestOf(request(f, { mode: 'exact', record: { ...record, ...patch } })), { code: 'PUBLICATION_PROTOCOL' })
+  }
+  assert.throws(() => requestOf(request(f, { mode: 'source', digest: record.digest, size: [record.size] })), { code: 'PUBLICATION_PROTOCOL' })
+  assert.deepEqual(fs.readFileSync(f.target), f.old)
+})
+test('ordinary native publication cannot change private recovery history or add metadata inside it', async t => {
+  const f = fixture(t)
+  await finishDocument(worker(t, request(f)), f)
+  const history = path.join(f.output, '.album-studio-publications/history'), stage = path.join(history, fs.readdirSync(history)[0])
+  const target = path.join(stage, 'old-0'), before = fs.readFileSync(target), names = fs.readdirSync(stage).sort()
+  const w = worker(t, request({ ...f, target })), r = await w.next()
+  assert.equal(r.state, 'failed'); assert.equal(r.error.code, 'PUBLICATION_PRIVATE_PATH'); assert.equal(await w.exit, 1)
+  assert.deepEqual(fs.readFileSync(target), before); assert.deepEqual(fs.readdirSync(stage).sort(), names)
+})
+test('the actual managed sheets directory remains a valid native document destination', async t => {
+  const f = fixture(t), folder = path.join(f.output, '.album-studio/sheets'), target = path.join(folder, 'spread_fixture.psd')
+  fs.mkdirSync(folder, { recursive: true }); fs.writeFileSync(target, f.old)
+  const record = await fingerprintFile(target), sheet = { ...f, target }
+  const receipt = await finishDocument(worker(t, request(sheet, documentExpectation(sheet, record))), sheet)
+  assert.equal(receipt.replacesSource, true); assert.deepEqual(fs.readFileSync(target), f.next)
+})

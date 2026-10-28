@@ -47,13 +47,46 @@ function errorValue(error) {
   for (const key of ['recoveryStage', 'recoveryJournal', 'publicationCommitted', 'publicationRestored', 'recoveryRequired']) if (['string', 'boolean'].includes(typeof error[key])) out[key] = typeof error[key] === 'string' ? error[key].slice(0, 32768) : error[key]
   return out
 }
+function optionalPath(value) { return value === null || typeof value === 'string' && value.length > 0 && value.length <= 32768 && value.isWellFormed() && !value.includes('\0') }
+function sourceRevision(e) { return typeof e.digest === 'string' && typeof e.size === 'string' && SHA.test(e.digest) && /^(0|[1-9]\d{0,15})$/.test(e.size || '') && BigInt(e.size) <= BigInt(Number.MAX_SAFE_INTEGER) }
 function requestOf(request) {
-  if (!exactKeys(request, ['version', 'target', 'expected']) || request.version !== 1 || typeof request.target !== 'string' || request.target.length > 32768 || request.target.includes('\0') || !request.target.isWellFormed() || !path.isAbsolute(request.target) || !exactKeys(request.expected, ['mode', 'record', 'digest', 'size'])) throw invalid('Native publication requires an absolute target and explicit overwrite expectation.')
-  const e = request.expected
-  if (!['overwrite', 'new', 'source', 'exact'].includes(e.mode) || e.mode === 'source' && (!SHA.test(e.digest || '') || !/^(0|[1-9]\d{0,15})$/.test(e.size || '')) || e.mode === 'exact' && (!e.record || typeof e.record !== 'object' || Array.isArray(e.record))) throw invalid('Native publication has an invalid prior-revision expectation.')
-  // These are serialization scopes, not album adoption or arbitrary control-session rights.
+  if (!exactKeys(request, ['version', 'target', 'expected']) || request.version !== 1 || typeof request.target !== 'string' || request.target.length > 32768 || request.target.includes('\0') || !request.target.isWellFormed() || !path.isAbsolute(request.target) || !request.expected) throw invalid('Native publication requires an absolute target and explicit overwrite expectation.')
+  const e = request.expected, fields = {
+    overwrite: ['mode'], new: ['mode'], source: ['mode', 'digest', 'size'], exact: ['mode', 'record'],
+    document: ['mode', 'currentPath', 'sourcePath', 'digest', 'size', 'publication'],
+  }[e.mode]
+  if (!Array.isArray(fields) || !exactKeys(e, fields) || e.mode === 'source' && !sourceRevision(e) || e.mode === 'exact' && !matchesFileRevision(e.record, e.record)) throw invalid('Native publication has an invalid prior-revision expectation.')
+  if (e.mode === 'document') {
+    if (!optionalPath(e.currentPath) || !optionalPath(e.sourcePath) || !(e.digest === null && e.size === null || sourceRevision(e))) throw invalid('Native document publication requires explicit current/origin paths and decoder evidence.')
+    if (e.publication !== null && (!exactKeys(e.publication, ['path', 'revision', 'replacesSource']) || !optionalPath(e.publication.path) || e.publication.path === null || typeof e.publication.replacesSource !== 'boolean' || !matchesFileRevision(e.publication.revision, e.publication.revision))) throw invalid('Native document publication has an invalid earlier receipt.')
+  }
   return request
 }
+async function canonicalName(name) {
+  const file = path.resolve(name)
+  try { return await fs.promises.realpath(file) } catch (error) {
+    if (error.code !== 'ENOENT') throw error
+    try { return path.join(await fs.promises.realpath(path.dirname(file)), path.basename(file)) } catch (parentError) { if (parentError.code !== 'ENOENT') throw parentError; return file }
+  }
+}
+async function validateExpectation(target, before, e) {
+  const conflict = () => changed('The document no longer matches its earlier publication revision. Preserve both versions before saving again.')
+  if (e.mode !== 'document') {
+    if (e.mode === 'new' && before || e.mode === 'source' && (!before || before.digest !== e.digest || before.size !== e.size) || e.mode === 'exact' && !matchesFileRevision(before, e.record)) throw conflict()
+    return false
+  }
+  const physical = await canonicalName(target)
+  const current = e.currentPath !== null && await canonicalName(e.currentPath) === physical
+  const previous = e.publication !== null && await canonicalName(e.publication.path) === physical
+  const source = e.sourcePath !== null && await canonicalName(e.sourcePath) === physical
+  if (previous) { if (!matchesFileRevision(before, e.publication.revision)) throw conflict() }
+  else if (current && source) { if (!sourceRevision(e) || !before || before.digest !== e.digest || before.size !== e.size) throw conflict() }
+  else if (current) throw changed('This document has no verified revision for its current file. Preserve it by saving a copy to a different name.')
+  // A different target is the user's explicit Save As/Copy choice. It still uses
+  // the exact revision captured under this actor's capabilities, never an in-place rebase.
+  return current
+}
+
 async function run({ input = process.stdin, output = process.stdout } = {}) {
   const reader = inputReader(input)
   let lease, result, failure, inputStage
@@ -66,9 +99,10 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
     deadline = setTimeout(() => input.destroy(invalid('Native publication preparation timed out.')), 6 * 60 * 60 * 1000)
     deadline.unref()
     lease = await acquirePublicationDirectories([request.target])
+    await require('./publication_recovery').assertManagedRendersSettled(lease)
     await recoverFiles(folder, lease)
     const before = await fingerprintFile(request.target), e = request.expected
-    if (e.mode === 'new' && before || e.mode === 'source' && (!before || before.digest !== e.digest || before.size !== e.size) || e.mode === 'exact' && !matchesFileRevision(before, e.record)) throw changed('The document no longer matches its earlier publication revision. Preserve both versions before saving again.')
+    const replacesSource = await validateExpectation(request.target, before, e)
     await write(output, { version: 1, state: 'ready', before })
     const payload = await reader.json()
     if (!exactKeys(payload, ['length', 'digest']) || !Number.isSafeInteger(payload.length) || payload.length < 0 || !SHA.test(payload.digest || '')) throw invalid('Native document bytes require a safe declared length and SHA-256.')
@@ -92,6 +126,8 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
     if (!exactKeys(decision, ['commit']) || decision.commit !== true) throw invalid('The native publication was not explicitly committed.')
     await reader.end()
     result = await publishFiles({ folder, entries: [{ name, source, sourceDigest: payload.digest, before }] }, lease)
+    const { name: _name, ...revision } = result.records[0]
+    result.fileReceipt = { path: path.join(physical, name), revision, replacesSource }
     const inputs = path.join(metadata, 'inputs')
     try {
       await lease.assertOwned(); await io.directory(inputs, true)

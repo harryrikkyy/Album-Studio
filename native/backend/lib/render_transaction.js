@@ -23,7 +23,7 @@ function stopped(check) { if (check && check()) { const error = new Error('Rende
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Render', changed })
 
 const {
-  syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, remember, retainedRecord, removeRetired, sameIdentity,
+  syncDirectory, directory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity,
 } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
 const fingerprintRenderFile = file => readRecord(file)
 const description = r => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
@@ -146,7 +146,7 @@ async function retire(c, stage, known) {
 async function pruneHistory(c, kept, spreadId) {
   try {
     const history = path.dirname(kept)
-    for (const name of (await fs.promises.readdir(history)).sort()) {
+    for (const name of await boundedNames(history)) {
       const stage = path.join(history, name)
       if (stage === kept || !STAGE.test(name)) continue
       const state = await journalOf(c, stage, undefined, false).catch(() => null)
@@ -193,6 +193,18 @@ async function recoverInContext(c) {
     recovered.push({ stage: path.join(c.metadata, name), ...await recoverStage(c, path.join(c.metadata, name)) })
   }
   return { recovered, orphanStages }
+}
+/** Editors without a project recovery capability must defer an interrupted render. */
+async function assertRendersSettled(output) {
+  const metadata = path.join(output, '.album-studio')
+  if (!await stat(metadata)) return
+  const identity = await directory(metadata)
+  for (const name of await boundedNames(metadata)) {
+    if (!STAGE.test(name)) continue
+    const stage = path.join(metadata, name)
+    throw Object.assign(new Error(`An earlier render must finish recovery before this sheet can be saved. Reopen the album's render/export plan; preserve the evidence at ${stage}.`), { code: 'RENDER_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
+  }
+  if (!sameNode(identity, await directory(metadata))) throw changed('render recovery directory identity')
 }
 async function recoverRenders(p, capabilities) { return recoverInContext(await contextOf(p, capabilities)) }
 async function checkSnapshot(c, p) {
@@ -313,4 +325,4 @@ async function publishRender(p, capabilities) {
   }
 }
 
-module.exports = { publishRender, recoverRenders, fingerprintRenderFile }
+module.exports = { publishRender, recoverRenders, assertRendersSettled, fingerprintRenderFile }

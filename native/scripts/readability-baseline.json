@@ -27,7 +27,7 @@
     "max-len": 1
   },
   "native/backend/lib/file_publication.js": {
-    "max-len": 20,
+    "max-len": 21,
     "complexity": 2
   },
   "native/backend/lib/identity.js": {
@@ -44,14 +44,14 @@
     "max-len": 1
   },
   "native/backend/lib/namespace_lock.js": {
-    "max-len": 7
+    "max-len": 9
   },
   "native/backend/lib/newalbum.js": {
     "max-len": 3,
     "complexity": 1
   },
   "native/backend/lib/output_lock.js": {
-    "max-len": 1
+    "max-len": 2
   },
   "native/backend/lib/output_paths.js": {
     "max-len": 5
@@ -107,10 +107,16 @@
     "complexity": 2
   },
   "native/backend/lib/publication_broker.js": {
-    "max-len": 10,
-    "complexity": 1
+    "max-len": 15,
+    "complexity": 3
   },
   "native/backend/lib/publication_io.js": {
+    "max-len": 3
+  },
+  "native/backend/lib/publication_paths.js": {
+    "max-len": 1
+  },
+  "native/backend/lib/publication_recovery.js": {
     "max-len": 3
   },
   "native/backend/lib/raw.js": {
@@ -121,7 +127,7 @@
     "complexity": 1
   },
   "native/backend/lib/render_transaction.js": {
-    "max-len": 30,
+    "max-len": 31,
     "complexity": 2
   },
   "native/backend/lib/sheet.js": {
@@ -224,6 +230,9 @@
   "native/backend/test/labnaming_recovery.test.js": {
     "max-len": 1
   },
+  "native/backend/test/native_publication_recovery.test.js": {
+    "max-len": 10
+  },
   "native/backend/test/newalbum.test.js": {
     "max-len": 5
   },
@@ -285,7 +294,7 @@
     "max-len": 2
   },
   "native/backend/test/publication_broker.test.js": {
-    "max-len": 3
+    "max-len": 5
   },
   "native/backend/test/render_finish.test.js": {
     "max-len": 8

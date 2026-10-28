@@ -16,7 +16,7 @@ async function acquireOutputLease(output, { delivery = false, kind = 'output' } 
   const all = await contexts(output, delivery)
   for (const context of all) context.kind = `${kind}-${context.scope}`
   const group = await acquireNamespaceGroup(all, { validateExtra: () => require('./output_paths').validateOutputPaths(output) })
-  return { output, delivery, assertOwned: () => group.assertOwned(), async assertFor(requested, needsDelivery = false) {
+  return { output, delivery, coversNamespace: (requested, scope) => group.coversNamespace(requested, scope), assertOwned: () => group.assertOwned(), async assertFor(requested, needsDelivery = false) {
     if (needsDelivery && !delivery) throw new Error('This operation has no lease for its delivery folder.')
     await group.assertDirectory(requested, 'sheets')
     if (needsDelivery) await group.assertDirectory(path.dirname(requested), 'delivery')
@@ -37,6 +37,7 @@ async function acquireProjectOutputs(project, options = {}) {
   const group = await acquireOutputLease(output, options)
   try {
     await project.assertOwned()
+    await require('./publication_recovery').recoverOutputFiles(project, group, output, options)
     // Interrupted publication can leave either public name absent. Recover while both
     // namespaces are held, before any reader interprets missing ownership as a new album.
     await require('./render_transaction').recoverRenders({ albumFile: project.file, outputFolder: output }, {
