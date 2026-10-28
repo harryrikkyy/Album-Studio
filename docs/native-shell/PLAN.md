@@ -27,10 +27,10 @@
   Backend 27 tests, UI 10 tests; interactions checked in the real web view through the
   debug-build script hook (`ALBUM_STUDIO_DEBUG_SOCKET`); browser preview: `node native/ui/dev/serve.mjs`.
 
-Reusable from the Electron app without changes (checked): `src/proof_renderer.js`,
-`src/psd_layers.js`, `src/overlay_render.js`, `src/renderer_pure.js`, `src/curation.js`,
-`src/thumbnailer.js`, `src/sharp_config.js`. Need an `app.getPath` adapter: `src/library.js`,
-`src/renamer.js`, `src/plugins.js`, `src/telemetry.js`.
+Shared with the Electron app and used by the helper today (`src/`): `proof_renderer.js`,
+`psd_layers.js`, `overlay_render.js`, `overlay_ps.js`, `editor_geometry.js`, `curation.js`,
+`sharp_config.js`, `license.js`, `firebase_auth.js`, `autofill_counts.js` and `exif_date.js`; the
+licence issuer uses `license_signing.js`. The other Electron-only modules have been removed.
 
 ## Next, in order
 

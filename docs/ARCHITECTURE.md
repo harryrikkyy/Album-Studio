@@ -44,6 +44,17 @@ Input framing rejects oversized lines and invalid UTF-8, coalesces fragmented in
 bounded slabs, and resynchronizes at a newline. Output backpressure and native transport
 execution require their own verification; request byte limits alone do not establish them.
 
+## Module reachability
+
+Every runtime module under `src/`, `native/backend/`, `native/ui/src/` and `native/contracts/`
+must be reachable, through `require`/`import`, from an application entry point:
+`native/backend/server.js` (the helper), `native/ui/src/main.tsx` (the interface),
+`server/index.js` or `server/keygen.js` (the licence issuer). `npm run check:architecture`
+reports any other module as `UNREACHABLE_MODULE`. Type declarations (`*.d.ts`) are exempt, and
+tests are not entry points, so a module only tests use counts as dead. Shared modules in `src/`
+are used by the helper (proofs, PSD layers, curation, licensing, Auto-Fill counts, Exif dates)
+and by the licence issuer (`license_signing.js`).
+
 ## State and ownership
 
 The project file is the persistent source of album edits. A canonical project lease serializes
