@@ -1,4 +1,4 @@
-# PRODUCT.md — Creative Hubb Album Toolkit Pro
+# PRODUCT.md — Album Studio
 
 ## Register
 
@@ -13,10 +13,11 @@ Photoshop. Keyboard-heavy; repetitive placement work measured in pages/hour.
 
 ## Purpose
 
-The album production pipeline: import a shoot → auto-fill/place photos into
-spreads → refine in the Spread Editor → proof to the client → batch-export
-true-to-PSD files through Photoshop. Primary loop: Source panel → page grid →
-next page, hundreds of times per album.
+The album production pipeline on the Mac: choose a shoot and template collections → plan
+spreads (auto-fill places the whole album in capture order) → review spreads as the client will
+→ edit any sheet in the built-in PhotoCraft editor → deliver print JPEGs and a low-res PDF
+rendered by the PhotoCraft engine. Photoshop isn't needed at any step. Primary loop: photo pool
+→ spread → next spread, hundreds of times per album.
 
 ## Brand personality
 
@@ -49,9 +50,8 @@ replacing emoji glyphs. Sentence case everywhere ("Edit spread", not
 
 ## Non-negotiables
 
-- WCAG 2.1 AA enforced by CI (axe gate, e2e/a11y.spec.js — scans every shipped
-  theme; update its THEMES list in the same commit as any theme change)
-- 196 unit + 13 e2e tests stay green through every visual change
+- WCAG 2.1 AA in both shipped themes (studio dark and studio light)
+- The shared, backend and interface test suites stay green through every visual change
 - Every existing workflow keeps working; no functionality removed for looks
 - Density is a feature: photographers want many thumbnails/controls per screen,
   macOS-comfortable but information-rich

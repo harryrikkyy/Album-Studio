@@ -85,8 +85,9 @@ Two environment settings help with testing:
 
 | Command | Checks |
 |---|---|
-| `npm run lint` | ESLint over `src/`, `test/` and `native/backend/` |
-| `npm run typecheck` | `tsc` over the shared modules (opt-in `// @ts-check`) and the interface |
+| `npm run lint` | ESLint over `src/`, `test/`, `native/backend/` and `native/contracts/`, then the readability ratchet (`native/scripts/check-readability.mjs`: no file may gain lines over 160 characters or functions above complexity 20) |
+| `npm run typecheck` | `tsc` over the shared modules and backend files that opt in with `// @ts-check`, and the interface |
+| `npm run check:architecture` | Dependency boundaries, canonical contracts and the packaged closure |
 | `node native/scripts/engine.mjs test-node` | All three application suites against the pinned CLI/helper; rejects skips |
 | `npm --prefix native/ui run build` | Production interface assets |
 | `cargo fmt --all -- --check`, `cargo test --workspace --locked --features heif` | Native workspace (in `native/photocraft`) |

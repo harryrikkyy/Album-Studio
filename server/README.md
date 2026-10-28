@@ -37,8 +37,14 @@ The response (`{ …fields, sig }`) is what gets stored in the customer's
 Firestore user doc / handed to the app; `src/license.js` verifies `sig`
 against the bundled public key on every load.
 
-## Still to do (needs the owner's Firebase project)
+## How it fits together
 
-- Point the activation flow at this signer and store `sig` in user docs.
-- Real Firebase Auth sign-in in the app, then tighten `firestore.rules`
-  off `read: if true`.
+The owner's admin panel (outside this repository) calls `/sign` when it activates or extends a
+licence, and stores the response's `sig`, `licExpiresOn` and `licActivatedOn` in the customer's
+Firestore user record. The app signs in to Firebase with Google, reads its own record, and keeps
+offline access only for a licence whose `sig` verifies against the bundled public key; an unsigned
+record opens the app online only. Firestore rules let only the owner write those fields.
+
+Known limit: the signature covers the customer's `name`, which the app refreshes from Google at
+every sign-in, so a Google profile-name change breaks offline verification until the licence is
+signed again (Extend in the admin panel does that).
