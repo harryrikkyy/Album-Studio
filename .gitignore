@@ -52,3 +52,7 @@ psd files/
 
 # Raw quality evidence lives outside git (docs/quality/ARCHIVE.md); *.log above already covers logs
 native/scripts/engine/*.bundle
+
+# Local tool and business files, never part of the app
+.kiro/
+invoice-template/
