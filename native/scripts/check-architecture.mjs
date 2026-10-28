@@ -27,6 +27,7 @@ export const defaultPolicy = {
   forbiddenPackages: ['electron', '@electron/', 'firebase-admin'],
   allowCycles: false,
   runtime: { entries: ['native/backend/server.js'], resources: ['src/license_public_key.pem', 'native/contracts/contract-manifest.json', 'native/contracts/album-studio.schema.json'], collector: 'native/scripts/collect-backend.mjs' },
+  reachability: { entries: ['native/backend/server.js', 'native/ui/src/main.tsx', 'server/index.js', 'server/keygen.js'] },
   contracts: {
     manifest: 'native/contracts/contract-manifest.json', schema: 'native/contracts/album-studio.schema.json',
     methodRegistry: { file: 'native/backend/methods.js', variable: 'methods' },
@@ -224,6 +225,23 @@ export function checkArchitecture(root = ROOT, { policy = defaultPolicy, package
       else if (path.isAbsolute(reference.spec)) add('ABSOLUTE_DEPENDENCY', 'Runtime source dependencies must stay repository-relative.', { file, spec: reference.spec })
       else if (edge.target && (edge.target.startsWith('../') || !toLayer || !fromLayer?.allows.includes(toLayer.name))) add('FORBIDDEN_LAYER', `${fromLayer?.name || 'unclassified'} must not import ${toLayer?.name || 'outside the configured source layers'}.`, { file, target: edge.target })
       else if (!edge.target && (policy.forbiddenPackages.some(name => reference.spec === name || name.endsWith('/') && reference.spec.startsWith(name)) || fromLayer?.browser && BUILTINS.has(reference.spec))) add('FORBIDDEN_PACKAGE', 'This package/builtin crosses the configured runtime boundary.', { file, spec: reference.spec })
+    }
+  }
+  if (policy.reachability) {
+    // Every module under the roots must be reachable from an application entry point. Entries
+    // outside the roots (the licence server) contribute their imports only; .d.ts files are types.
+    const reached = new Set(), queue = [...policy.reachability.entries]
+    const outgoing = file => sources.has(file) ? edges.filter(edge => edge.from === file)
+      : refsIn(sourceOf(file, fs.readFileSync(path.join(root, file), 'utf8'))).edges
+        .map(ref => ({ ...ref, target: ref.spec.startsWith('.') ? resolveLocal(root, file, ref.spec) : null }))
+    while (queue.length) {
+      const file = queue.pop()
+      if (reached.has(file) || !fs.existsSync(path.join(root, file))) continue
+      reached.add(file)
+      for (const edge of outgoing(file)) if (edge.target) queue.push(edge.target)
+    }
+    for (const file of nodes) {
+      if (!reached.has(file) && !file.endsWith('.d.ts')) add('UNREACHABLE_MODULE', 'No application entry point reaches this module; import it or delete it.', { file })
     }
   }
   const runtimeFiles = new Set(policy.runtime?.resources || []), runtimePackages = new Set(), queue = [...policy.runtime?.entries || []]

@@ -12,6 +12,7 @@ async function fixture(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
   const write = (file, text) => { fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true }); fs.writeFileSync(path.join(root, file), text) }
   const policy = JSON.parse(JSON.stringify(defaultPolicy))
+  delete policy.reachability // the miniature fixture has deliberately unimported files; one test opts in
   const manifest = {
     methods: { alpha: { owner: 'backend', params: '#/$defs/Params', result: '#/$defs/Result' }, 'shell.fixture': { owner: 'shell', params: '#/$defs/Params', result: '#/$defs/Result' } },
     events: { 'alpha.done': { data: '#/$defs/Result' }, 'shell.fixtureEvent': { data: '#/$defs/Result' } },
@@ -156,4 +157,18 @@ test('changing canonical method ownership cannot redirect an existing executor a
   f.saveManifest()
   const bad = f.check().violations.filter(item => item.code === 'METHOD_OWNER_MISMATCH')
   assert.deepEqual(bad.map(item => [item.method, item.expectedOwner]), [['alpha', 'backend'], ['shell.fixture', 'shell']])
+})
+
+test('a module no application entry point reaches is reported; type declarations and issuer-only imports are not', async t => {
+  const f = await fixture(t)
+  f.policy.reachability = { entries: ['native/backend/server.js', 'native/ui/src/main.ts', 'server/index.js'] }
+  f.write('src/orphan.js', 'module.exports = {}\n')
+  f.write('src/types.d.ts', 'export type Unused = string\n')
+  f.write('src/signing.js', 'module.exports = {}\n')
+  f.write('server/index.js', "require('../src/signing')\n")
+  const unreachable = f.check().violations.filter(v => v.code === 'UNREACHABLE_MODULE').map(v => v.file)
+  assert.ok(unreachable.includes('src/orphan.js'), JSON.stringify(unreachable))
+  for (const live of ['src/types.d.ts', 'src/signing.js', 'native/ui/src/bridge.ts', 'native/backend/methods.js']) {
+    assert.equal(unreachable.includes(live), false, live)
+  }
 })
