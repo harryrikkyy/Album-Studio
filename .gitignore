@@ -49,3 +49,6 @@ psd files/
 /native/photocraft/
 /native/ui/node_modules/
 /native/ui/dist/
+
+# Raw quality evidence lives outside git (docs/quality/ARCHIVE.md); *.log above already covers logs
+native/scripts/engine/*.bundle

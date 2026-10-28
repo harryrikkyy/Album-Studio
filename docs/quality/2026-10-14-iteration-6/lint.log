@@ -1,4 +1,0 @@
-
-> album-studio@1.0.0 lint
-> eslint "src/**/*.js" "test/**/*.js" "native/backend/**/*.js"
-

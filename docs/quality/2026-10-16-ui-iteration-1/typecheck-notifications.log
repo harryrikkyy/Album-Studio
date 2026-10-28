@@ -1,4 +1,0 @@
-
-> album-studio-ui@0.1.0 typecheck
-> tsc --noEmit && tsc --noEmit -p tsconfig.test.json
-
