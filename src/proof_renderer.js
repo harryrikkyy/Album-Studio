@@ -34,8 +34,7 @@ const crypto = require('crypto')
 // Text/shape overlays. The Spread Editor renders the SAME SVG into its stage,
 // so the preview and this composite cannot drift apart.
 const { buildOverlaySvg, overlayCacheKey } = require('./overlay_render')
-// Layer move/scale geometry, shared with the Page Editor and unit-tested
-// in test/editor_geometry.test.js.
+// Layer move/scale geometry, unit-tested in test/editor_geometry.test.js.
 const { layerBox } = require('./editor_geometry')
 
 // '#rrggbb' → sharp's background object. Returns null for anything else so
@@ -527,7 +526,7 @@ async function renderFinalComposite(job) {
 /**
  * Build the composite operations for a template's own PSD layers.
  *
- * Used when the user has hidden or faded template layers in the Page Editor —
+ * Used when template layers have been hidden or faded —
  * the flattened preview can't express that, so the page is rebuilt from the
  * layer stack instead. Photo slots are skipped here: the caller interleaves
  * the photos at their frame's position so template art above a frame still
@@ -568,11 +567,9 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
         const be = (layerEdits && layerEdits[base.id]) || {}
         return { png: base.png, ...layerBox(base, be) }
       })(),
-      // Move/scale from the Page Editor. Stored in canvas pixels, so they
-      // scale with the output like every other coordinate here.
-      // Same helper the editor's canvas and hit-test use, so a moved layer
-      // renders exactly where it was dragged. This was a second copy of the
-      // arithmetic until editor_geometry existed.
+      // Layer move/scale edits, stored in canvas pixels, so they scale with
+      // the output like every other coordinate here. editor_geometry's layerBox
+      // places them, so a moved layer renders exactly where it was put.
       _box: layerBox(node, edit),
       top: Math.round((node.y + (edit.dy || 0)) * scale),
       left: Math.round((node.x + (edit.dx || 0)) * scale),

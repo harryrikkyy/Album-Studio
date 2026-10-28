@@ -30,7 +30,7 @@ try {
   sharp = require('../src/sharp_config').getSharp()
 } catch (_) {
   try { sharp = require('sharp') } catch (e) {
-    console.error('Could not load sharp. Run under Electron:\n  ELECTRON_RUN_AS_NODE=1 npx electron scripts/colormatch.js <ref> <cand>')
+    console.error('Could not load sharp. Install dependencies with npm ci, then run:\n  node scripts/colormatch.js <ref> <cand>')
     process.exit(2)
   }
 }
@@ -91,7 +91,7 @@ async function blurredMAE(fileA, fileB, width, height) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args._.length < 2) {
-    console.error('Usage: ELECTRON_RUN_AS_NODE=1 npx electron scripts/colormatch.js <reference> <candidate> [--out dir] [--threshold N]')
+    console.error('Usage: node scripts/colormatch.js <reference> <candidate> [--out dir] [--threshold N]')
     process.exit(2)
   }
   const [refPath, candPath] = args._

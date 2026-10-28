@@ -1,17 +1,12 @@
 // @ts-check
-// editor_geometry.js — the Page Editor's pure geometry decisions.
+// editor_geometry.js — pure layer geometry: which corner moves which edge,
+// where a snap lands, which layer a click means. It began as the Electron
+// editor's arithmetic, pulled out so it could be tested directly; today the
+// proof renderer (proof_renderer.js) uses it, so a moved or scaled layer
+// renders exactly where it was placed.
 //
-// editor_renderer.js is ~1,950 lines of window script with no exports, so it
-// cannot be unit-tested as it stands. The parts most likely to be WRONG,
-// though, are not the DOM wiring — they are the small pieces of arithmetic
-// buried in pointer handlers: which corner moves which edge, where a snap
-// lands, which layer a click means. Those are pulled out here so they can be
-// tested directly, and so the renderer and the exporter cannot drift apart
-// about them.
-//
-// Two of these were already duplicated when this file was written —
-// `layerBox` existed in both editor_renderer.js and proof_renderer.js, and
-// the same class of split had already caused a real bug once this session.
+// It replaced duplicates: `layerBox` once existed both in the Electron editor
+// and in proof_renderer.js, and that kind of split had already caused a bug.
 //
 // Everything here is a plain function of its arguments: no DOM, no state.
 // Coordinates are unitless, so the same helpers serve normalized overlay
@@ -244,9 +239,8 @@
         pickAtPoint,
     }
 
-    // Loaded two ways, like overlay_render.js: required by the main process
-    // and the test suite, and pulled into the context-isolated Page Editor
-    // window as a plain <script>.
+    // Required by the proof renderer and the test suite; the guard below also
+    // allows loading as a plain <script>, as the Electron editor once did.
     if (typeof module !== 'undefined' && module.exports) module.exports = api
     if (root) root.EditorGeometry = api
 })(typeof window !== 'undefined' ? window : null)

@@ -18,11 +18,9 @@
 // Widths come from a deterministic metrics estimate (see estimateAdvance) so
 // both sides break lines at exactly the same words.
 
-// Everything below is wrapped in an IIFE: this file is loaded as a PLAIN
-// <script> in the Page Editor window, where top-level `const`/`function`
-// declarations share one script scope with editor_renderer.js. Without the
-// wrapper, generic names here (`esc`, `num`, `api`) collide with that file and
-// the whole window dies on a redeclaration SyntaxError.
+// Everything below is wrapped in an IIFE. The Electron editor loaded this file
+// as a plain <script> beside its own scripts, where generic top-level names
+// (`esc`, `num`, `api`) would collide; under CommonJS the wrapper is harmless.
 ;(function (/** @type {any} */ root) {
     'use strict'
 
@@ -102,7 +100,7 @@
 
     // ── Text metrics ────────────────────────────────────────────────
     // A real font metrics table would mean shipping and parsing font files in the
-    // main process. Instead: per-character advance ratios (multiples of font size)
+    // backend helper. Instead: per-character advance ratios (multiples of font size)
     // grouped by width class, averaged from the macOS system faces this app
     // offers. Deterministic, so the editor and the exporter wrap identically —
     // which matters far more here than absolute accuracy, because the two must
@@ -495,9 +493,9 @@
         safeFont,
     }
 
-    // Two load paths, one implementation — this is what keeps preview and
-    // export honest: the main process requires it, and the Page Editor window
-    // (context-isolated, no `require`) pulls the same file in as a <script>.
+    // One implementation, shared by the proof renderer and the exporter, keeps
+    // preview and export honest. The CommonJS guard below is all that remains
+    // of the Electron editor loading this file as a plain <script>.
     if (typeof module !== 'undefined' && module.exports) module.exports = api
     if (root) root.OverlayRender = api
 })(typeof window !== 'undefined' ? window : null)
