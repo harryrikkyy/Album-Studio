@@ -295,17 +295,53 @@ test('the strict gate runs all three suites, with coverage limits on the shared 
   const { NODE_GATE_SCRIPT } = await scripts()
   const root = require('../package.json').scripts
   const backend = require('../native/backend/package.json').scripts
-  const gate = root[NODE_GATE_SCRIPT] || ''
-  for (const step of [
+  assert.deepEqual(root[NODE_GATE_SCRIPT].split(' && '), [
     'npm run check:architecture',
     'npm run test:coverage',
     'npm --prefix native/backend run test:coverage',
     'npm --prefix native/ui test',
+  ])
+  // The limits only rise from these floors: 88/88 for the shared suite, 94/88 for the backend.
+  for (const [script, lines, branches] of [
+    [root['test:coverage'], 88, 88],
+    [backend['test:coverage'], 94, 88],
   ]) {
-    assert.ok(gate.includes(step), `${NODE_GATE_SCRIPT} runs ${step}`)
+    assert.match(script, /--experimental-test-coverage/)
+    assert.ok(
+      Number(script.match(/--test-coverage-lines=(\d+)/)?.[1]) >= lines,
+      `${script}: lines at ${lines}% or more`,
+    )
+    assert.ok(
+      Number(script.match(/--test-coverage-branches=(\d+)/)?.[1]) >= branches,
+      `${script}: branches at ${branches}% or more`,
+    )
   }
-  for (const script of [root['test:coverage'], backend['test:coverage']]) {
-    assert.match(script, /--test-coverage-lines=\d+/)
-    assert.match(script, /--test-coverage-branches=\d+/)
+})
+
+test('the strict gate hands the pinned engine and helper to npm run test:strict', async (t) => {
+  const { runNodeSuites } = await scripts()
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'as-npm-stub-')),
+    log = path.join(bin, 'npm.json')
+  t.after(() => fs.rmSync(bin, { recursive: true, force: true }))
+  // A silent, failing npm records how it was called and prints no test summaries into this suite.
+  const stub = [
+    `#!${process.execPath}`,
+    'const { argv, env } = process',
+    'const called = [argv.slice(2), env.ALBUM_STUDIO_PHOTOCRAFT_CLI, env.ALBUM_STUDIO_RENAME_CLI]',
+    `require('node:fs').writeFileSync(${JSON.stringify(log)}, JSON.stringify(called))`,
+    'process.exitCode = 1',
+  ]
+  fs.writeFileSync(path.join(bin, 'npm'), stub.join('\n') + '\n', { mode: 0o700 })
+  const previous = process.env.PATH
+  process.env.PATH = bin + path.delimiter + previous
+  try {
+    assert.throws(() => runNodeSuites({ cli: '/pinned/photocraft-cli', rename: '/pinned/rename' }), /exit 1/)
+  } finally {
+    process.env.PATH = previous
   }
+  assert.deepEqual(JSON.parse(fs.readFileSync(log, 'utf8')), [
+    ['run', 'test:strict'],
+    '/pinned/photocraft-cli',
+    '/pinned/rename',
+  ])
 })

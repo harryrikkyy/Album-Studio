@@ -240,6 +240,12 @@ export function runNodeGate({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   const rename = join(target, 'release/album-studio-rename-exclusive')
   if (!command(rename, ['--version']).includes(sha256(join(ROOT, 'native/scripts/rename-exclusive.c'))))
     throw new Error('Node integration gate requires the current atomic file helper.')
+  runNodeSuites({ cli, rename })
+  return { ...state, cli, tests: 'all Node suites completed without skipped tests' }
+}
+
+/** Runs the strict gate script against a verified engine and helper; any skipped or missing suite fails. */
+export function runNodeSuites({ cli, rename }) {
   const result = spawnSync('npm', ['run', NODE_GATE_SCRIPT], {
     cwd: ROOT,
     encoding: 'utf8',
@@ -252,7 +258,6 @@ export function runNodeGate({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   if (result.error || result.status !== 0)
     throw new Error(`Node test gate failed: ${result.error?.message || `exit ${result.status}`}`)
   assertNoSkippedTap(result.stdout, { expectedSuites: 3 })
-  return { ...state, cli, tests: 'all Node suites completed without skipped tests' }
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
