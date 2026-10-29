@@ -40,7 +40,8 @@ async function main() {
   const times = []
   const t0 = Date.now()
   for (let pg = 0; pg < PAGES; pg++) {
-    const a = (pg * 2) % 400, b = a + 1
+    const a = (pg * 2) % 400,
+      b = a + 1
     const job = {
       templatePath: path.join(ROOT, 'template.psd'), // hash key only
       templatePreviewPath: path.join(ROOT, 'template.jpg'),
@@ -63,14 +64,28 @@ async function main() {
   clearInterval(rssTimer)
 
   const sorted = [...times].sort((x, y) => x - y)
-  console.log(JSON.stringify({
-    pages: PAGES,
-    total_ms: total,
-    per_page_ms: { min: sorted[0], median: pct(sorted, 0.5), p95: pct(sorted, 0.95), max: sorted[sorted.length - 1] },
-    pages_per_s: +(PAGES / (total / 1000)).toFixed(2),
-    peak_rss_mb: Math.round(peakRss / 1024 / 1024),
-  }, null, 2))
+  console.log(
+    JSON.stringify(
+      {
+        pages: PAGES,
+        total_ms: total,
+        per_page_ms: {
+          min: sorted[0],
+          median: pct(sorted, 0.5),
+          p95: pct(sorted, 0.95),
+          max: sorted[sorted.length - 1],
+        },
+        pages_per_s: +(PAGES / (total / 1000)).toFixed(2),
+        peak_rss_mb: Math.round(peakRss / 1024 / 1024),
+      },
+      null,
+      2,
+    ),
+  )
   fs.rmSync(OUT_DIR, { recursive: true, force: true })
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

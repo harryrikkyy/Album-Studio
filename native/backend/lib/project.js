@@ -59,9 +59,14 @@ function pagesOf(d) {
 
 function setPages(d, pages) {
   const list = pages.length ? pages : [emptyPage()]
-  if (list.length > LIMITS.SPREADS) throw new Error(`The album exceeds the supported ${LIMITS.SPREADS}-spread limit. Split it into smaller projects before retrying.`)
+  if (list.length > LIMITS.SPREADS)
+    throw new Error(
+      `The album exceeds the supported ${LIMITS.SPREADS}-spread limit. Split it into smaller projects before retrying.`,
+    )
   d.albumPages = {}
-  list.forEach((p, i) => { d.albumPages[i + 1] = p })
+  list.forEach((p, i) => {
+    d.albumPages[i + 1] = p
+  })
   d.totalActivePages = list.length
 }
 
@@ -127,7 +132,8 @@ function templateEntry(t, previous) {
 }
 
 function checkSpread(pages, n) {
-  if (!Number.isInteger(n) || n < 1 || n > pages.length) throw new Error(`There is no spread ${n} (the album has ${pages.length}).`)
+  if (!Number.isInteger(n) || n < 1 || n > pages.length)
+    throw new Error(`There is no spread ${n} (the album has ${pages.length}).`)
 }
 
 /**
@@ -136,9 +142,15 @@ function checkSpread(pages, n) {
  * frame parked off the page (its photo wouldn't show). Null when the catalogue has none.
  */
 async function pickFitting(catalogue, { h, v, like, except, rng, shape }) {
-  const choices = catalogue.filter((t) => t.h === h && t.v === v && t.id !== except && (!shape || !shapeOf(t) || shapeOf(t) === shape))
+  const choices = catalogue.filter(
+    (t) => t.h === h && t.v === v && t.id !== except && (!shape || !shapeOf(t) || shapeOf(t) === shape),
+  )
   if (!choices.length) return null
-  const same = like ? choices.filter((t) => t.sourceRoot && like.sourceRoot ? t.sourceRoot === like.sourceRoot : t.collection === like.collection) : []
+  const same = like
+    ? choices.filter((t) =>
+        t.sourceRoot && like.sourceRoot ? t.sourceRoot === like.sourceRoot : t.collection === like.collection,
+      )
+    : []
   const pool = same.length ? same : choices
   const i = Math.floor(rng() * pool.length)
   const order = [...pool.slice(i), ...pool.slice(0, i)]
@@ -253,7 +265,14 @@ const OPS = {
     if (!another && cur && cur.h === h && cur.v === v) return
     const catalogue = await ctx.templates()
     const known = cur && catalogue.find((t) => t.id === cur.id)
-    const t = await pickFitting(catalogue, { h, v, like: known, except: cur && cur.id, rng: ctx.rng, shape: await albumShape(ctx) })
+    const t = await pickFitting(catalogue, {
+      h,
+      v,
+      like: known,
+      except: cur && cur.id,
+      rng: ctx.rng,
+      shape: await albumShape(ctx),
+    })
     if (!t) {
       ;(ctx.report.noTemplate ??= []).push({ n, h, v })
       return
@@ -310,7 +329,18 @@ const OPS = {
    */
   adjustPhoto(ctx, { id, adjust }) {
     if (!ctx.model.photos[id]) throw new Error(`That photo isn't in this album's folders any more (${id}).`)
-    const SLIDERS = ['exposure', 'contrast', 'saturation', 'warmth', 'tint', 'fade', 'clarity', 'sharpen', 'blur', 'vignette']
+    const SLIDERS = [
+      'exposure',
+      'contrast',
+      'saturation',
+      'warmth',
+      'tint',
+      'fade',
+      'clarity',
+      'sharpen',
+      'blur',
+      'vignette',
+    ]
     const a = {}
     for (const k of SLIDERS) {
       const v = Math.round(Math.max(-100, Math.min(100, Number((adjust || {})[k]) || 0)))
@@ -334,7 +364,11 @@ const OPS = {
    * (shown as missing) until they are replaced, so nothing is lost if it was a mistake.
    */
   setPhotoFolders(ctx, { folders }) {
-    if (!Array.isArray(folders) || !folders.length || !folders.every((f) => typeof f === 'string' && path.isAbsolute(f))) {
+    if (
+      !Array.isArray(folders) ||
+      !folders.length ||
+      !folders.every((f) => typeof f === 'string' && path.isAbsolute(f))
+    ) {
       throw new Error('An album needs at least one photo folder.')
     }
     workspaceOf(ctx.d).imageTokens = [...new Set(folders)]
@@ -350,12 +384,13 @@ const OPS = {
 
   /** Relinking is explicit: a new folder list alone cannot claim an old folder's assets. */
   relinkFolder(ctx, { kind, from, to }) {
-    if (!['photo', 'template'].includes(kind) || !path.isAbsolute(from || '') || !path.isAbsolute(to || '')) throw new Error('Choose the old and new source folders to relink.')
+    if (!['photo', 'template'].includes(kind) || !path.isAbsolute(from || '') || !path.isAbsolute(to || ''))
+      throw new Error('Choose the old and new source folders to relink.')
     const ws = workspaceOf(ctx.d)
     const key = kind === 'photo' ? 'imageTokens' : 'templateTokens'
     if (!(ws[key] || []).includes(from)) throw new Error('That source folder is not in this album.')
     relinkRoot(ctx.d, kind, from, to)
-    ws[key] = [...new Set(ws[key].map((folder) => folder === from ? to : folder))]
+    ws[key] = [...new Set(ws[key].map((folder) => (folder === from ? to : folder)))]
   },
 
   clearSpread(ctx, { n }) {
@@ -399,7 +434,14 @@ const OPS = {
 
   /** Re-plan the whole album from all its photos (undoable as one step). */
   async autoFill(ctx, opts) {
-    if ((ctx.model.identityConflicts || []).some(c => ['physical-source-alias', 'conflicting-alias-adjustment'].includes(c.reason))) throw new Error('Two source aliases refer to the same physical files with different saved identities or edits. Choose the original source folder in Album Settings before auto-fill; all saved IDs and edits were preserved.')
+    if (
+      (ctx.model.identityConflicts || []).some((c) =>
+        ['physical-source-alias', 'conflicting-alias-adjustment'].includes(c.reason),
+      )
+    )
+      throw new Error(
+        'Two source aliases refer to the same physical files with different saved identities or edits. Choose the original source folder in Album Settings before auto-fill; all saved IDs and edits were preserved.',
+      )
     // `ids`: only these photos (Best picks); otherwise every photo of the album.
     const ids = Array.isArray(opts && opts.ids) ? ctx.model.pool.filter((id) => opts.ids.includes(id)) : ctx.model.pool
     const photos = ids.map((id) => ctx.model.photos[id]).filter(Boolean)
@@ -412,18 +454,35 @@ const OPS = {
     // fits (checked a few at a time; each template is read once, then cached).
     const pages = planned.pages.filter((p) => p.template)
     for (let i = 0; i < pages.length; i += 4) {
-      await Promise.all(pages.slice(i, i + 4).map(async (p) => {
-        if (!(await offPageFrames(p.template.file)).length) return
-        const other = await pickFitting(sameShape, { h: p.template.h, v: p.template.v, like: p.template, except: p.template.id, rng: ctx.rng, shape })
-        if (other) p.template = other
-      }))
+      await Promise.all(
+        pages.slice(i, i + 4).map(async (p) => {
+          if (!(await offPageFrames(p.template.file)).length) return
+          const other = await pickFitting(sameShape, {
+            h: p.template.h,
+            v: p.template.v,
+            like: p.template,
+            except: p.template.id,
+            rng: ctx.rng,
+            shape,
+          })
+          if (other) p.template = other
+        }),
+      )
     }
     ctx.pages.length = 0
     for (const p of planned.pages) {
-      ctx.pages.push({ id: newSpreadId(), photos: p.photoIds.map((id) => photoEntry(ctx.model, id)), template: p.template ? templateEntry(p.template) : null })
+      ctx.pages.push({
+        id: newSpreadId(),
+        photos: p.photoIds.map((id) => photoEntry(ctx.model, id)),
+        template: p.template ? templateEntry(p.template) : null,
+      })
     }
     for (const key of PAGE_KEYED) workspaceOf(ctx.d)[key] = {}
-    ctx.report.autoFill = { spreads: planned.pages.length, withoutTemplate: planned.unmatched, cappedTo: planned.cappedTo }
+    ctx.report.autoFill = {
+      spreads: planned.pages.length,
+      withoutTemplate: planned.unmatched,
+      cappedTo: planned.cappedTo,
+    }
   },
 }
 
@@ -436,22 +495,32 @@ async function withProjectLease(albumPath, work, { lease: provided, kind = 'edit
   const location = await canonicalProject(albumPath)
   // A supported current file must be validated before creating lease metadata. A missing
   // public name may still belong to a bounded pending save, which is recovered under lease.
-  try { await readProject(location.file) } catch (error) { if (error.code !== 'ENOENT') throw error }
+  try {
+    await readProject(location.file)
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error
+  }
   const run = async () => {
     if (provided && provided.file !== location.file) throw new Error('The project lease belongs to another album.')
     if (!provided) require('./jobs').assertProjectIdle(location.file, location.folder)
-    const lease = provided || await acquireProjectLease(location, { kind })
+    const lease = provided || (await acquireProjectLease(location, { kind }))
     let result, failure
     try {
       await lease.assertOwned()
       await recoverProject(location.file, { assertOwned: () => lease.assertOwned() })
       await readProject(location.file)
       result = await work({ ...location, lease })
-    } catch (error) { failure = error }
+    } catch (error) {
+      failure = error
+    }
     if (!provided) {
-      try { await lease.release() } catch (release) {
-        if (failure) { failure.message += ` Project lease release also failed: ${release.message}`; failure.releaseError = release }
-        else failure = release
+      try {
+        await lease.release()
+      } catch (release) {
+        if (failure) {
+          failure.message += ` Project lease release also failed: ${release.message}`
+          failure.releaseError = release
+        } else failure = release
       }
     }
     if (failure) throw failure
@@ -465,7 +534,10 @@ function historyOf(file, revision) {
   const h = histories.get(file)
   // Another helper/editor may have saved after our last operation. Its revision must never
   // inherit undo snapshots from this process's earlier project state.
-  if (revision && h.revision && revision !== h.revision) { h.undo.length = 0; h.redo.length = 0 }
+  if (revision && h.revision && revision !== h.revision) {
+    h.undo.length = 0
+    h.redo.length = 0
+  }
   if (revision) h.revision = revision
   return h
 }
@@ -492,7 +564,8 @@ async function updateAlbum({ album: albumPath, ops }, opts = {}) {
       pages: pagesOf(d),
       rng: opts.rng || Math.random,
       report: {},
-      templates: async () => (templates ??= await listTemplates(workspaceOf(d).templateTokens, workspaceOf(d).identity)),
+      templates: async () =>
+        (templates ??= await listTemplates(workspaceOf(d).templateTokens, workspaceOf(d).identity)),
     }
     for (const o of ops) {
       const fn = Object.prototype.hasOwnProperty.call(OPS, o.op) ? OPS[o.op] : null
@@ -551,14 +624,21 @@ async function prepare(data, file, folder) {
 
 async function migrateAlbum({ album: albumPath }, { lease } = {}) {
   if (!albumPath) throw new Error('missing `album`')
-  return withProjectLease(albumPath, async ({ file, folder, lease: held }) => {
-    const { data, revision } = await readProject(file)
-    const h = historyOf(file, revision)
-    const before = JSON.stringify(data)
-    await prepare(data, file, folder)
-    if (JSON.stringify(data) !== before) { await held.assertOwned(); h.revision = await writeProject(file, data, revision, held) }
-    return openAlbum({ path: albumPath })
-  }, { lease, kind: 'migration' })
+  return withProjectLease(
+    albumPath,
+    async ({ file, folder, lease: held }) => {
+      const { data, revision } = await readProject(file)
+      const h = historyOf(file, revision)
+      const before = JSON.stringify(data)
+      await prepare(data, file, folder)
+      if (JSON.stringify(data) !== before) {
+        await held.assertOwned()
+        h.revision = await writeProject(file, data, revision, held)
+      }
+      return openAlbum({ path: albumPath })
+    },
+    { lease, kind: 'migration' },
+  )
 }
 
 const undo = ({ album }) => step(album, 'undo', 'redo')

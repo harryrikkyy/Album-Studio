@@ -89,12 +89,20 @@ function explain(report: Report | undefined) {
     if (t.auto) toast('info', `Spread ${t.n} now uses ${templateLabel(t.name)}, which fits its photos.`)
   }
   for (const m of report.noTemplate ?? []) {
-    toast('error', `No template in this album’s collections takes ${describeSlots(m.h, m.v)} photos. Spread ${m.n} keeps its template; photos without a frame won’t show.`, 9000)
+    toast(
+      'error',
+      `No template in this album’s collections takes ${describeSlots(m.h, m.v)} photos. Spread ${m.n} keeps its template; photos without a frame won’t show.`,
+      9000,
+    )
   }
 }
 
-export function undo() { return step('album.undo', 'Nothing to undo.') }
-export function redo() { return step('album.redo', 'Nothing to redo.') }
+export function undo() {
+  return step('album.undo', 'Nothing to undo.')
+}
+export function redo() {
+  return step('album.redo', 'Nothing to redo.')
+}
 
 function step(method: 'album.undo' | 'album.redo', nothing: string) {
   return queued(async (a) => {
@@ -140,7 +148,14 @@ onEvent('proofs.failed', (d) => {
   if (album.value?.path !== e.album) return
   setPending([], [e.n])
   const budget = e.error.includes('retention budget') || e.error.includes('free-space reserve')
-  toast('error', budget ? 'Preview generation paused because recovery storage is full. Your album is saved. Review retained work in Settings.' : `The preview of spread ${e.n} couldn’t be drawn: ${e.error}`, 0, budget ? `preview-storage:${e.album}` : `preview:${e.album}:${e.n}`)
+  toast(
+    'error',
+    budget
+      ? 'Preview generation paused because recovery storage is full. Your album is saved. Review retained work in Settings.'
+      : `The preview of spread ${e.n} couldn’t be drawn: ${e.error}`,
+    0,
+    budget ? `preview-storage:${e.album}` : `preview:${e.album}:${e.n}`,
+  )
 })
 
 onEvent('proofs.idle', (d) => {

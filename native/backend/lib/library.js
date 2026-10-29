@@ -15,7 +15,11 @@ const file = () => path.join(require('./recent').dataDir(), 'library.json')
 async function readLibrary() {
   try {
     const d = JSON.parse(await fs.promises.readFile(file(), 'utf8'))
-    return { added: Array.isArray(d.added) ? d.added : [], hidden: Array.isArray(d.hidden) ? d.hidden : [], defaults: Array.isArray(d.defaults) ? d.defaults : null }
+    return {
+      added: Array.isArray(d.added) ? d.added : [],
+      hidden: Array.isArray(d.hidden) ? d.hidden : [],
+      defaults: Array.isArray(d.defaults) ? d.defaults : null,
+    }
   } catch (_) {
     return { added: [], hidden: [], defaults: null }
   }
@@ -32,7 +36,9 @@ async function usedByAlbums() {
         if (!uses.has(c)) uses.set(c, [])
         uses.get(c).push(r.name)
       }
-    } catch (_) { /* an unreadable album just doesn't count */ }
+    } catch (_) {
+      /* an unreadable album just doesn't count */
+    }
   }
   return uses
 }
@@ -45,17 +51,22 @@ async function libraryCollections() {
   const lib = await readLibrary()
   const uses = await usedByAlbums()
   const paths = [...new Set([...uses.keys(), ...lib.added])].filter((p) => !lib.hidden.includes(p))
-  const list = await Promise.all(paths.map(async (p) => {
-    const exists = await fs.promises.stat(p).then((s) => s.isDirectory(), () => false)
-    return {
-      path: p,
-      name: path.basename(p),
-      exists,
-      templates: exists ? (await listTemplates([p])).length : 0,
-      albums: uses.get(p) || [],
-      isDefault: lib.defaults ? lib.defaults.includes(p) : true,
-    }
-  }))
+  const list = await Promise.all(
+    paths.map(async (p) => {
+      const exists = await fs.promises.stat(p).then(
+        (s) => s.isDirectory(),
+        () => false,
+      )
+      return {
+        path: p,
+        name: path.basename(p),
+        exists,
+        templates: exists ? (await listTemplates([p])).length : 0,
+        albums: uses.get(p) || [],
+        isDefault: lib.defaults ? lib.defaults.includes(p) : true,
+      }
+    }),
+  )
   list.sort((a, b) => b.albums.length - a.albums.length || a.name.localeCompare(b.name))
   return { collections: list, defaultsChosen: !!lib.defaults }
 }

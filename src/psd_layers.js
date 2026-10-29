@@ -57,17 +57,21 @@ function getAgPsd() {
   // See note 1 in the header: allocation only, never drawing.
   // Cast to any: this is a stub, not a real 2D context. ag-psd only reads
   // width/height/data off the ImageData it allocates here — it never draws.
-  agpsd.initializeCanvas(/** @type {any} */ (
-    (/** @type {number} */ w, /** @type {number} */ h) => ({
-      width: w,
-      height: h,
-      getContext: () => ({
-        createImageData: (/** @type {number} */ a, /** @type {number} */ b) => ({
-          width: a, height: b, data: new Uint8ClampedArray(a * b * 4),
+  agpsd.initializeCanvas(
+    /** @type {any} */ (
+      (/** @type {number} */ w, /** @type {number} */ h) => ({
+        width: w,
+        height: h,
+        getContext: () => ({
+          createImageData: (/** @type {number} */ a, /** @type {number} */ b) => ({
+            width: a,
+            height: b,
+            data: new Uint8ClampedArray(a * b * 4),
+          }),
         }),
-      }),
-    })
-  ))
+      })
+    ),
+  )
   _agpsd = agpsd
   return agpsd
 }
@@ -92,7 +96,9 @@ function layerCacheDir(/** @type {string} */ psdPath) {
   try {
     const st = fs.statSync(psdPath)
     stat = `${st.size}|${st.mtimeMs}`
-  } catch (_) { /* missing file is reported by the caller */ }
+  } catch (_) {
+    /* missing file is reported by the caller */
+  }
   const key = crypto.createHash('sha1').update(`${psdPath}|${stat}`).digest('hex').slice(0, 16)
   return path.join(os.tmpdir(), 'albumstudio_psd_layers', key)
 }
@@ -107,7 +113,9 @@ async function writeLayerPng(/** @type {any} */ layer, /** @type {string} */ out
   const sharp = getSharp()
   await sharp(Buffer.from(img.data.buffer, img.data.byteOffset, img.data.length), {
     raw: { width: img.width, height: img.height, channels: 4 },
-  }).png().toFile(outPath)
+  })
+    .png()
+    .toFile(outPath)
   return outPath
 }
 
@@ -119,8 +127,12 @@ async function writeLayerPng(/** @type {any} */ layer, /** @type {string} */ out
  * are routine — so an index path is the only identifier that survives a reload
  * without collisions.
  */
-async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ dir,
-  /** @type {string} */ idPrefix, /** @type {any[]} */ out) {
+async function convertNodes(
+  /** @type {any[]} */ nodes,
+  /** @type {string} */ dir,
+  /** @type {string} */ idPrefix,
+  /** @type {any[]} */ out,
+) {
   for (let i = 0; i < nodes.length; i++) {
     const n = nodes[i]
     const id = idPrefix ? `${idPrefix}/${i}` : String(i)
@@ -129,7 +141,7 @@ async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ di
     const node = {
       id,
       name: n.name || (isGroup ? 'Group' : 'Layer'),
-      kind: isGroup ? 'group' : (n.text ? 'text' : 'raster'),
+      kind: isGroup ? 'group' : n.text ? 'text' : 'raster',
       // ag-psd reports `hidden`; the UI thinks in terms of visibility.
       visible: !n.hidden,
       opacity: typeof n.opacity === 'number' ? n.opacity : 1,
@@ -160,12 +172,18 @@ async function convertNodes(/** @type {any[]} */ nodes, /** @type {string} */ di
         // was scaled after the type was set reports the ORIGINAL size, so
         // ignoring the transform renders it visibly too small.
         sizePx: (st.fontSize || 12) * scale,
-        color: '#' + [c.r, c.g, c.b].map((v) =>
-          Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join(''),
+        color:
+          '#' +
+          [c.r, c.g, c.b]
+            .map((v) =>
+              Math.max(0, Math.min(255, Math.round(v)))
+                .toString(16)
+                .padStart(2, '0'),
+            )
+            .join(''),
         // Photoshop tracking is 1/1000 em.
         tracking: (st.tracking || 0) / 1000,
-        align: ps.justification === 'center' ? 'center'
-          : ps.justification === 'right' ? 'right' : 'left',
+        align: ps.justification === 'center' ? 'center' : ps.justification === 'right' ? 'right' : 'left',
         anchorX: tr[4],
         anchorY: tr[5],
       }
@@ -217,7 +235,9 @@ async function readPsdLayerTree(psdPath, opts = {}) {
       const cached = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
       if (cached.schema === SCHEMA_VERSION) return { ...cached, cached: true }
       // Written by an older build — fall through and re-extract.
-    } catch (_) { /* corrupt cache — fall through and rebuild */ }
+    } catch (_) {
+      /* corrupt cache — fall through and rebuild */
+    }
   }
 
   try {
@@ -234,12 +254,14 @@ async function readPsdLayerTree(psdPath, opts = {}) {
       skipThumbnail: true,
     })
 
-    let estimate = (outline.width || 0) * (outline.height || 0) * 4  // composite
+    let estimate = (outline.width || 0) * (outline.height || 0) * 4 // composite
     const measure = (/** @type {any[]} */ nodes) => {
       for (const n of nodes || []) {
-        if (n.children) { measure(n.children); continue }
-        estimate += Math.max(0, (n.right || 0) - (n.left || 0))
-          * Math.max(0, (n.bottom || 0) - (n.top || 0)) * 4
+        if (n.children) {
+          measure(n.children)
+          continue
+        }
+        estimate += Math.max(0, (n.right || 0) - (n.left || 0)) * Math.max(0, (n.bottom || 0) - (n.top || 0)) * 4
       }
     }
     measure(outline.children)
@@ -253,14 +275,16 @@ async function readPsdLayerTree(psdPath, opts = {}) {
 
     fs.mkdirSync(dir, { recursive: true })
 
-    const psd = pixelsSkipped ? outline : agpsd.readPsd(buf, {
-      useImageData: true,
-      // Layer effects/adjustments aren't reproducible from raw pixels anyway
-      // (see header), so skip the extra parsing work.
-      skipLayerImageData: false,
-      skipCompositeImageData: false,
-      skipThumbnail: true,
-    })
+    const psd = pixelsSkipped
+      ? outline
+      : agpsd.readPsd(buf, {
+          useImageData: true,
+          // Layer effects/adjustments aren't reproducible from raw pixels anyway
+          // (see header), so skip the extra parsing work.
+          skipLayerImageData: false,
+          skipCompositeImageData: false,
+          skipThumbnail: true,
+        })
 
     /** @type {any[]} */
     const layers = []
@@ -292,7 +316,9 @@ async function readPsdLayerTree(psdPath, opts = {}) {
     }
     try {
       fs.writeFileSync(manifestPath, JSON.stringify(result))
-    } catch (_) { /* cache write is best-effort; the tree is already built */ }
+    } catch (_) {
+      /* cache write is best-effort; the tree is already built */
+    }
     return result
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -313,8 +339,12 @@ async function readPsdLayerTree(psdPath, opts = {}) {
 function flattenDrawOrder(layers, edits = {}) {
   /** @type {any[]} */
   const out = []
-  const walk = (/** @type {any[]} */ nodes, /** @type {number} */ depth,
-    /** @type {boolean} */ parentVisible, /** @type {number} */ parentOpacity) => {
+  const walk = (
+    /** @type {any[]} */ nodes,
+    /** @type {number} */ depth,
+    /** @type {boolean} */ parentVisible,
+    /** @type {number} */ parentOpacity,
+  ) => {
     for (const n of nodes) {
       const edit = edits[n.id] || {}
       // Retyped text hides its own baked pixels — the stand-in draws instead.
@@ -404,7 +434,10 @@ function toPhotoshopLayerOps(layers, layerEdits) {
         if (edit.dy) op.dy = edit.dy
         if (edit.sx != null && edit.sx !== 1) op.sx = edit.sx
         if (edit.sy != null && edit.sy !== 1) op.sy = edit.sy
-        if (op.sx || op.sy) { op.w = node.w; op.h = node.h }
+        if (op.sx || op.sy) {
+          op.w = node.w
+          op.h = node.h
+        }
         // Retyped copy goes in as LIVE type: Photoshop re-renders it in the
         // template's own font, so the delivered PSD is exact — the editor's
         // stand-in was only ever a preview.

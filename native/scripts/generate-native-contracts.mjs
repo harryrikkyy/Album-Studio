@@ -5,57 +5,147 @@ import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex')
-const variant = name => name.split(/[._-]/).map(part => part[0].toUpperCase() + part.slice(1)).join('')
+const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex')
+const variant = (name) =>
+  name
+    .split(/[._-]/)
+    .map((part) => part[0].toUpperCase() + part.slice(1))
+    .join('')
 export function nativeContracts(root = ROOT) {
   const folder = path.join(root, 'native/contracts')
   const schema = fs.readFileSync(path.join(folder, 'album-studio.schema.json'))
   const manifest = fs.readFileSync(path.join(folder, 'contract-manifest.json'))
   const document = JSON.parse(schema)
-  const allowed = new Set(['$ref', 'type', 'const', 'enum', 'anyOf', 'oneOf', 'minimum', 'maximum', 'minLength', 'maxLength', 'pattern', 'minItems', 'maxItems', 'uniqueItems', 'items', 'properties', 'required', 'additionalProperties', 'maxProperties', 'propertyNames', 'description', 'title'])
-  const inspect = node => {
+  const allowed = new Set([
+    '$ref',
+    'type',
+    'const',
+    'enum',
+    'anyOf',
+    'oneOf',
+    'minimum',
+    'maximum',
+    'minLength',
+    'maxLength',
+    'pattern',
+    'minItems',
+    'maxItems',
+    'uniqueItems',
+    'items',
+    'properties',
+    'required',
+    'additionalProperties',
+    'maxProperties',
+    'propertyNames',
+    'description',
+    'title',
+  ])
+  const inspect = (node) => {
     if (typeof node === 'boolean') return
-    if (!node || typeof node !== 'object' || Array.isArray(node)) throw Error('A native schema node must be an object or boolean.')
+    if (!node || typeof node !== 'object' || Array.isArray(node))
+      throw Error('A native schema node must be an object or boolean.')
     for (const key of Object.keys(node)) if (!allowed.has(key)) throw Error(`Unsupported native schema keyword: ${key}`)
-    if (node.type !== undefined && !['integer', 'number', 'string', 'boolean', 'null', 'array', 'object'].includes(node.type)) throw Error('Unsupported native schema type.')
-    const primitive = value => value === null || ['string', 'boolean', 'number'].includes(typeof value)
-    if (Object.hasOwn(node, 'const') && !primitive(node.const) || node.enum && !node.enum.every(primitive)) throw Error('Canonical discriminators must be primitive values in JS and Rust.')
-    if (node.$ref && (!/^#\/\$defs\/[^/]+$/.test(node.$ref) || !Object.hasOwn(document.$defs, node.$ref.slice(8)))) throw Error(`Unresolved native schema reference: ${node.$ref}`)
-    if (node.uniqueItems && !['integer', 'number', 'string', 'boolean', 'null'].includes(node.items?.type) && !(node.items?.enum?.every(value => value === null || ['number', 'string', 'boolean'].includes(typeof value)))) throw Error('Native uniqueItems supports primitive item policies only.')
-    for (const key of ['items', 'additionalProperties', 'propertyNames']) if (node[key] !== undefined) inspect(node[key])
+    if (
+      node.type !== undefined &&
+      !['integer', 'number', 'string', 'boolean', 'null', 'array', 'object'].includes(node.type)
+    )
+      throw Error('Unsupported native schema type.')
+    const primitive = (value) => value === null || ['string', 'boolean', 'number'].includes(typeof value)
+    if ((Object.hasOwn(node, 'const') && !primitive(node.const)) || (node.enum && !node.enum.every(primitive)))
+      throw Error('Canonical discriminators must be primitive values in JS and Rust.')
+    if (node.$ref && (!/^#\/\$defs\/[^/]+$/.test(node.$ref) || !Object.hasOwn(document.$defs, node.$ref.slice(8))))
+      throw Error(`Unresolved native schema reference: ${node.$ref}`)
+    if (
+      node.uniqueItems &&
+      !['integer', 'number', 'string', 'boolean', 'null'].includes(node.items?.type) &&
+      !node.items?.enum?.every((value) => value === null || ['number', 'string', 'boolean'].includes(typeof value))
+    )
+      throw Error('Native uniqueItems supports primitive item policies only.')
+    for (const key of ['items', 'additionalProperties', 'propertyNames'])
+      if (node[key] !== undefined) inspect(node[key])
     for (const item of Object.values(node.properties || {})) inspect(item)
     for (const item of node.anyOf || node.oneOf || []) inspect(item)
   }
   for (const node of Object.values(document.$defs)) inspect(node)
   const methods = Object.entries(JSON.parse(manifest).methods).sort(([a], [b]) => a.localeCompare(b))
   for (const [name, method] of methods) {
-    if (!['backend', 'shell'].includes(method.owner) || method.availability !== undefined && method.availability !== 'debug') throw Error(`Unsupported native method ownership/availability: ${name}`)
+    if (
+      !['backend', 'shell'].includes(method.owner) ||
+      (method.availability !== undefined && method.availability !== 'debug')
+    )
+      throw Error(`Unsupported native method ownership/availability: ${name}`)
   }
   const variants = methods.map(([name]) => variant(name))
-  if (new Set(variants).size !== variants.length || variants.some(name => !/^[A-Z][A-Za-z0-9]*$/.test(name))) throw Error('Native method variants must be unique Rust identifiers.')
-  const quote = value => JSON.stringify(value)
-  const lines = ['// Generated by native/scripts/generate-native-contracts.mjs. Do not edit.', `// schema-sha256: ${hash(schema)}`, `// manifest-sha256: ${hash(manifest)}`, '#[derive(Clone, Copy, Debug, PartialEq, Eq)]', 'pub(crate) enum Method {', ...variants.map(name => `    ${name},`), '}', 'impl Method {', '    pub(crate) fn parse(name: &str) -> Option<Self> {', '        Some(match name {', ...methods.map(([name]) => `            ${quote(name)} => Self::${variant(name)},`), '            _ => return None,', '        })', '    }', "    pub(crate) fn name(self) -> &'static str {", '        match self {', ...methods.map(([name]) => `            Self::${variant(name)} => ${quote(name)},`), '        }', '    }', '    pub(crate) fn is_backend(self) -> bool {', '        match self {', ...methods.map(([name, value]) => `            Self::${variant(name)} => ${value.owner === 'backend'},`), '        }', '    }', '    pub(crate) fn is_debug(self) -> bool {', '        match self {', ...methods.map(([name, value]) => `            Self::${variant(name)} => ${value.availability === 'debug'},`), '        }', '    }', '}', '']
-  return new Map([['generated.rs', lines.join('\n')], ['schema.json', schema], ['manifest.json', manifest], ['examples.json', fs.readFileSync(path.join(folder, 'examples.json'))], ['mod.rs', fs.readFileSync(path.join(folder, 'native-runtime.rs'))]])
+  if (new Set(variants).size !== variants.length || variants.some((name) => !/^[A-Z][A-Za-z0-9]*$/.test(name)))
+    throw Error('Native method variants must be unique Rust identifiers.')
+  const quote = (value) => JSON.stringify(value)
+  const lines = [
+    '// Generated by native/scripts/generate-native-contracts.mjs. Do not edit.',
+    `// schema-sha256: ${hash(schema)}`,
+    `// manifest-sha256: ${hash(manifest)}`,
+    '#[derive(Clone, Copy, Debug, PartialEq, Eq)]',
+    'pub(crate) enum Method {',
+    ...variants.map((name) => `    ${name},`),
+    '}',
+    'impl Method {',
+    '    pub(crate) fn parse(name: &str) -> Option<Self> {',
+    '        Some(match name {',
+    ...methods.map(([name]) => `            ${quote(name)} => Self::${variant(name)},`),
+    '            _ => return None,',
+    '        })',
+    '    }',
+    "    pub(crate) fn name(self) -> &'static str {",
+    '        match self {',
+    ...methods.map(([name]) => `            Self::${variant(name)} => ${quote(name)},`),
+    '        }',
+    '    }',
+    '    pub(crate) fn is_backend(self) -> bool {',
+    '        match self {',
+    ...methods.map(([name, value]) => `            Self::${variant(name)} => ${value.owner === 'backend'},`),
+    '        }',
+    '    }',
+    '    pub(crate) fn is_debug(self) -> bool {',
+    '        match self {',
+    ...methods.map(([name, value]) => `            Self::${variant(name)} => ${value.availability === 'debug'},`),
+    '        }',
+    '    }',
+    '}',
+    '',
+  ]
+  return new Map([
+    ['generated.rs', lines.join('\n')],
+    ['schema.json', schema],
+    ['manifest.json', manifest],
+    ['examples.json', fs.readFileSync(path.join(folder, 'examples.json'))],
+    ['mod.rs', fs.readFileSync(path.join(folder, 'native-runtime.rs'))],
+  ])
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    let engine, root = ROOT, check = false
+    let engine,
+      root = ROOT,
+      check = false
     for (let i = 2; i < process.argv.length; i++) {
       if (process.argv[i] === '--check') check = true
       else if (process.argv[i] === '--engine' && process.argv[i + 1]) engine = path.resolve(process.argv[++i])
       else if (process.argv[i] === '--root' && process.argv[i + 1]) root = path.resolve(process.argv[++i])
       else throw Error(`Unknown native contract option: ${process.argv[i]}`)
     }
-    if (!engine || !fs.existsSync(path.join(engine, 'apps/album-studio/Cargo.toml'))) throw Error('Pass --engine with a verified Album Studio engine checkout.')
+    if (!engine || !fs.existsSync(path.join(engine, 'apps/album-studio/Cargo.toml')))
+      throw Error('Pass --engine with a verified Album Studio engine checkout.')
     const target = path.join(engine, 'apps/album-studio/src/contracts')
     const files = nativeContracts(root)
     if (!check) fs.mkdirSync(target, { recursive: true })
     for (const [name, bytes] of files) {
       const file = path.join(target, name)
       if (check) {
-        if (!fs.existsSync(file) || !fs.readFileSync(file).equals(Buffer.from(bytes))) throw Error(`Native contracts differ: ${name}. Regenerate and review the engine diff.`)
+        if (!fs.existsSync(file) || !fs.readFileSync(file).equals(Buffer.from(bytes)))
+          throw Error(`Native contracts differ: ${name}. Regenerate and review the engine diff.`)
       } else fs.writeFileSync(file, bytes)
     }
     process.stdout.write(`Native contracts ${check ? 'match' : 'generated'}: ${files.size} files.\n`)
-  } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1 }
+  } catch (error) {
+    process.stderr.write(`${error.message}\n`)
+    process.exitCode = 1
+  }
 }

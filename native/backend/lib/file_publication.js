@@ -10,84 +10,197 @@ const { leaseHeld } = require('./project_lock')
 const MAX_JOURNAL = 1024 * 1024
 const SHA = /^[a-f0-9]{64}$/
 const STAGE = /^files-[a-f0-9-]{36}$/
-const stat = file => fs.promises.lstat(file, { bigint: true }).catch(error => { if (error.code === 'ENOENT') return null; throw error })
+const stat = (file) =>
+  fs.promises.lstat(file, { bigint: true }).catch((error) => {
+    if (error.code === 'ENOENT') return null
+    throw error
+  })
 const sameNode = (a, b) => !!a && !!b && String(a.dev) === String(b.dev) && String(a.ino) === String(b.ino)
 const matches = (a, b) => !!a && !!b && a.digest === b.digest && a.size === b.size && a.stamp === b.stamp
 const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === b.mode
-const changed = what => Object.assign(new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`), { code: 'PUBLICATION_CONFLICT' })
+const changed = (what) =>
+  Object.assign(
+    new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`),
+    { code: 'PUBLICATION_CONFLICT' },
+  )
 // Finder and network volumes drop these into any folder a person browses; they are never records.
-const ignorable = name => name === '.DS_Store' || name.startsWith('._')
+const ignorable = (name) => name === '.DS_Store' || name.startsWith('._')
 /** A conflict naming an entry Album Studio didn't create, and what to do about it. */
 function unexpectedEntry(folder, name) {
   const error = changed('folder listing')
-  error.message = `${folder} contains "${name}", an unexpected entry Album Studio didn't create. If you put it there, move it out `
-    + 'and try again; otherwise keep it as evidence. Existing files and recovery evidence were preserved.'
+  error.message =
+    `${folder} contains "${name}", an unexpected entry Album Studio didn't create. If you put it there, move it out ` +
+    'and try again; otherwise keep it as evidence. Existing files and recovery evidence were preserved.'
   return error
 }
 const readRecord = require('./verified_file').createVerifiedFileReader({ label: 'Publication', changed })
 const {
-  directory, syncDirectory, writeNew, writeCommitPart, copyDetached, move, boundedNames, remember, retainedRecord, removeRetired, sameIdentity,
+  directory,
+  syncDirectory,
+  writeNew,
+  writeCommitPart,
+  copyDetached,
+  move,
+  boundedNames,
+  remember,
+  retainedRecord,
+  removeRetired,
+  sameIdentity,
 } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
-const validNode = n => !!n && typeof n.dev === 'string' && typeof n.ino === 'string' && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
-const validRecord = r => !!r && typeof r.digest === 'string' && typeof r.size === 'string' && typeof r.stamp === 'string' && SHA.test(r.digest) && /^(0|[1-9]\d{0,15})$/.test(r.size || '') && BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) && /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') && validNode(r.node) && Number.isInteger(r.mode) && r.mode >= 0 && r.mode <= 0o777 && Number.isFinite(r.mtimeMs) && Number.isFinite(r.atimeMs)
-const validName = n => typeof n === 'string' && n.length > 0 && n.length <= 255 && n.isWellFormed() && !['.', '..'].includes(n) && path.basename(n) === n && !n.includes('\0') && !isPrivateName(n)
+const validNode = (n) =>
+  !!n && typeof n.dev === 'string' && typeof n.ino === 'string' && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
+const validRecord = (r) =>
+  !!r &&
+  typeof r.digest === 'string' &&
+  typeof r.size === 'string' &&
+  typeof r.stamp === 'string' &&
+  SHA.test(r.digest) &&
+  /^(0|[1-9]\d{0,15})$/.test(r.size || '') &&
+  BigInt(r.size) <= BigInt(Number.MAX_SAFE_INTEGER) &&
+  /^\d{1,16}:\d{1,16}$/.test(r.stamp || '') &&
+  validNode(r.node) &&
+  Number.isInteger(r.mode) &&
+  r.mode >= 0 &&
+  r.mode <= 0o777 &&
+  Number.isFinite(r.mtimeMs) &&
+  Number.isFinite(r.atimeMs)
+const validName = (n) =>
+  typeof n === 'string' &&
+  n.length > 0 &&
+  n.length <= 255 &&
+  n.isWellFormed() &&
+  !['.', '..'].includes(n) &&
+  path.basename(n) === n &&
+  !n.includes('\0') &&
+  !isPrivateName(n)
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
   const failure = new Error(`${error.message} File publication evidence is retained at ${retained}.`, { cause: error })
-  Object.assign(failure, { code: error.code || 'PUBLICATION_FAILED', recoveryStage: retained, recoveryJournal: path.join(retained, 'journal.json'), publicationCommitted: committed || !!error.publicationCommitted })
+  Object.assign(failure, {
+    code: error.code || 'PUBLICATION_FAILED',
+    recoveryStage: retained,
+    recoveryJournal: path.join(retained, 'journal.json'),
+    publicationCommitted: committed || !!error.publicationCommitted,
+  })
   if (error.publicationRestored) failure.publicationRestored = true
   if (error.recoveryRequired) failure.recoveryRequired = true
   if (failure.publicationCommitted && result) Object.assign(failure, result)
   return failure
 }
 async function context(folder, capabilities) {
-  if (typeof folder !== 'string' || !path.isAbsolute(folder) || !capabilities || typeof capabilities.assertOwned !== 'function' || typeof capabilities.assertTarget !== 'function' || capabilities.validateSnapshot !== undefined && typeof capabilities.validateSnapshot !== 'function' || capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function') throw new Error('File publication requires an absolute directory and owned namespace/domain capabilities.')
+  if (
+    typeof folder !== 'string' ||
+    !path.isAbsolute(folder) ||
+    !capabilities ||
+    typeof capabilities.assertOwned !== 'function' ||
+    typeof capabilities.assertTarget !== 'function' ||
+    (capabilities.validateSnapshot !== undefined && typeof capabilities.validateSnapshot !== 'function') ||
+    (capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function')
+  )
+    throw new Error('File publication requires an absolute directory and owned namespace/domain capabilities.')
   await capabilities.assertOwned()
-  const physical = await fs.promises.realpath(folder), parentNode = await directory(physical)
+  const physical = await fs.promises.realpath(folder),
+    parentNode = await directory(physical)
   assertPublicationParent(physical)
-  const metadata = path.join(physical, '.album-studio-publications'), metadataNode = await directory(metadata, true)
+  const metadata = path.join(physical, '.album-studio-publications'),
+    metadataNode = await directory(metadata, true)
   return { logical: folder, physical, parentNode, metadata, metadataNode, capabilities }
 }
 async function assertContext(c, target) {
   await c.capabilities.assertOwned()
   if (target) await c.capabilities.assertTarget(path.join(c.logical, target))
-  if (await fs.promises.realpath(c.logical) !== c.physical || !sameNode(await directory(c.physical), c.parentNode) || !sameNode(await directory(c.metadata), c.metadataNode)) throw changed('publication directory identity')
+  if (
+    (await fs.promises.realpath(c.logical)) !== c.physical ||
+    !sameNode(await directory(c.physical), c.parentNode) ||
+    !sameNode(await directory(c.metadata), c.metadataNode)
+  )
+    throw changed('publication directory identity')
 }
 async function checkSnapshot(c) {
   await assertContext(c)
   if (c.capabilities.validateSnapshot) await c.capabilities.validateSnapshot()
-  if (c.capabilities.isCancelled && c.capabilities.isCancelled()) throw Object.assign(new Error('File publication was cancelled before commit.'), { code: 'PUBLICATION_CANCELLED' })
+  if (c.capabilities.isCancelled && c.capabilities.isCancelled())
+    throw Object.assign(new Error('File publication was cancelled before commit.'), { code: 'PUBLICATION_CANCELLED' })
 }
 async function journalOf(c, stage, known, contents = true) {
-  const stageNode = await directory(stage), raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
+  const stageNode = await directory(stage),
+    raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
   if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
   let journal
-  try { journal = JSON.parse(raw.bytes) } catch (_) { throw changed('publication journal JSON') }
-  if (!journal || journal.version !== 1 || journal.folder !== c.physical || journal.name !== path.basename(stage) || !STAGE.test(journal.name) || !sameNode(journal.parentNode, c.parentNode) || !sameNode(journal.metadataNode, c.metadataNode) || !sameNode(journal.stageNode, stageNode) || !validNode(journal.commitNode) || !Array.isArray(journal.entries) || !journal.entries.length || journal.entries.length > 256) throw changed('publication journal identity')
-  const names = new Set(), allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
+  try {
+    journal = JSON.parse(raw.bytes)
+  } catch (_) {
+    throw changed('publication journal JSON')
+  }
+  if (
+    !journal ||
+    journal.version !== 1 ||
+    journal.folder !== c.physical ||
+    journal.name !== path.basename(stage) ||
+    !STAGE.test(journal.name) ||
+    !sameNode(journal.parentNode, c.parentNode) ||
+    !sameNode(journal.metadataNode, c.metadataNode) ||
+    !sameNode(journal.stageNode, stageNode) ||
+    !validNode(journal.commitNode) ||
+    !Array.isArray(journal.entries) ||
+    !journal.entries.length ||
+    journal.entries.length > 256
+  )
+    throw changed('publication journal identity')
+  const names = new Set(),
+    allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
   for (const [i, entry] of journal.entries.entries()) {
-    if (!entry || !validName(entry.name) || names.has(entry.name) || entry.before !== null && !validRecord(entry.before) || !validRecord(entry.after)) throw changed('publication entry identity')
+    if (
+      !entry ||
+      !validName(entry.name) ||
+      names.has(entry.name) ||
+      (entry.before !== null && !validRecord(entry.before)) ||
+      !validRecord(entry.after)
+    )
+      throw changed('publication entry identity')
     names.add(entry.name)
     for (const prefix of ['old', 'next', 'install', 'captured', 'discard']) {
       const name = `${prefix}-${i}`
       allowed.add(name)
       if (!contents) continue
-      const actual = await retainedRecord(known, path.join(stage, name)), expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
-      if (!expected && actual || expected && ['old', 'next'].includes(prefix) && !actual || actual && !(prefix === 'old' || prefix === 'next' ? matches(actual, expected) && !(actual.mode & 0o222) : owned(actual, expected))) throw changed(`retained publication ${name}`)
+      const actual = await retainedRecord(known, path.join(stage, name)),
+        expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
+      if (
+        (!expected && actual) ||
+        (expected && ['old', 'next'].includes(prefix) && !actual) ||
+        (actual &&
+          !(prefix === 'old' || prefix === 'next'
+            ? matches(actual, expected) && !(actual.mode & 0o222)
+            : owned(actual, expected)))
+      )
+        throw changed(`retained publication ${name}`)
     }
   }
   const present = await boundedNames(stage)
   for (const name of present) {
     if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw unexpectedEntry(stage, name)
     const info = await stat(path.join(stage, name))
-    if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n || name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL)) throw changed('publication recovery file identity')
+    if (
+      !info ||
+      !info.isFile() ||
+      info.isSymbolicLink() ||
+      info.nlink !== 1n ||
+      (name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL))
+    )
+      throw changed('publication recovery file identity')
   }
   const marker = await readRecord(path.join(stage, 'commit.json'), MAX_JOURNAL, true)
   if (marker) {
-    if (!sameNode(marker.node, journal.commitNode) || marker.mode & 0o222) throw changed('durable publication commit identity')
+    if (!sameNode(marker.node, journal.commitNode) || marker.mode & 0o222)
+      throw changed('durable publication commit identity')
     let value
-    try { value = JSON.parse(marker.bytes) } catch (_) { throw changed('publication commit JSON') }
-    if (!value || value.version !== 1 || value.journal !== raw.digest) throw changed('exact publication commit revision')
+    try {
+      value = JSON.parse(marker.bytes)
+    } catch (_) {
+      throw changed('publication commit JSON')
+    }
+    if (!value || value.version !== 1 || value.journal !== raw.digest)
+      throw changed('exact publication commit revision')
   }
   return { journal, digest: raw.digest, committed: !!marker, names: present }
 }
@@ -96,23 +209,38 @@ async function inspect(c, journal, pending) {
   const results = []
   for (const [i, entry] of journal.entries.entries()) {
     await assertContext(c, entry.name)
-    const target = path.join(c.physical, entry.name), info = await stat(target)
-    const current = !info ? null : info.isFile() && !info.isSymbolicLink() && info.nlink === 1n ? await readRecord(target, undefined, false, { expectedDigest: entry.after.digest }) : { foreign: true }
-    const old = matches(current, entry.before), next = owned(current, entry.after)
+    const target = path.join(c.physical, entry.name),
+      info = await stat(target)
+    const current = !info
+      ? null
+      : info.isFile() && !info.isSymbolicLink() && info.nlink === 1n
+        ? await readRecord(target, undefined, false, { expectedDigest: entry.after.digest })
+        : { foreign: true }
+    const old = matches(current, entry.before),
+      next = owned(current, entry.after)
     if (pending && current && !old && !next) throw changed(`manual or unrelated public file ${target}`)
     results.push({ i, entry, target, current, old, next })
   }
   return results
 }
 async function retire(c, stage, known) {
-  await journalOf(c, stage, known); await assertContext(c)
-  const history = path.join(c.metadata, 'history'); await directory(history, true)
-  const destination = path.join(history, path.basename(stage)), before = await stat(stage)
-  try { await move(stage, destination) } catch (error) {
-    if (!await stat(stage) && sameNode(before, await stat(destination))) throw failureAt(destination, error)
+  await journalOf(c, stage, known)
+  await assertContext(c)
+  const history = path.join(c.metadata, 'history')
+  await directory(history, true)
+  const destination = path.join(history, path.basename(stage)),
+    before = await stat(stage)
+  try {
+    await move(stage, destination)
+  } catch (error) {
+    if (!(await stat(stage)) && sameNode(before, await stat(destination))) throw failureAt(destination, error)
     throw error
   }
-  try { await journalOf(c, destination, known) } catch (error) { throw failureAt(destination, error) }
+  try {
+    await journalOf(c, destination, known)
+  } catch (error) {
+    throw failureAt(destination, error)
+  }
   return destination
 }
 // A publication removes the older committed histories it supersedes, those whose every file it has
@@ -126,21 +254,31 @@ async function pruneHistory(c, kept, published) {
       const stage = path.join(history, name)
       if (stage === kept || !STAGE.test(name)) continue
       const state = await journalOf(c, stage, undefined, false).catch(() => null)
-      if (!state || !state.committed || !state.journal.entries.every(entry => published.includes(entry.name))) continue
-      await assertContext(c); await removeRetired(stage, state.names)
+      if (!state || !state.committed || !state.journal.entries.every((entry) => published.includes(entry.name)))
+        continue
+      await assertContext(c)
+      await removeRetired(stage, state.names)
     }
-  } catch (_) { /* The remaining histories are retained. */ }
+  } catch (_) {
+    /* The remaining histories are retained. */
+  }
 }
 async function returnCaptured(c, stage, i, file, target, actual) {
-  if (!actual || await stat(target)) return
+  if (!actual || (await stat(target))) return
   const restore = path.join(stage, `restore-${i}-${crypto.randomUUID()}`)
-  await copyDetached(file, restore, actual); await assertContext(c)
-  try { await move(restore, target) } catch (error) { if (!['EEXIST', 'ENOTEMPTY'].includes(error.code)) throw error }
+  await copyDetached(file, restore, actual)
+  await assertContext(c)
+  try {
+    await move(restore, target)
+  } catch (error) {
+    if (!['EEXIST', 'ENOTEMPTY'].includes(error.code)) throw error
+  }
 }
 async function recoverStage(c, stage) {
   let committed = false
   try {
-    const state = await journalOf(c, stage); committed = state.committed
+    const state = await journalOf(c, stage)
+    committed = state.committed
     const entries = await inspect(c, state.journal, !committed)
     if (!committed) {
       for (const { i, entry, target, old, next } of entries.reverse()) {
@@ -150,27 +288,36 @@ async function recoverStage(c, stage) {
           if (await stat(discard)) throw changed('duplicate publication discard')
           await move(target, discard)
           const captured = await readRecord(discard)
-          if (!owned(captured, entry.after)) { await returnCaptured(c, stage, i, discard, target, captured); throw changed('public file during rollback capture') }
+          if (!owned(captured, entry.after)) {
+            await returnCaptured(c, stage, i, discard, target, captured)
+            throw changed('public file during rollback capture')
+          }
         }
         if (!old && entry.before) {
           const restore = path.join(stage, `restore-${i}-${crypto.randomUUID()}`)
           await copyDetached(path.join(stage, `old-${i}`), restore, entry.before)
-          await assertContext(c, entry.name); await move(restore, target)
+          await assertContext(c, entry.name)
+          await move(restore, target)
         }
       }
       const final = await inspect(c, state.journal, true)
-      if (final.some(({ entry, current, old }) => entry.before ? !old : !!current)) throw changed('restored publication batch')
+      if (final.some(({ entry, current, old }) => (entry.before ? !old : !!current)))
+        throw changed('restored publication batch')
     }
     return { state: committed ? 'committed' : 'restored', historyPath: await retire(c, stage) }
-  } catch (error) { throw failureAt(stage, error, committed) }
+  } catch (error) {
+    throw failureAt(stage, error, committed)
+  }
 }
 async function recoverInContext(c) {
   await assertContext(c)
-  const recovered = [], orphanStages = []
+  const recovered = [],
+    orphanStages = []
   for (const name of await boundedNames(c.metadata)) {
     if (ignorable(name)) continue
     if (name.startsWith('.prepare-')) orphanStages.push(path.join(c.metadata, name))
-    else if (STAGE.test(name)) recovered.push({ stage: path.join(c.metadata, name), ...await recoverStage(c, path.join(c.metadata, name)) })
+    else if (STAGE.test(name))
+      recovered.push({ stage: path.join(c.metadata, name), ...(await recoverStage(c, path.join(c.metadata, name))) })
     else if (['history', 'inputs'].includes(name)) await directory(path.join(c.metadata, name))
     else throw unexpectedEntry(c.metadata, name)
   }
@@ -189,14 +336,30 @@ async function pendingStage(metadata) {
 /** Whether another process is saving into this folder now, i.e. holds the folder's file lease. */
 async function saveRunning(physical) {
   // An owner that can't be checked counts as running: waiting is safer than declaring a crash.
-  return leaseHeld(path.join(physical, '.album-studio-namespace-files.json'))
-    .catch(error => { if (error.code === 'PROJECT_LOCK_UNCERTAIN') return true; throw error })
+  return leaseHeld(path.join(physical, '.album-studio-namespace-files.json')).catch((error) => {
+    if (error.code === 'PROJECT_LOCK_UNCERTAIN') return true
+    throw error
+  })
 }
-const interruptedSave = stage => Object.assign(new Error('An interrupted native save must be recovered before reading these files. '
-  + `Reopen the album's render/export plan; preserve the evidence at ${stage}.`),
-{ code: 'PUBLICATION_RECOVERY_REQUIRED', recoveryRequired: true, recoveryStage: stage, recoveryJournal: path.join(stage, 'journal.json') })
-const saveStillRunning = stage => Object.assign(new Error('A save to these files is still running. Try again when it finishes.'),
-  { code: 'PUBLICATION_IN_PROGRESS', retryable: true, recoveryStage: stage })
+const interruptedSave = (stage) =>
+  Object.assign(
+    new Error(
+      'An interrupted native save must be recovered before reading these files. ' +
+        `Reopen the album's render/export plan; preserve the evidence at ${stage}.`,
+    ),
+    {
+      code: 'PUBLICATION_RECOVERY_REQUIRED',
+      recoveryRequired: true,
+      recoveryStage: stage,
+      recoveryJournal: path.join(stage, 'journal.json'),
+    },
+  )
+const saveStillRunning = (stage) =>
+  Object.assign(new Error('A save to these files is still running. Try again when it finishes.'), {
+    code: 'PUBLICATION_IN_PROGRESS',
+    retryable: true,
+    recoveryStage: stage,
+  })
 /**
  * Read-only callers must not interpret a temporarily missing native target as a new file. A save
  * that another process is still running is waited for, up to `waitMs`; a stage nobody holds is an
@@ -204,107 +367,199 @@ const saveStillRunning = stage => Object.assign(new Error('A save to these files
  */
 async function assertFilesSettled(folder, { waitMs = 30000 } = {}) {
   let physical
-  try { physical = await fs.promises.realpath(folder) } catch (error) { if (error.code === 'ENOENT') return; throw error }
-  const metadata = path.join(physical, '.album-studio-publications'), deadline = Date.now() + waitMs
+  try {
+    physical = await fs.promises.realpath(folder)
+  } catch (error) {
+    if (error.code === 'ENOENT') return
+    throw error
+  }
+  const metadata = path.join(physical, '.album-studio-publications'),
+    deadline = Date.now() + waitMs
   for (;;) {
-    if (!await stat(metadata)) return
-    const identity = await directory(metadata), stage = await pendingStage(metadata)
+    if (!(await stat(metadata))) return
+    const identity = await directory(metadata),
+      stage = await pendingStage(metadata)
     if (!stage) {
       if (!sameNode(identity, await directory(metadata))) throw changed('native publication metadata identity')
       return
     }
-    if (!await saveRunning(physical)) throw interruptedSave(stage)
+    if (!(await saveRunning(physical))) throw interruptedSave(stage)
     if (Date.now() >= deadline) throw saveStillRunning(stage)
-    await new Promise(resolve => setTimeout(resolve, SETTLE_POLL_MS))
+    await new Promise((resolve) => setTimeout(resolve, SETTLE_POLL_MS))
   }
 }
-async function recoverFiles(folder, capabilities) { return recoverInContext(await context(folder, capabilities)) }
+async function recoverFiles(folder, capabilities) {
+  return recoverInContext(await context(folder, capabilities))
+}
 /** Whether an interrupted save left a stage in this folder's publication records. Read-only. */
 async function hasInterruptedSave(folder) {
-  const metadata = path.join(folder, '.album-studio-publications'), info = await stat(metadata)
+  const metadata = path.join(folder, '.album-studio-publications'),
+    info = await stat(metadata)
   if (!info) return false
   if (!info.isDirectory()) return true
-  return (await boundedNames(metadata)).some(name => STAGE.test(name))
+  return (await boundedNames(metadata)).some((name) => STAGE.test(name))
 }
 
 /** Sources are private regular files, streamed into independent snapshots. The caller
  * supplies exact prior records (or null), never a fresh-at-save overwrite permission. */
 async function publishFiles({ folder, entries }, capabilities) {
-  if (!Array.isArray(entries) || !entries.length || entries.length > 256 || entries.some(e => !e || !validName(e.name) || typeof e.source !== 'string' || !path.isAbsolute(e.source) || !SHA.test(e.sourceDigest || '') || e.before !== null && !validRecord(e.before)) || new Set(entries.map(e => e.name)).size !== entries.length) throw new Error('Publication requires 1–256 distinct file names, exact prior records and staged source digests.')
-  const c = await context(folder, capabilities); await recoverInContext(c); await checkSnapshot(c)
-  const before = [], sources = []
+  if (
+    !Array.isArray(entries) ||
+    !entries.length ||
+    entries.length > 256 ||
+    entries.some(
+      (e) =>
+        !e ||
+        !validName(e.name) ||
+        typeof e.source !== 'string' ||
+        !path.isAbsolute(e.source) ||
+        !SHA.test(e.sourceDigest || '') ||
+        (e.before !== null && !validRecord(e.before)),
+    ) ||
+    new Set(entries.map((e) => e.name)).size !== entries.length
+  )
+    throw new Error('Publication requires 1–256 distinct file names, exact prior records and staged source digests.')
+  const c = await context(folder, capabilities)
+  await recoverInContext(c)
+  await checkSnapshot(c)
+  const before = [],
+    sources = []
   for (const entry of entries) {
     await assertContext(c, entry.name)
-    const current = await readRecord(path.join(c.physical, entry.name), undefined, false, { expectedDigest: entry.before && entry.before.digest })
+    const current = await readRecord(path.join(c.physical, entry.name), undefined, false, {
+      expectedDigest: entry.before && entry.before.digest,
+    })
     const source = await readRecord(entry.source, undefined, false, { expectedDigest: entry.sourceDigest })
     if (entry.before ? !owned(current, entry.before) : current) throw changed(`previous revision of ${entry.name}`)
     if (!source || source.digest !== entry.sourceDigest) throw changed(`staged source ${entry.name}`)
-    before.push(current); sources.push(source)
+    before.push(current)
+    sources.push(source)
   }
-  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')), name = `files-${crypto.randomUUID()}`, stage = path.join(c.metadata, name)
+  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')),
+    name = `files-${crypto.randomUUID()}`,
+    stage = path.join(c.metadata, name)
   const known = new Map()
   const retainCopy = async (from, file, expected, mode) => {
-    const target = path.join(prepared, file), record = await copyDetached(from, target, expected, mode)
+    const target = path.join(prepared, file),
+      record = await copyDetached(from, target, expected, mode)
     await remember(known, target, record)
     return record
   }
-  let exposed = false, committed = false, result
+  let exposed = false,
+    committed = false,
+    result
   try {
     const records = []
     for (const [i, entry] of entries.entries()) {
       const next = await retainCopy(entry.source, `next-${i}`, sources[i], 0o400)
-      const after = await retainCopy(path.join(prepared, `next-${i}`), `install-${i}`, { ...next, mode: before[i] ? before[i].mode : 0o600 })
+      const after = await retainCopy(path.join(prepared, `next-${i}`), `install-${i}`, {
+        ...next,
+        mode: before[i] ? before[i].mode : 0o600,
+      })
       if (before[i]) await retainCopy(path.join(c.physical, entry.name), `old-${i}`, before[i], 0o400)
       records.push({ name: entry.name, before: before[i], after })
     }
     const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
-    const journal = { version: 1, name, folder: c.physical, parentNode: c.parentNode, metadataNode: c.metadataNode, stageNode: await directory(prepared), entries: records, commitNode }
-    const bytes = Buffer.from(JSON.stringify(journal)), revision = crypto.createHash('sha256').update(bytes).digest('hex')
+    const journal = {
+      version: 1,
+      name,
+      folder: c.physical,
+      parentNode: c.parentNode,
+      metadataNode: c.metadataNode,
+      stageNode: await directory(prepared),
+      entries: records,
+      commitNode,
+    }
+    const bytes = Buffer.from(JSON.stringify(journal)),
+      revision = crypto.createHash('sha256').update(bytes).digest('hex')
     if (bytes.length > MAX_JOURNAL) throw new Error('The publication journal exceeds its 1 MiB limit.')
-    await writeNew(path.join(prepared, 'journal.json'), bytes, 0o400); await syncDirectory(prepared)
-    const exactJournal = async () => { const state = await journalOf(c, stage, known); if (state.digest !== revision) throw changed('durable publication journal revision'); return state }
-    await checkSnapshot(c); await move(prepared, stage); exposed = true
+    await writeNew(path.join(prepared, 'journal.json'), bytes, 0o400)
+    await syncDirectory(prepared)
+    const exactJournal = async () => {
+      const state = await journalOf(c, stage, known)
+      if (state.digest !== revision) throw changed('durable publication journal revision')
+      return state
+    }
+    await checkSnapshot(c)
+    await move(prepared, stage)
+    exposed = true
     await exactJournal()
-    result = { committed: true, records: records.map(e => ({ name: e.name, ...e.after })) }
+    result = { committed: true, records: records.map((e) => ({ name: e.name, ...e.after })) }
     for (const [i, entry] of records.entries()) {
-      await checkSnapshot(c); await assertContext(c, entry.name); await exactJournal()
+      await checkSnapshot(c)
+      await assertContext(c, entry.name)
+      await exactJournal()
       // Identity checks around the moves: the captured original is re-read once captured, and the
       // published batch is re-read just before the commit marker.
-      const target = path.join(c.physical, entry.name), current = await stat(target)
-      if (entry.before ? !sameIdentity(current, entry.before) : current) throw changed(`public revision of ${entry.name}`)
+      const target = path.join(c.physical, entry.name),
+        current = await stat(target)
+      if (entry.before ? !sameIdentity(current, entry.before) : current)
+        throw changed(`public revision of ${entry.name}`)
       if (entry.before) {
         const capture = path.join(stage, `captured-${i}`)
         await move(target, capture)
         const actual = await readRecord(capture, undefined, false, { expectedDigest: entry.before.digest })
-        if (!owned(actual, entry.before)) { await returnCaptured(c, stage, i, capture, target, actual); throw changed(`atomic capture of ${entry.name}`) }
+        if (!owned(actual, entry.before)) {
+          await returnCaptured(c, stage, i, capture, target, actual)
+          throw changed(`atomic capture of ${entry.name}`)
+        }
         await remember(known, capture, actual)
       }
-      await checkSnapshot(c); await move(path.join(stage, `install-${i}`), target)
+      await checkSnapshot(c)
+      await move(path.join(stage, `install-${i}`), target)
       if (!sameIdentity(await stat(target), entry.after)) throw changed(`installed revision of ${entry.name}`)
     }
     await exactJournal()
     if ((await inspect(c, journal, true)).some(({ next }) => !next)) throw changed('published batch ownership')
     await checkSnapshot(c)
-    const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: revision })), markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
+    const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: revision })),
+      markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
     await writeCommitPart(stage, markerBytes, commitNode)
-    await checkSnapshot(c); await exactJournal()
+    await checkSnapshot(c)
+    await exactJournal()
     const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL)
-    if (!marker || marker.digest !== markerDigest || marker.size !== String(markerBytes.length) || !sameNode(marker.node, commitNode) || marker.mode & 0o222) throw changed('exact publication commit preparation')
+    if (
+      !marker ||
+      marker.digest !== markerDigest ||
+      marker.size !== String(markerBytes.length) ||
+      !sameNode(marker.node, commitNode) ||
+      marker.mode & 0o222
+    )
+      throw changed('exact publication commit preparation')
     await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
-    await exactJournal(); committed = true
+    await exactJournal()
+    committed = true
     const historyPath = await retire(c, stage, known)
-    await pruneHistory(c, historyPath, records.map(record => record.name))
+    await pruneHistory(
+      c,
+      historyPath,
+      records.map((record) => record.name),
+    )
     return { ...result, historyPath }
   } catch (error) {
-    if (!exposed && !await stat(prepared) && await stat(stage)) exposed = true
-    if (exposed && await stat(stage)) {
+    if (!exposed && !(await stat(prepared)) && (await stat(stage))) exposed = true
+    if (exposed && (await stat(stage))) {
       try {
-        const state = await journalOf(c, stage); committed = state.committed
-        const recovery = await recoverStage(c, stage); error.recoveryStage = recovery.historyPath
+        const state = await journalOf(c, stage)
+        committed = state.committed
+        const recovery = await recoverStage(c, stage)
+        error.recoveryStage = recovery.historyPath
         if (!state.committed) error.publicationRestored = true
-      } catch (recovery) { error.message += ` ${recovery.message}`; error.recoveryStage = recovery.recoveryStage || stage; error.recoveryRequired = true; if (recovery.publicationCommitted) committed = true }
+      } catch (recovery) {
+        error.message += ` ${recovery.message}`
+        error.recoveryStage = recovery.recoveryStage || stage
+        error.recoveryRequired = true
+        if (recovery.publicationCommitted) committed = true
+      }
     }
     throw failureAt(exposed ? stage : prepared, error, committed, result)
   }
 }
-module.exports = { publishFiles, recoverFiles, hasInterruptedSave, assertFilesSettled, fingerprintFile: readRecord, matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected) }
+module.exports = {
+  publishFiles,
+  recoverFiles,
+  hasInterruptedSave,
+  assertFilesSettled,
+  fingerprintFile: readRecord,
+  matchesFileRevision: (actual, expected) => validRecord(expected) && owned(actual, expected),
+}

@@ -19,19 +19,23 @@ function getAgPsd() {
   agpsd.initializeCanvas((w, h) => ({
     width: w,
     height: h,
-    getContext: () => ({ createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }) }),
+    getContext: () => ({
+      createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+    }),
   }))
   return agpsd
 }
 
 /** Visible frames with less than half their area on the page, given the canvas size. */
 function framesOffPage(width, height, frames) {
-  return frames.filter((f) => {
-    if (f.hidden || !(f.w > 0) || !(f.h > 0)) return false
-    const ix = Math.max(0, Math.min(width, f.x + f.w) - Math.max(0, f.x))
-    const iy = Math.max(0, Math.min(height, f.y + f.h) - Math.max(0, f.y))
-    return (ix * iy) / (f.w * f.h) < 0.5
-  }).map((f) => f.name)
+  return frames
+    .filter((f) => {
+      if (f.hidden || !(f.w > 0) || !(f.h > 0)) return false
+      const ix = Math.max(0, Math.min(width, f.x + f.w) - Math.max(0, f.x))
+      const iy = Math.max(0, Math.min(height, f.y + f.h) - Math.max(0, f.y))
+      return (ix * iy) / (f.w * f.h) < 0.5
+    })
+    .map((f) => f.name)
 }
 
 const memo = new Map()
@@ -51,12 +55,18 @@ async function offPageFrames(psdPath) {
   const job = (async () => {
     try {
       return JSON.parse(await fs.promises.readFile(file, 'utf8')).off
-    } catch (_) { /* not checked yet */ }
+    } catch (_) {
+      /* not checked yet */
+    }
     try {
       const { collectFrames } = require('./psd_template')
-      const psd = getAgPsd().readPsd(await readPsdBuffer(psdPath), { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
+      const psd = getAgPsd().readPsd(await readPsdBuffer(psdPath), {
+        skipLayerImageData: true,
+        skipCompositeImageData: true,
+        skipThumbnail: true,
+      })
       const off = framesOffPage(psd.width, psd.height, collectFrames(psd.children))
-      if (await contentFileKey(psdPath) !== key) throw new Error('The template changed during its frame check.')
+      if ((await contentFileKey(psdPath)) !== key) throw new Error('The template changed during its frame check.')
       await writeAtomic(file, JSON.stringify({ off }))
       return off
     } catch (_) {
@@ -64,7 +74,11 @@ async function offPageFrames(psdPath) {
     }
   })()
   memo.set(key, job)
-  try { return await job } finally { memo.delete(key) }
+  try {
+    return await job
+  } finally {
+    memo.delete(key)
+  }
 }
 
 /**

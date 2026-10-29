@@ -1,7 +1,8 @@
 // account_logic.ts — what the window says about the Creative Hubb account: why it can't open,
 // what to do next, and how long the subscription has left. Pure, so it is tested on its own.
 
-export type BlockedReason = 'not_activated' | 'expired' | 'wrong_machine' | 'wrong_account' | 'machine_binding_failed' | 'no_internet' | 'error'
+export type BlockedReason =
+  'not_activated' | 'expired' | 'wrong_machine' | 'wrong_account' | 'machine_binding_failed' | 'no_internet' | 'error'
 
 export interface Account {
   state: 'signedOut' | 'allowed' | 'blocked'
@@ -31,9 +32,17 @@ export function explainBlocked(a: Account): Explanation {
   const who = a.email || 'this account'
   switch (a.reason) {
     case 'not_activated':
-      return { title: 'Your account isn’t active yet', text: `You’re signed in as ${who}. Creative Hubb activates new accounts; once they have, choose Check again.`, retry: true }
+      return {
+        title: 'Your account isn’t active yet',
+        text: `You’re signed in as ${who}. Creative Hubb activates new accounts; once they have, choose Check again.`,
+        retry: true,
+      }
     case 'expired':
-      return { title: 'Your subscription has ended', text: `The subscription for ${who} has expired. Contact Creative Hubb to renew it, then choose Check again.`, retry: true }
+      return {
+        title: 'Your subscription has ended',
+        text: `The subscription for ${who} has expired. Contact Creative Hubb to renew it, then choose Check again.`,
+        retry: true,
+      }
     case 'wrong_machine':
       return {
         title: 'This licence is in use on another computer',
@@ -41,13 +50,29 @@ export function explainBlocked(a: Account): Explanation {
         retry: true,
       }
     case 'wrong_account':
-      return { title: 'The licence on this Mac is for another account', text: 'Connect to the internet and sign in with the account you want to use.', retry: false }
+      return {
+        title: 'The licence on this Mac is for another account',
+        text: 'Connect to the internet and sign in with the account you want to use.',
+        retry: false,
+      }
     case 'machine_binding_failed':
-      return { title: 'Album Studio couldn’t confirm this computer', text: 'Connect to the internet and choose Check again. If it still fails, contact Creative Hubb to confirm this Mac’s activation.', retry: true }
+      return {
+        title: 'Album Studio couldn’t confirm this computer',
+        text: 'Connect to the internet and choose Check again. If it still fails, contact Creative Hubb to confirm this Mac’s activation.',
+        retry: true,
+      }
     case 'no_internet':
-      return { title: 'Album Studio can’t reach Creative Hubb', text: 'There’s no internet connection, and no licence saved on this Mac yet. Connect, then choose Check again.', retry: true }
+      return {
+        title: 'Album Studio can’t reach Creative Hubb',
+        text: 'There’s no internet connection, and no licence saved on this Mac yet. Connect, then choose Check again.',
+        retry: true,
+      }
     default:
-      return { title: 'The subscription check didn’t finish', text: a.message || 'Something went wrong while checking your subscription. Try again in a moment.', retry: true }
+      return {
+        title: 'The subscription check didn’t finish',
+        text: a.message || 'Something went wrong while checking your subscription. Try again in a moment.',
+        retry: true,
+      }
   }
 }
 
@@ -62,6 +87,7 @@ export function expiryNote(daysLeft: number | undefined): string | null {
 export function subscriptionLine(a: Account): string {
   if (a.bypass) return 'Developer run: the subscription check is skipped.'
   const days = a.daysLeft ?? 0
-  const left = days > 365 ? 'over a year left' : days === 1 ? '1 day left' : days <= 0 ? 'ends today' : `${days} days left`
+  const left =
+    days > 365 ? 'over a year left' : days === 1 ? '1 day left' : days <= 0 ? 'ends today' : `${days} days left`
   return a.offline ? `Active, ${left} · checked against the licence saved on this Mac (offline)` : `Active, ${left}`
 }

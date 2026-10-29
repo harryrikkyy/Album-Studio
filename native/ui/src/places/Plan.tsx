@@ -2,8 +2,20 @@
 // browser) · inspector. Everything here edits the album; every edit can be undone.
 
 import {
-  ArrowLeftToLine, ArrowRightToLine, ChevronLeft, ChevronRight, Eraser, Ellipsis, LayoutTemplate, PanelRight,
-  PanelRightClose, Plus, Shuffle, SquarePen, Trash2, TriangleAlert,
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ChevronLeft,
+  ChevronRight,
+  Eraser,
+  Ellipsis,
+  LayoutTemplate,
+  PanelRight,
+  PanelRightClose,
+  Plus,
+  Shuffle,
+  SquarePen,
+  Trash2,
+  TriangleAlert,
 } from 'lucide-preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { allowDrop, dragging, endDrag, payloadOf, startDrag } from '../dnd'
@@ -12,7 +24,17 @@ import { plural, signature, templateLabel } from '../format'
 import { addPhotos, clearSpread, deleteSpread, insertSpread, moveSpread, shuffleTemplate } from '../plan_actions'
 import { slotsOf, templateFits } from '../plan_logic'
 import { editCurrentSpread, sheetStateOf } from '../render'
-import { album, currentSpread, goToSpread, inspectorOpen, nextSpread, planView, spreadIndex, templateBrowserOpen, toggleInspector } from '../state'
+import {
+  album,
+  currentSpread,
+  goToSpread,
+  inspectorOpen,
+  nextSpread,
+  planView,
+  spreadIndex,
+  templateBrowserOpen,
+  toggleInspector,
+} from '../state'
 import type { Spread } from '../types'
 import { Button, IconButton, Segmented } from '../ui/controls'
 import { Menu } from '../ui/Menu'
@@ -44,21 +66,38 @@ function StageHead({ s }: { s: Spread }) {
         <span class="dot" aria-hidden="true" />
         <span>{signature(h, v)}</span>
         <span class="dot" aria-hidden="true" />
-        <button type="button" class="stage__tpl" title={`${s.template?.name ?? 'No template'} — choose another (T)`} onClick={() => (templateBrowserOpen.value = !templateBrowserOpen.value)}>
+        <button
+          type="button"
+          class="stage__tpl"
+          title={`${s.template?.name ?? 'No template'} — choose another (T)`}
+          onClick={() => (templateBrowserOpen.value = !templateBrowserOpen.value)}
+        >
           {templateLabel(s.template?.name)}
         </button>
         {fits === false && s.photoIds.length ? (
-          <span class="pill pill--warn" title="The template's frames don't match the photos"><TriangleAlert size={12} /> Doesn’t fit</span>
+          <span class="pill pill--warn" title="The template's frames don't match the photos">
+            <TriangleAlert size={12} /> Doesn’t fit
+          </span>
         ) : null}
         {s.missingPhotos ? (
-          <span class="pill pill--warn"><TriangleAlert size={12} /> {plural(s.missingPhotos, 'photo')} missing</span>
+          <span class="pill pill--warn">
+            <TriangleAlert size={12} /> {plural(s.missingPhotos, 'photo')} missing
+          </span>
         ) : null}
       </div>
       <div class="stage__actions">
-        <IconButton label="Templates (T)" pressed={templateBrowserOpen.value} onClick={() => (templateBrowserOpen.value = !templateBrowserOpen.value)}>
+        <IconButton
+          label="Templates (T)"
+          pressed={templateBrowserOpen.value}
+          onClick={() => (templateBrowserOpen.value = !templateBrowserOpen.value)}
+        >
           <LayoutTemplate size={17} />
         </IconButton>
-        <IconButton label="Shuffle template (S)" disabled={!s.photoIds.length} onClick={() => void shuffleTemplate(s.n)}>
+        <IconButton
+          label="Shuffle template (S)"
+          disabled={!s.photoIds.length}
+          onClick={() => void shuffleTemplate(s.n)}
+        >
           <Shuffle size={16} />
         </IconButton>
         <Menu
@@ -67,16 +106,50 @@ function StageHead({ s }: { s: Spread }) {
           items={[
             { label: 'New spread after this', icon: <Plus size={15} />, onSelect: () => void insertSpread(s.n + 1) },
             { label: 'New spread before this', icon: <Plus size={15} />, onSelect: () => void insertSpread(s.n) },
-            { label: 'Move left', icon: <ArrowLeftToLine size={15} />, hint: '⌥←', disabled: s.n === 1, onSelect: () => void moveSpread(s.n, s.n - 1), separatorBefore: true },
-            { label: 'Move right', icon: <ArrowRightToLine size={15} />, hint: '⌥→', disabled: s.n === total, onSelect: () => void moveSpread(s.n, s.n + 1) },
-            { label: 'Clear spread', icon: <Eraser size={15} />, disabled: !s.photoIds.length && !s.template, onSelect: () => void clearSpread(s.n), separatorBefore: true },
-            { label: 'Delete spread', icon: <Trash2 size={15} />, danger: true, onSelect: () => void deleteSpread(s.n) },
+            {
+              label: 'Move left',
+              icon: <ArrowLeftToLine size={15} />,
+              hint: '⌥←',
+              disabled: s.n === 1,
+              onSelect: () => void moveSpread(s.n, s.n - 1),
+              separatorBefore: true,
+            },
+            {
+              label: 'Move right',
+              icon: <ArrowRightToLine size={15} />,
+              hint: '⌥→',
+              disabled: s.n === total,
+              onSelect: () => void moveSpread(s.n, s.n + 1),
+            },
+            {
+              label: 'Clear spread',
+              icon: <Eraser size={15} />,
+              disabled: !s.photoIds.length && !s.template,
+              onSelect: () => void clearSpread(s.n),
+              separatorBefore: true,
+            },
+            {
+              label: 'Delete spread',
+              icon: <Trash2 size={15} />,
+              danger: true,
+              onSelect: () => void deleteSpread(s.n),
+            },
           ]}
         />
-        <Button variant="primary" icon={<SquarePen size={15} />} onClick={editCurrentSpread} title="Open this spread in the editor (Return)">
+        <Button
+          variant="primary"
+          icon={<SquarePen size={15} />}
+          onClick={editCurrentSpread}
+          title="Open this spread in the editor (Return)"
+        >
           Edit spread
         </Button>
-        <IconButton id="inspector-toggle" label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'} pressed={inspectorOpen.value} onClick={toggleInspector}>
+        <IconButton
+          id="inspector-toggle"
+          label={inspectorOpen.value ? 'Hide inspector' : 'Show inspector'}
+          pressed={inspectorOpen.value}
+          onClick={toggleInspector}
+        >
           {inspectorOpen.value ? <PanelRightClose size={17} /> : <PanelRight size={17} />}
         </IconButton>
       </div>
@@ -86,14 +159,28 @@ function StageHead({ s }: { s: Spread }) {
 
 function Stage() {
   const s = currentSpread.value
-  if (!s) return <section class="stage" aria-label="Empty album plan"><div class="empty">
-    <h1 class="empty__title">Build your first spread</h1>
-    <p class="empty__text">Add a spread, then choose photos and a template. You can undo each change.</p>
-    <div class="empty__actions"><Button id="first-spread-button" variant="primary" icon={<Plus size={15} />} onClick={async () => {
-      await insertSpread(1)
-      requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
-    }}>Add the first spread</Button></div>
-  </div></section>
+  if (!s)
+    return (
+      <section class="stage" aria-label="Empty album plan">
+        <div class="empty">
+          <h1 class="empty__title">Build your first spread</h1>
+          <p class="empty__text">Add a spread, then choose photos and a template. You can undo each change.</p>
+          <div class="empty__actions">
+            <Button
+              id="first-spread-button"
+              variant="primary"
+              icon={<Plus size={15} />}
+              onClick={async () => {
+                await insertSpread(1)
+                requestAnimationFrame(() => document.getElementById('spread-heading')?.focus())
+              }}
+            >
+              Add the first spread
+            </Button>
+          </div>
+        </div>
+      </section>
+    )
   return (
     <section class={`stage ${templateBrowserOpen.value ? 'has-browser' : ''}`} aria-label={`Spread ${s.n}`}>
       <h1 class="visually-hidden">Plan the album</h1>
@@ -113,17 +200,30 @@ function Strip() {
   const [over, setOver] = useState<number | null>(null)
   const drag = dragging.value
   const pending = proofPending.value
-  useEffect(() => { if (!drag) setOver(null) }, [drag])
+  useEffect(() => {
+    if (!drag) setOver(null)
+  }, [drag])
   // Keep the current spread in view as the user moves through the album.
   useEffect(() => {
     const el = ref.current?.children[i] as HTMLElement | undefined
-    el?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    el?.scrollIntoView({
+      block: 'nearest',
+      inline: 'nearest',
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    })
   }, [i])
 
   return (
     <ol class="strip" ref={ref} aria-label="Spreads">
       {a.spreads.map((s, idx) => {
-        const mode = drag?.kind === 'spread' ? (drag.n !== s.n ? 'move' : null) : drag?.kind === 'photos' && drag.from?.n !== s.n ? 'add' : null
+        const mode =
+          drag?.kind === 'spread'
+            ? drag.n !== s.n
+              ? 'move'
+              : null
+            : drag?.kind === 'photos' && drag.from?.n !== s.n
+              ? 'add'
+              : null
         return (
           <li key={s.n}>
             <button
@@ -164,7 +264,12 @@ function Strip() {
         )
       })}
       <li>
-        <button type="button" class="strip__add" onClick={() => void insertSpread(a.spreads.length + 1)} title="Add a spread at the end">
+        <button
+          type="button"
+          class="strip__add"
+          onClick={() => void insertSpread(a.spreads.length + 1)}
+          title="Add a spread at the end"
+        >
           <Plus size={18} />
           <span class="visually-hidden">Add a spread at the end</span>
         </button>
@@ -193,9 +298,19 @@ function StatusDot({ s }: { s: Spread }) {
 
 export function Plan() {
   return (
-    <div class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'} ${planView.value === 'photos' ? 'is-pool-open' : ''}`}>
+    <div
+      class={`place place--plan ${inspectorOpen.value ? '' : 'no-inspector'} ${planView.value === 'photos' ? 'is-pool-open' : ''}`}
+    >
       <div class="plan__view-switch">
-        <Segmented label="Plan view" value={planView.value} onChange={(v) => (planView.value = v)} options={[{ value: 'spread', label: 'Spread' }, { value: 'photos', label: 'Photos' }]} />
+        <Segmented
+          label="Plan view"
+          value={planView.value}
+          onChange={(v) => (planView.value = v)}
+          options={[
+            { value: 'spread', label: 'Spread' },
+            { value: 'photos', label: 'Photos' },
+          ]}
+        />
       </div>
       <Pool />
       <Stage />

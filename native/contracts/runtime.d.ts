@@ -1,5 +1,29 @@
-import type { MethodName, MethodParams, MethodResult, EventName, EventData, ReplyEnvelope, RequestEnvelope, EventEnvelope, Definitions, ErrorData, ValidationIssue } from './types'
-export { MethodName, MethodParams, MethodResult, EventName, EventData, ReplyEnvelope, RequestEnvelope, EventEnvelope, Definitions, ErrorData, ValidationIssue }
+import type {
+  MethodName,
+  MethodParams,
+  MethodResult,
+  EventName,
+  EventData,
+  ReplyEnvelope,
+  RequestEnvelope,
+  EventEnvelope,
+  Definitions,
+  ErrorData,
+  ValidationIssue,
+} from './types'
+export {
+  MethodName,
+  MethodParams,
+  MethodResult,
+  EventName,
+  EventData,
+  ReplyEnvelope,
+  RequestEnvelope,
+  EventEnvelope,
+  Definitions,
+  ErrorData,
+  ValidationIssue,
+}
 export class ContractError extends Error {
   readonly name: 'ContractError'
   readonly code: string
@@ -7,8 +31,23 @@ export class ContractError extends Error {
   readonly issues: ValidationIssue[]
   constructor(message: string, issues?: ValidationIssue[], code?: string)
 }
-export const limits: Readonly<{ maxDepth: number; maxNodes: number; maxStringLength: number; maxTotalStringLength: number; maxSchemaSteps: number }>
-export const manifest: Readonly<{ methods: Readonly<Record<MethodName, { owner: 'backend' | 'shell'; params: { $ref: string }; result: { $ref: string }; availability?: string }>>; events: Readonly<Record<EventName, { owner: 'backend' | 'shell'; data: { $ref: string } }>>; schemaVersions: Readonly<Record<string, number | ReadonlyArray<number | string>>> }>
+export const limits: Readonly<{
+  maxDepth: number
+  maxNodes: number
+  maxStringLength: number
+  maxTotalStringLength: number
+  maxSchemaSteps: number
+}>
+export const manifest: Readonly<{
+  methods: Readonly<
+    Record<
+      MethodName,
+      { owner: 'backend' | 'shell'; params: { $ref: string }; result: { $ref: string }; availability?: string }
+    >
+  >
+  events: Readonly<Record<EventName, { owner: 'backend' | 'shell'; data: { $ref: string } }>>
+  schemaVersions: Readonly<Record<string, number | ReadonlyArray<number | string>>>
+}>
 export const schema: Readonly<Record<string, unknown>>
 export function validateRequest(request: unknown): RequestEnvelope
 export function validateParams<M extends MethodName>(method: M, params?: unknown): MethodParams<M>

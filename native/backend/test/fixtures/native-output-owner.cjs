@@ -9,15 +9,23 @@ async function main() {
   let outputs
   try {
     outputs = await acquireOutputLease(output, { kind: 'native-save-regression' })
-    await project.assertOwned(); await outputs.assertOwned()
+    await project.assertOwned()
+    await outputs.assertOwned()
     process.stdout.write(JSON.stringify({ ready: true }) + '\n')
     const input = readline.createInterface({ input: process.stdin })
-    await new Promise(resolve => { input.once('line', resolve); input.once('close', resolve) })
+    await new Promise((resolve) => {
+      input.once('line', resolve)
+      input.once('close', resolve)
+    })
     input.close()
-    await project.assertOwned(); await outputs.assertOwned()
+    await project.assertOwned()
+    await outputs.assertOwned()
   } finally {
     if (outputs) await outputs.release()
     await project.release()
   }
 }
-main().catch(error => { process.stdout.write(JSON.stringify({ ready: false, code: error.code, error: error.message }) + '\n'); process.exitCode = 1 })
+main().catch((error) => {
+  process.stdout.write(JSON.stringify({ ready: false, code: error.code, error: error.message }) + '\n')
+  process.exitCode = 1
+})

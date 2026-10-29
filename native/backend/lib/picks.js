@@ -15,34 +15,65 @@ const { readEvidence, publishExclusive, sourceIdentity } = require('./raw')
 
 const VERSION = 3
 const curation = () => require('../../../src/curation')
-const sameIdentity = (a, b) => a && b && ['dev', 'ino', 'size', 'mode', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
+const sameIdentity = (a, b) =>
+  a && b && ['dev', 'ino', 'size', 'mode', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
 async function unchangedCopy(photo) {
-  return sameIdentity(photo.identity, await sourceIdentity(photo.file)) && await fileDigest(photo.file) === photo.digest && sameIdentity(photo.identity, await sourceIdentity(photo.file))
+  return (
+    sameIdentity(photo.identity, await sourceIdentity(photo.file)) &&
+    (await fileDigest(photo.file)) === photo.digest &&
+    sameIdentity(photo.identity, await sourceIdentity(photo.file))
+  )
 }
 
 async function thumbnailEvidence(folder) {
   const survey = await surveyFolder(folder, { includeEvidence: true })
-  if (!survey.exists || survey.missing.length) throw new Error(`The photo previews in ${folder} changed or could not be verified. Refresh them and resolve any edited preview before scoring.`)
+  if (!survey.exists || survey.missing.length)
+    throw new Error(
+      `The photo previews in ${folder} changed or could not be verified. Refresh them and resolve any edited preview before scoring.`,
+    )
   const photos = survey.evidence.sort((a, b) => a.thumb.localeCompare(b.thumb))
-  const key = crypto.createHash('sha256').update(JSON.stringify([path.resolve(folder), VERSION, photos])).digest('hex')
+  const key = crypto
+    .createHash('sha256')
+    .update(JSON.stringify([path.resolve(folder), VERSION, photos]))
+    .digest('hex')
   return { photos, key }
 }
 async function unchangedThumbnails(folder, expected) {
-  if ((await thumbnailEvidence(folder)).key !== expected) throw new Error(`The originals or previews in ${folder} changed during scoring. Retry after they stop changing.`)
+  if ((await thumbnailEvidence(folder)).key !== expected)
+    throw new Error(`The originals or previews in ${folder} changed during scoring. Retry after they stop changing.`)
 }
 async function cachedScores(file, key) {
   const record = await readEvidence(`${file}.evidence`)
-  const present = await fs.promises.lstat(file).then(() => true, (error) => { if (error.code === 'ENOENT') return false; throw error })
+  const present = await fs.promises.lstat(file).then(
+    () => true,
+    (error) => {
+      if (error.code === 'ENOENT') return false
+      throw error
+    },
+  )
   if (!present && !record) return null
-  if (!present || !record || record.version !== VERSION || record.key !== key || !/^[a-f0-9]{64}$/.test(record.digest) || await fileDigest(file) !== record.digest) throw new Error(`The photo-score cache ${file} was edited or cannot be verified. Its bytes have been preserved; rebuild in a new cache folder.`)
+  if (
+    !present ||
+    !record ||
+    record.version !== VERSION ||
+    record.key !== key ||
+    !/^[a-f0-9]{64}$/.test(record.digest) ||
+    (await fileDigest(file)) !== record.digest
+  )
+    throw new Error(
+      `The photo-score cache ${file} was edited or cannot be verified. Its bytes have been preserved; rebuild in a new cache folder.`,
+    )
   const scores = await readEvidence(file, 64 * 1024 * 1024)
-  if (!Array.isArray(scores) || await fileDigest(file) !== record.digest) throw new Error(`The photo-score cache ${file} changed while it was read. Its bytes have been preserved.`)
+  if (!Array.isArray(scores) || (await fileDigest(file)) !== record.digest)
+    throw new Error(`The photo-score cache ${file} changed while it was read. Its bytes have been preserved.`)
   return scores
 }
 async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
   await fs.promises.mkdir(path.dirname(cacheFile), { recursive: true })
   const stage = await fs.promises.mkdtemp(path.join(path.dirname(cacheFile), '.score-'))
-  const photoDir = path.join(stage, 'photos'), scoresFile = path.join(stage, 'scores.json'), metaFile = path.join(stage, 'evidence.json')
+  const photoDir = path.join(stage, 'photos'),
+    scoresFile = path.join(stage, 'scores.json'),
+    metaFile = path.join(stage, 'evidence.json')
   const copied = []
   let preserveCopies = false
   await fs.promises.mkdir(photoDir)
@@ -52,30 +83,60 @@ async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
       const file = path.join(photoDir, path.basename(photo.thumb))
       await fs.promises.copyFile(photo.thumb, file, fs.constants.COPYFILE_EXCL)
       await fs.promises.chmod(file, 0o400)
-      if ((await fs.promises.lstat(file)).mode & 0o222) throw new Error('The scoring snapshot cannot be protected on this filesystem. Use a volume with file-permission support.')
+      if ((await fs.promises.lstat(file)).mode & 0o222)
+        throw new Error(
+          'The scoring snapshot cannot be protected on this filesystem. Use a volume with file-permission support.',
+        )
       const copy = { file, digest: photo.digest, identity: await sourceIdentity(file) }
       copied.push(copy)
-      if (await fileDigest(file) !== photo.digest || await fileDigest(photo.thumb) !== photo.digest) throw new Error(`The preview ${photo.thumb} changed while its scoring snapshot was made.`)
-      if (!await unchangedCopy(copy)) throw new Error(`The scoring snapshot ${file} changed while it was verified. Its unexpected bytes have been preserved.`)
+      if ((await fileDigest(file)) !== photo.digest || (await fileDigest(photo.thumb)) !== photo.digest)
+        throw new Error(`The preview ${photo.thumb} changed while its scoring snapshot was made.`)
+      if (!(await unchangedCopy(copy)))
+        throw new Error(
+          `The scoring snapshot ${file} changed while it was verified. Its unexpected bytes have been preserved.`,
+        )
       originals.set(file, photo.thumb)
     }
     await unchangedThumbnails(folder, snapshot.key)
     let features
-    try { features = await curation().analyzeFolder(photoDir, (p) => progress({ ...p, file: originals.get(p.file) || p.file })) }
-    catch (error) { preserveCopies = true; throw new Error(`The scoring snapshot could not be analysed safely; its private files have been preserved. ${error.message}`, { cause: error }) }
-    for (const photo of copied) if (!await unchangedCopy(photo)) throw new Error(`The scoring snapshot ${photo.file} changed during analysis. Its unexpected bytes have been preserved.`)
+    try {
+      features = await curation().analyzeFolder(photoDir, (p) =>
+        progress({ ...p, file: originals.get(p.file) || p.file }),
+      )
+    } catch (error) {
+      preserveCopies = true
+      throw new Error(
+        `The scoring snapshot could not be analysed safely; its private files have been preserved. ${error.message}`,
+        { cause: error },
+      )
+    }
+    for (const photo of copied)
+      if (!(await unchangedCopy(photo)))
+        throw new Error(
+          `The scoring snapshot ${photo.file} changed during analysis. Its unexpected bytes have been preserved.`,
+        )
     const scores = features.map((f) => ({
-      thumb: originals.get(f.filePath), base: f.baseName, folder, orient: f.orient === 'v' ? 'v' : 'h',
-      sharpness: Math.round(f.sharpness * 10) / 10, exposure: Math.round(f.exposureScore * 1000) / 1000,
-      blackPct: Math.round(f.blackPct * 1000) / 1000, whitePct: Math.round(f.whitePct * 1000) / 1000,
-      hash: f.pHash, ...(f.error ? { error: f.error } : {}),
+      thumb: originals.get(f.filePath),
+      base: f.baseName,
+      folder,
+      orient: f.orient === 'v' ? 'v' : 'h',
+      sharpness: Math.round(f.sharpness * 10) / 10,
+      exposure: Math.round(f.exposureScore * 1000) / 1000,
+      blackPct: Math.round(f.blackPct * 1000) / 1000,
+      whitePct: Math.round(f.whitePct * 1000) / 1000,
+      hash: f.pHash,
+      ...(f.error ? { error: f.error } : {}),
     }))
     await unchangedThumbnails(folder, snapshot.key)
     await fs.promises.writeFile(scoresFile, JSON.stringify(scores), { flag: 'wx' })
     const digest = await fileDigest(scoresFile)
-    await fs.promises.writeFile(metaFile, JSON.stringify({ version: VERSION, key: snapshot.key, digest }), { flag: 'wx' })
+    await fs.promises.writeFile(metaFile, JSON.stringify({ version: VERSION, key: snapshot.key, digest }), {
+      flag: 'wx',
+    })
     await unchangedThumbnails(folder, snapshot.key)
-    try { await publishExclusive(scoresFile, cacheFile) } catch (error) {
+    try {
+      await publishExclusive(scoresFile, cacheFile)
+    } catch (error) {
       if (error.code !== 'EEXIST') throw error
       const concurrent = await cachedScores(cacheFile, snapshot.key)
       if (concurrent) return concurrent
@@ -86,7 +147,9 @@ async function scoreThumbnails(folder, snapshot, cacheFile, progress) {
   } finally {
     // Only delete this invocation's known, still-identical snapshot files. Unexpected edits
     // or additions in a private staging folder remain available for recovery.
-    for (const photo of copied) if (!preserveCopies && await unchangedCopy(photo).catch(() => false)) await fs.promises.unlink(photo.file).catch(() => {})
+    for (const photo of copied)
+      if (!preserveCopies && (await unchangedCopy(photo).catch(() => false)))
+        await fs.promises.unlink(photo.file).catch(() => {})
     await fs.promises.unlink(scoresFile).catch(() => {})
     await fs.promises.unlink(metaFile).catch(() => {})
     await fs.promises.rmdir(photoDir).catch(() => {})
@@ -107,14 +170,28 @@ async function analyzePhotos({ folders }, { emit }) {
     const survey = await surveyFolder(folder)
     if (!survey.exists) throw new Error(`The folder ${folder} isn’t there. The drive may be disconnected.`)
     if (survey.missing.length) {
-      const result = await ensureThumbnails(folder, (p) => emit('picks.progress', { stage: 'thumbs', folder: label, index: i + 1, folders: folders.length, ...p }))
-      if (result.failed.length) throw new Error(`Photo previews could not be refreshed. Resolve these preserved thumbnails before scoring: ${result.failed.join('; ')}`)
+      const result = await ensureThumbnails(folder, (p) =>
+        emit('picks.progress', { stage: 'thumbs', folder: label, index: i + 1, folders: folders.length, ...p }),
+      )
+      if (result.failed.length)
+        throw new Error(
+          `Photo previews could not be refreshed. Resolve these preserved thumbnails before scoring: ${result.failed.join('; ')}`,
+        )
     }
     const snapshot = await thumbnailEvidence(folder)
     const cacheFile = path.join(cacheRoot(), 'picks', `contents-${snapshot.key}-v${VERSION}.json`)
     let scored = await cachedScores(cacheFile, snapshot.key)
     if (!scored) {
-      scored = await scoreThumbnails(folder, snapshot, cacheFile, (p) => emit('picks.progress', { stage: 'score', folder: label, index: i + 1, folders: folders.length, done: p.done, total: p.total }))
+      scored = await scoreThumbnails(folder, snapshot, cacheFile, (p) =>
+        emit('picks.progress', {
+          stage: 'score',
+          folder: label,
+          index: i + 1,
+          folders: folders.length,
+          done: p.done,
+          total: p.total,
+        }),
+      )
     }
     await unchangedThumbnails(folder, snapshot.key)
     out.push(...scored)
@@ -143,13 +220,25 @@ async function copyPicks({ picks }) {
       if (!e.isFile() || e.name.startsWith('.')) continue
       if (!bases.has(e.name.replace(/\.[^.]+$/, '').toLowerCase())) continue
       const target = path.join(dest, e.name)
-      if (await fs.promises.access(target).then(() => true, () => false)) { skipped++; continue }
+      if (
+        await fs.promises.access(target).then(
+          () => true,
+          () => false,
+        )
+      ) {
+        skipped++
+        continue
+      }
       await fs.promises.copyFile(path.join(folder, e.name), target, fs.constants.COPYFILE_FICLONE)
       copied++
     }
     result.push({ folder, dest, copied, skipped })
   }
-  return { folders: result, copied: result.reduce((n, r) => n + r.copied, 0), skipped: result.reduce((n, r) => n + r.skipped, 0) }
+  return {
+    folders: result,
+    copied: result.reduce((n, r) => n + r.copied, 0),
+    skipped: result.reduce((n, r) => n + r.skipped, 0),
+  }
 }
 
 module.exports = { analyzePhotos, copyPicks }

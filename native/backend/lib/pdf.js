@@ -16,7 +16,9 @@ const MAX_JPEG_SOURCE_BYTES = 512 * 1024 * 1024
 const MAX_JPEG_PIXELS = MAX_JPEG_SOURCE_BYTES / 4
 
 function jpegError(detail) {
-  return new Error(`The JPEG page cannot be included safely (${detail}). Export this page's JPEG again, or restore a valid smaller image before making the PDF.`)
+  return new Error(
+    `The JPEG page cannot be included safely (${detail}). Export this page's JPEG again, or restore a valid smaller image before making the PDF.`,
+  )
 }
 
 async function readJpeg(file) {
@@ -28,7 +30,8 @@ async function readJpeg(file) {
   try {
     const opened = await handle.stat({ bigint: true })
     if (!opened.isFile() || !same(before, opened)) throw changed()
-    if (opened.size > BigInt(MAX_JPEG_SOURCE_BYTES)) throw jpegError('the encoded source exceeds the 512 MiB source policy')
+    if (opened.size > BigInt(MAX_JPEG_SOURCE_BYTES))
+      throw jpegError('the encoded source exceeds the 512 MiB source policy')
     const buf = Buffer.allocUnsafe(Number(opened.size))
     let at = 0
     while (at < buf.length) {
@@ -36,23 +39,35 @@ async function readJpeg(file) {
       if (!bytesRead) throw changed()
       at += bytesRead
     }
-    const after = await handle.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
+    const after = await handle.stat({ bigint: true }),
+      named = await fs.promises.lstat(file, { bigint: true })
     if (!same(opened, after) || !same(after, named)) throw changed()
     return buf
-  } finally { await handle.close() }
+  } finally {
+    await handle.close()
+  }
 }
 
 /** Validate JPEG markers before handing binary bytes to PDF's decoder; gather ICC APP2 chunks. */
 function jpegInfo(buf) {
   if (buf.length < 4 || buf.readUInt16BE(0) !== 0xffd8) throw new Error('Invalid JPEG signature.')
-  let at = 2, frame = null, frameIds = null, scans = 0, ended = false, chunks = null, chunkCount = 0
+  let at = 2,
+    frame = null,
+    frameIds = null,
+    scans = 0,
+    ended = false,
+    chunks = null,
+    chunkCount = 0
   while (at < buf.length) {
     if (buf[at++] !== 0xff) throw new Error('Invalid JPEG marker.')
     while (buf[at] === 0xff) at++
     const marker = buf[at++]
-    if (marker === 0xd9) { ended = true; break }
+    if (marker === 0xd9) {
+      ended = true
+      break
+    }
     if (marker === 0xd8 || marker === 0 || marker === undefined) throw new Error('Invalid JPEG marker.')
-    if (marker === 1 || marker >= 0xd0 && marker <= 0xd7) continue
+    if (marker === 1 || (marker >= 0xd0 && marker <= 0xd7)) continue
     if (at + 2 > buf.length) throw new Error('Truncated JPEG marker length.')
     const length = buf.readUInt16BE(at)
     if (length < 2 || at + length > buf.length) throw new Error('Truncated JPEG segment.')
@@ -60,14 +75,23 @@ function jpegInfo(buf) {
     if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
       // Eight-bit single-frame DCT, including sequential/progressive arithmetic
       // coding. Lossless and hierarchical frames cannot be embedded as DCTDecode.
-      if (![0xc0, 0xc1, 0xc2, 0xc9, 0xca].includes(marker) || frame || payload.length < 6 || payload[0] !== 8 || ![1, 3, 4].includes(payload[5]) || payload.length !== 6 + payload[5] * 3) throw new Error('Unsupported or malformed JPEG DCT frame.')
+      if (
+        ![0xc0, 0xc1, 0xc2, 0xc9, 0xca].includes(marker) ||
+        frame ||
+        payload.length < 6 ||
+        payload[0] !== 8 ||
+        ![1, 3, 4].includes(payload[5]) ||
+        payload.length !== 6 + payload[5] * 3
+      )
+        throw new Error('Unsupported or malformed JPEG DCT frame.')
       frame = payload[5]
       frameIds = new Set(Array.from({ length: frame }, (_, i) => payload[6 + i * 3]))
       if (frameIds.size !== frame) throw new Error('Duplicate JPEG frame components.')
     }
     if (marker === 0xda) {
       const count = payload[0]
-      if (!frame || !count || count > frame || payload.length !== 4 + count * 2) throw new Error('Malformed JPEG SOS scan header.')
+      if (!frame || !count || count > frame || payload.length !== 4 + count * 2)
+        throw new Error('Malformed JPEG SOS scan header.')
       const ids = new Set()
       for (let i = 0; i < count; i++) {
         const id = payload[1 + i * 2]
@@ -78,9 +102,14 @@ function jpegInfo(buf) {
     }
     if (marker === 0xe2 && payload.subarray(0, 12).equals(Buffer.from('ICC_PROFILE\0'))) {
       if (payload.length < 14) throw new Error('Truncated JPEG ICC header.')
-      const sequence = payload[12], total = payload[13]
-      if (!sequence || !total || sequence > total || chunkCount && chunkCount !== total) throw new Error('Invalid JPEG ICC chunk sequence.')
-      if (!chunks) { chunks = new Map(); chunkCount = total }
+      const sequence = payload[12],
+        total = payload[13]
+      if (!sequence || !total || sequence > total || (chunkCount && chunkCount !== total))
+        throw new Error('Invalid JPEG ICC chunk sequence.')
+      if (!chunks) {
+        chunks = new Map()
+        chunkCount = total
+      }
       if (chunks.has(sequence)) throw new Error('Duplicate JPEG ICC chunk.')
       chunks.set(sequence, payload.subarray(14))
     }
@@ -89,10 +118,21 @@ function jpegInfo(buf) {
       // Skip entropy bytes, escaped FFs and restart markers; next marker may start another scan.
       let entropy = false
       while (at < buf.length) {
-        if (buf[at] !== 0xff) { entropy = true; at++; continue }
+        if (buf[at] !== 0xff) {
+          entropy = true
+          at++
+          continue
+        }
         const next = buf[at + 1]
-        if (next === 0) { entropy = true; at += 2; continue }
-        if (next >= 0xd0 && next <= 0xd7) { at += 2; continue }
+        if (next === 0) {
+          entropy = true
+          at += 2
+          continue
+        }
+        if (next >= 0xd0 && next <= 0xd7) {
+          at += 2
+          continue
+        }
         break
       }
       if (!entropy) throw new Error('The JPEG scan has no entropy data.')
@@ -133,33 +173,51 @@ async function writeJpegPdf(file, pages, opts = {}) {
     offset += buf.length
     await out.writeFile(buf)
   }
-  const obj = async (n, body) => { offsets[n] = offset; await write(`${n} 0 obj\n${body}\nendobj\n`) }
+  const obj = async (n, body) => {
+    offsets[n] = offset
+    await write(`${n} 0 obj\n${body}\nendobj\n`)
+  }
 
   // Objects: 1 catalog, 2 pages, 3 info; then per page: page, contents, image.
   const pageObj = (i) => 4 + i * 3
   const profiles = new Map()
   let count = pageObj(pages.length)
-  const esc = (s) => String(s).replace(/[\\()]/g, (c) => '\\' + c).replace(/[^\x20-\x7e]/g, '?')
+  const esc = (s) =>
+    String(s)
+      .replace(/[\\()]/g, (c) => '\\' + c)
+      .replace(/[^\x20-\x7e]/g, '?')
   try {
     await write('%PDF-1.4\n%\xe2\xe3\xcf\xd3\n')
     await obj(1, '<< /Type /Catalog /Pages 2 0 R >>')
-    await obj(2, `<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_, i) => `${pageObj(i)} 0 R`).join(' ')}] >>`)
-    await obj(3, `<< /Producer (Album Studio) /Title (${esc(opts.title || 'Album')}) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}Z) >>`)
+    await obj(
+      2,
+      `<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_, i) => `${pageObj(i)} 0 R`).join(' ')}] >>`,
+    )
+    await obj(
+      3,
+      `<< /Producer (Album Studio) /Title (${esc(opts.title || 'Album')}) /CreationDate (D:${new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}Z) >>`,
+    )
     for (let i = 0; i < pages.length; i++) {
       const jpeg = await readJpeg(pages[i].path)
       let size
       try {
         size = jpegInfo(jpeg)
-        if (!Number.isSafeInteger(size.width * size.height) || size.width * size.height > MAX_JPEG_PIXELS) throw new Error('decoded pixels exceed the 134 megapixel PDF image policy')
+        if (!Number.isSafeInteger(size.width * size.height) || size.width * size.height > MAX_JPEG_PIXELS)
+          throw new Error('decoded pixels exceed the 134 megapixel PDF image policy')
         // Marker checks cannot validate Huffman entropy. stats() traverses every
         // decoded pixel and retains only aggregates, unlike a full raw output or
         // resize that might avoid a damaged image region. Never re-encode the JPEG.
-        await require('../../../src/sharp_config').getSharp()(jpeg, { failOn: 'warning', limitInputPixels: MAX_JPEG_PIXELS, limitInputChannels: 4 }).stats()
-      } catch (error) { throw jpegError(error.message) }
+        await require('../../../src/sharp_config')
+          .getSharp()(jpeg, { failOn: 'warning', limitInputPixels: MAX_JPEG_PIXELS, limitInputChannels: 4 })
+          .stats()
+      } catch (error) {
+        throw jpegError(error.message)
+      }
       const ppi = pages[i].ppi === undefined ? 300 : pages[i].ppi
-      if (!Number.isFinite(ppi) || ppi <= 0) throw new Error('The PDF page resolution must be a finite positive number.')
-      const w = +(size.width / ppi * 72).toFixed(2)
-      const h = +(size.height / ppi * 72).toFixed(2)
+      if (!Number.isFinite(ppi) || ppi <= 0)
+        throw new Error('The PDF page resolution must be a finite positive number.')
+      const w = +((size.width / ppi) * 72).toFixed(2)
+      const h = +((size.height / ppi) * 72).toFixed(2)
       const comps = size.components
       const alternate = comps === 1 ? '/DeviceGray' : comps === 4 ? '/DeviceCMYK' : '/DeviceRGB'
       let space = alternate
@@ -178,13 +236,18 @@ async function writeJpegPdf(file, pages, opts = {}) {
       }
       if (comps === 4) space += ' /Decode [1 0 1 0 1 0 1 0]'
       const n = pageObj(i)
-      await obj(n, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im${i} ${n + 2} 0 R >> >> /Contents ${n + 1} 0 R >>`)
+      await obj(
+        n,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im${i} ${n + 2} 0 R >> >> /Contents ${n + 1} 0 R >>`,
+      )
       const content = `q ${w} 0 0 ${h} 0 0 cm /Im${i} Do Q`
       await obj(n + 1, `<< /Length ${content.length} >>\nstream\n${content}\nendstream`)
       offsets[n + 2] = offset
       // Match the source-to-sRGB proof policy. PDF's default relative colourimetric
       // intent changes LUT-profile CMYK colours compared with perceptual conversion.
-      await write(`${n + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${size.width} /Height ${size.height} /ColorSpace ${space} /Intent /Perceptual /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`)
+      await write(
+        `${n + 2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${size.width} /Height ${size.height} /ColorSpace ${space} /Intent /Perceptual /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+      )
       await write(jpeg)
       await write('\nendstream\nendobj\n')
       if (opts.onPage) opts.onPage(i + 1)

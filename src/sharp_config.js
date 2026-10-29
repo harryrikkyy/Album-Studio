@@ -22,12 +22,16 @@ function getSharp() {
   // 4 worker threads is a sweet spot: enough to keep a multi-core Mac busy
   // during a batch, low enough that peak memory on 6000×4000 RAW JPEGs stays
   // bounded. Tunable in one place if we ever profile a different optimum.
-  try { _sharp.concurrency(4) } catch (_) {}
+  try {
+    _sharp.concurrency(4)
+  } catch (_) {}
 
   // Bound the libvips cache. items = max cached operations, memory = MB,
   // files = max open file descriptors. Keeps a 2,000-photo run from letting
   // the cache balloon.
-  try { _sharp.cache({ memory: 200, items: 100, files: 0 }) } catch (_) {}
+  try {
+    _sharp.cache({ memory: 200, items: 100, files: 0 })
+  } catch (_) {}
 
   return _sharp
 }

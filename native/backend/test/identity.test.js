@@ -19,8 +19,16 @@ function collisionProject(withUrls = false) {
   }
   const proj = path.join(root, 'Album')
   fs.mkdirSync(proj)
-  const entries = folders.map((folder) => ({ id: 'img_DCIM_IMG_0001_jpg', orient: 'h', ...(withUrls ? { url: pathToFileURL(path.join(folder, 'IMG_0001.jpg')).href } : {}) }))
-  const data = { workspace: { imageTokens: folders, templateTokens: [], imageRotations: { img_DCIM_IMG_0001_jpg: 90 } }, albumPages: { 1: { photos: entries, template: null } }, totalActivePages: 1 }
+  const entries = folders.map((folder) => ({
+    id: 'img_DCIM_IMG_0001_jpg',
+    orient: 'h',
+    ...(withUrls ? { url: pathToFileURL(path.join(folder, 'IMG_0001.jpg')).href } : {}),
+  }))
+  const data = {
+    workspace: { imageTokens: folders, templateTokens: [], imageRotations: { img_DCIM_IMG_0001_jpg: 90 } },
+    albumPages: { 1: { photos: entries, template: null } },
+    totalActivePages: 1,
+  }
   const file = path.join(proj, 'project.json')
   fs.writeFileSync(file, JSON.stringify(data))
   return { root, folders, proj, file, data }
@@ -34,14 +42,20 @@ test('duplicate photo basenames stay distinct; ambiguous legacy references fail 
   assert.equal(album.spreads[0].missingPhotos, 2)
   assert.ok(album.identityConflicts.some((c) => c.kind === 'photo' && c.reason === 'ambiguous-reference'))
   assert.ok(album.identityConflicts.some((c) => c.reason === 'ambiguous-adjustment'))
-  assert.ok(Object.values(album.photos).every((p) => p.rotation === 0), 'an ambiguous rotation cannot be applied to both photographs')
+  assert.ok(
+    Object.values(album.photos).every((p) => p.rotation === 0),
+    'an ambiguous rotation cannot be applied to both photographs',
+  )
 })
 
 test('exact saved photo URLs resolve collisions and migrated IDs survive folder removal and undo', async () => {
   const { proj, folders, file } = collisionProject(true)
   let album = await openAlbum({ path: proj })
   assert.equal(album.spreads[0].missingPhotos, 0)
-  assert.deepEqual(album.spreads[0].photoIds.map((id) => album.photos[id].folder), folders)
+  assert.deepEqual(
+    album.spreads[0].photoIds.map((id) => album.photos[id].folder),
+    folders,
+  )
   const ids = album.spreads[0].photoIds
   await updateAlbum({ album: proj, ops: [{ op: 'setPhotoFolders', folders: [folders[0]] }] })
   const saved = JSON.parse(fs.readFileSync(file))
@@ -56,7 +70,10 @@ test('exact saved photo URLs resolve collisions and migrated IDs survive folder 
 })
 
 test('sanitization and recursive template basename collisions receive unique IDs', async () => {
-  const root = tmpdir(), photos = path.join(root, 'Shoot'), templates = path.join(root, 'Templates'), proj = path.join(root, 'Album')
+  const root = tmpdir(),
+    photos = path.join(root, 'Shoot'),
+    templates = path.join(root, 'Templates'),
+    proj = path.join(root, 'Album')
   fs.mkdirSync(photos)
   for (const name of ['A-B.jpg', 'A_B.jpg']) fs.writeFileSync(path.join(photos, name), fakeJpeg(400, 200))
   for (const sub of ['one', 'two']) {
@@ -64,7 +81,14 @@ test('sanitization and recursive template basename collisions receive unique IDs
     fs.writeFileSync(path.join(templates, sub, '1h0v_001.psd'), 'x')
   }
   fs.mkdirSync(proj)
-  fs.writeFileSync(path.join(proj, 'project.json'), JSON.stringify({ workspace: { imageTokens: [photos], templateTokens: [templates] }, albumPages: { 1: { photos: [], template: { id: 'tpl_Templates_1h0v_001_psd', name: '1h0v_001.psd' } } }, totalActivePages: 1 }))
+  fs.writeFileSync(
+    path.join(proj, 'project.json'),
+    JSON.stringify({
+      workspace: { imageTokens: [photos], templateTokens: [templates] },
+      albumPages: { 1: { photos: [], template: { id: 'tpl_Templates_1h0v_001_psd', name: '1h0v_001.psd' } } },
+      totalActivePages: 1,
+    }),
+  )
   const album = await openAlbum({ path: proj })
   assert.equal(new Set(album.pool).size, 2)
   const list = await listTemplates([templates])
@@ -79,20 +103,42 @@ test('persistent spread IDs follow move, insert, clear, delete, undo and redo', 
   const ids = moved.album.spreads.map((s) => s.id)
   assert.ok(ids.every((id) => typeof id === 'string' && id.startsWith('spread_')))
   assert.notEqual(ids[0], ids[1])
-  assert.deepEqual((await undo({ album: proj })).album.spreads.map((s) => s.id), [...ids].reverse())
-  assert.deepEqual((await redo({ album: proj })).album.spreads.map((s) => s.id), ids)
-  const inserted = await updateAlbum({ album: proj, ops: [{ op: 'insertSpread', at: 1 }, { op: 'clearSpread', n: 2 }] })
-  assert.deepEqual(inserted.album.spreads.slice(1).map((s) => s.id), ids)
+  assert.deepEqual(
+    (await undo({ album: proj })).album.spreads.map((s) => s.id),
+    [...ids].reverse(),
+  )
+  assert.deepEqual(
+    (await redo({ album: proj })).album.spreads.map((s) => s.id),
+    ids,
+  )
+  const inserted = await updateAlbum({
+    album: proj,
+    ops: [
+      { op: 'insertSpread', at: 1 },
+      { op: 'clearSpread', n: 2 },
+    ],
+  })
+  assert.deepEqual(
+    inserted.album.spreads.slice(1).map((s) => s.id),
+    ids,
+  )
   assert.ok(!ids.includes(inserted.album.spreads[0].id))
   const removed = await updateAlbum({ album: proj, ops: [{ op: 'removeSpread', n: 2 }] })
   assert.equal(removed.album.spreads[1].id, ids[1])
-  assert.deepEqual((await undo({ album: proj })).album.spreads.map((s) => s.id), inserted.album.spreads.map((s) => s.id))
+  assert.deepEqual(
+    (await undo({ album: proj })).album.spreads.map((s) => s.id),
+    inserted.album.spreads.map((s) => s.id),
+  )
 })
 
 test('a failed initial edit leaves project migration and undo history untouched', async () => {
   const { proj } = makeProject()
-  const file = path.join(proj, 'project.json'), before = fs.readFileSync(file)
-  await assert.rejects(updateAlbum({ album: proj, ops: [{ op: 'moveSpread', from: 1, to: 2 }, { op: 'noSuchOp' }] }), /unknown album operation/)
+  const file = path.join(proj, 'project.json'),
+    before = fs.readFileSync(file)
+  await assert.rejects(
+    updateAlbum({ album: proj, ops: [{ op: 'moveSpread', from: 1, to: 2 }, { op: 'noSuchOp' }] }),
+    /unknown album operation/,
+  )
   assert.deepEqual(fs.readFileSync(file), before)
   assert.equal((await undo({ album: proj })).changed, false)
 })
@@ -105,7 +151,9 @@ test('explicit source relink preserves IDs and colour edits, and undo restores t
   const moved = path.join(root, 'moved', 'DCIM')
   fs.mkdirSync(path.dirname(moved))
   fs.renameSync(folders[0], moved)
-  const relinked = (await updateAlbum({ album: proj, ops: [{ op: 'relinkFolder', kind: 'photo', from: folders[0], to: moved }] })).album
+  const relinked = (
+    await updateAlbum({ album: proj, ops: [{ op: 'relinkFolder', kind: 'photo', from: folders[0], to: moved }] })
+  ).album
   assert.equal(relinked.photos[id].folder, moved)
   assert.deepEqual(relinked.photos[id].adjust, { warmth: 25 })
   assert.equal(relinked.spreads[0].photoIds[0], id)
@@ -116,7 +164,8 @@ test('explicit source relink preserves IDs and colour edits, and undo restores t
 })
 
 test('auto-fill replaces page edits and undo restores their original spread identities', async () => {
-  const { proj } = makeProject(), file = path.join(proj, 'project.json')
+  const { proj } = makeProject(),
+    file = path.join(proj, 'project.json')
   const before = await migrateAlbum({ album: proj })
   const data = JSON.parse(fs.readFileSync(file))
   data.workspace.pageLayerEdits = { 1: { opacity: 0.5 } }
@@ -124,20 +173,27 @@ test('auto-fill replaces page edits and undo restores their original spread iden
   fs.writeFileSync(file, JSON.stringify(data))
   await updateAlbum({ album: proj, ops: [{ op: 'autoFill', mode: 'desired', desiredSheets: 2 }] })
   const after = JSON.parse(fs.readFileSync(file))
-  for (const field of ['pageOverlays', 'pageLayerEdits', 'pageBackgrounds']) assert.deepEqual(after.workspace[field], {})
+  for (const field of ['pageOverlays', 'pageLayerEdits', 'pageBackgrounds'])
+    assert.deepEqual(after.workspace[field], {})
   assert.ok(Object.values(after.albumPages).every((p) => !before.spreads.some((s) => s.id === p.id)))
   const restored = (await undo({ album: proj })).album
-  assert.deepEqual(restored.spreads.map((s) => s.id), before.spreads.map((s) => s.id))
+  assert.deepEqual(
+    restored.spreads.map((s) => s.id),
+    before.spreads.map((s) => s.id),
+  )
   assert.deepEqual(JSON.parse(fs.readFileSync(file)).workspace.pageLayerEdits, data.workspace.pageLayerEdits)
 })
 
 test('failed atomic writes do not add, remove or move undo history', async () => {
-  const { proj } = makeProject(), file = path.join(proj, 'project.json')
+  const { proj } = makeProject(),
+    file = path.join(proj, 'project.json')
   await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 1 }] })
   const before = fs.readFileSync(file)
-  const exclusive = require('../lib/exclusive_rename'), rename = exclusive.renameExclusive
+  const exclusive = require('../lib/exclusive_rename'),
+    rename = exclusive.renameExclusive
   exclusive.renameExclusive = async (from, to) => {
-    if (to === file && path.basename(from) === 'install-project.json') throw Object.assign(new Error('simulated disk failure'), { code: 'EIO' })
+    if (to === file && path.basename(from) === 'install-project.json')
+      throw Object.assign(new Error('simulated disk failure'), { code: 'EIO' })
     return rename(from, to)
   }
   try {
@@ -145,7 +201,9 @@ test('failed atomic writes do not add, remove or move undo history', async () =>
     await assert.rejects(undo({ album: proj }), /simulated disk failure/)
     assert.deepEqual(fs.readFileSync(file), before)
     assert.equal(fs.existsSync(`${file}.tmp-${process.pid}`), false)
-  } finally { exclusive.renameExclusive = rename }
+  } finally {
+    exclusive.renameExclusive = rename
+  }
   const restored = await undo({ album: proj })
   assert.equal(restored.changed, true)
   assert.equal(restored.album.spreads[0].photoIds.length, 2)
@@ -160,10 +218,17 @@ test('legacy URL evidence still identifies the second photo when the first alrea
   await migrateAlbum({ album: proj })
   const saved = JSON.parse(fs.readFileSync(file))
   saved.workspace.imageTokens.push(folders[1])
-  saved.albumPages[1].photos.push({ id: 'img_DCIM_IMG_0001_jpg', url: pathToFileURL(path.join(folders[1], 'IMG_0001.jpg')).href, orient: 'h' })
+  saved.albumPages[1].photos.push({
+    id: 'img_DCIM_IMG_0001_jpg',
+    url: pathToFileURL(path.join(folders[1], 'IMG_0001.jpg')).href,
+    orient: 'h',
+  })
   fs.writeFileSync(file, JSON.stringify(saved))
   const album = await openAlbum({ path: proj })
-  assert.deepEqual(album.spreads[0].photoIds.map((id) => album.photos[id].folder), folders)
+  assert.deepEqual(
+    album.spreads[0].photoIds.map((id) => album.photos[id].folder),
+    folders,
+  )
 })
 
 test('legacy URL evidence for an absent collided asset cannot resolve to a different present photo', async () => {
@@ -180,7 +245,8 @@ test('legacy URL evidence for an absent collided asset cannot resolve to a diffe
 })
 
 test('duplicate persisted spread IDs and conflicting asset registry records fail before saving', async () => {
-  const { proj } = makeProject(), file = path.join(proj, 'project.json')
+  const { proj } = makeProject(),
+    file = path.join(proj, 'project.json')
   await migrateAlbum({ album: proj })
   const data = JSON.parse(fs.readFileSync(file))
   data.albumPages[2].id = data.albumPages[1].id
@@ -193,14 +259,23 @@ test('duplicate persisted spread IDs and conflicting asset registry records fail
   data.workspace.identity.assets.img_conflicting = { ...asset }
   fs.writeFileSync(file, JSON.stringify(data))
   const conflicting = fs.readFileSync(file)
-  await assert.rejects(openAlbum({ path: proj }), error => error.code === 'PROJECT_INVALID' && error.field === 'identity registry' && /duplicate asset locator/.test(error.message))
+  await assert.rejects(
+    openAlbum({ path: proj }),
+    (error) =>
+      error.code === 'PROJECT_INVALID' &&
+      error.field === 'identity registry' &&
+      /duplicate asset locator/.test(error.message),
+  )
   assert.deepEqual(fs.readFileSync(file), conflicting)
 })
 
 test('project edits and undo cannot change a plan while its files are being produced', async () => {
-  const { proj } = makeProject(), file = path.join(proj, 'project.json')
+  const { proj } = makeProject(),
+    file = path.join(proj, 'project.json')
   await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 1 }] })
-  const before = fs.readFileSync(file), jobs = require('../lib/jobs'), other = makeProject()
+  const before = fs.readFileSync(file),
+    jobs = require('../lib/jobs'),
+    other = makeProject()
   for (const kind of ['render', 'export']) {
     const lease = await jobs.reserveJob(kind, proj)
     try {
@@ -208,10 +283,16 @@ test('project edits and undo cannot change a plan while its files are being prod
       await assert.rejects(updateAlbum({ album: proj, ops: [{ op: 'insertSpread', at: 1 }] }), match)
       await assert.rejects(undo({ album: proj }), match)
       await assert.rejects(redo({ album: proj }), match)
-      assert.equal((await migrateAlbum({ album: proj }, { lease: lease.project })).path, proj, 'only the job holding the capability can migrate during preparation')
+      assert.equal(
+        (await migrateAlbum({ album: proj }, { lease: lease.project })).path,
+        proj,
+        'only the job holding the capability can migrate during preparation',
+      )
       await updateAlbum({ album: other.proj, ops: [{ op: 'insertSpread', at: 1 }] })
       assert.deepEqual(fs.readFileSync(file), before)
-    } finally { await jobs.releaseJob(lease) }
+    } finally {
+      await jobs.releaseJob(lease)
+    }
   }
   assert.equal((await undo({ album: proj })).changed, true)
 })

@@ -50,8 +50,13 @@ async function fakeToken(init, reply) {
   const p = new URLSearchParams(init.body)
   assert.equal(p.get('client_secret'), 'test-secret')
   const challenge = new URL(opened.at(-1)).searchParams.get('code_challenge')
-  const proof = require('crypto').createHash('sha256').update(p.get('code_verifier') || '').digest('base64url')
-  return p.get('code') === 'good' && proof === challenge ? reply({ access_token: 'access', id_token: 'google-id' }) : reply({ error: 'invalid_grant' }, 400)
+  const proof = require('crypto')
+    .createHash('sha256')
+    .update(p.get('code_verifier') || '')
+    .digest('base64url')
+  return p.get('code') === 'good' && proof === challenge
+    ? reply({ access_token: 'access', id_token: 'google-id' })
+    : reply({ error: 'invalid_grant' }, 400)
 }
 
 async function fakeFetch(url, init = {}) {
@@ -62,11 +67,15 @@ async function fakeFetch(url, init = {}) {
   const reply = (body, status = 200) => new Response(JSON.stringify(body), { status })
   if (u.hostname === 'oauth2.googleapis.com') return fakeToken(init, reply)
   if (u.pathname === '/oauth2/v2/userinfo') return reply({ email: 'ana@studio.in', name: googleName, picture: '' })
-  if (u.hostname === 'identitytoolkit.googleapis.com') return reply({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in', expiresIn: '3600' })
+  if (u.hostname === 'identitytoolkit.googleapis.com')
+    return reply({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in', expiresIn: '3600' })
   if (u.hostname === 'firestore.googleapis.com') {
     assert.equal(init.headers?.Authorization, 'Bearer fb-id', 'every record read and write is authenticated')
     const key = decodeURIComponent(u.pathname.split('/users/')[1])
-    const document = () => ({ fields: structuredClone(docs.get(key)), updateTime: new Date(Date.UTC(2026, 0, 1) + (versions.get(key) || 0) * 1000).toISOString() })
+    const document = () => ({
+      fields: structuredClone(docs.get(key)),
+      updateTime: new Date(Date.UTC(2026, 0, 1) + (versions.get(key) || 0) * 1000).toISOString(),
+    })
     if (method === 'GET') {
       if (readHook) {
         const response = await readHook({ key, reply, document })
@@ -81,7 +90,8 @@ async function fakeFetch(url, init = {}) {
     // Simulate Firestore's document precondition only. These fake REST tests do not
     // evaluate security rules, establish that deployed rules match, or call a live project.
     const precondition = u.searchParams.get('currentDocument.updateTime')
-    if (precondition && precondition !== document().updateTime) return reply({ error: { code: 409, status: 'FAILED_PRECONDITION' } }, 409)
+    if (precondition && precondition !== document().updateTime)
+      return reply({ error: { code: 409, status: 'FAILED_PRECONDITION' } }, 409)
     const mask = u.searchParams.getAll('updateMask.fieldPaths')
     const sent = JSON.parse(init.body).fields
     const doc = docs.get(key) || {}
@@ -99,15 +109,27 @@ account._setDeps({
   fetch: fakeFetch,
   machineId: async () => 'machine-A',
   port: 0,
-  open: async (url) => { opened.push(url); onOpen?.(url) },
+  open: async (url) => {
+    opened.push(url)
+    onOpen?.(url)
+  },
 })
 
 /** Start a sign-in; resolves with its promise and the page Google would send the user back to. */
 async function startSignIn() {
-  const seen = new Promise((resolve) => { onOpen = resolve })
+  const seen = new Promise((resolve) => {
+    onOpen = resolve
+  })
   const done = account.signIn({}, {})
   done.catch(() => {}) // the tests look at failures after driving the browser side
-  const url = new URL(await Promise.race([seen, done.then(() => { throw new Error('Sign-in finished before opening the browser.') })]))
+  const url = new URL(
+    await Promise.race([
+      seen,
+      done.then(() => {
+        throw new Error('Sign-in finished before opening the browser.')
+      }),
+    ]),
+  )
   return { done, back: url.searchParams.get('redirect_uri'), state: url.searchParams.get('state') }
 }
 
@@ -119,7 +141,11 @@ test('signed out with nothing saved: only account and system calls are answered'
 
   const out = []
   const orig = process.stdout.write.bind(process.stdout)
-  process.stdout.write = (s, callback) => { out.push(JSON.parse(String(s))); if (callback) queueMicrotask(callback); return true }
+  process.stdout.write = (s, callback) => {
+    out.push(JSON.parse(String(s)))
+    if (callback) queueMicrotask(callback)
+    return true
+  }
   try {
     await dispatch(JSON.stringify({ id: 1, method: 'album.recent' }))
   } finally {
@@ -133,7 +159,10 @@ test('sign-in in the browser: a new user gets a record, not yet activated', asyn
   assert.match(opened[0], /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/)
   assert.match(back, /^http:\/\/127\.0\.0\.1:\d+$/)
   const pkce = new URL(opened[0]).searchParams
-  assert.deepEqual([pkce.get('code_challenge_method'), /^[A-Za-z0-9_-]{43}$/.test(pkce.get('code_challenge'))], ['S256', true])
+  assert.deepEqual(
+    [pkce.get('code_challenge_method'), /^[A-Za-z0-9_-]{43}$/.test(pkce.get('code_challenge'))],
+    ['S256', true],
+  )
 
   const stale = await fetch(`${back}/?code=good&state=old`)
   assert.equal(stale.status, 400, 'an answer for another sign-in is turned away')
@@ -149,7 +178,8 @@ test('sign-in in the browser: a new user gets a record, not yet activated', asyn
 })
 
 test('activated by Creative Hubb: retry opens the app, binds this Mac, saves the licence', async () => {
-  const doc = docs.get('ana@studio_in'), expiresOn = new Date(Date.now() + 30 * day).toISOString()
+  const doc = docs.get('ana@studio_in'),
+    expiresOn = new Date(Date.now() + 30 * day).toISOString()
   Object.assign(doc, { activated: field(true), expiresOn: { timestampValue: expiresOn }, ...signedFields(expiresOn) })
   const r = await account.retry()
   assert.equal(r.state, 'allowed')
@@ -185,7 +215,10 @@ test('bound to another Mac, or expired: blocked, and the saved licence goes', as
   assert.deepEqual([r.state, r.reason, r.machineName], ['blocked', 'wrong_machine', 'Studio iMac'])
   assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false)
 
-  Object.assign(doc, { machineId: field('machine-A'), expiresOn: { timestampValue: new Date(Date.now() - day).toISOString() } })
+  Object.assign(doc, {
+    machineId: field('machine-A'),
+    expiresOn: { timestampValue: new Date(Date.now() - day).toISOString() },
+  })
   r = await account.retry()
   assert.deepEqual([r.state, r.reason], ['blocked', 'expired'])
   assert.equal(account.permits('album.open'), false)
@@ -245,14 +278,27 @@ async function activatedAccount({ machineId = '', expiresOn = new Date(Date.now(
   docs.clear()
   versions.clear()
   fbAuth.setSession(fbAuth.mapSignInResponse({ idToken: 'fb-id', refreshToken: 'fb-refresh', email: 'ana@studio.in' }))
-  const doc = { activated: field(true), expiresOn: { timestampValue: expiresOn }, name: field('Ana Rao'), machineId: field(machineId), ...signedFields(expiresOn) }
+  const doc = {
+    activated: field(true),
+    expiresOn: { timestampValue: expiresOn },
+    name: field('Ana Rao'),
+    machineId: field(machineId),
+    ...signedFields(expiresOn),
+  }
   docs.set('ana@studio_in', doc)
   return doc
 }
 
 function saveExistingLicense(expiresOn = new Date(Date.now() + 30 * day).toISOString()) {
   const signed = signedFields(expiresOn)
-  licence.saveLicense({ email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn, activatedOn: signed.licActivatedOn.stringValue, sig: signed.sig.stringValue })
+  licence.saveLicense({
+    email: 'ana@studio.in',
+    name: 'Ana Rao',
+    machineId: 'machine-A',
+    expiresOn,
+    activatedOn: signed.licActivatedOn.stringValue,
+    sig: signed.sig.stringValue,
+  })
 }
 
 test('an unsigned activation opens the app online only, and a forged licence never opens it offline', async () => {
@@ -263,8 +309,18 @@ test('an unsigned activation opens the app online only, and a forged licence nev
   assert.deepEqual([online.state, online.offline], ['allowed', false])
   assert.equal(fs.existsSync(process.env.CH_LICENSE_FILE), false, 'the earlier signed licence goes with the signature')
 
-  const data = { email: 'ana@studio.in', name: 'Ana Rao', machineId: 'machine-A', expiresOn: new Date(Date.now() + 3650 * day).toISOString(), activatedOn: new Date().toISOString(), savedAt: new Date().toISOString() }
-  const checksum = require('crypto').createHmac('sha256', 'CH-TOOLKIT-PRO-2025-SECRET').update(JSON.stringify(data)).digest('hex')
+  const data = {
+    email: 'ana@studio.in',
+    name: 'Ana Rao',
+    machineId: 'machine-A',
+    expiresOn: new Date(Date.now() + 3650 * day).toISOString(),
+    activatedOn: new Date().toISOString(),
+    savedAt: new Date().toISOString(),
+  }
+  const checksum = require('crypto')
+    .createHmac('sha256', 'CH-TOOLKIT-PRO-2025-SECRET')
+    .update(JSON.stringify(data))
+    .digest('hex')
   fs.writeFileSync(process.env.CH_LICENSE_FILE, JSON.stringify({ ...data, checksum }))
   account._reset()
   offline = true
@@ -302,9 +358,18 @@ test('renaming the Google account after activation keeps the saved licence, at l
 test('rejected or unconfirmed device binding cannot grant access or save a licence', async (t) => {
   for (const [label, respond] of [
     ['permission denied', ({ reply }) => reply({ error: { code: 403, status: 'PERMISSION_DENIED' } }, 403)],
-    ['a non-success response carrying fields', ({ reply, document }) => reply({ ...document(), fields: { ...document().fields, machineId: field('machine-A') } }, 403)],
+    [
+      'a non-success response carrying fields',
+      ({ reply, document }) =>
+        reply({ ...document(), fields: { ...document().fields, machineId: field('machine-A') } }, 403),
+    ],
     ['unconfirmed successful response', ({ reply, document }) => reply(document())],
-    ['connection lost', () => { throw new TypeError('fetch failed') }],
+    [
+      'connection lost',
+      () => {
+        throw new TypeError('fetch failed')
+      },
+    ],
   ]) {
     await t.test(label, async () => {
       await activatedAccount()
@@ -392,10 +457,17 @@ test('signing out while status is checking cannot restore access or the licence'
   await activatedAccount({ machineId: 'machine-A' })
   saveExistingLicense()
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
-  readHook = async () => { entered(); await waiting }
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
+  readHook = async () => {
+    entered()
+    await waiting
+  }
   const pending = account.status()
   await seen
   await account.signOut()
@@ -412,10 +484,17 @@ test('signing out while status is checking cannot restore access or the licence'
 test('signing out during a Google callback cannot save a late Firebase session', async () => {
   await activatedAccount({ machineId: 'machine-A' })
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
-  tokenHook = async () => { entered(); await waiting }
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
+  tokenHook = async () => {
+    entered()
+    await waiting
+  }
   const signIn = await startSignIn()
   const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
   await seen
@@ -441,7 +520,7 @@ test('HTTP errors carrying record fields cannot authorize an online account', as
 test('binding confirmation requires a successful authoritative read', async () => {
   await activatedAccount()
   let reads = 0
-  readHook = ({ reply, document }) => ++reads > 1 ? reply(document(), 403) : null
+  readHook = ({ reply, document }) => (++reads > 1 ? reply(document(), 403) : null)
   const result = await account.verify('ana@studio.in')
   readHook = null
   assert.deepEqual([result.state, result.reason], ['blocked', 'machine_binding_failed'])
@@ -481,7 +560,15 @@ test('signing out during sign-in server startup cancels before opening a browser
   await account.signOut()
   let timeout
   try {
-    await assert.rejects(Promise.race([pending, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Startup cancellation did not finish.')), 500) })]), /Sign-in cancelled/)
+    await assert.rejects(
+      Promise.race([
+        pending,
+        new Promise((_, reject) => {
+          timeout = setTimeout(() => reject(new Error('Startup cancellation did not finish.')), 500)
+        }),
+      ]),
+      /Sign-in cancelled/,
+    )
   } finally {
     clearTimeout(timeout)
     account.cancelSignIn()
@@ -495,9 +582,13 @@ test('retry and a status refresh share one in-flight account check', async () =>
   saveExistingLicense()
   assert.equal((await account.status()).state, 'allowed')
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
   let reads = 0
   readHook = async ({ reply, document }) => {
     reads += 1
@@ -521,10 +612,17 @@ test('signing out while retry is checking cannot restore access or the licence',
   saveExistingLicense()
   assert.equal((await account.status()).state, 'allowed')
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
-  readHook = async () => { entered(); await waiting }
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
+  readHook = async () => {
+    entered()
+    await waiting
+  }
   const pending = account.retry()
   await seen
   await account.signOut()
@@ -541,10 +639,17 @@ test('automatic sign-in timeout prevents an in-flight callback from saving late 
   fbAuth.clearSession()
   account._setDeps({ signInTimeoutMs: 60 })
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
-  tokenHook = async () => { entered(); await waiting }
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
+  tokenHook = async () => {
+    entered()
+    await waiting
+  }
   const signIn = await startSignIn()
   const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
   try {
@@ -566,11 +671,21 @@ test('automatic sign-in timeout prevents an in-flight callback from saving late 
 test('duplicate OAuth callbacks cannot exchange a second code or overwrite the winning flow', async () => {
   await activatedAccount({ machineId: 'machine-A' })
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
   let exchanges = 0
-  tokenHook = async () => { exchanges++; if (exchanges === 1) { entered(); await waiting } }
+  tokenHook = async () => {
+    exchanges++
+    if (exchanges === 1) {
+      entered()
+      await waiting
+    }
+  }
   const signIn = await startSignIn()
   const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
   try {
@@ -593,10 +708,17 @@ test('duplicate OAuth callbacks cannot exchange a second code or overwrite the w
 test('a duplicate OAuth error cannot cancel a valid callback already being processed', async () => {
   await activatedAccount({ machineId: 'machine-A' })
   let release
-  const waiting = new Promise((resolve) => { release = resolve })
+  const waiting = new Promise((resolve) => {
+    release = resolve
+  })
   let entered
-  const seen = new Promise((resolve) => { entered = resolve })
-  tokenHook = async () => { entered(); await waiting }
+  const seen = new Promise((resolve) => {
+    entered = resolve
+  })
+  tokenHook = async () => {
+    entered()
+    await waiting
+  }
   const signIn = await startSignIn()
   const callback = fetch(`${signIn.back}/?code=good&state=${signIn.state}`)
   try {

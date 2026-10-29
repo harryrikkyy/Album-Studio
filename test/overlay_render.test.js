@@ -14,8 +14,16 @@ const {
 } = require('../src/overlay_render')
 
 const textLayer = (over = {}) => ({
-  id: 't1', type: 'text', x: 0.1, y: 0.1, w: 0.5, h: 0.2,
-  text: 'Hello', size: 0.05, color: '#fff', ...over,
+  id: 't1',
+  type: 'text',
+  x: 0.1,
+  y: 0.1,
+  w: 0.5,
+  h: 0.2,
+  text: 'Hello',
+  size: 0.05,
+  color: '#fff',
+  ...over,
 })
 
 // ─── escaping / sanitizing ───────────────────────────────────────────────────
@@ -137,14 +145,13 @@ test('horizontal alignment sets both anchor and x origin', () => {
 
   assert.equal(Number(/<tspan x="([\d.]+)"/.exec(left)[1]), 100)
   assert.equal(Number(/<tspan x="([\d.]+)"/.exec(center)[1]), 350) // 100 + 500/2
-  assert.equal(Number(/<tspan x="([\d.]+)"/.exec(right)[1]), 600)  // 100 + 500
+  assert.equal(Number(/<tspan x="([\d.]+)"/.exec(right)[1]), 600) // 100 + 500
 })
 
 test('vertical alignment shifts the first baseline', () => {
   const base = { y: 0, h: 0.5, size: 0.1, text: 'x', w: 0 }
-  const yOf = (valign) => Number(
-    /<tspan x="[\d.-]+" y="([\d.-]+)"/.exec(buildOverlaySvg([textLayer({ ...base, valign })], 1000, 1000))[1]
-  )
+  const yOf = (valign) =>
+    Number(/<tspan x="[\d.-]+" y="([\d.-]+)"/.exec(buildOverlaySvg([textLayer({ ...base, valign })], 1000, 1000))[1])
   assert.ok(yOf('top') < yOf('middle'))
   assert.ok(yOf('middle') < yOf('bottom'))
 })
@@ -159,10 +166,24 @@ test('baselines are explicit, never dominant-baseline', () => {
 // ─── shapes ──────────────────────────────────────────────────────────────────
 
 test('rect honours fill, stroke and corner radius', () => {
-  const svg = buildOverlaySvg([{
-    id: 's', type: 'rect', x: 0.1, y: 0.1, w: 0.5, h: 0.25,
-    fill: '#ff0000', stroke: '#00ff00', strokeWidth: 0.01, radius: 0.02,
-  }], 1000, 1000)
+  const svg = buildOverlaySvg(
+    [
+      {
+        id: 's',
+        type: 'rect',
+        x: 0.1,
+        y: 0.1,
+        w: 0.5,
+        h: 0.25,
+        fill: '#ff0000',
+        stroke: '#00ff00',
+        strokeWidth: 0.01,
+        radius: 0.02,
+      },
+    ],
+    1000,
+    1000,
+  )
   assert.ok(svg.includes('<rect'))
   assert.ok(svg.includes('fill="#ff0000"'))
   assert.ok(svg.includes('stroke="#00ff00"'))
@@ -171,7 +192,11 @@ test('rect honours fill, stroke and corner radius', () => {
 })
 
 test('rect with fill none stays unfilled', () => {
-  const svg = buildOverlaySvg([{ id: 's', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5, fill: 'none', stroke: '#000', strokeWidth: 0.01 }], 1000, 1000)
+  const svg = buildOverlaySvg(
+    [{ id: 's', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5, fill: 'none', stroke: '#000', strokeWidth: 0.01 }],
+    1000,
+    1000,
+  )
   assert.ok(svg.includes('fill="none"'))
 })
 
@@ -183,7 +208,11 @@ test('ellipse is centered in its box', () => {
 })
 
 test('line spans the box midline', () => {
-  const svg = buildOverlaySvg([{ id: 's', type: 'line', x: 0.1, y: 0.2, w: 0.6, h: 0.1, stroke: '#000', strokeWidth: 0.005 }], 1000, 1000)
+  const svg = buildOverlaySvg(
+    [{ id: 's', type: 'line', x: 0.1, y: 0.2, w: 0.6, h: 0.1, stroke: '#000', strokeWidth: 0.005 }],
+    1000,
+    1000,
+  )
   assert.ok(svg.includes('x1="100"'))
   assert.ok(svg.includes('x2="700"'))
   assert.ok(svg.includes('y1="250"'))
@@ -259,9 +288,24 @@ test('identical input yields byte-identical SVG (stable hashing)', () => {
 const { psdTextOverlay } = require('../src/overlay_render')
 
 const psdNode = (over = {}) => ({
-  id: '1/0', kind: 'text', name: 'Title', text: 'Original',
-  x: 100, y: 200, w: 400, h: 80, effectiveOpacity: 1,
-  textStyle: { font: 'Didot', sizePx: 100, color: '#112233', tracking: 0.05, align: 'center', anchorX: 500, anchorY: 300 },
+  id: '1/0',
+  kind: 'text',
+  name: 'Title',
+  text: 'Original',
+  x: 100,
+  y: 200,
+  w: 400,
+  h: 80,
+  effectiveOpacity: 1,
+  textStyle: {
+    font: 'Didot',
+    sizePx: 100,
+    color: '#112233',
+    tracking: 0.05,
+    align: 'center',
+    anchorX: 500,
+    anchorY: 300,
+  },
   ...over,
 })
 
@@ -280,13 +324,17 @@ test('psdTextOverlay only applies to text layers', () => {
 })
 
 test('the stand-in anchor matches the PSD anchor for each alignment', () => {
-  const W = 1000, H = 1000
-  for (const [align, expected] of [['center', 500], ['left', 500], ['right', 500]]) {
+  const W = 1000,
+    H = 1000
+  for (const [align, expected] of [
+    ['center', 500],
+    ['left', 500],
+    ['right', 500],
+  ]) {
     const n = psdNode({ textStyle: { ...psdNode().textStyle, align } })
     const ov = psdTextOverlay(n, { text: 'New' }, W, H)
     // The engine's own anchor for this alignment must land on anchorX.
-    const anchor = align === 'center' ? (ov.x + ov.w / 2)
-      : align === 'right' ? (ov.x + ov.w) : ov.x
+    const anchor = align === 'center' ? ov.x + ov.w / 2 : align === 'right' ? ov.x + ov.w : ov.x
     assert.ok(Math.abs(anchor * W - expected) < 0.001, `${align}: ${anchor * W} != ${expected}`)
   }
 })
@@ -302,7 +350,7 @@ test('a moved layer carries its stand-in with it', () => {
   const a = psdTextOverlay(psdNode(), { text: 'New' }, 1000, 1000)
   const b = psdTextOverlay(psdNode(), { text: 'New', dx: 50, dy: -25 }, 1000, 1000)
   assert.ok(Math.abs((b.x - a.x) * 1000 - 50) < 0.001)
-  assert.ok(Math.abs((b.y - a.y) * 1000 - (-25)) < 0.001)
+  assert.ok(Math.abs((b.y - a.y) * 1000 - -25) < 0.001)
 })
 
 test('style carries over, and a missing size falls back to the layer height', () => {
@@ -355,10 +403,15 @@ test('an empty textStyle is not treated as an edit', () => {
 
 test('the stand-in honours an overridden size, face and alignment', () => {
   const n = psdNode()
-  const ov = psdTextOverlay(n, {
-    text: 'New',
-    textStyle: { sizePx: 200, font: 'Futura', align: 'left', weight: 700, italic: true, lineHeight: 1.5 },
-  }, 1000, 1000)
+  const ov = psdTextOverlay(
+    n,
+    {
+      text: 'New',
+      textStyle: { sizePx: 200, font: 'Futura', align: 'left', weight: 700, italic: true, lineHeight: 1.5 },
+    },
+    1000,
+    1000,
+  )
   assert.equal(ov.size * 1000, 200, 'size override reaches the overlay')
   assert.equal(ov.font, 'Futura')
   assert.equal(ov.align, 'left')

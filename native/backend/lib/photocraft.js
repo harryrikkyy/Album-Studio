@@ -12,15 +12,18 @@ const readline = require('readline')
 
 /** The engine binary: ALBUM_STUDIO_PHOTOCRAFT_CLI, else the development build. */
 function cliPath() {
-  return process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI
-    || path.join(process.env.HOME || '', 'Library/Caches/AlbumStudioBuild/target/release/photocraft-cli')
+  return (
+    process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI ||
+    path.join(process.env.HOME || '', 'Library/Caches/AlbumStudioBuild/target/release/photocraft-cli')
+  )
 }
 
 class PhotoCraftSession {
   /** Long print commands can take minutes; tests and callers may choose shorter bounds. */
   constructor({ writeRoot, requestTimeoutMs = 300000, shutdownTimeoutMs = 5000, forceKillTimeoutMs = 1000 }) {
     for (const [name, value] of Object.entries({ requestTimeoutMs, shutdownTimeoutMs, forceKillTimeoutMs })) {
-      if (!Number.isSafeInteger(value) || value < 1 || value > 2147483647) throw new Error(`${name} must be a positive timeout in milliseconds`)
+      if (!Number.isSafeInteger(value) || value < 1 || value > 2147483647)
+        throw new Error(`${name} must be a positive timeout in milliseconds`)
     }
     this.writeRoot = writeRoot
     this.requestTimeoutMs = requestTimeoutMs
@@ -36,8 +39,14 @@ class PhotoCraftSession {
     this.proc = spawn(cliPath(), ['serve', '--automation-read-root', '/', '--automation-write-root', writeRoot], {
       stdio: ['pipe', 'pipe', 'pipe'],
     })
-    this.exited = new Promise((resolve) => { this.resolveExited = resolve })
-    const stopped = (code, signal) => this._finish({ code, signal }, new Error(`PhotoCraft stopped (${signal || code}). ${this.stderr.trim().split('\n').slice(-2).join(' ')}`))
+    this.exited = new Promise((resolve) => {
+      this.resolveExited = resolve
+    })
+    const stopped = (code, signal) =>
+      this._finish(
+        { code, signal },
+        new Error(`PhotoCraft stopped (${signal || code}). ${this.stderr.trim().split('\n').slice(-2).join(' ')}`),
+      )
     this.proc.on('exit', stopped)
     this.proc.on('close', stopped)
     this.proc.on('error', (e) => {
@@ -47,10 +56,16 @@ class PhotoCraftSession {
       if (!this.proc.pid) this._finish({ code: null, signal: null }, err)
     })
     this.proc.stdin.on('error', (e) => this._failAll(new Error(`PhotoCraft didn't accept a request: ${e.message}`)))
-    this.proc.stderr.on('data', (d) => { this.stderr = (this.stderr + d).slice(-4000) })
+    this.proc.stderr.on('data', (d) => {
+      this.stderr = (this.stderr + d).slice(-4000)
+    })
     readline.createInterface({ input: this.proc.stdout }).on('line', (line) => {
       let msg
-      try { msg = JSON.parse(line) } catch (_) { return }
+      try {
+        msg = JSON.parse(line)
+      } catch (_) {
+        return
+      }
       if (!msg || typeof msg !== 'object' || !Number.isSafeInteger(msg.id)) return
       const w = this.waiting.get(msg.id)
       if (!w) return
@@ -63,7 +78,10 @@ class PhotoCraftSession {
 
   _failAll(err) {
     if (!this.terminalError) this.terminalError = err
-    for (const w of this.waiting.values()) { clearTimeout(w.timer); w.reject(this.terminalError) }
+    for (const w of this.waiting.values()) {
+      clearTimeout(w.timer)
+      w.reject(this.terminalError)
+    }
     this.waiting.clear()
   }
 
@@ -79,16 +97,30 @@ class PhotoCraftSession {
     if (this.terminalError) return Promise.reject(this.terminalError)
     let request
     const id = this.next++
-    try { request = JSON.stringify({ id, method, params }) + '\n' } catch (e) { return Promise.reject(e) }
+    try {
+      request = JSON.stringify({ id, method, params }) + '\n'
+    } catch (e) {
+      return Promise.reject(e)
+    }
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
-        this._failAll(new Error(`PhotoCraft request “${method}” timed out after ${this.requestTimeoutMs} ms. Retry the job with a new engine session.`))
+        this._failAll(
+          new Error(
+            `PhotoCraft request “${method}” timed out after ${this.requestTimeoutMs} ms. Retry the job with a new engine session.`,
+          ),
+        )
         // Continuing after a timed-out stateful command could apply later commands to the wrong document.
         this.close().catch(() => {})
       }, this.requestTimeoutMs)
       this.waiting.set(id, { resolve, reject, timer })
-      const failedWrite = (e) => { if (e) this._failAll(new Error(`PhotoCraft didn't accept a request: ${e.message}`)) }
-      try { this.proc.stdin.write(request, failedWrite) } catch (e) { failedWrite(e) }
+      const failedWrite = (e) => {
+        if (e) this._failAll(new Error(`PhotoCraft didn't accept a request: ${e.message}`))
+      }
+      try {
+        this.proc.stdin.write(request, failedWrite)
+      } catch (e) {
+        failedWrite(e)
+      }
     })
   }
 
@@ -105,7 +137,8 @@ class PhotoCraftSession {
   /** An absolute path under the write root, relative to it. */
   writePath(p) {
     const rel = path.relative(this.writeRoot, p)
-    if (!rel || rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) throw new Error(`${p} is outside the output folder ${this.writeRoot}`)
+    if (!rel || rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel))
+      throw new Error(`${p} is outside the output folder ${this.writeRoot}`)
     return rel.split(path.sep).join('/')
   }
 
@@ -118,22 +151,41 @@ class PhotoCraftSession {
     if (this.finished) return true
     let timer
     try {
-      return await Promise.race([this.exited.then(() => true), new Promise((resolve) => {
-        timer = setTimeout(() => resolve(false), ms)
-      })])
-    } finally { clearTimeout(timer) }
+      return await Promise.race([
+        this.exited.then(() => true),
+        new Promise((resolve) => {
+          timer = setTimeout(() => resolve(false), ms)
+        }),
+      ])
+    } finally {
+      clearTimeout(timer)
+    }
   }
 
   async _close() {
     this._failAll(new Error('PhotoCraft session is closing.'))
     if (this.finished) return
-    try { this.proc.stdin.end() } catch (_) { /* already gone */ }
+    try {
+      this.proc.stdin.end()
+    } catch (_) {
+      /* already gone */
+    }
     if (await this._waitForExit(this.shutdownTimeoutMs)) return
-    try { this.proc.kill('SIGTERM') } catch (_) { /* KILL below still gets a chance */ }
+    try {
+      this.proc.kill('SIGTERM')
+    } catch (_) {
+      /* KILL below still gets a chance */
+    }
     if (await this._waitForExit(this.shutdownTimeoutMs)) return
-    try { this.proc.kill('SIGKILL') } catch (_) { /* bounded final wait */ }
-    if (!await this._waitForExit(this.forceKillTimeoutMs)) {
-      throw new Error(`PhotoCraft process ${this.proc.pid || '(unknown)'} did not stop after SIGKILL. Close it before retrying the job.`)
+    try {
+      this.proc.kill('SIGKILL')
+    } catch (_) {
+      /* bounded final wait */
+    }
+    if (!(await this._waitForExit(this.forceKillTimeoutMs))) {
+      throw new Error(
+        `PhotoCraft process ${this.proc.pid || '(unknown)'} did not stop after SIGKILL. Close it before retrying the job.`,
+      )
     }
   }
 }

@@ -11,7 +11,9 @@ export function Review() {
     <section class="place place--review" aria-labelledby="review-title">
       <header class="place__head">
         <div>
-          <h1 id="review-title" class="place__title">Review</h1>
+          <h1 id="review-title" class="place__title">
+            Review
+          </h1>
           <p class="place__sub">{plural(a.spreads.length, 'spread')} · click a spread to work on it</p>
         </div>
       </header>
@@ -21,15 +23,24 @@ export function Review() {
             <button
               type="button"
               class="review-card"
-              onClick={() => { goToSpread(i); place.value = 'plan' }}
+              onClick={() => {
+                goToSpread(i)
+                place.value = 'plan'
+              }}
               aria-label={`Spread ${s.n}: ${plural(s.photoIds.length, 'photo')}, ${templateLabel(s.template?.name)}`}
             >
               <span class="review-card__img">
-                {s.proof ? <img src={proofUrl(s)} alt="" loading="lazy" decoding="async" /> : <ImageOff size={22} strokeWidth={1.4} />}
+                {s.proof ? (
+                  <img src={proofUrl(s)} alt="" loading="lazy" decoding="async" />
+                ) : (
+                  <ImageOff size={22} strokeWidth={1.4} />
+                )}
               </span>
               <span class="review-card__cap">
                 <span class="review-card__n">{s.n}</span>
-                <span class="review-card__meta">{plural(s.photoIds.length, 'photo')} · {templateLabel(s.template?.name)}</span>
+                <span class="review-card__meta">
+                  {plural(s.photoIds.length, 'photo')} · {templateLabel(s.template?.name)}
+                </span>
               </span>
             </button>
           </li>

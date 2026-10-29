@@ -34,6 +34,9 @@ test('signature and labels', () => {
 })
 
 test('local files become as:// URLs, each path part encoded', () => {
-  assert.equal(fileUrl('/Volumes/Harry/Album !/PSD\'s/Page 1#.jpg'), "as://file/Volumes/Harry/Album%20!/PSD's/Page%201%23.jpg")
+  assert.equal(
+    fileUrl("/Volumes/Harry/Album !/PSD's/Page 1#.jpg"),
+    "as://file/Volumes/Harry/Album%20!/PSD's/Page%201%23.jpg",
+  )
   assert.equal(fileUrl(null), undefined)
 })

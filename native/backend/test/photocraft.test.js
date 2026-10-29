@@ -10,9 +10,12 @@ const { PhotoCraftSession } = require('../lib/photocraft')
 async function bounded(promise, ms = 1000) {
   let timer
   try {
-    return await Promise.race([promise, new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error('operation did not settle in time')), ms)
-    })])
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error('operation did not settle in time')), ms)
+      }),
+    ])
   } finally {
     clearTimeout(timer)
   }
@@ -22,9 +25,11 @@ function makeSession(t, { missing = false, ignoreTermination = false, malformed 
   const dir = tmpdir()
   const binary = path.join(dir, 'engine')
   if (!missing) {
-    fs.writeFileSync(binary, `#!${process.execPath}
+    fs.writeFileSync(
+      binary,
+      `#!${process.execPath}
 const readline = require('readline')
-${malformed ? "process.stdout.write('null\\ninvalid JSON\\n{\"id\":\"wrong\"}\\n')" : ''}
+${malformed ? 'process.stdout.write(\'null\\ninvalid JSON\\n{"id":"wrong"}\\n\')' : ''}
 ${ignoreTermination ? "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)" : ''}
 readline.createInterface({ input: process.stdin }).on('line', (line) => {
   const msg = JSON.parse(line)
@@ -33,11 +38,19 @@ readline.createInterface({ input: process.stdin }).on('line', (line) => {
   if (msg.method === 'fail') { process.stdout.write(JSON.stringify({ id: msg.id, ok: false, error: 'bad command' }) + '\\n'); return }
   process.stdout.write(JSON.stringify({ id: msg.id, ok: true, result: msg.params }) + '\\n')
 })
-`, { mode: 0o755 })
+`,
+      { mode: 0o755 },
+    )
   }
   const previous = process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI
   process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI = binary
-  const pc = new PhotoCraftSession({ writeRoot: dir, requestTimeoutMs: 100, shutdownTimeoutMs: 40, forceKillTimeoutMs: 200, ...options })
+  const pc = new PhotoCraftSession({
+    writeRoot: dir,
+    requestTimeoutMs: 100,
+    shutdownTimeoutMs: 40,
+    forceKillTimeoutMs: 200,
+    ...options,
+  })
   if (previous === undefined) delete process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI
   else process.env.ALBUM_STUDIO_PHOTOCRAFT_CLI = previous
   t.after(async () => {

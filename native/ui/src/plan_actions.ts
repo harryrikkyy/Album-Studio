@@ -3,7 +3,16 @@
 
 import { autoTemplate, edit, spreadSelection, type Op } from './edit'
 import { plural, templateLabel } from './format'
-import { album, currentSpread, goToSpread, poolAnchor, poolSelection, selectionFocus, spreadIndex, toast } from './state'
+import {
+  album,
+  currentSpread,
+  goToSpread,
+  poolAnchor,
+  poolSelection,
+  selectionFocus,
+  spreadIndex,
+  toast,
+} from './state'
 import type { Adjust, Placement } from './types'
 
 /** Spreads a set of photos is on now, other than `except`. */
@@ -27,7 +36,12 @@ export function addPhotos(n: number, ids: string[], { copy = false, index }: { c
 }
 
 export function removePhotos(n: number, ids: string[]) {
-  return edit(fit(ids.map((id) => ({ op: 'removePhoto', n, id })), [n]))
+  return edit(
+    fit(
+      ids.map((id) => ({ op: 'removePhoto', n, id })),
+      [n],
+    ),
+  )
 }
 
 /** `newId` takes `oldId`'s frame; if `newId` was on another spread, `oldId` goes there instead. */
@@ -78,14 +92,19 @@ export async function placeWithTemplate(ids: string[], templateId: string, templ
   const n = empty ? s.n : s.n + 1
   const ops: Op[] = empty ? [] : [{ op: 'insertSpread', at: n }]
   // The spreads they leave, numbered as they will be once the new spread is in.
-  const left = spreadsOf(ids, 0).map((m) => (!empty && m >= n ? m + 1 : m)).filter((m) => m !== n)
+  const left = spreadsOf(ids, 0)
+    .map((m) => (!empty && m >= n ? m + 1 : m))
+    .filter((m) => m !== n)
   ops.push({ op: 'addPhoto', n, ids }, { op: 'setTemplate', n, templateId })
   const r = await edit(fit(ops, left))
   if (!r) return
   goToSpread(n - 1)
   poolSelection.value = new Set()
   poolAnchor.value = null
-  toast('ok', `${plural(ids.length, 'photo')} on ${empty ? '' : 'a new '}spread ${n} with ${templateLabel(templateName)}. ⌘Z undoes it.`)
+  toast(
+    'ok',
+    `${plural(ids.length, 'photo')} on ${empty ? '' : 'a new '}spread ${n} with ${templateLabel(templateName)}. ⌘Z undoes it.`,
+  )
 }
 
 /** A photo's colour (wherever it appears); all zero restores it. */
@@ -147,6 +166,10 @@ export async function autoFill(o: AutoFillOptions) {
     f.cappedTo != null ? `only ${f.cappedTo} spreads: there aren’t enough photos for more` : null,
     f.withoutTemplate ? `${plural(f.withoutTemplate, 'spread')} without a fitting template` : null,
   ].filter(Boolean)
-  toast(f.withoutTemplate ? 'error' : 'ok', `Planned ${plural(f.spreads, 'spread')}${notes.length ? ` (${notes.join('; ')})` : ''}. ⌘Z undoes it.`, 9000)
+  toast(
+    f.withoutTemplate ? 'error' : 'ok',
+    `Planned ${plural(f.spreads, 'spread')}${notes.length ? ` (${notes.join('; ')})` : ''}. ⌘Z undoes it.`,
+    9000,
+  )
   return true
 }

@@ -21,16 +21,28 @@ function helperCandidates() {
 }
 
 function renameExclusive(source, target) {
-  const candidates = helperCandidates(), binary = candidates.find(file => fs.existsSync(file)) || candidates[0]
+  const candidates = helperCandidates(),
+    binary = candidates.find((file) => fs.existsSync(file)) || candidates[0]
   return new Promise((resolve, reject) => {
-    execFile(binary, [source, target], { timeout: 10000, killSignal: 'SIGKILL', maxBuffer: 65536 }, (error, _out, stderr) => {
-      if (!error) { resolve(); return }
-      const code = /^([A-Z]+):/m.exec(stderr || '')
-      const missing = `The atomic publication helper is missing (looked for ${candidates.join(', ')}). Rebuild the pinned native engine/helpers or set ALBUM_STUDIO_RENAME_CLI before publishing; all existing files were preserved.`
-      const failure = new Error(error.code === 'ENOENT' ? missing : `Atomic file capture failed: ${(stderr || error.message).trim()}`, { cause: error })
-      failure.code = code ? code[1] : error.code
-      reject(failure)
-    })
+    execFile(
+      binary,
+      [source, target],
+      { timeout: 10000, killSignal: 'SIGKILL', maxBuffer: 65536 },
+      (error, _out, stderr) => {
+        if (!error) {
+          resolve()
+          return
+        }
+        const code = /^([A-Z]+):/m.exec(stderr || '')
+        const missing = `The atomic publication helper is missing (looked for ${candidates.join(', ')}). Rebuild the pinned native engine/helpers or set ALBUM_STUDIO_RENAME_CLI before publishing; all existing files were preserved.`
+        const failure = new Error(
+          error.code === 'ENOENT' ? missing : `Atomic file capture failed: ${(stderr || error.message).trim()}`,
+          { cause: error },
+        )
+        failure.code = code ? code[1] : error.code
+        reject(failure)
+      },
+    )
   })
 }
 module.exports = { renameExclusive, helperCandidates }

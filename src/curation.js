@@ -59,7 +59,9 @@ async function extractFeatures(sharp, filePath) {
   // Sharpness: variance of the Laplacian (4-neighbour discrete kernel). High
   // variance = more high-frequency content = sharper. Blurry shots cluster
   // near zero; well-focused shots run 100+ on this scale.
-  let sumLap = 0, sumLapSq = 0, n = 0
+  let sumLap = 0,
+    sumLapSq = 0,
+    n = 0
   for (let y = 1; y < h - 1; y++) {
     for (let x = 1; x < w - 1; x++) {
       const i = y * w + x
@@ -141,7 +143,10 @@ function hamming(a, b) {
   // 16 hex chars × 4 bits = 64 bits.
   for (let i = 0; i < 16; i++) {
     let v = parseInt(a[i], 16) ^ parseInt(b[i], 16)
-    while (v) { d += v & 1; v >>= 1 }
+    while (v) {
+      d += v & 1
+      v >>= 1
+    }
   }
   return d
 }
@@ -209,7 +214,9 @@ async function analyzeFolder(folderPath, onProgress) {
       })
     }
     if (onProgress && (i % 5 === 0 || i === files.length - 1)) {
-      try { onProgress({ done: i + 1, total, file }) } catch {}
+      try {
+        onProgress({ done: i + 1, total, file })
+      } catch {}
     }
   }
   return results
@@ -242,9 +249,18 @@ function curate(features, options = {}) {
   const droppedError = []
   const survivors = []
   for (const f of features) {
-    if (f.error) { droppedError.push(f); continue }
-    if (f.sharpness < opts.minSharpness) { droppedBlur.push(f); continue }
-    if (f.exposureScore < opts.minExposure) { droppedExposure.push(f); continue }
+    if (f.error) {
+      droppedError.push(f)
+      continue
+    }
+    if (f.sharpness < opts.minSharpness) {
+      droppedBlur.push(f)
+      continue
+    }
+    if (f.exposureScore < opts.minExposure) {
+      droppedExposure.push(f)
+      continue
+    }
     survivors.push(f)
   }
 
@@ -264,8 +280,7 @@ function curate(features, options = {}) {
   // Pass 3: orientation caps. If the user asked for at most N horizontal +
   // M vertical, take the best of each.
   if (opts.targetH != null || opts.targetV != null) {
-    const sortByQuality = (a, b) =>
-      b.sharpness * b.exposureScore - a.sharpness * a.exposureScore
+    const sortByQuality = (a, b) => b.sharpness * b.exposureScore - a.sharpness * a.exposureScore
     const byOrient = { h: [], v: [] }
     for (const k of keepers) byOrient[k.orient].push(k)
     byOrient.h.sort(sortByQuality)
@@ -277,9 +292,7 @@ function curate(features, options = {}) {
 
   // Sort final keepers by chronology if filenames look chronological,
   // otherwise alphabetic. Wedding shoots almost always sort right by filename.
-  keepers.sort((a, b) =>
-    a.baseName.localeCompare(b.baseName, undefined, { numeric: true })
-  )
+  keepers.sort((a, b) => a.baseName.localeCompare(b.baseName, undefined, { numeric: true }))
 
   return {
     keepers,

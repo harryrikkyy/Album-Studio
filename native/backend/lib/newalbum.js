@@ -23,10 +23,21 @@ const BAD_NAME = /[/:\\\u0000-\u001f]/
 /** What is in each folder: photos, RAWs, thumbnails still to make, a few thumbnails to show. */
 async function inspectFolders({ paths }) {
   if (!Array.isArray(paths)) throw new Error('missing `paths`')
-  return Promise.all(paths.map(async (p) => {
-    const s = await surveyFolder(p)
-    return { path: s.path, name: s.name, exists: s.exists, photos: s.photos, raws: s.raws, thumbs: s.thumbs, missing: s.missing.length, samples: s.samples.slice(0, 6) }
-  }))
+  return Promise.all(
+    paths.map(async (p) => {
+      const s = await surveyFolder(p)
+      return {
+        path: s.path,
+        name: s.name,
+        exists: s.exists,
+        photos: s.photos,
+        raws: s.raws,
+        thumbs: s.thumbs,
+        missing: s.missing.length,
+        samples: s.samples.slice(0, 6),
+      }
+    }),
+  )
 }
 
 /** Template collections used by recent albums, most used first, with their template counts. */
@@ -40,23 +51,41 @@ async function knownCollections() {
         if (!uses.has(c)) uses.set(c, [])
         uses.get(c).push(r.name)
       }
-    } catch (_) { /* an album that can't be read just doesn't vote */ }
+    } catch (_) {
+      /* an album that can't be read just doesn't vote */
+    }
   }
-  const list = await Promise.all([...uses].map(async ([p, albums]) => {
-    const exists = await fs.promises.access(p).then(() => true, () => false)
-    const templates = exists ? (await listTemplates([p])).length : 0
-    return { path: p, name: path.basename(p), exists, templates, albums }
-  }))
+  const list = await Promise.all(
+    [...uses].map(async ([p, albums]) => {
+      const exists = await fs.promises.access(p).then(
+        () => true,
+        () => false,
+      )
+      const templates = exists ? (await listTemplates([p])).length : 0
+      return { path: p, name: path.basename(p), exists, templates, albums }
+    }),
+  )
   return list.sort((a, b) => b.albums.length - a.albums.length || a.name.localeCompare(b.name))
 }
 
 /** Template counts of folders the user picked as collections. */
 async function inspectCollections({ paths }) {
   if (!Array.isArray(paths)) throw new Error('missing `paths`')
-  return Promise.all(paths.map(async (p) => {
-    const exists = await fs.promises.stat(p).then((s) => s.isDirectory(), () => false)
-    return { path: p, name: path.basename(p), exists, templates: exists ? (await listTemplates([p])).length : 0, albums: [] }
-  }))
+  return Promise.all(
+    paths.map(async (p) => {
+      const exists = await fs.promises.stat(p).then(
+        (s) => s.isDirectory(),
+        () => false,
+      )
+      return {
+        path: p,
+        name: path.basename(p),
+        exists,
+        templates: exists ? (await listTemplates([p])).length : 0,
+        albums: [],
+      }
+    }),
+  )
 }
 
 /** A suggested name and place for an album of these photo folders. */
@@ -84,17 +113,32 @@ async function createAlbum(p, { emit }) {
   if (!name) throw new Error('Give the album a name.')
   if (BAD_NAME.test(name) || name === '.' || name === '..') throw new Error('An album name can’t contain / : or \\.')
   if (!p.parent) throw new Error('Choose where to save the album.')
-  const parentOk = await fs.promises.stat(p.parent).then((s) => s.isDirectory(), () => false)
+  const parentOk = await fs.promises.stat(p.parent).then(
+    (s) => s.isDirectory(),
+    () => false,
+  )
   if (!parentOk) throw new Error(`The folder ${p.parent} isn’t there. The drive may be disconnected.`)
   const folder = path.join(p.parent, name)
-  if (await fs.promises.access(path.join(folder, 'project.json')).then(() => true, () => false)) {
+  if (
+    await fs.promises.access(path.join(folder, 'project.json')).then(
+      () => true,
+      () => false,
+    )
+  ) {
     throw new Error(`There is already an album called “${name}” there. Open it from Albums, or choose another name.`)
   }
   const photoFolders = [...new Set(p.photoFolders || [])]
   if (!photoFolders.length) throw new Error('Add at least one photo folder.')
   for (const f of photoFolders) {
-    if (!(await fs.promises.stat(f).then((s) => s.isDirectory(), () => false))) throw new Error(`The photo folder ${f} isn’t there.`)
-    if (path.resolve(f) === path.resolve(folder)) throw new Error('The album can’t be saved inside its own photo folder with the same name.')
+    if (
+      !(await fs.promises.stat(f).then(
+        (s) => s.isDirectory(),
+        () => false,
+      ))
+    )
+      throw new Error(`The photo folder ${f} isn’t there.`)
+    if (path.resolve(f) === path.resolve(folder))
+      throw new Error('The album can’t be saved inside its own photo folder with the same name.')
   }
   const collections = [...new Set(p.templateCollections || [])]
   if (p.autoFill && !collections.length) throw new Error('Auto-fill needs at least one template collection.')
@@ -106,8 +150,26 @@ async function createAlbum(p, { emit }) {
     const thumbFailures = []
     for (let i = 0; i < photoFolders.length; i++) {
       const f = photoFolders[i]
-      emit('album.creating', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: photoFolders.length, done: 0, total: 0 })
-      const r = await ensureThumbnails(f, (pr) => emit('album.creating', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: photoFolders.length, ...pr }), job)
+      emit('album.creating', {
+        stage: 'thumbs',
+        folder: path.basename(f),
+        index: i + 1,
+        folders: photoFolders.length,
+        done: 0,
+        total: 0,
+      })
+      const r = await ensureThumbnails(
+        f,
+        (pr) =>
+          emit('album.creating', {
+            stage: 'thumbs',
+            folder: path.basename(f),
+            index: i + 1,
+            folders: photoFolders.length,
+            ...pr,
+          }),
+        job,
+      )
       thumbFailures.push(...r.failed)
     }
 
@@ -144,8 +206,10 @@ async function createAlbum(p, { emit }) {
     let handle
     try {
       handle = await fs.promises.open(temporary, 'wx', 0o600)
-      await handle.writeFile(JSON.stringify(project, null, 2)); await handle.sync()
-      await handle.close(); handle = null
+      await handle.writeFile(JSON.stringify(project, null, 2))
+      await handle.sync()
+      await handle.close()
+      handle = null
       // Another creator can publish after the initial existence check while thumbnails are
       // being made. Publication must atomically refuse its project rather than replace it.
       await exclusiveRename.renameExclusive(temporary, path.join(folder, 'project.json'))
@@ -158,7 +222,17 @@ async function createAlbum(p, { emit }) {
     let report = null
     if (p.autoFill) {
       emit('album.creating', { stage: 'plan', spreads: p.autoFill.desiredSheets })
-      const r = await updateAlbum({ album: folder, ops: [{ op: 'autoFill', mode: 'desired', desiredSheets: p.autoFill.desiredSheets, chronological: p.autoFill.chronological !== false }] })
+      const r = await updateAlbum({
+        album: folder,
+        ops: [
+          {
+            op: 'autoFill',
+            mode: 'desired',
+            desiredSheets: p.autoFill.desiredSheets,
+            chronological: p.autoFill.chronological !== false,
+          },
+        ],
+      })
       report = r.report
     }
     const album = await migrateAlbum({ album: folder })
@@ -187,9 +261,30 @@ async function setAlbumFolders(p, { emit }) {
     const added = p.photoFolders.filter((f) => !known.has(f))
     for (let i = 0; i < added.length; i++) {
       const f = added[i]
-      if (!(await fs.promises.stat(f).then((st) => st.isDirectory(), () => false))) throw new Error(`The photo folder ${f} isn’t there.`)
-      emit('album.folders', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: added.length, done: 0, total: 0 })
-      await ensureThumbnails(f, (pr) => emit('album.folders', { stage: 'thumbs', folder: path.basename(f), index: i + 1, folders: added.length, ...pr }))
+      if (
+        !(await fs.promises.stat(f).then(
+          (st) => st.isDirectory(),
+          () => false,
+        ))
+      )
+        throw new Error(`The photo folder ${f} isn’t there.`)
+      emit('album.folders', {
+        stage: 'thumbs',
+        folder: path.basename(f),
+        index: i + 1,
+        folders: added.length,
+        done: 0,
+        total: 0,
+      })
+      await ensureThumbnails(f, (pr) =>
+        emit('album.folders', {
+          stage: 'thumbs',
+          folder: path.basename(f),
+          index: i + 1,
+          folders: added.length,
+          ...pr,
+        }),
+      )
     }
     ops.push({ op: 'setPhotoFolders', folders: p.photoFolders })
   }

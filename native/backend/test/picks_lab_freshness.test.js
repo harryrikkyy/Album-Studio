@@ -15,27 +15,47 @@ function fixture(t) {
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const previous = process.env.ALBUM_STUDIO_CACHE_DIR
   process.env.ALBUM_STUDIO_CACHE_DIR = path.join(dir, 'cache')
-  t.after(() => { if (previous === undefined) delete process.env.ALBUM_STUDIO_CACHE_DIR; else process.env.ALBUM_STUDIO_CACHE_DIR = previous })
-  const folder = path.join(dir, 'photos'); fs.mkdirSync(folder)
+  t.after(() => {
+    if (previous === undefined) delete process.env.ALBUM_STUDIO_CACHE_DIR
+    else process.env.ALBUM_STUDIO_CACHE_DIR = previous
+  })
+  const folder = path.join(dir, 'photos')
+  fs.mkdirSync(folder)
   return { dir, folder }
 }
 async function buffers(colors) {
-  const values = await Promise.all(colors.map((background) => sharp({ create: { width: 640, height: 480, channels: 3, background } }).png({ compressionLevel: 0 }).toBuffer()))
+  const values = await Promise.all(
+    colors.map((background) =>
+      sharp({ create: { width: 640, height: 480, channels: 3, background } })
+        .png({ compressionLevel: 0 })
+        .toBuffer(),
+    ),
+  )
   assert.equal(values[0].length, values[1].length)
   return values
 }
-const rewrite = (file, bytes) => { fs.writeFileSync(file, bytes); fs.utimesSync(file, 1700000000, 1700000000) }
+const rewrite = (file, bytes) => {
+  fs.writeFileSync(file, bytes)
+  fs.utimesSync(file, 1700000000, 1700000000)
+}
 const context = { emit: () => {} }
 
 test('scores from the older mutable-input pipeline are retained but never reused', async (t) => {
-  const { dir, folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white] = await buffers(['#f0f0f0', '#020202'])
-  rewrite(source, white); await ensureThumbnails(folder)
+  const { dir, folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white] = await buffers(['#f0f0f0', '#020202'])
+  rewrite(source, white)
+  await ensureThumbnails(folder)
   const evidence = await require('../lib/thumbs').surveyFolder(folder, { includeEvidence: true })
-  const photos = evidence.evidence.sort((a, b) => a.thumb.localeCompare(b.thumb)), crypto = require('crypto')
+  const photos = evidence.evidence.sort((a, b) => a.thumb.localeCompare(b.thumb)),
+    crypto = require('crypto')
   const hash = (bytes) => crypto.createHash('sha256').update(bytes).digest('hex')
-  const key = hash(JSON.stringify([path.resolve(folder), 2, photos])), cache = path.join(dir, 'cache', 'picks'), legacy = path.join(cache, `contents-${key}-v2.json`)
+  const key = hash(JSON.stringify([path.resolve(folder), 2, photos])),
+    cache = path.join(dir, 'cache', 'picks'),
+    legacy = path.join(cache, `contents-${key}-v2.json`)
   const bytes = Buffer.from(JSON.stringify([{ base: 'Photo', blackPct: 1, sharpness: 0 }]))
-  fs.mkdirSync(cache, { recursive: true }); fs.writeFileSync(legacy, bytes)
+  fs.mkdirSync(cache, { recursive: true })
+  fs.writeFileSync(legacy, bytes)
   fs.writeFileSync(`${legacy}.evidence`, JSON.stringify({ version: 2, key, digest: hash(bytes) }))
   const result = await analyzePhotos({ folders: [folder] }, context)
   assert.equal(result.photos[0].blackPct, 0, 'legacy scores must not describe the current white source')
@@ -43,7 +63,9 @@ test('scores from the older mutable-input pipeline are retained but never reused
 })
 
 test('picks changes its content evidence even when original and thumbnail-directory timestamps stay equal', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
   await ensureThumbnails(folder)
   const thumbDir = path.join(folder, '_Thumbnails')
@@ -59,73 +81,115 @@ test('picks changes its content evidence even when original and thumbnail-direct
 })
 
 test('picks refuses a failed thumbnail refresh and preserves the edited proxy', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
   await analyzePhotos({ folders: [folder] }, context)
-  const target = path.join(folder, '_Thumbnails', 'Photo.jpg'), manual = await sharp(black).jpeg().toBuffer()
+  const target = path.join(folder, '_Thumbnails', 'Photo.jpg'),
+    manual = await sharp(black).jpeg().toBuffer()
   fs.writeFileSync(target, manual)
   await assert.rejects(analyzePhotos({ folders: [folder] }, context), /thumbnail|preview|edited|preserv/i)
   assert.deepEqual(fs.readFileSync(target), manual)
 })
 
 test('picks scores only verified source-backed proxies and preserves orphan previews', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
   await ensureThumbnails(folder)
-  const orphan = path.join(folder, '_Thumbnails', 'Deleted-photo.jpg'), bytes = await sharp(black).jpeg().toBuffer()
+  const orphan = path.join(folder, '_Thumbnails', 'Deleted-photo.jpg'),
+    bytes = await sharp(black).jpeg().toBuffer()
   fs.writeFileSync(orphan, bytes)
   const result = await analyzePhotos({ folders: [folder] }, context)
-  assert.deepEqual(result.photos.map((photo) => photo.base), ['Photo'])
+  assert.deepEqual(
+    result.photos.map((photo) => photo.base),
+    ['Photo'],
+  )
   assert.deepEqual(fs.readFileSync(orphan), bytes)
 })
 
 test('picks source changes during scoring reject cache publication', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
-  const curation = require('../../../src/curation'), original = curation.analyzeFolder
-  t.mock.method(curation, 'analyzeFolder', async (...args) => { const result = await original(...args); rewrite(source, black); return result })
+  const curation = require('../../../src/curation'),
+    original = curation.analyzeFolder
+  t.mock.method(curation, 'analyzeFolder', async (...args) => {
+    const result = await original(...args)
+    rewrite(source, black)
+    return result
+  })
   await assert.rejects(analyzePhotos({ folders: [folder] }, context), /changed|refresh|raced/i)
 })
 
 test('picks rejects an edited private scoring snapshot and preserves its unexpected bytes', async (t) => {
-  const { dir, folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { dir, folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
-  const curation = require('../../../src/curation'), original = curation.analyzeFolder
+  const curation = require('../../../src/curation'),
+    original = curation.analyzeFolder
   const manual = await sharp(black).jpeg().toBuffer()
   let snapshot
   t.mock.method(curation, 'analyzeFolder', async (stage, ...args) => {
     snapshot = path.join(stage, 'Photo.jpg')
     // Override the private file's protection to exercise preservation of an actual edit.
-    fs.chmodSync(snapshot, 0o600); fs.writeFileSync(snapshot, manual)
+    fs.chmodSync(snapshot, 0o600)
+    fs.writeFileSync(snapshot, manual)
     return original(stage, ...args)
   })
   await assert.rejects(analyzePhotos({ folders: [folder] }, context), /snapshot|changed/i)
   assert.deepEqual(fs.readFileSync(snapshot), manual)
-  assert.deepEqual(fs.readdirSync(path.join(dir, 'cache', 'picks')).filter((name) => !name.startsWith('.')), [], 'no scores are committed from an edited scratch input')
+  assert.deepEqual(
+    fs.readdirSync(path.join(dir, 'cache', 'picks')).filter((name) => !name.startsWith('.')),
+    [],
+    'no scores are committed from an edited scratch input',
+  )
 })
 
 test('picks rejects a private snapshot changed and restored around decoding', async (t) => {
-  const { dir, folder } = fixture(t), source = path.join(folder, 'Photo.png'), [white, black] = await buffers(['#f0f0f0', '#020202'])
+  const { dir, folder } = fixture(t),
+    source = path.join(folder, 'Photo.png'),
+    [white, black] = await buffers(['#f0f0f0', '#020202'])
   rewrite(source, white)
-  const curation = require('../../../src/curation'), original = curation.analyzeFolder
+  const curation = require('../../../src/curation'),
+    original = curation.analyzeFolder
   let snapshot, snapshotBytes
   t.mock.method(curation, 'analyzeFolder', async (stage, ...args) => {
-    const file = path.join(stage, 'Photo.jpg'), prior = fs.readFileSync(file), st = fs.statSync(file)
-    snapshot = file; snapshotBytes = prior
+    const file = path.join(stage, 'Photo.jpg'),
+      prior = fs.readFileSync(file),
+      st = fs.statSync(file)
+    snapshot = file
+    snapshotBytes = prior
     fs.writeFileSync(file, await sharp(black).jpeg().toBuffer())
     const result = await original(stage, ...args)
-    fs.writeFileSync(file, prior); fs.utimesSync(file, st.atime, st.mtime)
+    fs.writeFileSync(file, prior)
+    fs.utimesSync(file, st.atime, st.mtime)
     return result
   })
   await assert.rejects(analyzePhotos({ folders: [folder] }, context), /snapshot|changed/i)
-  assert.deepEqual(fs.readFileSync(snapshot), snapshotBytes, 'a changed-and-restored snapshot is retained for diagnosis')
-  assert.deepEqual(fs.readdirSync(path.join(dir, 'cache', 'picks')).filter((name) => !name.startsWith('.')), [], 'no scores are published from transiently changed input')
+  assert.deepEqual(
+    fs.readFileSync(snapshot),
+    snapshotBytes,
+    'a changed-and-restored snapshot is retained for diagnosis',
+  )
+  assert.deepEqual(
+    fs.readdirSync(path.join(dir, 'cache', 'picks')).filter((name) => !name.startsWith('.')),
+    [],
+    'no scores are published from transiently changed input',
+  )
 })
 
 test('lab thumbnails refresh a preserved-size/stamp sheet and retain previous preview bytes', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Page.png'), [red, blue] = await buffers(['#ee1010', '#1010ee'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Page.png'),
+    [red, blue] = await buffers(['#ee1010', '#1010ee'])
   rewrite(source, red)
-  const first = (await listSheets({ folder })).sheets[0], prior = fs.readFileSync(first.thumb)
+  const first = (await listSheets({ folder })).sheets[0],
+    prior = fs.readFileSync(first.thumb)
   rewrite(source, blue)
   const second = (await listSheets({ folder })).sheets[0]
   assert.notEqual(second.thumb, first.thumb)
@@ -136,9 +200,12 @@ test('lab thumbnails refresh a preserved-size/stamp sheet and retain previous pr
 })
 
 test('an edited lab thumbnail is preserved and returns an actionable sheet error', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Page.png'), [red, blue] = await buffers(['#ee1010', '#1010ee'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Page.png'),
+    [red, blue] = await buffers(['#ee1010', '#1010ee'])
   rewrite(source, red)
-  const first = (await listSheets({ folder })).sheets[0], manual = await sharp(blue).jpeg().toBuffer()
+  const first = (await listSheets({ folder })).sheets[0],
+    manual = await sharp(blue).jpeg().toBuffer()
   fs.writeFileSync(first.thumb, manual)
   const second = (await listSheets({ folder })).sheets[0]
   assert.equal(second.thumb, null)
@@ -147,10 +214,16 @@ test('an edited lab thumbnail is preserved and returns an actionable sheet error
 })
 
 test('lab source changes during decoding cannot publish a stale thumbnail', async (t) => {
-  const { folder } = fixture(t), source = path.join(folder, 'Page.png'), [red, blue] = await buffers(['#ee1010', '#1010ee'])
+  const { folder } = fixture(t),
+    source = path.join(folder, 'Page.png'),
+    [red, blue] = await buffers(['#ee1010', '#1010ee'])
   rewrite(source, red)
   const toFile = sharp.prototype.toFile
-  t.mock.method(sharp.prototype, 'toFile', async function (...args) { const result = await toFile.apply(this, args); rewrite(source, blue); return result })
+  t.mock.method(sharp.prototype, 'toFile', async function (...args) {
+    const result = await toFile.apply(this, args)
+    rewrite(source, blue)
+    return result
+  })
   const sheet = (await listSheets({ folder })).sheets[0]
   assert.equal(sheet.thumb, null)
   assert.match(sheet.error, /changed|raced/i)

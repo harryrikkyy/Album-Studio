@@ -26,7 +26,10 @@ function settle(a: Account) {
 
 export async function checkAccount(refresh = false): Promise<void> {
   // The interface opened in a browser for development has no helper and nothing to check.
-  if (!inShell) { settle({ state: 'allowed', configured: true, bypass: true, daysLeft: 999 }); return }
+  if (!inShell) {
+    settle({ state: 'allowed', configured: true, bypass: true, daysLeft: 999 })
+    return
+  }
   checking.value = true
   try {
     settle(await call('account.status', refresh ? { refresh } : {}, 60_000))

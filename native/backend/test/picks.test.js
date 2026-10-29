@@ -16,10 +16,16 @@ const { analyzePhotos, copyPicks } = require('../lib/picks')
 async function makeShoot() {
   const dir = path.join(tmpdir(), 'haldi')
   fs.mkdirSync(dir)
-  const detail = await sharp({ create: { width: 900, height: 600, channels: 3, noise: { type: 'gaussian', mean: 128, sigma: 70 } } }).jpeg().toBuffer()
+  const detail = await sharp({
+    create: { width: 900, height: 600, channels: 3, noise: { type: 'gaussian', mean: 128, sigma: 70 } },
+  })
+    .jpeg()
+    .toBuffer()
   await sharp(detail).toFile(path.join(dir, 'A.jpg'))
   await sharp(detail).blur(25).toFile(path.join(dir, 'B.jpg'))
-  await sharp({ create: { width: 600, height: 900, channels: 3, background: '#020202' } }).jpeg().toFile(path.join(dir, 'C.jpg'))
+  await sharp({ create: { width: 600, height: 900, channels: 3, background: '#020202' } })
+    .jpeg()
+    .toFile(path.join(dir, 'C.jpg'))
   await sharp(detail).toFile(path.join(dir, 'D.jpg'))
   fs.writeFileSync(path.join(dir, 'D.ARW'), 'raw bytes')
   return dir
@@ -43,7 +49,12 @@ test('a shoot is scored from its thumbnails: sharp beats blurred, a black frame 
 
 test('picks are copied with every file of the same name (RAW and JPEG together), once', async () => {
   const dir = await makeShoot()
-  const r = await copyPicks({ picks: [{ folder: dir, base: 'D' }, { folder: dir, base: 'A' }] })
+  const r = await copyPicks({
+    picks: [
+      { folder: dir, base: 'D' },
+      { folder: dir, base: 'A' },
+    ],
+  })
   assert.equal(r.copied, 3)
   assert.deepEqual(fs.readdirSync(path.join(dir, '_Selected')).sort(), ['A.jpg', 'D.ARW', 'D.jpg'])
   const again = await copyPicks({ picks: [{ folder: dir, base: 'A' }] })

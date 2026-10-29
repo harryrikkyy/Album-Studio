@@ -49,7 +49,15 @@ async function rememberAlbum(album) {
 /** The list, each entry marked with whether its folder is reachable right now. */
 async function listRecent() {
   const list = await readRecent()
-  return Promise.all(list.map(async (e) => ({ ...e, available: await fs.promises.access(e.path).then(() => true, () => false) })))
+  return Promise.all(
+    list.map(async (e) => ({
+      ...e,
+      available: await fs.promises.access(e.path).then(
+        () => true,
+        () => false,
+      ),
+    })),
+  )
 }
 
 module.exports = { listRecent, rememberAlbum, dataDir }

@@ -31,29 +31,36 @@ function run(cmd, args) {
 
 const derivations = new Map()
 const sameFile = (a, b) => ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
-const changed = (file) => new Error(`The source ${file} changed while its derived image was made. Retry from a stable original.`)
+const changed = (file) =>
+  new Error(`The source ${file} changed while its derived image was made. Retry from a stable original.`)
 async function sourceIdentity(file) {
   const identity = await fs.promises.lstat(file, { bigint: true })
-  if (!identity.isFile()) throw new Error(`The source ${file} is not a regular file. Resolve its symlink before continuing.`)
+  if (!identity.isFile())
+    throw new Error(`The source ${file} is not a regular file. Resolve its symlink before continuing.`)
   return identity
 }
 async function unchangedSource(file, key, identity = null) {
-  if (await contentFileKey(file) !== key) throw changed(file)
+  if ((await contentFileKey(file)) !== key) throw changed(file)
   if (identity && !sameFile(identity, await sourceIdentity(file))) throw changed(file)
 }
 
 /** Decoders consume a private read-only copy, not a mutable original with coarse timestamps. */
 async function consumeSnapshot(file, key, parent, consume, options = {}) {
-  return withPrivateStage(parent, '.source-', async stage => {
-    const identity = await sourceIdentity(file)
-    const digest = await fileDigest(file)
-    if (contentKey(file, digest) !== key) throw changed(file)
-    const frozen = await stage.snapshot(file, digest)
-    const result = await consume(frozen, stage.path)
-    if (await fileDigest(frozen) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) throw changed(frozen)
-    await unchangedSource(file, key, identity)
-    return result
-  }, options)
+  return withPrivateStage(
+    parent,
+    '.source-',
+    async (stage) => {
+      const identity = await sourceIdentity(file)
+      const digest = await fileDigest(file)
+      if (contentKey(file, digest) !== key) throw changed(file)
+      const frozen = await stage.snapshot(file, digest)
+      const result = await consume(frozen, stage.path)
+      if ((await fileDigest(frozen)) !== digest || (await fs.promises.lstat(frozen)).mode & 0o222) throw changed(frozen)
+      await unchangedSource(file, key, identity)
+      return result
+    },
+    options,
+  )
 }
 
 /** Small evidence files are read without following links or accepting an in-flight rewrite. */
@@ -62,19 +69,26 @@ async function readEvidence(file, maxBytes = 65536) {
   try {
     handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
     const before = await handle.stat({ bigint: true })
-    if (!before.isFile() || before.size > BigInt(maxBytes)) throw new Error(`The cache evidence ${file} is invalid. Preserve it and rebuild in a new cache folder.`)
+    if (!before.isFile() || before.size > BigInt(maxBytes))
+      throw new Error(`The cache evidence ${file} is invalid. Preserve it and rebuild in a new cache folder.`)
     const bytes = await handle.readFile()
-    const after = await handle.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
-    if (!sameFile(before, after) || !sameFile(after, named)) throw new Error(`The cache evidence ${file} changed while it was read.`)
+    const after = await handle.stat({ bigint: true }),
+      named = await fs.promises.lstat(file, { bigint: true })
+    if (!sameFile(before, after) || !sameFile(after, named))
+      throw new Error(`The cache evidence ${file} changed while it was read.`)
     return JSON.parse(bytes.toString('utf8'))
   } catch (error) {
     if (error.code === 'ENOENT' && !handle) return null
     throw error
-  } finally { if (handle) await handle.close() }
+  } finally {
+    if (handle) await handle.close()
+  }
 }
 
 async function publishExclusive(from, to) {
-  try { await fs.promises.link(from, to) } catch (error) {
+  try {
+    await fs.promises.link(from, to)
+  } catch (error) {
     if (!['ENOSYS', 'ENOTSUP', 'EOPNOTSUPP', 'EPERM', 'EXDEV', 'EMLINK'].includes(error.code)) throw error
     await exclusiveRename.renameExclusive(from, to)
   }
@@ -82,12 +96,31 @@ async function publishExclusive(from, to) {
 
 async function verifiedDerived(file, out, sourceKey, recipe) {
   const record = await readEvidence(`${out}.json`)
-  const present = await fs.promises.lstat(out).then(() => true, (error) => { if (error.code === 'ENOENT') return false; throw error })
+  const present = await fs.promises.lstat(out).then(
+    () => true,
+    (error) => {
+      if (error.code === 'ENOENT') return false
+      throw error
+    },
+  )
   if (!present && !record) return null
-  if (!present || !record || record.version !== 1 || record.sourceKey !== sourceKey || record.recipe !== recipe || !/^[a-f0-9]{64}$/.test(record.digest) || (record.rotation !== undefined && ![0, 90, 180, 270].includes(record.rotation))) {
-    throw new Error(`The derived cache ${out} has unverified or incomplete evidence. Its existing bytes have been preserved; use a new cache folder to rebuild.`)
+  if (
+    !present ||
+    !record ||
+    record.version !== 1 ||
+    record.sourceKey !== sourceKey ||
+    record.recipe !== recipe ||
+    !/^[a-f0-9]{64}$/.test(record.digest) ||
+    (record.rotation !== undefined && ![0, 90, 180, 270].includes(record.rotation))
+  ) {
+    throw new Error(
+      `The derived cache ${out} has unverified or incomplete evidence. Its existing bytes have been preserved; use a new cache folder to rebuild.`,
+    )
   }
-  if (await fileDigest(out) !== record.digest) throw new Error(`The derived cache ${out} was edited or changed. Its bytes have been preserved; use a new cache folder to rebuild.`)
+  if ((await fileDigest(out)) !== record.digest)
+    throw new Error(
+      `The derived cache ${out} was edited or changed. Its bytes have been preserved; use a new cache folder to rebuild.`,
+    )
   await unchangedSource(file, sourceKey)
   return { file: out, rotation: record.rotation || 0, digest: record.digest, sourceKey }
 }
@@ -102,18 +135,28 @@ async function deriveCached(file, out, sourceKey, recipe, generate, extra = {}) 
   const work = (async () => {
     const identity = await sourceIdentity(file)
     const reused = await verifiedDerived(file, out, sourceKey, recipe)
-    if (reused) { await unchangedSource(file, sourceKey, identity); return reused }
+    if (reused) {
+      await unchangedSource(file, sourceKey, identity)
+      return reused
+    }
     await fs.promises.mkdir(path.dirname(out), { recursive: true })
-    return withPrivateStage(path.dirname(out), '.album-studio-derived-', async stage => {
-      const tmp = path.join(stage.path, 'image.jpg'), evidence = path.join(stage.path, 'evidence.json')
-      await consumeSnapshot(file, sourceKey, stage.path, (frozen) => generate(tmp, frozen), { historyParent: path.dirname(out) })
+    return withPrivateStage(path.dirname(out), '.album-studio-derived-', async (stage) => {
+      const tmp = path.join(stage.path, 'image.jpg'),
+        evidence = path.join(stage.path, 'evidence.json')
+      await consumeSnapshot(file, sourceKey, stage.path, (frozen) => generate(tmp, frozen), {
+        historyParent: path.dirname(out),
+      })
       const digest = await fileDigest(tmp)
       await stage.register(tmp, { digest })
       await unchangedSource(file, sourceKey, identity)
-      await fs.promises.writeFile(evidence, JSON.stringify({ ...extra, version: 1, sourceKey, recipe, digest }), { flag: 'wx' })
+      await fs.promises.writeFile(evidence, JSON.stringify({ ...extra, version: 1, sourceKey, recipe, digest }), {
+        flag: 'wx',
+      })
       await stage.register(evidence)
       // Retained stages must not share writable inodes with public derivatives.
-      try { await exclusiveRename.renameExclusive(tmp, out) } catch (error) {
+      try {
+        await exclusiveRename.renameExclusive(tmp, out)
+      } catch (error) {
         if (error.code !== 'EEXIST') throw error
         const concurrent = await verifiedDerived(file, out, sourceKey, recipe)
         if (concurrent) return concurrent
@@ -129,11 +172,18 @@ async function deriveCached(file, out, sourceKey, recipe, generate, extra = {}) 
     })
   })()
   derivations.set(identity, work)
-  try { return await work } finally { derivations.delete(identity) }
+  try {
+    return await work
+  } finally {
+    derivations.delete(identity)
+  }
 }
 
 function derivedKey(sourceKey, recipe) {
-  return crypto.createHash('sha256').update(JSON.stringify([sourceKey, recipe])).digest('hex')
+  return crypto
+    .createHash('sha256')
+    .update(JSON.stringify([sourceKey, recipe]))
+    .digest('hex')
 }
 function sourceBase(file) {
   let base = ''
@@ -153,12 +203,17 @@ async function placeable(file, cacheDir) {
   return (await placeableEvidence(file, cacheDir)).file
 }
 async function placeableEvidence(file, cacheDir) {
-  if (!isRaw(file)) { const digest = await fileDigest(file); return { file, digest, sourceKey: require('./cache').contentKey(file, digest), rotation: 0 } }
-  const sourceKey = await contentFileKey(file), recipe = 'sips-srgb-jpeg95-v2-frozen'
+  if (!isRaw(file)) {
+    const digest = await fileDigest(file)
+    return { file, digest, sourceKey: require('./cache').contentKey(file, digest), rotation: 0 }
+  }
+  const sourceKey = await contentFileKey(file),
+    recipe = 'sips-srgb-jpeg95-v2-frozen'
   const key = derivedKey(sourceKey, recipe)
   const out = path.join(cacheDir, `${sourceBase(file)}-${key}.jpg`)
   return deriveCached(file, out, sourceKey, recipe, (tmp, frozen) =>
-    run('/usr/bin/sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '95', '-m', SRGB, frozen, '--out', tmp]))
+    run('/usr/bin/sips', ['-s', 'format', 'jpeg', '-s', 'formatOptions', '95', '-m', SRGB, frozen, '--out', tmp]),
+  )
 }
 
 /** Degrees to turn an image upright, from a TIFF/EXIF orientation value. */
@@ -170,73 +225,84 @@ const ORIENT_DEG = { 1: 0, 3: 180, 6: 90, 8: 270 }
  * has no embedded JPEG (CR3, RAF and some DNGs aren't TIFF-based).
  */
 async function readEmbedded(fh, opened) {
-    const head = Buffer.alloc(1 << 20)
-    const { bytesRead } = await fh.read(head, 0, head.length, 0)
-    const order = head.toString('latin1', 0, 2)
-    if (bytesRead < 16 || (order !== 'II' && order !== 'MM')) return null
-    const le = order === 'II'
-    const u16 = (o) => (o + 2 <= bytesRead ? (le ? head.readUInt16LE(o) : head.readUInt16BE(o)) : 0)
-    const u32 = (o) => (o + 4 <= bytesRead ? (le ? head.readUInt32LE(o) : head.readUInt32BE(o)) : 0)
-    const found = []
-    let orientation = 1
-    const seen = new Set()
-    const walk = (off, depth) => {
-      if (!off || off + 2 > bytesRead || seen.has(off) || depth > 4 || seen.size > 32) return
-      seen.add(off)
-      const count = u16(off)
-      let at = 0
-      let len = 0
-      const subs = []
-      for (let i = 0; i < count; i++) {
-        const e = off + 2 + i * 12
-        if (e + 12 > bytesRead) break
-        const tag = u16(e)
-        const n = u32(e + 4)
-        const val = u32(e + 8)
-        if (tag === 0x0201) at = val
-        else if (tag === 0x0202) len = val
-        else if (tag === 0x0112 && depth === 0) orientation = u16(e + 8)
-        else if (tag === 0x014a) {
-          if (n === 1) subs.push(val)
-          else for (let k = 0; k < Math.min(n, 8); k++) subs.push(u32(val + k * 4))
-        }
+  const head = Buffer.alloc(1 << 20)
+  const { bytesRead } = await fh.read(head, 0, head.length, 0)
+  const order = head.toString('latin1', 0, 2)
+  if (bytesRead < 16 || (order !== 'II' && order !== 'MM')) return null
+  const le = order === 'II'
+  const u16 = (o) => (o + 2 <= bytesRead ? (le ? head.readUInt16LE(o) : head.readUInt16BE(o)) : 0)
+  const u32 = (o) => (o + 4 <= bytesRead ? (le ? head.readUInt32LE(o) : head.readUInt32BE(o)) : 0)
+  const found = []
+  let orientation = 1
+  const seen = new Set()
+  const walk = (off, depth) => {
+    if (!off || off + 2 > bytesRead || seen.has(off) || depth > 4 || seen.size > 32) return
+    seen.add(off)
+    const count = u16(off)
+    let at = 0
+    let len = 0
+    const subs = []
+    for (let i = 0; i < count; i++) {
+      const e = off + 2 + i * 12
+      if (e + 12 > bytesRead) break
+      const tag = u16(e)
+      const n = u32(e + 4)
+      const val = u32(e + 8)
+      if (tag === 0x0201) at = val
+      else if (tag === 0x0202) len = val
+      else if (tag === 0x0112 && depth === 0) orientation = u16(e + 8)
+      else if (tag === 0x014a) {
+        if (n === 1) subs.push(val)
+        else for (let k = 0; k < Math.min(n, 8); k++) subs.push(u32(val + k * 4))
       }
-      if (at && len) found.push({ at, len })
-      for (const s of subs) walk(s, depth + 1)
-      walk(u32(off + 2 + count * 12), depth)
     }
-    walk(u32(4), 0)
-    const best = found.sort((a, b) => b.len - a.len)[0]
-    // A malformed offset must not cause a huge allocation or a truncated preview to be cached.
-    if (!best || best.len < 1024 || best.len > 64 * 1024 * 1024 || BigInt(best.at) + BigInt(best.len) > opened.size) return null
-    const jpeg = Buffer.alloc(best.len)
-    let read = 0
-    while (read < best.len) {
-      const { bytesRead } = await fh.read(jpeg, read, best.len - read, best.at + read)
-      if (!bytesRead) return null
-      read += bytesRead
-    }
-    if (jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return null
-    return { jpeg, rotation: ORIENT_DEG[orientation] || 0 }
+    if (at && len) found.push({ at, len })
+    for (const s of subs) walk(s, depth + 1)
+    walk(u32(off + 2 + count * 12), depth)
+  }
+  walk(u32(4), 0)
+  const best = found.sort((a, b) => b.len - a.len)[0]
+  // A malformed offset must not cause a huge allocation or a truncated preview to be cached.
+  if (!best || best.len < 1024 || best.len > 64 * 1024 * 1024 || BigInt(best.at) + BigInt(best.len) > opened.size)
+    return null
+  const jpeg = Buffer.alloc(best.len)
+  let read = 0
+  while (read < best.len) {
+    const { bytesRead } = await fh.read(jpeg, read, best.len - read, best.at + read)
+    if (!bytesRead) return null
+    read += bytesRead
+  }
+  if (jpeg[0] !== 0xff || jpeg[1] !== 0xd8) return null
+  return { jpeg, rotation: ORIENT_DEG[orientation] || 0 }
 }
 
 async function embeddedJpeg(file) {
   const before = await fs.promises.lstat(file, { bigint: true })
-  if (!before.isFile()) throw new Error(`The source ${file} is not a regular file. Resolve its symlink before continuing.`)
+  if (!before.isFile())
+    throw new Error(`The source ${file} is not a regular file. Resolve its symlink before continuing.`)
   const fh = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
   let opened, result, failure
   try {
     opened = await fh.stat({ bigint: true })
     if (!sameFile(before, opened)) throw changed(file)
     result = await readEmbedded(fh, opened)
-  } catch (error) { failure = error }
+  } catch (error) {
+    failure = error
+  }
   try {
     if (opened) {
-      const after = await fh.stat({ bigint: true }), named = await fs.promises.lstat(file, { bigint: true })
+      const after = await fh.stat({ bigint: true }),
+        named = await fs.promises.lstat(file, { bigint: true })
       if (!sameFile(opened, after) || !sameFile(after, named)) throw changed(file)
     }
-  } catch (error) { if (!failure) failure = error }
-  try { await fh.close() } catch (error) { if (!failure) failure = error }
+  } catch (error) {
+    if (!failure) failure = error
+  }
+  try {
+    await fh.close()
+  } catch (error) {
+    if (!failure) failure = error
+  }
   if (failure) throw failure
   return result
 }
@@ -256,7 +322,8 @@ async function previewable(file, { developedDir, previewDir, minEdge = 1000 }) {
   const developed = path.join(developedDir, `${base}-${derivedKey(sourceKey, developedRecipe)}.jpg`)
   const reused = await verifiedDerived(file, developed, sourceKey, developedRecipe)
   if (reused) return reused
-  const recipe = `embedded-jpeg-v2-frozen:minEdge=${minEdge}`, key = derivedKey(sourceKey, recipe)
+  const recipe = `embedded-jpeg-v2-frozen:minEdge=${minEdge}`,
+    key = derivedKey(sourceKey, recipe)
   const out = path.join(previewDir, `${base}-${key}.preview.jpg`)
   const prior = await verifiedDerived(file, out, sourceKey, recipe)
   if (prior) return prior
@@ -264,9 +331,25 @@ async function previewable(file, { developedDir, previewDir, minEdge = 1000 }) {
   await unchangedSource(file, sourceKey, identity)
   const size = emb ? require('./jpeg_size').jpegSizeFromBuffer(emb.jpeg) : null
   if (emb && size && Math.max(size.width, size.height) >= minEdge) {
-    return deriveCached(file, out, sourceKey, recipe, (tmp) => fs.promises.writeFile(tmp, emb.jpeg, { flag: 'wx' }), { rotation: emb.rotation })
+    return deriveCached(file, out, sourceKey, recipe, (tmp) => fs.promises.writeFile(tmp, emb.jpeg, { flag: 'wx' }), {
+      rotation: emb.rotation,
+    })
   }
   return placeableEvidence(file, developedDir)
 }
 
-module.exports = { isRaw, placeable, placeableEvidence, previewable, embeddedJpeg, deriveCached, derivedKey, sourceBase, readEvidence, sourceIdentity, unchangedSource, publishExclusive, consumeSnapshot }
+module.exports = {
+  isRaw,
+  placeable,
+  placeableEvidence,
+  previewable,
+  embeddedJpeg,
+  deriveCached,
+  derivedKey,
+  sourceBase,
+  readEvidence,
+  sourceIdentity,
+  unchangedSource,
+  publishExclusive,
+  consumeSnapshot,
+}

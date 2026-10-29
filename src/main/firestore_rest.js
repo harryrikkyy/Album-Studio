@@ -6,14 +6,18 @@
 
 const fbAuth = require('../firebase_auth')
 
-function projectId() { return process.env.FIREBASE_PROJECT_ID || 'creative-hubb-toolkit' }
-function apiKey() { return process.env.FIREBASE_API_KEY || '' }
+function projectId() {
+  return process.env.FIREBASE_PROJECT_ID || 'creative-hubb-toolkit'
+}
+function apiKey() {
+  return process.env.FIREBASE_API_KEY || ''
+}
 
 // Build a Firestore REST path. `mask` is the list of `updateMask.fieldPaths`
 // values. Centralizing this kills the previously hardcoded API key duplication.
 function firestorePath(suffix, mask = []) {
   const base = `/v1/projects/${projectId()}/databases/(default)/documents`
-  const m = mask.length ? '&' + mask.map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&') : ''
+  const m = mask.length ? '&' + mask.map((f) => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&') : ''
   return `${base}${suffix}?key=${apiKey()}${m}`
 }
 
@@ -25,7 +29,9 @@ async function firestoreAuthHeaders() {
   try {
     const token = await fbAuth.getValidIdToken(apiKey())
     return token ? { Authorization: `Bearer ${token}` } : {}
-  } catch (_) { return {} }
+  } catch (_) {
+    return {}
+  }
 }
 
 // R3: derive the Firestore document id from an email in ONE place. Previously
@@ -44,7 +50,11 @@ function emailToUserKey(email) {
 // the event emitter — a non-JSON 500 page or a truncated body would crash the
 // MAIN process (taking the whole app down). This returns a fallback instead.
 function safeJsonParse(str, fallback = null) {
-  try { return JSON.parse(str) } catch (_) { return fallback }
+  try {
+    return JSON.parse(str)
+  } catch (_) {
+    return fallback
+  }
 }
 
 module.exports = {

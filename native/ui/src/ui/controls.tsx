@@ -10,7 +10,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   busy?: boolean
 }
 
-export function Button({ variant = 'secondary', size = 'md', icon, busy, children, class: cls, disabled, ...rest }: ButtonProps) {
+export function Button({
+  variant = 'secondary',
+  size = 'md',
+  icon,
+  busy,
+  children,
+  class: cls,
+  disabled,
+  ...rest
+}: ButtonProps) {
   return (
     <button
       type="button"
@@ -19,7 +28,11 @@ export function Button({ variant = 'secondary', size = 'md', icon, busy, childre
       aria-busy={busy || undefined}
       {...rest}
     >
-      {icon ? <span class="btn__icon" aria-hidden="true">{icon}</span> : null}
+      {icon ? (
+        <span class="btn__icon" aria-hidden="true">
+          {icon}
+        </span>
+      ) : null}
       {children ? <span class="btn__label">{children}</span> : null}
     </button>
   )
@@ -30,13 +43,25 @@ type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { label: string
 /** An icon-only button. `label` is required: it is the accessible name and the tooltip. */
 export function IconButton({ label, pressed, children, class: cls, ...rest }: IconButtonProps) {
   return (
-    <button type="button" class={`icon-btn ${cls ?? ''}`} aria-label={label} title={label} aria-pressed={pressed} {...rest}>
+    <button
+      type="button"
+      class={`icon-btn ${cls ?? ''}`}
+      aria-label={label}
+      title={label}
+      aria-pressed={pressed}
+      {...rest}
+    >
       {children}
     </button>
   )
 }
 
-export function Segmented<T extends string>({ label, value, options, onChange }: {
+export function Segmented<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
   label: string
   value: T
   options: { value: T; label: string; title?: string; ariaLabel?: string }[]
@@ -51,16 +76,29 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
           role="radio"
           aria-checked={o.value === value}
           aria-label={o.ariaLabel}
-          tabIndex={o.value === value || (!options.some(x => x.value === value) && index === 0) ? 0 : -1}
+          tabIndex={o.value === value || (!options.some((x) => x.value === value) && index === 0) ? 0 : -1}
           class={`segmented__item ${o.value === value ? 'is-on' : ''}`}
           title={o.title}
           onClick={() => onChange(o.value)}
           onKeyDown={(e) => {
             if (e.altKey || e.metaKey || e.ctrlKey) return
-            const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
-            const next = e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : step ? (index + step + options.length) % options.length : null
+            const step =
+              e.key === 'ArrowRight' || e.key === 'ArrowDown'
+                ? 1
+                : e.key === 'ArrowLeft' || e.key === 'ArrowUp'
+                  ? -1
+                  : 0
+            const next =
+              e.key === 'Home'
+                ? 0
+                : e.key === 'End'
+                  ? options.length - 1
+                  : step
+                    ? (index + step + options.length) % options.length
+                    : null
             if (next === null) return
-            e.preventDefault(); e.stopPropagation()
+            e.preventDefault()
+            e.stopPropagation()
             onChange(options[next]!.value)
             const group = e.currentTarget.parentElement
             group?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus()
@@ -77,7 +115,9 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
 export function Kbd({ keys }: { keys: string[] }) {
   return (
     <span class="kbd" aria-hidden="true">
-      {keys.map((k) => <kbd>{k}</kbd>)}
+      {keys.map((k) => (
+        <kbd>{k}</kbd>
+      ))}
     </span>
   )
 }

@@ -10,10 +10,25 @@
 //   cover pad            → "ZZZ--<name>--<Lamination>--<Size>--<N>+1", N = 1 + page sheets
 
 export type SheetRole = 'first' | 'last' | 'cover' | 'page'
-export interface NamingTile { path: string; role: SheetRole; effect?: string | null }
-export interface CoverPad { lamination: string; size: string }
-export interface NamingInput { folderName: string; tiles: NamingTile[]; coverPad?: CoverPad | null; customPageName?: string | null }
-export interface RenameOp { fromPath: string; toBaseName: string }
+export interface NamingTile {
+  path: string
+  role: SheetRole
+  effect?: string | null
+}
+export interface CoverPad {
+  lamination: string
+  size: string
+}
+export interface NamingInput {
+  folderName: string
+  tiles: NamingTile[]
+  coverPad?: CoverPad | null
+  customPageName?: string | null
+}
+export interface RenameOp {
+  fromPath: string
+  toBaseName: string
+}
 
 export const LAMINATIONS = ['Standard', 'Matte', 'Glossy', 'Velvet', 'Luster']
 export const SIZES = ['12x36', '12x30', '12x24', '10x30', '10x24', '8x24', '12x18', '10x20']
@@ -28,7 +43,12 @@ export function coverPadBaseName(folderName: string, lamination: string, size: s
   return `ZZZ--${folderName}--${lamination}--${size}--${1 + pageSheetCount}+1`
 }
 
-export function pageBaseName(folderName: string, sequence: number, effect?: string | null, customPageName?: string | null): string {
+export function pageBaseName(
+  folderName: string,
+  sequence: number,
+  effect?: string | null,
+  customPageName?: string | null,
+): string {
   const custom = (customPageName || '').trim()
   const base = custom ? `${custom}_${pad3(sequence)}` : `${folderName} (${pad2(sequence)})`
   return effect ? `${base}--------${effect}` : base
@@ -42,7 +62,10 @@ export function computeAssignedNames(input: NamingInput): { path: string; baseNa
     let baseName: string | null = null
     if (t.role === 'first') baseName = '00'
     else if (t.role === 'last') baseName = 'zz'
-    else if (t.role === 'cover') baseName = input.coverPad ? coverPadBaseName(input.folderName, input.coverPad.lamination, input.coverPad.size, pages) : null
+    else if (t.role === 'cover')
+      baseName = input.coverPad
+        ? coverPadBaseName(input.folderName, input.coverPad.lamination, input.coverPad.size, pages)
+        : null
     else baseName = pageBaseName(input.folderName, ++seq, t.effect, input.customPageName)
     return { path: t.path, baseName, role: t.role }
   })
@@ -67,7 +90,10 @@ export function matchStandardSize(w: number, h: number): string | null {
     const m = /^(\d+)x(\d+)$/.exec(s)
     if (!m) continue
     const r = Math.max(+m[1]!, +m[2]!) / Math.min(+m[1]!, +m[2]!)
-    if (Math.abs(r - ratio) < delta) { delta = Math.abs(r - ratio); best = s }
+    if (Math.abs(r - ratio) < delta) {
+      delta = Math.abs(r - ratio)
+      best = s
+    }
   }
   return best
 }
@@ -77,11 +103,21 @@ export function matchStandardSize(w: number, h: number): string | null {
  * names, so it opens as it was left. Files with other names are pages after the known ones, in
  * their own order.
  */
-export function readBack(files: { path: string; baseName: string }[]): { tiles: NamingTile[]; coverPad: CoverPad | null; customPageName: string | null; folderName: string | null } {
+export function readBack(files: { path: string; baseName: string }[]): {
+  tiles: NamingTile[]
+  coverPad: CoverPad | null
+  customPageName: string | null
+  folderName: string | null
+} {
   // Only a folder with a 00, a zz or a cover pad was named for the lab; Album Studio's own
   // "Page_001"… exports must not read as custom-named pages.
   if (!files.some((f) => f.baseName === '00' || f.baseName === 'zz' || f.baseName.startsWith('ZZZ--'))) {
-    return { tiles: files.map((f) => ({ path: f.path, role: 'page' as const })), coverPad: null, customPageName: null, folderName: null }
+    return {
+      tiles: files.map((f) => ({ path: f.path, role: 'page' as const })),
+      coverPad: null,
+      customPageName: null,
+      folderName: null,
+    }
   }
   const tiles: (NamingTile & { order: number })[] = []
   let coverPad: CoverPad | null = null

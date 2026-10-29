@@ -38,12 +38,17 @@ function getAgPsd() {
   const agpsd = require('ag-psd')
   // Allocation-only shim; structure reads never touch pixels. Mirrors
   // src/psd_layers.js so both agree about what ag-psd needs.
-  agpsd.initializeCanvas(/** @type {any} */((w, h) => ({
-    width: w, height: h,
-    getContext: () => ({
-      createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
-    }),
-  })))
+  agpsd.initializeCanvas(
+    /** @type {any} */ (
+      (w, h) => ({
+        width: w,
+        height: h,
+        getContext: () => ({
+          createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+        }),
+      })
+    ),
+  )
   _agpsd = agpsd
   return agpsd
 }
@@ -76,10 +81,17 @@ function auditFile(file) {
     ok: true,
     ...header,
     sizeMB: +(fs.statSync(file).size / 1e6).toFixed(1),
-    layers: 0, groups: 0, frames: 0, textLayers: 0,
-    clipped: 0, hiddenLayers: 0,
-    effectsTractable: [], effectsHard: [],
-    adjustmentLayers: [], unsupportedBlends: [], smartObjects: 0,
+    layers: 0,
+    groups: 0,
+    frames: 0,
+    textLayers: 0,
+    clipped: 0,
+    hiddenLayers: 0,
+    effectsTractable: [],
+    effectsHard: [],
+    adjustmentLayers: [],
+    unsupportedBlends: [],
+    smartObjects: 0,
     fonts: new Set(),
   }
 
@@ -119,7 +131,7 @@ function auditFile(file) {
         }
         if (n.placedLayer || n.smartObject) r.smartObjects++
         for (const key of Object.keys(n.effects || {})) {
-          if (key === 'scale') continue          // not an effect, just metadata
+          if (key === 'scale') continue // not an effect, just metadata
           const list = n.effects[key]
           // ag-psd reports disabled effects too; only enabled ones render.
           const enabled = Array.isArray(list)
@@ -145,7 +157,11 @@ function findPsds(root) {
   const walk = (dir, depth) => {
     if (depth > 6) return
     let entries
-    try { entries = fs.readdirSync(dir, { withFileTypes: true }) } catch (_) { return }
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch (_) {
+      return
+    }
     for (const e of entries) {
       if (e.name.startsWith('.')) continue
       const p = path.join(dir, e.name)
@@ -154,7 +170,8 @@ function findPsds(root) {
     }
   }
   const st = fs.statSync(root)
-  if (st.isDirectory()) walk(root, 0); else out.push(root)
+  if (st.isDirectory()) walk(root, 0)
+  else out.push(root)
   return out
 }
 
@@ -162,14 +179,17 @@ function main() {
   const args = process.argv.slice(2)
   const jsonAt = args.indexOf('--json')
   const jsonOut = jsonAt >= 0 ? args[jsonAt + 1] : null
-  const roots = (jsonAt >= 0 ? args.slice(0, jsonAt) : args)
+  const roots = jsonAt >= 0 ? args.slice(0, jsonAt) : args
   if (!roots.length) {
     console.error('usage: node scripts/audit_templates.js <folder|file> [...] [--json out.json]')
     process.exit(1)
   }
 
   const files = roots.flatMap(findPsds)
-  if (!files.length) { console.error('no .psd files found'); process.exit(1) }
+  if (!files.length) {
+    console.error('no .psd files found')
+    process.exit(1)
+  }
   console.log(`Auditing ${files.length} template${files.length > 1 ? 's' : ''}…\n`)
 
   const results = []
@@ -177,7 +197,10 @@ function main() {
     const r = auditFile(f)
     results.push(r)
     const name = path.basename(f)
-    if (!r.ok) { console.log(`  ✗ ${name}  — ${r.error}`); continue }
+    if (!r.ok) {
+      console.log(`  ✗ ${name}  — ${r.error}`)
+      continue
+    }
     const flags = []
     if (r.mode !== 'RGB') flags.push(r.mode)
     if (r.depth !== 8) flags.push(r.depth + '-bit')
@@ -186,14 +209,16 @@ function main() {
     if (r.adjustmentLayers.length) flags.push(`${r.adjustmentLayers.length} adj-layer`)
     if (r.unsupportedBlends.length) flags.push(`${r.unsupportedBlends.length} blend`)
     if (r.smartObjects) flags.push(`${r.smartObjects} smart-obj`)
-    console.log(`  ${flags.length ? '!' : '✓'} ${name.padEnd(34)} ${String(r.layers).padStart(3)}L `
-      + `${String(r.frames).padStart(2)}F ${String(r.textLayers).padStart(2)}T`
-      + (flags.length ? '   ⚠ ' + flags.join(', ') : ''))
+    console.log(
+      `  ${flags.length ? '!' : '✓'} ${name.padEnd(34)} ${String(r.layers).padStart(3)}L ` +
+        `${String(r.frames).padStart(2)}F ${String(r.textLayers).padStart(2)}T` +
+        (flags.length ? '   ⚠ ' + flags.join(', ') : ''),
+    )
   }
 
   const ok = results.filter((r) => r.ok)
   const any = (k) => ok.filter((r) => r[k] && r[k].length).length
-  const pct = (n) => ok.length ? ` (${Math.round(n / ok.length * 100)}%)` : ''
+  const pct = (n) => (ok.length ? ` (${Math.round((n / ok.length) * 100)}%)` : '')
 
   console.log(`\n${'═'.repeat(64)}\nBLOCKERS TO RUNNING WITHOUT PHOTOSHOP\n`)
   const rows = [
@@ -209,9 +234,16 @@ function main() {
     console.log(`  ${n ? '⚠' : '·'} ${label.padEnd(46)} ${String(n).padStart(3)}/${ok.length}${n ? pct(n) : ''}`)
   }
 
-  const clean = ok.filter((r) => !r.effectsHard.length && !r.effectsTractable.length
-    && !r.adjustmentLayers.length && !r.unsupportedBlends.length && !r.smartObjects
-    && r.mode === 'RGB' && r.depth === 8)
+  const clean = ok.filter(
+    (r) =>
+      !r.effectsHard.length &&
+      !r.effectsTractable.length &&
+      !r.adjustmentLayers.length &&
+      !r.unsupportedBlends.length &&
+      !r.smartObjects &&
+      r.mode === 'RGB' &&
+      r.depth === 8,
+  )
   console.log(`\n  ${clean.length}/${ok.length}${pct(clean.length)} templates need NOTHING beyond what already works.`)
 
   const fonts = [...new Set(ok.flatMap((r) => r.fonts || []))].sort()

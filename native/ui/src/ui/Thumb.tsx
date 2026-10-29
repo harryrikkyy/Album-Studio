@@ -14,7 +14,26 @@ export function Thumb({ p, alt = '', lazy = true }: { p: Photo; alt?: string; la
   useEffect(() => setFailed(false), [p])
   return (
     <span class={`thumb ${t ? `thumb--turn${t}` : ''}`}>
-      {failed ? <span class="thumb__missing" role="img" aria-label={`${p.base}: thumbnail unavailable`} title="Thumbnail unavailable. Reconnect its drive or reopen the album to try again."><ImageOff size={18} aria-hidden="true" /><span>Preview unavailable</span></span> : <img src={fileUrl(p.thumb)} alt={alt} loading={lazy ? 'lazy' : undefined} decoding="async" draggable={false} onError={() => setFailed(true)} />}
+      {failed ? (
+        <span
+          class="thumb__missing"
+          role="img"
+          aria-label={`${p.base}: thumbnail unavailable`}
+          title="Thumbnail unavailable. Reconnect its drive or reopen the album to try again."
+        >
+          <ImageOff size={18} aria-hidden="true" />
+          <span>Preview unavailable</span>
+        </span>
+      ) : (
+        <img
+          src={fileUrl(p.thumb)}
+          alt={alt}
+          loading={lazy ? 'lazy' : undefined}
+          decoding="async"
+          draggable={false}
+          onError={() => setFailed(true)}
+        />
+      )}
     </span>
   )
 }

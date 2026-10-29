@@ -28,10 +28,21 @@ export interface PickOptions {
   targetV: number | null
 }
 
-export const DEFAULT_PICKS: PickOptions = { minSharpness: 80, minExposure: 0.25, dupThreshold: 8, window: 12, targetH: null, targetV: null }
+export const DEFAULT_PICKS: PickOptions = {
+  minSharpness: 80,
+  minExposure: 0.25,
+  dupThreshold: 8,
+  window: 12,
+  targetH: null,
+  targetV: null,
+}
 
 export type Reason = 'blur' | 'exposure' | 'duplicate' | 'cap' | 'error' | 'yours'
-export interface Picked { keep: Scored[]; drop: Map<string, Reason>; groups: number }
+export interface Picked {
+  keep: Scored[]
+  drop: Map<string, Reason>
+  groups: number
+}
 
 const key = (p: Scored) => `${p.folder}/${p.base}`
 
@@ -40,13 +51,20 @@ export function hamming(a: string, b: string): number {
   let d = 0
   for (let i = 0; i < 16; i++) {
     let v = parseInt(a[i]!, 16) ^ parseInt(b[i]!, 16)
-    while (v) { d += v & 1; v >>= 1 }
+    while (v) {
+      d += v & 1
+      v >>= 1
+    }
   }
   return d
 }
 
 /** Groups of near-duplicates among nearby frames; the sharpest frame represents each group. */
-export function groupDuplicates(list: Scored[], threshold: number, window: number): { rep: Scored; members: Scored[]; last: number }[] {
+export function groupDuplicates(
+  list: Scored[],
+  threshold: number,
+  window: number,
+): { rep: Scored; members: Scored[]; last: number }[] {
   const groups: { rep: Scored; members: Scored[]; last: number }[] = []
   list.forEach((p, i) => {
     const near = groups.find((g) => i - g.last <= window && hamming(p.hash, g.rep.hash) <= threshold)
@@ -65,7 +83,9 @@ export function groupDuplicates(list: Scored[], threshold: number, window: numbe
  */
 export function choose(all: Scored[], o: PickOptions, yours: ReadonlyMap<string, boolean> = new Map()): Picked {
   const drop = new Map<string, Reason>()
-  const ordered = all.slice().sort((a, b) => a.folder.localeCompare(b.folder) || a.base.localeCompare(b.base, undefined, { numeric: true }))
+  const ordered = all
+    .slice()
+    .sort((a, b) => a.folder.localeCompare(b.folder) || a.base.localeCompare(b.base, undefined, { numeric: true }))
   const survivors: Scored[] = []
   for (const p of ordered) {
     if (p.error) drop.set(key(p), 'error')
@@ -95,8 +115,14 @@ export function choose(all: Scored[], o: PickOptions, yours: ReadonlyMap<string,
   const keepSet = new Set(keep.map(key))
   for (const p of ordered) {
     const want = yours.get(key(p))
-    if (want === true && !keepSet.has(key(p))) { keepSet.add(key(p)); drop.delete(key(p)) }
-    if (want === false && keepSet.has(key(p))) { keepSet.delete(key(p)); drop.set(key(p), 'yours') }
+    if (want === true && !keepSet.has(key(p))) {
+      keepSet.add(key(p))
+      drop.delete(key(p))
+    }
+    if (want === false && keepSet.has(key(p))) {
+      keepSet.delete(key(p))
+      drop.set(key(p), 'yours')
+    }
   }
   return { keep: ordered.filter((p) => keepSet.has(key(p))), drop, groups: groups.length }
 }

@@ -30,13 +30,21 @@ test('an edit saves in the Electron format and keeps the previous version', asyn
   assert.deepEqual(Object.keys(d.albumPages), ['1', '2'])
   assert.equal(d.totalActivePages, 2)
   assert.deepEqual(ids(d, 2), [GONE, C], 'a photo no longer on disk stays where it was')
-  assert.deepEqual(d.albumPages[2].photos[1], { id: C, url: 'file://' + path.join(shoot, '_Thumbnails', 'C3.jpg'), orient: 'v' })
+  assert.deepEqual(d.albumPages[2].photos[1], {
+    id: C,
+    url: 'file://' + path.join(shoot, '_Thumbnails', 'C3.jpg'),
+    orient: 'v',
+  })
   assert.equal(d.version, 1, 'fields this app does not edit are kept')
   assert.deepEqual(d.renderHashes, { 1: 'abc' })
   assert.deepEqual(d.workspace.imageRotations, { [C]: 90 })
   assert.notEqual(d.savedAt, '2026-10-01T00:00:00.000Z')
   assert.deepEqual(fs.readFileSync(fileOf(proj) + '.bak'), before, 'the replaced version is kept as project.json.bak')
-  assert.deepEqual(fs.readdirSync(proj).filter((f) => f.includes('.tmp-')), [], 'no temporary file is left behind')
+  assert.deepEqual(
+    fs.readdirSync(proj).filter((f) => f.includes('.tmp-')),
+    [],
+    'no temporary file is left behind',
+  )
 
   assert.deepEqual(r.album.spreads[1].photoIds, [GONE, C], 'the reply carries the updated album')
   assert.deepEqual([r.canUndo, r.canRedo], [true, false])
@@ -54,7 +62,11 @@ test('adding moves a photo off its old spread; replacing swaps across spreads', 
 
   await edit(proj, { op: 'replacePhoto', n: 1, oldId: A, newId: C })
   d = read(proj)
-  assert.deepEqual([ids(d, 1), ids(d, 2)], [[C], [B, GONE]], 'an unused photo takes the slot; the old one goes back to the pool')
+  assert.deepEqual(
+    [ids(d, 1), ids(d, 2)],
+    [[C], [B, GONE]],
+    'an unused photo takes the slot; the old one goes back to the pool',
+  )
 
   await edit(proj, { op: 'removePhoto', n: 1, id: C }, { op: 'setPhotos', n: 2, photoIds: [A, B] })
   d = read(proj)
@@ -83,7 +95,10 @@ test('spreads insert, move and delete, and their page edits move with them', asy
   d = read(proj)
   assert.equal(d.totalActivePages, 1, 'an album always keeps one spread')
   assert.match(d.albumPages[1].id, /^spread_/)
-  assert.deepEqual({ photos: d.albumPages[1].photos, template: d.albumPages[1].template }, { photos: [], template: null })
+  assert.deepEqual(
+    { photos: d.albumPages[1].photos, template: d.albumPages[1].template },
+    { photos: [], template: null },
+  )
 
   await assert.rejects(edit(proj, { op: 'clearSpread', n: 5 }), /There is no spread 5/)
 })
@@ -92,11 +107,20 @@ test('templates are set by id; a failed edit saves nothing', async () => {
   const { proj, tpls } = makeProject()
   await edit(proj, { op: 'setTemplate', n: 2, templateId: TPL })
   const d = read(proj)
-  assert.deepEqual(d.albumPages[2].template, { id: TPL, name: '1h1v_0001.psd', h: 1, v: 1, url: 'file://' + path.join(tpls, 'Thumbnails', '1h1v_0001.jpg') })
+  assert.deepEqual(d.albumPages[2].template, {
+    id: TPL,
+    name: '1h1v_0001.psd',
+    h: 1,
+    v: 1,
+    url: 'file://' + path.join(tpls, 'Thumbnails', '1h1v_0001.jpg'),
+  })
 
   const saved = fs.readFileSync(fileOf(proj))
   // The first op is fine; the second fails, so neither is saved.
-  await assert.rejects(edit(proj, { op: 'clearSpread', n: 1 }, { op: 'setTemplate', n: 1, templateId: 'tpl_nope' }), /isn’t in this album’s collections/)
+  await assert.rejects(
+    edit(proj, { op: 'clearSpread', n: 1 }, { op: 'setTemplate', n: 1, templateId: 'tpl_nope' }),
+    /isn’t in this album’s collections/,
+  )
   await assert.rejects(edit(proj, { op: 'explode' }), /unknown album operation `explode`/)
   await assert.rejects(edit(proj, { op: 'addPhoto', n: 1, id: 'img_who' }), /isn't in this album's folders/)
   assert.deepEqual(fs.readFileSync(fileOf(proj)), saved)
@@ -130,7 +154,10 @@ test('auto-fill re-plans the album from every photo, as one undoable step', asyn
   fs.writeFileSync(path.join(tpls, '1h0v_0002.psd'), 'x')
   fs.writeFileSync(path.join(tpls, '0h1v_0003.psd'), 'x')
   // rng 0: counts [1, 2] → [A] (1 H) and [B, C] (2 V, no such template).
-  const r = await updateAlbum({ album: proj, ops: [{ op: 'autoFill', mode: 'desired', desiredSheets: 2, chronological: false }] }, { rng: () => 0 })
+  const r = await updateAlbum(
+    { album: proj, ops: [{ op: 'autoFill', mode: 'desired', desiredSheets: 2, chronological: false }] },
+    { rng: () => 0 },
+  )
   const d = read(proj)
   assert.equal(d.totalActivePages, 2)
   assert.deepEqual([ids(d, 1), ids(d, 2)], [[A], [B, C]])
@@ -151,7 +178,14 @@ test('several photos are added at once, copied on request, and reordered', async
 
   await edit(proj, { op: 'addPhoto', n: 1, id: A, copy: true })
   d = read(proj)
-  assert.deepEqual([ids(d, 1), ids(d, 2)], [[B, A], [C, A, GONE]], 'a copy leaves the photo where it was too')
+  assert.deepEqual(
+    [ids(d, 1), ids(d, 2)],
+    [
+      [B, A],
+      [C, A, GONE],
+    ],
+    'a copy leaves the photo where it was too',
+  )
 
   await edit(proj, { op: 'movePhoto', n: 2, id: GONE, index: 0 })
   assert.deepEqual(ids(read(proj), 2), [GONE, C, A])
@@ -179,7 +213,16 @@ test('fitTemplate picks a template whose frames fit the photos, from the same co
   assert.equal(r.canUndo, false, 'a fitting template is left alone')
 
   // Two landscape photos no longer fit 1H 1V.
-  r = await updateAlbum({ album: proj, ops: [{ op: 'setPhotos', n: 1, photoIds: [A, D] }, { op: 'fitTemplate', n: 1 }] }, { rng: () => 0.99 })
+  r = await updateAlbum(
+    {
+      album: proj,
+      ops: [
+        { op: 'setPhotos', n: 1, photoIds: [A, D] },
+        { op: 'fitTemplate', n: 1 },
+      ],
+    },
+    { rng: () => 0.99 },
+  )
   let d = read(proj)
   assert.equal(d.albumPages[1].template.name, '2h0v_0002.psd', 'the same collection is preferred')
   assert.deepEqual(r.report.templates, [{ n: 1, name: '2h0v_0002.psd', auto: true }])
@@ -238,11 +281,19 @@ test('photos turn in quarter turns, everywhere they appear, and the turn undoes'
   r = await edit(proj, { op: 'rotatePhotos', ids: [A, C], by: -90 })
   d = read(proj)
   assert.deepEqual(d.workspace.imageRotations, {}, 'turned back upright: no entry left')
-  assert.deepEqual([r.album.photos[C].rotation, r.album.photos[C].orient], [0, 'h'], 'a photo on no spread follows its thumbnail and turn')
+  assert.deepEqual(
+    [r.album.photos[C].rotation, r.album.photos[C].orient],
+    [0, 'h'],
+    'a photo on no spread follows its thumbnail and turn',
+  )
   assert.equal(d.albumPages[1].photos[0].orient, 'h')
 
   r = await edit(proj, { op: 'rotatePhotos', ids: [B], by: 180 })
-  assert.deepEqual([r.album.photos[B].rotation, r.album.photos[B].orient], [180, 'v'], 'a half turn keeps the orientation')
+  assert.deepEqual(
+    [r.album.photos[B].rotation, r.album.photos[B].orient],
+    [180, 'v'],
+    'a half turn keeps the orientation',
+  )
 
   await undo({ album: proj })
   r = await undo({ album: proj })
@@ -258,33 +309,83 @@ test('photos turn in quarter turns, everywhere they appear, and the turn undoes'
 function framePsd(file, { width, height, name, left, top, w, h }) {
   const ag = require('ag-psd')
   const px = (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4).fill(255) })
-  ag.initializeCanvas((a, b) => ({ width: a, height: b, getContext: () => ({ createImageData: px, getImageData: () => px(a, b), putImageData: () => {} }) }))
-  const psd = { width, height, imageData: px(width, height), children: [{ name, left, top, right: left + w, bottom: top + h, imageData: px(w, h) }] }
+  ag.initializeCanvas((a, b) => ({
+    width: a,
+    height: b,
+    getContext: () => ({ createImageData: px, getImageData: () => px(a, b), putImageData: () => {} }),
+  }))
+  const psd = {
+    width,
+    height,
+    imageData: px(width, height),
+    children: [{ name, left, top, right: left + w, bottom: top + h, imageData: px(w, h) }],
+  }
   fs.writeFileSync(file, Buffer.from(ag.writePsd(psd, { generateThumbnail: false })))
 }
 
 test('templates picked for the photos skip ones with a frame parked off the page', async () => {
   const { framesOffPage, offPageFrames } = require('../lib/template_check')
-  assert.deepEqual(framesOffPage(300, 100, [
-    { name: 'in', x: 10, y: 10, w: 100, h: 80 },
-    { name: 'half', x: 250, y: 10, w: 100, h: 80 },
-    { name: 'parked', x: 298, y: 0, w: 80, h: 100 },
-    { name: 'hidden', x: 400, y: 0, w: 10, h: 10, hidden: true },
-  ]), ['parked'], 'half on the page still shows; hidden frames show nothing anyway')
+  assert.deepEqual(
+    framesOffPage(300, 100, [
+      { name: 'in', x: 10, y: 10, w: 100, h: 80 },
+      { name: 'half', x: 250, y: 10, w: 100, h: 80 },
+      { name: 'parked', x: 298, y: 0, w: 80, h: 100 },
+      { name: 'hidden', x: 400, y: 0, w: 10, h: 10, hidden: true },
+    ]),
+    ['parked'],
+    'half on the page still shows; hidden frames show nothing anyway',
+  )
 
   const { proj, tpls } = makeProject()
-  framePsd(path.join(tpls, '1h0v_0001.psd'), { width: 300, height: 100, name: 'ToolkitHFrame_001', left: 296, top: 10, w: 100, h: 60 })
-  framePsd(path.join(tpls, '1h0v_0002.psd'), { width: 300, height: 100, name: 'ToolkitHFrame_001', left: 20, top: 10, w: 100, h: 60 })
+  framePsd(path.join(tpls, '1h0v_0001.psd'), {
+    width: 300,
+    height: 100,
+    name: 'ToolkitHFrame_001',
+    left: 296,
+    top: 10,
+    w: 100,
+    h: 60,
+  })
+  framePsd(path.join(tpls, '1h0v_0002.psd'), {
+    width: 300,
+    height: 100,
+    name: 'ToolkitHFrame_001',
+    left: 20,
+    top: 10,
+    w: 100,
+    h: 60,
+  })
   assert.deepEqual(await offPageFrames(path.join(tpls, '1h0v_0001.psd')), ['ToolkitHFrame_001'])
   // rng 0 tries 1h0v_0001 first: its frame is off the page, so 1h0v_0002 is chosen.
-  await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 2 }, { op: 'addPhoto', n: 2, id: A }, { op: 'fitTemplate', n: 2 }] }, { rng: () => 0 })
+  await updateAlbum(
+    {
+      album: proj,
+      ops: [
+        { op: 'clearSpread', n: 2 },
+        { op: 'addPhoto', n: 2, id: A },
+        { op: 'fitTemplate', n: 2 },
+      ],
+    },
+    { rng: () => 0 },
+  )
   assert.equal(read(proj).albumPages[2].template.name, '1h0v_0002.psd')
 })
 
 test('templates picked for the photos keep to the album’s page shape', async () => {
   const { shapeOf, commonShape } = require('../lib/templates')
-  assert.equal(shapeOf({ width: 7200, height: 2400 }), shapeOf({ width: 10800, height: 3600 }), 'same shape at another resolution')
-  assert.equal(commonShape([{ width: 7200, height: 2400 }, { width: 7200, height: 4500 }, { width: 10800, height: 3600 }]), 3)
+  assert.equal(
+    shapeOf({ width: 7200, height: 2400 }),
+    shapeOf({ width: 10800, height: 3600 }),
+    'same shape at another resolution',
+  )
+  assert.equal(
+    commonShape([
+      { width: 7200, height: 2400 },
+      { width: 7200, height: 4500 },
+      { width: 10800, height: 3600 },
+    ]),
+    3,
+  )
 
   const { proj, tpls } = makeProject()
   const frame = { name: 'ToolkitHFrame_001', left: 10, top: 10, w: 50, h: 30 }
@@ -292,14 +393,33 @@ test('templates picked for the photos keep to the album’s page shape', async (
   framePsd(path.join(tpls, '1h1v_0001.psd'), { width: 300, height: 100, ...frame })
   framePsd(path.join(tpls, '1h0v_0001.psd'), { width: 160, height: 100, ...frame })
   framePsd(path.join(tpls, '1h0v_0002.psd'), { width: 600, height: 200, ...frame })
-  await updateAlbum({ album: proj, ops: [{ op: 'clearSpread', n: 2 }, { op: 'addPhoto', n: 2, id: C }, { op: 'rotatePhotos', ids: [C], by: 90 }, { op: 'fitTemplate', n: 2 }] }, { rng: () => 0 })
-  assert.equal(read(proj).albumPages[2].template.name, '1h0v_0002.psd', 'rng 0 would take the 16:10 page; the 3:1 one is chosen')
+  await updateAlbum(
+    {
+      album: proj,
+      ops: [
+        { op: 'clearSpread', n: 2 },
+        { op: 'addPhoto', n: 2, id: C },
+        { op: 'rotatePhotos', ids: [C], by: 90 },
+        { op: 'fitTemplate', n: 2 },
+      ],
+    },
+    { rng: () => 0 },
+  )
+  assert.equal(
+    read(proj).albumPages[2].template.name,
+    '1h0v_0002.psd',
+    'rng 0 would take the 16:10 page; the 3:1 one is chosen',
+  )
 })
 
 test('a photo is zoomed and panned in its frame, clamped, and fits again; undo covers it', async () => {
   const { proj } = makeProject()
   let r = await edit(proj, { op: 'placePhoto', id: A, scale: 1.8, ox: -0.4, oy: 2 })
-  assert.deepEqual(read(proj).workspace.imagePlacements, { [A]: { scale: 1.8, ox: -0.4, oy: 1 } }, 'kept as the Electron app does; pan clamped to the edge')
+  assert.deepEqual(
+    read(proj).workspace.imagePlacements,
+    { [A]: { scale: 1.8, ox: -0.4, oy: 1 } },
+    'kept as the Electron app does; pan clamped to the edge',
+  )
   assert.deepEqual(r.album.photos[A].placement, { scale: 1.8, ox: -0.4, oy: 1 })
   r = await edit(proj, { op: 'placePhoto', id: A })
   assert.deepEqual(read(proj).workspace.imagePlacements, {}, 'no values: fitted again, nothing kept')
@@ -311,8 +431,16 @@ test('a photo is zoomed and panned in its frame, clamped, and fits again; undo c
 
 test('a photo’s colour is set, clamped and cleared; undo covers it', async () => {
   const { proj } = makeProject()
-  const r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 30.4, warmth: -250, contrast: 0, bw: true, junk: 9 } })
-  assert.deepEqual(read(proj).workspace.imageAdjustments, { [B]: { exposure: 30, warmth: -100, bw: true } }, 'kept as the Electron app does')
+  const r = await edit(proj, {
+    op: 'adjustPhoto',
+    id: B,
+    adjust: { exposure: 30.4, warmth: -250, contrast: 0, bw: true, junk: 9 },
+  })
+  assert.deepEqual(
+    read(proj).workspace.imageAdjustments,
+    { [B]: { exposure: 30, warmth: -100, bw: true } },
+    'kept as the Electron app does',
+  )
   assert.deepEqual(r.album.photos[B].adjust, { exposure: 30, warmth: -100, bw: true })
   await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 0 } })
   assert.deepEqual(read(proj).workspace.imageAdjustments, {}, 'all zero: the photo as it was')

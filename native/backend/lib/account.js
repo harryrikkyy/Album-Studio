@@ -33,14 +33,19 @@ const settingsFiles = () => [
 function loadSettings(files = settingsFiles()) {
   for (const file of files) {
     let text
-    try { text = fs.readFileSync(file, 'utf8') } catch (_) { continue }
+    try {
+      text = fs.readFileSync(file, 'utf8')
+    } catch (_) {
+      continue
+    }
     for (const raw of text.split(/\r?\n/)) {
       const line = raw.trim()
       const eq = line.indexOf('=')
       if (!line || line.startsWith('#') || eq < 1) continue
       const key = line.slice(0, eq).trim()
       let value = line.slice(eq + 1).trim()
-      if (value.length > 1 && (value[0] === '"' || value[0] === "'") && value.endsWith(value[0])) value = value.slice(1, -1)
+      if (value.length > 1 && (value[0] === '"' || value[0] === "'") && value.endsWith(value[0]))
+        value = value.slice(1, -1)
       if (SETTINGS.includes(key) && value && !process.env[key]) process.env[key] = value
     }
   }
@@ -73,9 +78,12 @@ const deps = {
 }
 
 /** Tests replace the network, the machine id, the browser and the port. */
-function _setDeps(d) { Object.assign(deps, d) }
+function _setDeps(d) {
+  Object.assign(deps, d)
+}
 
-const configured = () => !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.FIREBASE_API_KEY)
+const configured = () =>
+  !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET && process.env.FIREBASE_API_KEY)
 const signedOut = () => ({ state: 'signedOut', configured: configured() })
 // Keep the verified deadline internal, so the existing account response stays compatible.
 const allowedUntil = new WeakMap()
@@ -84,7 +92,13 @@ function allowed(email, name, daysLeft, offline, deadline) {
   if (Number.isFinite(deadline)) allowedUntil.set(result, deadline)
   return result
 }
-const blocked = (reason, email, extra = {}) => ({ state: 'blocked', reason, email: email || '', ...extra, configured: configured() })
+const blocked = (reason, email, extra = {}) => ({
+  state: 'blocked',
+  reason,
+  email: email || '',
+  ...extra,
+  configured: configured(),
+})
 
 /** Developers and tests may skip the check — never in the packaged app. */
 const bypass = () => process.env.ALBUM_STUDIO_ACCOUNT === 'skip' && !__dirname.includes('.app/Contents/')
@@ -125,15 +139,28 @@ async function responseJson(url, init = {}) {
     return null
   }
 }
-async function json(url, init = {}) { return (await responseJson(url, init))?.body ?? null }
-const postJson = (url, body, headers = {}) => json(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
-const postForm = (url, params) => json(url, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(params).toString() })
-const patchDoc = async (userKey, fields, mask, { updateTime, headers } = {}) => responseJson(FIRESTORE + firestorePath(`/users/${userKey}`, mask)
-  + (updateTime ? `&currentDocument.updateTime=${encodeURIComponent(updateTime)}` : ''), {
-  method: 'PATCH',
-  headers: { 'Content-Type': 'application/json', ...(headers || await firestoreAuthHeaders()) },
-  body: JSON.stringify({ fields }),
-})
+async function json(url, init = {}) {
+  return (await responseJson(url, init))?.body ?? null
+}
+const postJson = (url, body, headers = {}) =>
+  json(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) })
+const postForm = (url, params) =>
+  json(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(params).toString(),
+  })
+const patchDoc = async (userKey, fields, mask, { updateTime, headers } = {}) =>
+  responseJson(
+    FIRESTORE +
+      firestorePath(`/users/${userKey}`, mask) +
+      (updateTime ? `&currentDocument.updateTime=${encodeURIComponent(updateTime)}` : ''),
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...(headers || (await firestoreAuthHeaders())) },
+      body: JSON.stringify({ fields }),
+    },
+  )
 
 // ── The subscription check ─────────────────────────────────────────────────
 
@@ -154,19 +181,23 @@ async function verify(email, expectedGeneration = generation) {
     const expiresAt = Date.parse(f.expiresOn.timestampValue)
     if (!Number.isFinite(expiresAt) || expiresAt <= deps.now()) return { reason: 'expired' }
     const bound = f.machineId?.stringValue
-    if (bound && bound !== machine) return { reason: 'wrong_machine', extra: { machineName: f.machineName?.stringValue || '' } }
+    if (bound && bound !== machine)
+      return { reason: 'wrong_machine', extra: { machineName: f.machineName?.stringValue || '' } }
     return null
   }
   try {
     const machine = await deps.machineId()
     requireGeneration(expectedGeneration)
-    if (typeof machine !== 'string' || !machine) return deny('error', { message: 'This device could not be identified.' })
+    if (typeof machine !== 'string' || !machine)
+      return deny('error', { message: 'This device could not be identified.' })
     const userKey = emailToUserKey(email)
     const headers = await firestoreAuthHeaders()
     requireGeneration(expectedGeneration)
     // No session (signed out elsewhere, or offline): an unauthenticated read would be refused and
     // misread as "not activated", so go straight to the saved licence.
-    const read = headers.Authorization ? await responseJson(FIRESTORE + firestorePath(`/users/${userKey}`), { headers }) : null
+    const read = headers.Authorization
+      ? await responseJson(FIRESTORE + firestorePath(`/users/${userKey}`), { headers })
+      : null
     requireGeneration(expectedGeneration)
     if (read && !read.ok) return deny('not_activated')
     let doc = read?.body ?? null
@@ -178,8 +209,12 @@ async function verify(email, expectedGeneration = generation) {
         // Compare the exact version read: two devices claiming an empty record cannot both
         // succeed, even if a deployed rule accidentally permits overwriting a machine id.
         if (!doc.updateTime) return deny('machine_binding_failed')
-        const written = await patchDoc(userKey, { machineId: { stringValue: machine }, machineName: { stringValue: os.hostname() } },
-          ['machineId', 'machineName'], { updateTime: doc.updateTime, headers })
+        const written = await patchDoc(
+          userKey,
+          { machineId: { stringValue: machine }, machineName: { stringValue: os.hostname() } },
+          ['machineId', 'machineName'],
+          { updateTime: doc.updateTime, headers },
+        )
         requireGeneration(expectedGeneration)
         const reread = await responseJson(FIRESTORE + firestorePath(`/users/${userKey}`), { headers })
         requireGeneration(expectedGeneration)
@@ -189,7 +224,11 @@ async function verify(email, expectedGeneration = generation) {
         if (issue) return deny(issue.reason, issue.extra)
         // Neither an HTTP error nor a lost/unconfirmed write is a successful binding. The
         // authoritative reread must still identify this device before saving offline access.
-        if (!written?.ok || written.body?.fields?.machineId?.stringValue !== machine || confirmed?.fields?.machineId?.stringValue !== machine) {
+        if (
+          !written?.ok ||
+          written.body?.fields?.machineId?.stringValue !== machine ||
+          confirmed?.fields?.machineId?.stringValue !== machine
+        ) {
           return deny('machine_binding_failed')
         }
         doc = confirmed
@@ -225,7 +264,9 @@ function checkedStatus(email) {
       const result = email ? await verify(email, expectedGeneration) : signedOut()
       if (generation === expectedGeneration) current = result
       return current || signedOut()
-    })().finally(() => { if (checking === pending) checking = null })
+    })().finally(() => {
+      if (checking === pending) checking = null
+    })
     checking = pending
   }
   return checking
@@ -259,11 +300,15 @@ async function signOut() {
 
 // ── Google sign-in ─────────────────────────────────────────────────────────
 
-const PAGE_STYLE = 'body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:#eee;font:15px/1.5 -apple-system,BlinkMacSystemFont,sans-serif}main{max-width:420px;padding:32px;text-align:center}h1{font-size:20px;font-weight:600;margin:0 0 8px}p{margin:0;color:#aaa}'
-const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const PAGE_STYLE =
+  'body{margin:0;min-height:100vh;display:grid;place-items:center;background:#111;color:#eee;font:15px/1.5 -apple-system,BlinkMacSystemFont,sans-serif}main{max-width:420px;padding:32px;text-align:center}h1{font-size:20px;font-weight:600;margin:0 0 8px}p{margin:0;color:#aaa}'
+const escapeHtml = (s) =>
+  String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 function page(res, status, title, text) {
   res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' })
-  res.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><style>${PAGE_STYLE}</style><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(text)}</p></main>`)
+  res.end(
+    `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><style>${PAGE_STYLE}</style><main><h1>${escapeHtml(title)}</h1><p>${escapeHtml(text)}</p></main>`,
+  )
 }
 
 /** The answer from Google → a Firebase session, the user's record, and the subscription check. */
@@ -278,7 +323,9 @@ async function complete(code, redirectUri, verifier, expectedGeneration) {
   })
   requireGeneration(expectedGeneration)
   if (!token?.access_token || !token.id_token) throw new Error('Google didn’t finish the sign-in. Try again.')
-  const user = await json('https://www.googleapis.com/oauth2/v2/userinfo', { headers: { Authorization: `Bearer ${token.access_token}` } })
+  const user = await json('https://www.googleapis.com/oauth2/v2/userinfo', {
+    headers: { Authorization: `Bearer ${token.access_token}` },
+  })
   requireGeneration(expectedGeneration)
   if (!user?.email) throw new Error('Google didn’t share your email address. Try again, and allow it.')
 
@@ -307,7 +354,10 @@ async function complete(code, redirectUri, verifier, expectedGeneration) {
     lastLogin: { timestampValue: new Date().toISOString() },
   }
   const mask = ['email', 'name', 'photoURL', 'lastLogin']
-  if (!existing?.fields) { fields.activated = { booleanValue: false }; mask.push('activated') }
+  if (!existing?.fields) {
+    fields.activated = { booleanValue: false }
+    mask.push('activated')
+  }
   await patchDoc(userKey, fields, mask)
   requireGeneration(expectedGeneration)
 
@@ -329,12 +379,16 @@ async function signIn(_p = {}, { emit } = {}) {
     return existing.done
   }
   if (!configured()) {
-    throw new Error('Sign-in isn’t set up in this copy of Album Studio: its Google and Firebase settings are missing. Ask Creative Hubb for the settings file.')
+    throw new Error(
+      'Sign-in isn’t set up in this copy of Album Studio: its Google and Firebase settings are missing. Ask Creative Hubb for the settings file.',
+    )
   }
   const me = { url: null, cancel: () => {}, done: null, generation: ++generation }
   checking = null
   flow = me
-  me.done = run(me, emit).finally(() => { if (flow === me) flow = null })
+  me.done = run(me, emit).finally(() => {
+    if (flow === me) flow = null
+  })
   me.done.catch(() => {}) // a cancelled sign-in nobody waits for is not an error
   return me.done
 }
@@ -346,9 +400,15 @@ async function run(me, emit) {
   const verifier = crypto.randomBytes(32).toString('base64url')
   const server = http.createServer()
   await new Promise((resolve, reject) => {
-    server.once('error', (e) => reject(e.code === 'EADDRINUSE'
-      ? new Error('Something else on this Mac is using the sign-in address (port 9842), perhaps the Album Toolkit’s sign-in window. Close it, then try again.')
-      : e))
+    server.once('error', (e) =>
+      reject(
+        e.code === 'EADDRINUSE'
+          ? new Error(
+              'Something else on this Mac is using the sign-in address (port 9842), perhaps the Album Toolkit’s sign-in window. Close it, then try again.',
+            )
+          : e,
+      ),
+    )
     server.listen(deps.port, '127.0.0.1', resolve)
   })
   if (generation !== me.generation) {
@@ -356,16 +416,18 @@ async function run(me, emit) {
     throw new Error('Sign-in cancelled.')
   }
   const redirectUri = `http://127.0.0.1:${server.address().port}`
-  me.url = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: 'code',
-    scope: 'openid email profile',
-    prompt: 'select_account',
-    state,
-    code_challenge: crypto.createHash('sha256').update(verifier).digest('base64url'),
-    code_challenge_method: 'S256',
-  })
+  me.url =
+    'https://accounts.google.com/o/oauth2/v2/auth?' +
+    new URLSearchParams({
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      prompt: 'select_account',
+      state,
+      code_challenge: crypto.createHash('sha256').update(verifier).digest('base64url'),
+      code_challenge_method: 'S256',
+    })
 
   let finishFlow
   const answer = new Promise((resolve, reject) => {
@@ -384,15 +446,26 @@ async function run(me, emit) {
       else resolve(value)
     }
     finishFlow = finish
-    const timer = setTimeout(() => finish(new Error('Sign-in timed out. Try again when you’re ready.')), deps.signInTimeoutMs)
+    const timer = setTimeout(
+      () => finish(new Error('Sign-in timed out. Try again when you’re ready.')),
+      deps.signInTimeoutMs,
+    )
     me.cancel = () => finish(new Error('Sign-in cancelled.'))
 
     server.on('request', async (req, res) => {
       const u = new URL(req.url, redirectUri)
-      if (u.pathname !== '/') { res.writeHead(404).end(); return }
+      if (u.pathname !== '/') {
+        res.writeHead(404).end()
+        return
+      }
       // An answer to another sign-in (an old tab): say so and keep waiting for this one.
       if (u.searchParams.get('state') !== state) {
-        page(res, 400, 'This sign-in page is out of date', 'Go back to Album Studio and choose Sign in with Google again.')
+        page(
+          res,
+          400,
+          'This sign-in page is out of date',
+          'Go back to Album Studio and choose Sign in with Google again.',
+        )
         return
       }
       if (finished || generation !== me.generation) {
@@ -400,7 +473,12 @@ async function run(me, emit) {
         return
       }
       if (processing) {
-        page(res, 409, 'Sign-in is already being processed', 'Return to Album Studio and wait for the sign-in to finish.')
+        page(
+          res,
+          409,
+          'Sign-in is already being processed',
+          'Return to Album Studio and wait for the sign-in to finish.',
+        )
         return
       }
       if (u.searchParams.get('error')) {
@@ -409,7 +487,10 @@ async function run(me, emit) {
         return
       }
       const code = u.searchParams.get('code')
-      if (!code) { page(res, 400, 'Sign-in didn’t finish', 'Go back to Album Studio and try again.'); return }
+      if (!code) {
+        page(res, 400, 'Sign-in didn’t finish', 'Go back to Album Studio and try again.')
+        return
+      }
       processing = true
       try {
         const result = await complete(code, redirectUri, verifier, me.generation)
@@ -425,7 +506,12 @@ async function run(me, emit) {
   emit?.('account.signIn', { stage: 'browser' })
   // The overall deadline must settle even when the OS browser-launch command stalls.
   // Racing the answer also installs its rejection handler before opening the browser.
-  try { await Promise.race([deps.open(me.url), answer]) } catch (e) { finishFlow(e); throw e }
+  try {
+    await Promise.race([deps.open(me.url), answer])
+  } catch (e) {
+    finishFlow(e)
+    throw e
+  }
   return answer
 }
 
@@ -439,6 +525,11 @@ function cancelSignIn() {
 }
 
 /** Tests: forget the session state (not the files). */
-function _reset() { generation += 1; current = null; checking = null; cancelSignIn() }
+function _reset() {
+  generation += 1
+  current = null
+  checking = null
+  cancelSignIn()
+}
 
 module.exports = { status, signIn, cancelSignIn, retry, signOut, permits, verify, loadSettings, _setDeps, _reset }

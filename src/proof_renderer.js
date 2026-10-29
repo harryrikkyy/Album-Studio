@@ -132,8 +132,8 @@ function applyAdjust(sharp, pipeline, adj, dims) {
   const sharpenAmt = adj.sharpen || 0
   const blurAmt = adj.blur || 0
   const bw = !!adj.bw
-  if (!exposure && !saturation && !contrast && !warmth && !tint && !fade
-    && !clarity && !sharpenAmt && !blurAmt && !bw) return pipeline
+  if (!exposure && !saturation && !contrast && !warmth && !tint && !fade && !clarity && !sharpenAmt && !blurAmt && !bw)
+    return pipeline
 
   // Greyscale first so the colour ops below tone the mono result.
   if (bw) pipeline = pipeline.greyscale()
@@ -146,8 +146,8 @@ function applyAdjust(sharp, pipeline, adj, dims) {
   }
   if (contrast || warmth || tint || fade) {
     const s = Math.max(0, 1 + contrast / 100) // contrast slope
-    const w = warmth / 200                     // ±0.5 channel gain at ±100
-    const t = tint / 200                       // + = magenta, - = green
+    const w = warmth / 200 // ±0.5 channel gain at ±100
+    const t = tint / 200 // + = magenta, - = green
     const gains = [1 + w + t, 1 - t, 1 - w + t] // R, G, B
     // out = gain * (s*in + 128*(1-s)) = (gain*s)*in + gain*128*(1-s)
     const slopes = gains.map((g) => g * s)
@@ -193,12 +193,12 @@ function vignetteSvg(width, height, strength) {
   const alpha = (Math.abs(s) / 100) * 0.85
   // Transparent through the middle ~45%, ramping to `alpha` at the corners.
   return Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">`
-    + `<defs><radialGradient id="v" cx="50%" cy="50%" r="75%">`
-    + `<stop offset="45%" stop-color="rgba(${color},0)"/>`
-    + `<stop offset="100%" stop-color="rgba(${color},${alpha.toFixed(3)})"/>`
-    + `</radialGradient></defs>`
-    + `<rect width="${width}" height="${height}" fill="url(#v)"/></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+      `<defs><radialGradient id="v" cx="50%" cy="50%" r="75%">` +
+      `<stop offset="45%" stop-color="rgba(${color},0)"/>` +
+      `<stop offset="100%" stop-color="rgba(${color},${alpha.toFixed(3)})"/>` +
+      `</radialGradient></defs>` +
+      `<rect width="${width}" height="${height}" fill="url(#v)"/></svg>`,
   )
 }
 
@@ -256,9 +256,7 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
         const oy = Math.max(-1, Math.min(1, pl.oy || 0))
         const left = Math.max(0, Math.min(maxLeft, Math.round(maxLeft / 2 + (ox * maxLeft) / 2)))
         const top = Math.max(0, Math.min(maxTop, Math.round(maxTop / 2 + (oy * maxTop) / 2)))
-        pipe = sharp(orientedBuf)
-          .extract({ left, top, width: cropW, height: cropH })
-          .resize(fW, fH, { fit: 'fill' })
+        pipe = sharp(orientedBuf).extract({ left, top, width: cropW, height: cropH }).resize(fW, fH, { fit: 'fill' })
       } else if (smartCrop && photo.focal && photo.focal.confidence > 0.15) {
         // Materialise the oriented image so metadata() reports the TRUE
         // (post-orientation) dimensions — otherwise the crop window is
@@ -283,9 +281,7 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
         // center of the crop as possible without going off the edge.
         const left = Math.max(0, Math.min(srcW - cropW, fx - Math.round(cropW / 2)))
         const top = Math.max(0, Math.min(srcH - cropH, fy - Math.round(cropH / 2)))
-        pipe = sharp(orientedBuf)
-          .extract({ left, top, width: cropW, height: cropH })
-          .resize(fW, fH, { fit: 'fill' })
+        pipe = sharp(orientedBuf).extract({ left, top, width: cropW, height: cropH }).resize(fW, fH, { fit: 'fill' })
       } else {
         pipe = base.resize({
           width: fW,
@@ -308,9 +304,7 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
       // Vignette composites over the finished frame, so it must come after the
       // photo has been cropped to the frame box — it darkens the FRAME's
       // corners, not the source photo's.
-      const vig = photo.adjust && photo.adjust.vignette
-        ? vignetteSvg(fW, fH, photo.adjust.vignette)
-        : null
+      const vig = photo.adjust && photo.adjust.vignette ? vignetteSvg(fW, fH, photo.adjust.vignette) : null
       if (vig) pipe = sharp(await pipe.png().toBuffer()).composite([{ input: vig, top: 0, left: 0 }])
 
       const buf = await pipe.jpeg({ quality: 82, mozjpeg: !photo.fastEncode }).toBuffer()
@@ -357,28 +351,34 @@ async function renderPageProof(job) {
   // are NOT hashed — they are a deterministic function of the template file
   // (templateKey already captures path+size+mtime), so including them was
   // redundant work on every page of a batch.
-  const hash = crypto.createHash('sha1').update(JSON.stringify({
-    t: templateKey(job.templatePath),
-    pv: job.templatePreviewPath,
-    cw: job.canvasWidth,
-    ch: job.canvasHeight,
-    p: job.photos.map((p) => ({
-      f: p.filePath,
-      o: p.orient,
-      r: p.rotation || 0,
-      a: p.adjust || 0, // adjustments affect output → must invalidate the cache
-      pl: p.placement || 0, // placement (zoom/pan) affects output too
-    })),
-    me: maxEdge,
-    sc: smartCrop ? 1 : 0,
-    // Overlay text/shapes are baked into the output, so editing a caption has
-    // to invalidate the cached page exactly like a photo edit does.
-    ov: overlayCacheKey(job.overlays),
-    bg: job.pageBackground || 0,
-    // Hiding a template layer changes the page without touching any photo,
-    // so it has to invalidate the cached render like any other edit.
-    le: job.layerEdits ? JSON.stringify(job.layerEdits) : 0,
-  })).digest('hex').slice(0, 16)
+  const hash = crypto
+    .createHash('sha1')
+    .update(
+      JSON.stringify({
+        t: templateKey(job.templatePath),
+        pv: job.templatePreviewPath,
+        cw: job.canvasWidth,
+        ch: job.canvasHeight,
+        p: job.photos.map((p) => ({
+          f: p.filePath,
+          o: p.orient,
+          r: p.rotation || 0,
+          a: p.adjust || 0, // adjustments affect output → must invalidate the cache
+          pl: p.placement || 0, // placement (zoom/pan) affects output too
+        })),
+        me: maxEdge,
+        sc: smartCrop ? 1 : 0,
+        // Overlay text/shapes are baked into the output, so editing a caption has
+        // to invalidate the cached page exactly like a photo edit does.
+        ov: overlayCacheKey(job.overlays),
+        bg: job.pageBackground || 0,
+        // Hiding a template layer changes the page without touching any photo,
+        // so it has to invalidate the cached render like any other edit.
+        le: job.layerEdits ? JSON.stringify(job.layerEdits) : 0,
+      }),
+    )
+    .digest('hex')
+    .slice(0, 16)
 
   try {
     fs.mkdirSync(path.dirname(job.outputPath), { recursive: true })
@@ -387,8 +387,7 @@ async function renderPageProof(job) {
     // plain off-white canvas at the doc's aspect.
     let base
     if (job.templatePreviewPath && fs.existsSync(job.templatePreviewPath)) {
-      base = sharp(job.templatePreviewPath, { failOn: 'none' })
-        .resize(dims.width, dims.height, { fit: 'fill' })
+      base = sharp(job.templatePreviewPath, { failOn: 'none' }).resize(dims.width, dims.height, { fit: 'fill' })
     } else {
       base = sharp({
         create: {
@@ -415,12 +414,20 @@ async function renderPageProof(job) {
     const layerResults = []
     const skipped = []
     for (let i = 0; i < hPhotos.length && i < hFrames.length; i++) {
-      layerResults.push(buildPhotoLayer(sharp, hPhotos[i], hFrames[i], scale, smartCrop)
-        .catch((e) => { skipped.push({ frame: hFrames[i].name, error: e.message }); return null }))
+      layerResults.push(
+        buildPhotoLayer(sharp, hPhotos[i], hFrames[i], scale, smartCrop).catch((e) => {
+          skipped.push({ frame: hFrames[i].name, error: e.message })
+          return null
+        }),
+      )
     }
     for (let i = 0; i < vPhotos.length && i < vFrames.length; i++) {
-      layerResults.push(buildPhotoLayer(sharp, vPhotos[i], vFrames[i], scale, smartCrop)
-        .catch((e) => { skipped.push({ frame: vFrames[i].name, error: e.message }); return null }))
+      layerResults.push(
+        buildPhotoLayer(sharp, vPhotos[i], vFrames[i], scale, smartCrop).catch((e) => {
+          skipped.push({ frame: vFrames[i].name, error: e.message })
+          return null
+        }),
+      )
     }
 
     let layers = (await Promise.all(layerResults)).filter(Boolean)
@@ -437,19 +444,22 @@ async function renderPageProof(job) {
       // frame they occupy so each can be slotted into the stack.
       const placed = []
       let li = 0
-      for (let i = 0; i < hPhotos.length && i < hFrames.length; i++) placed.push({ frame: hFrames[i], layer: layers[li++] })
-      for (let i = 0; i < vPhotos.length && i < vFrames.length; i++) placed.push({ frame: vFrames[i], layer: layers[li++] })
+      for (let i = 0; i < hPhotos.length && i < hFrames.length; i++)
+        placed.push({ frame: hFrames[i], layer: layers[li++] })
+      for (let i = 0; i < vPhotos.length && i < vFrames.length; i++)
+        placed.push({ frame: vFrames[i], layer: layers[li++] })
 
       for (const { frame, layer } of placed) {
         if (!layer) continue
         const at = frameOrder.get(frame.name)
-        if (at === undefined) ops.push(layer)   // frame not in the parsed stack
+        if (at === undefined)
+          ops.push(layer) // frame not in the parsed stack
         else ops[at] = layer
       }
 
       const realised = []
       for (const op of ops) {
-        if (!op) continue                        // an empty photo slot
+        if (!op) continue // an empty photo slot
         realised.push(op._layer ? await realisePsdOp(sharp, op, scale) : op)
       }
       layers = realised
@@ -457,7 +467,9 @@ async function renderPageProof(job) {
       // it would show through anywhere a layer was switched off.
       base = sharp({
         create: {
-          width: dims.width, height: dims.height, channels: 4,
+          width: dims.width,
+          height: dims.height,
+          channels: 4,
           background: parseHexColor(job.pageBackground) || { r: 255, g: 255, b: 255, alpha: 0 },
         },
       })
@@ -475,7 +487,9 @@ async function renderPageProof(job) {
         const { textReplacementOverlays } = require('./psd_layers')
         const subs = textReplacementOverlays(job.psdLayers, job.layerEdits, job.canvasWidth, job.canvasHeight)
         if (subs.length) pageOverlays = pageOverlays.concat(subs)
-      } catch (_) { /* stand-ins are best-effort; the page still renders */ }
+      } catch (_) {
+        /* stand-ins are best-effort; the page still renders */
+      }
     }
     const overlaySvg = buildOverlaySvg(pageOverlays, dims.width, dims.height)
     if (overlaySvg) {
@@ -483,10 +497,7 @@ async function renderPageProof(job) {
     }
 
     const finalQuality = job._hrMode ? 92 : 82
-    await base
-      .composite(layers)
-      .jpeg({ quality: finalQuality, mozjpeg: true })
-      .toFile(job.outputPath)
+    await base.composite(layers).jpeg({ quality: finalQuality, mozjpeg: true }).toFile(job.outputPath)
 
     return {
       ok: true,
@@ -521,7 +532,6 @@ async function renderFinalComposite(job) {
     _hrMode: true,
   })
 }
-
 
 /**
  * Build the composite operations for a template's own PSD layers.
@@ -583,10 +593,18 @@ function buildPsdStackOps(psdLayers, layerEdits, scale) {
 // no libvips equivalent (hue/saturation/colour/luminosity) fall back to normal
 // rather than to a wrong-but-similar operator.
 const PS_BLEND_TO_SHARP = {
-  normal: 'over', multiply: 'multiply', screen: 'screen', overlay: 'overlay',
-  darken: 'darken', lighten: 'lighten', 'color dodge': 'colour-dodge',
-  'color burn': 'colour-burn', 'hard light': 'hard-light',
-  'soft light': 'soft-light', difference: 'difference', exclusion: 'exclusion',
+  normal: 'over',
+  multiply: 'multiply',
+  screen: 'screen',
+  overlay: 'overlay',
+  darken: 'darken',
+  lighten: 'lighten',
+  'color dodge': 'colour-dodge',
+  'color burn': 'colour-burn',
+  'hard light': 'hard-light',
+  'soft light': 'soft-light',
+  difference: 'difference',
+  exclusion: 'exclusion',
 }
 
 /**
@@ -604,12 +622,14 @@ async function realisePsdOp(sharp, op, scale) {
   // Layer opacity: scale the alpha channel rather than flattening onto a
   // background, so the layer stays translucent over whatever is beneath it.
   if (node.effectiveOpacity < 1) {
-    pipe = pipe.ensureAlpha().composite([{
-      input: Buffer.from([255, 255, 255, Math.round(node.effectiveOpacity * 255)]),
-      raw: { width: 1, height: 1, channels: 4 },
-      tile: true,
-      blend: 'dest-in',
-    }])
+    pipe = pipe.ensureAlpha().composite([
+      {
+        input: Buffer.from([255, 255, 255, Math.round(node.effectiveOpacity * 255)]),
+        raw: { width: 1, height: 1, channels: 4 },
+        tile: true,
+        blend: 'dest-in',
+      },
+    ])
   }
 
   // A clipping mask shows this layer only where its base has pixels. Render
@@ -620,17 +640,20 @@ async function realisePsdOp(sharp, op, scale) {
     const b = op._clipBaseBox || op._clipBase
     const baseW = Math.max(1, Math.round(b.w * scale))
     const baseH = Math.max(1, Math.round(b.h * scale))
-    const baseBuf = await sharp(b.png).resize(baseW, baseH, { fit: 'fill' })
-      .ensureAlpha().png().toBuffer()
+    const baseBuf = await sharp(b.png).resize(baseW, baseH, { fit: 'fill' }).ensureAlpha().png().toBuffer()
     const maskCanvas = await sharp({
       create: { width: w, height: h, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
-    }).composite([{
-      input: baseBuf,
-      left: Math.round((b.x - box.x) * scale),
-      top: Math.round((b.y - box.y) * scale),
-    }]).png().toBuffer()
-    pipe = sharp(await pipe.png().toBuffer())
-      .composite([{ input: maskCanvas, blend: 'dest-in' }])
+    })
+      .composite([
+        {
+          input: baseBuf,
+          left: Math.round((b.x - box.x) * scale),
+          top: Math.round((b.y - box.y) * scale),
+        },
+      ])
+      .png()
+      .toBuffer()
+    pipe = sharp(await pipe.png().toBuffer()).composite([{ input: maskCanvas, blend: 'dest-in' }])
   }
 
   return { input: await pipe.png().toBuffer(), top: op.top, left: op.left, blend: op.blend }
@@ -655,13 +678,15 @@ async function realisePsdOp(sharp, op, scale) {
 async function rasterizeOverlays(overlays, width, height, opts = {}) {
   const layers = opts.includeText
     ? overlays
-    : (Array.isArray(overlays) ? overlays.filter((L) => L && L.type !== 'text') : overlays)
+    : Array.isArray(overlays)
+      ? overlays.filter((L) => L && L.type !== 'text')
+      : overlays
   const svg = buildOverlaySvg(layers, width, height)
   if (!svg) return null
   const sharp = getSharp()
   const out = path.join(
     require('os').tmpdir(),
-    `albumstudio_overlay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`
+    `albumstudio_overlay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.png`,
   )
   await sharp(Buffer.from(svg)).png().toFile(out)
   return out
@@ -673,7 +698,11 @@ async function renderProofBatch(jobs, onProgress) {
     const r = await renderPageProof(jobs[i])
     results.push(r)
     if (onProgress) {
-      try { onProgress(r, i + 1, jobs.length) } catch { /* progress is best-effort */ }
+      try {
+        onProgress(r, i + 1, jobs.length)
+      } catch {
+        /* progress is best-effort */
+      }
     }
   }
   return results

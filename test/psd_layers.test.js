@@ -6,13 +6,7 @@ const fs = require('fs')
 const os = require('os')
 const path = require('path')
 
-const {
-  readPsdLayerTree,
-  flattenDrawOrder,
-  resolveClipping,
-  frameLayers,
-  isFrameName,
-} = require('../src/psd_layers')
+const { readPsdLayerTree, flattenDrawOrder, resolveClipping, frameLayers, isFrameName } = require('../src/psd_layers')
 
 // ─── fixture ─────────────────────────────────────────────────────────────────
 // A PSD written with ag-psd, shaped like a real album template: a background,
@@ -22,7 +16,12 @@ const {
 
 function rgba(w, h, [r, g, b, a = 255]) {
   const d = new Uint8ClampedArray(w * h * 4)
-  for (let i = 0; i < w * h; i++) { d[i * 4] = r; d[i * 4 + 1] = g; d[i * 4 + 2] = b; d[i * 4 + 3] = a }
+  for (let i = 0; i < w * h; i++) {
+    d[i * 4] = r
+    d[i * 4 + 1] = g
+    d[i * 4 + 2] = b
+    d[i * 4 + 3] = a
+  }
   return { width: w, height: h, data: d }
 }
 
@@ -31,7 +30,8 @@ function fixturePath() {
   if (FIXTURE) return FIXTURE
   const agpsd = require('ag-psd')
   agpsd.initializeCanvas((w, h) => ({
-    width: w, height: h,
+    width: w,
+    height: h,
     getContext: () => ({
       createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
     }),
@@ -46,7 +46,15 @@ function fixturePath() {
         opened: true,
         children: [
           { name: 'toolkithframe1', left: 50, top: 50, imageData: rgba(300, 200, [200, 200, 200]) },
-          { name: 'colour wash', left: 50, top: 50, clipping: true, blendMode: 'multiply', opacity: 0.6, imageData: rgba(300, 200, [255, 0, 0]) },
+          {
+            name: 'colour wash',
+            left: 50,
+            top: 50,
+            clipping: true,
+            blendMode: 'multiply',
+            opacity: 0.6,
+            imageData: rgba(300, 200, [255, 0, 0]),
+          },
           { name: 'toolkitvframe1', left: 420, top: 50, imageData: rgba(200, 300, [180, 180, 180]) },
         ],
       },
@@ -101,8 +109,10 @@ test('groups keep their children and carry no pixels', async () => {
 
 test('layers are returned bottom-to-top (draw order)', async () => {
   const t = await tree()
-  assert.deepEqual(t.layers.map((l) => l.name),
-    ['Background', 'Photos', 'Gold rule', 'Hidden flourish'])
+  assert.deepEqual(
+    t.layers.map((l) => l.name),
+    ['Background', 'Photos', 'Gold rule', 'Hidden flourish'],
+  )
 })
 
 test('per-layer metadata survives the round trip', async () => {
@@ -124,14 +134,20 @@ test('hidden layers are listed, marked not visible', async () => {
 test('frame layers are flagged', async () => {
   const t = await tree()
   const frames = frameLayers(t.layers)
-  assert.deepEqual(frames.map((f) => f.name), ['toolkithframe1', 'toolkitvframe1'])
+  assert.deepEqual(
+    frames.map((f) => f.name),
+    ['toolkithframe1', 'toolkitvframe1'],
+  )
 })
 
 test('every raster layer gets a PNG on disk; groups do not', async () => {
   const t = await tree()
   const flat = flattenDrawOrder(t.layers)
   for (const n of flat) {
-    if (n.kind === 'group') { assert.equal(n.png, null); continue }
+    if (n.kind === 'group') {
+      assert.equal(n.png, null)
+      continue
+    }
     assert.ok(n.png, `${n.name} should have a PNG`)
     assert.ok(fs.existsSync(n.png), `${n.png} should exist`)
   }
@@ -172,10 +188,10 @@ test('the second read is served from cache', async () => {
 test('flattenDrawOrder emits groups before their children, with depth', async () => {
   const t = await tree()
   const flat = flattenDrawOrder(t.layers)
-  assert.deepEqual(flat.map((n) => n.name), [
-    'Background', 'Photos', 'toolkithframe1', 'colour wash', 'toolkitvframe1',
-    'Gold rule', 'Hidden flourish',
-  ])
+  assert.deepEqual(
+    flat.map((n) => n.name),
+    ['Background', 'Photos', 'toolkithframe1', 'colour wash', 'toolkitvframe1', 'Gold rule', 'Hidden flourish'],
+  )
   assert.equal(flat.find((n) => n.name === 'Photos').depth, 0)
   assert.equal(flat.find((n) => n.name === 'colour wash').depth, 1)
 })
@@ -185,11 +201,13 @@ test('hiding a group hides its whole subtree', async () => {
   const groupId = t.layers.find((l) => l.name === 'Photos').id
   const flat = flattenDrawOrder(t.layers, { [groupId]: { hidden: true } })
   for (const name of ['toolkithframe1', 'colour wash', 'toolkitvframe1']) {
-    assert.equal(flat.find((n) => n.name === name).effectiveVisible, false,
-      `${name} must be hidden with its group`)
+    assert.equal(flat.find((n) => n.name === name).effectiveVisible, false, `${name} must be hidden with its group`)
   }
-  assert.equal(flat.find((n) => n.name === 'Gold rule').effectiveVisible, true,
-    'layers outside the group are unaffected')
+  assert.equal(
+    flat.find((n) => n.name === 'Gold rule').effectiveVisible,
+    true,
+    'layers outside the group are unaffected',
+  )
 })
 
 test('group opacity multiplies into its children', async () => {
@@ -234,7 +252,10 @@ test('a run of clipped layers all share one base', () => {
     { id: 'e', kind: 'raster', clipped: false },
   ]
   const r = resolveClipping(flat)
-  assert.deepEqual(r.map((n) => n.clipBaseId), [null, 'a', 'a', 'a', null])
+  assert.deepEqual(
+    r.map((n) => n.clipBaseId),
+    [null, 'a', 'a', 'a', null],
+  )
 })
 
 // ─── Photoshop index translation ─────────────────────────────────────────────
@@ -337,14 +358,22 @@ test('a scale of exactly 1 is not emitted as a transform', async () => {
 // PSD, not just the on-screen preview. These use a synthetic tree so the
 // assertions are about the translation, not about one fixture's contents.
 
-const textTree = () => ([
+const textTree = () => [
   { id: '0', kind: 'raster', name: 'Background', visible: true, opacity: 1, x: 0, y: 0, w: 800, h: 600 },
   {
-    id: '1', kind: 'text', name: 'Title', visible: true, opacity: 1,
-    x: 100, y: 100, w: 400, h: 80, text: 'Original',
+    id: '1',
+    kind: 'text',
+    name: 'Title',
+    visible: true,
+    opacity: 1,
+    x: 100,
+    y: 100,
+    w: 400,
+    h: 80,
+    text: 'Original',
     textStyle: { font: 'Didot', sizePx: 100, color: '#112233', align: 'center' },
   },
-])
+]
 
 test('a style-only edit is emitted even when the copy is unchanged', () => {
   const ops = toPhotoshopLayerOps(textTree(), { 1: { textStyle: { color: '#ff0000' } } })
@@ -359,8 +388,14 @@ test('every text style field reaches the op', () => {
     1: {
       text: 'New copy',
       textStyle: {
-        font: 'Futura', sizePx: 48, color: '#00ff00', align: 'right',
-        tracking: 0.08, lineHeight: 1.5, weight: 700, italic: true,
+        font: 'Futura',
+        sizePx: 48,
+        color: '#00ff00',
+        align: 'right',
+        tracking: 0.08,
+        lineHeight: 1.5,
+        weight: 700,
+        italic: true,
       },
     },
   })

@@ -40,8 +40,14 @@ function jpegSizeFromBuffer(b, { stored = false } = {}) {
   while (i + 9 < b.length) {
     if (b[i] !== 0xff) return null
     const marker = b[i + 1]
-    if (marker === 0xff) { i++; continue }          // fill byte
-    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7)) { i += 2; continue }
+    if (marker === 0xff) {
+      i++
+      continue
+    } // fill byte
+    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7)) {
+      i += 2
+      continue
+    }
     const len = b.readUInt16BE(i + 2)
     if (marker === 0xe1 && i + 2 + len <= b.length) orientation = exifOrientation(b, i + 4, i + 2 + len)
     if (SOF.has(marker)) {

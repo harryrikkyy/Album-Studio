@@ -33,9 +33,11 @@ async function main() {
         width: landscape ? 3000 : 2000,
         height: landscape ? 2000 : 3000,
         channels: 3,
-        noise: { type: 'gaussian', mean: 80 + (i * 7) % 120, sigma: 30 },
+        noise: { type: 'gaussian', mean: 80 + ((i * 7) % 120), sigma: 30 },
       },
-    }).jpeg({ quality: 88 }).toFile(p)
+    })
+      .jpeg({ quality: 88 })
+      .toFile(p)
     if (i % 50 === 49) console.log(`  ${i + 1}/${photoCount}`)
   }
 
@@ -55,21 +57,36 @@ async function main() {
   if (!fs.existsSync(tpl)) {
     await sharp({
       create: { width: 2400, height: 1200, channels: 3, background: { r: 245, g: 240, b: 232 } },
-    }).jpeg({ quality: 90 }).toFile(tpl)
+    })
+      .jpeg({ quality: 90 })
+      .toFile(tpl)
   }
 
   // App-shaped project (same layout as e2e/fixtures/sample-project.json).
   const albumPages = {}
   for (let pg = 1; pg <= PAGES; pg++) {
-    const a = (pg - 1) * 2, b = a + 1
+    const a = (pg - 1) * 2,
+      b = a + 1
     albumPages[pg] = {
       template: {
-        id: 'tpl_bench_1h1v', folderId: 'tplFld_bench', name: 'bench_1h1v.psd',
-        h: 1, v: 1, url: 'file://' + tpl,
+        id: 'tpl_bench_1h1v',
+        folderId: 'tplFld_bench',
+        name: 'bench_1h1v.psd',
+        h: 1,
+        v: 1,
+        url: 'file://' + tpl,
       },
       photos: [
-        { id: `img_bench_${a}`, orient: 'h', url: 'file://' + path.join(ROOT, 'thumbs', `photo_${String(a).padStart(4, '0')}.jpg`) },
-        { id: `img_bench_${b}`, orient: 'v', url: 'file://' + path.join(ROOT, 'thumbs', `photo_${String(b).padStart(4, '0')}.jpg`) },
+        {
+          id: `img_bench_${a}`,
+          orient: 'h',
+          url: 'file://' + path.join(ROOT, 'thumbs', `photo_${String(a).padStart(4, '0')}.jpg`),
+        },
+        {
+          id: `img_bench_${b}`,
+          orient: 'v',
+          url: 'file://' + path.join(ROOT, 'thumbs', `photo_${String(b).padStart(4, '0')}.jpg`),
+        },
       ],
     }
   }
@@ -86,4 +103,7 @@ async function main() {
   console.log(`fixture ready in ${((Date.now() - t0) / 1000).toFixed(1)}s → ${out}`)
 }
 
-main().catch((e) => { console.error(e); process.exit(1) })
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})

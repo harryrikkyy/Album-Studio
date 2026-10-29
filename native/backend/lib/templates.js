@@ -15,12 +15,19 @@ const { readFileHeader } = require('./cache')
 const { prepareSourceAliases } = require('./source_roots')
 
 async function readdirSafe(dir) {
-  try { return await fs.promises.readdir(dir, { withFileTypes: true }) } catch (error) { if (error.code === 'ENOENT') return []; throw error }
+  try {
+    return await fs.promises.readdir(dir, { withFileTypes: true })
+  } catch (error) {
+    if (error.code === 'ENOENT') return []
+    throw error
+  }
 }
 
 /** Slot counts from a template's file name; 0/0 when the name doesn't say. */
 function slotsFromName(name) {
-  const m = String(name).toLowerCase().match(/(\d+)h(\d+)v/)
+  const m = String(name)
+    .toLowerCase()
+    .match(/(\d+)h(\d+)v/)
   return m ? { h: parseInt(m[1], 10), v: parseInt(m[2], 10) } : { h: 0, v: 0 }
 }
 
@@ -85,25 +92,52 @@ async function scanCollection(dir, dimensions) {
     // Same matching as the Electron app: the image named like the template, else one whose name
     // contains it.
     let preview = images.get(base) || null
-    if (!preview) for (const [k, v] of images) if (k.includes(base)) { preview = v; break }
-    return { id: 'tpl_' + sanitize(display + '_' + name), name, file, preview, collection: display, sourceRoot: dir, ...slotsFromName(name), width: null, height: null }
+    if (!preview)
+      for (const [k, v] of images)
+        if (k.includes(base)) {
+          preview = v
+          break
+        }
+    return {
+      id: 'tpl_' + sanitize(display + '_' + name),
+      name,
+      file,
+      preview,
+      collection: display,
+      sourceRoot: dir,
+      ...slotsFromName(name),
+      width: null,
+      height: null,
+    }
   })
   // Hashing reads are bounded globally; do not enqueue thousands of full-file reads.
   for (let i = 0; dimensions && i < list.length; i += 4) {
-    await Promise.all(list.slice(i, i + 4).map(async (t) => {
-      const c = await canvasOf(t.file)
-      if (c) { t.width = c.width; t.height = c.height }
-    }))
+    await Promise.all(
+      list.slice(i, i + 4).map(async (t) => {
+        const c = await canvasOf(t.file)
+        if (c) {
+          t.width = c.width
+          t.height = c.height
+        }
+      }),
+    )
   }
   list.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
   return list
 }
 
 /** All templates of these collection folders. */
-async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }, { onConflict, dimensions = true } = {}) {
+async function listTemplates(
+  collections,
+  registry = { version: 1, roots: {}, assets: {} },
+  { onConflict, dimensions = true } = {},
+) {
   const out = []
   for (const dir of collections || []) {
-    const st = await fs.promises.stat(dir).catch(error => { if (error.code === 'ENOENT') return null; throw error })
+    const st = await fs.promises.stat(dir).catch((error) => {
+      if (error.code === 'ENOENT') return null
+      throw error
+    })
     if (!st) continue
     const list = await scanCollection(dir, dimensions)
     out.push(...list)

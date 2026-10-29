@@ -9,7 +9,11 @@ const ag = require('ag-psd')
 const sharp = require('../../../src/sharp_config').getSharp()
 const { preflightAlbum } = require('../lib/preflight')
 
-ag.initializeCanvas((w, h) => ({ width: w, height: h, getContext: () => ({ createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }) }) }))
+ag.initializeCanvas((w, h) => ({
+  width: w,
+  height: h,
+  getContext: () => ({ createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }) }),
+}))
 
 function pixels(w, h, alpha = 255) {
   const data = new Uint8ClampedArray(w * h * 4).fill(180)
@@ -26,21 +30,44 @@ async function fixture(t, { width = 800, height = 600, frames = [frame()], canva
   t.after(() => fs.rmSync(root, { recursive: true, force: true }))
   const original = path.join(root, 'original.jpg')
   const thumb = path.join(root, 'thumbnail.jpg')
-  await sharp({ create: { width, height, channels: 3, background: '#986543' } }).jpeg().toFile(original)
+  await sharp({ create: { width, height, channels: 3, background: '#986543' } })
+    .jpeg()
+    .toFile(original)
   await sharp(original).resize(80, 60, { fit: 'inside' }).jpeg().toFile(thumb)
   const template = path.join(root, 'template.psd')
-  fs.writeFileSync(template, ag.writePsdBuffer({ width: canvasW, height: canvasH, imageData: pixels(canvasW, canvasH), children: frames }))
+  fs.writeFileSync(
+    template,
+    ag.writePsdBuffer({ width: canvasW, height: canvasH, imageData: pixels(canvasW, canvasH), children: frames }),
+  )
   const album = {
-    path: root, photos: { photoA: { id: 'photoA', base: 'Original', original, thumb, width: 80, height: 60, orient: 'h' } },
-    spreads: [{ n: 1, id: 'spread_1', photoIds: ['photoA'], template: { id: 'templateA', name: 'Template', file: template } }],
+    path: root,
+    photos: { photoA: { id: 'photoA', base: 'Original', original, thumb, width: 80, height: 60, orient: 'h' } },
+    spreads: [
+      { n: 1, id: 'spread_1', photoIds: ['photoA'], template: { id: 'templateA', name: 'Template', file: template } },
+    ],
     identityConflicts: [],
   }
-  const workspace = { outputToken: path.join(root, 'output'), imageRotations: {}, imagePlacements: {}, imageAdjustments: {}, pageLayerEdits: {} }
-  return { root, original, thumb, template, album, workspace, settings: { size: 'print', heightInches: 1, ppi: 300, phase: 'render' } }
+  const workspace = {
+    outputToken: path.join(root, 'output'),
+    imageRotations: {},
+    imagePlacements: {},
+    imageAdjustments: {},
+    pageLayerEdits: {},
+  }
+  return {
+    root,
+    original,
+    thumb,
+    template,
+    album,
+    workspace,
+    settings: { size: 'print', heightInches: 1, ppi: 300, phase: 'render' },
+  }
 }
 
 const codes = (report) => report.errors.map((e) => e.code)
-const run = (f, settings = {}, selected = null) => preflightAlbum(f.album, f.workspace, { ...f.settings, ...settings }, selected)
+const run = (f, settings = {}, selected = null) =>
+  preflightAlbum(f.album, f.workspace, { ...f.settings, ...settings }, selected)
 
 test('real original pixels and PSD geometry pass with an explicit fallback policy and unverified lab warning', async (t) => {
   const f = await fixture(t)
@@ -49,10 +76,17 @@ test('real original pixels and PSD geometry pass with an explicit fallback polic
   const report = await run(f)
   assert.deepEqual(report.errors, [])
   assert.ok(report.warnings.some((e) => e.code === 'lab_spec_unverified'))
-  assert.match(report.info.find((e) => e.code === 'effective_ppi_policy').message, /configured output.*300|300.*configured output/i)
+  assert.match(
+    report.info.find((e) => e.code === 'effective_ppi_policy').message,
+    /configured output.*300|300.*configured output/i,
+  )
   const measured = report.info.find((e) => e.code === 'effective_ppi')
   assert.equal(measured.sourcePpi, 800, 'thumbnail dimensions must never drive print resolution')
-  assert.equal(measured.embeddedPpi, 375, 'the print canvas preserves 25 percent recrop headroom above its 300 PPI target')
+  assert.equal(
+    measured.embeddedPpi,
+    375,
+    'the print canvas preserves 25 percent recrop headroom above its 300 PPI target',
+  )
   assert.equal(measured.effectivePpi, 375)
   assert.equal(JSON.stringify([f.album, f.workspace]), before)
   assert.deepEqual(fs.readFileSync(f.original), bytes)
@@ -87,15 +121,28 @@ test('missing references, missing templates and corrupt PSDs block production', 
 test('only requested spreads and their ambiguous adjustments are gated', async (t) => {
   const f = await fixture(t)
   f.album.spreads.push({ n: 2, id: 'spread_2', photoIds: ['missing'], template: null })
-  f.album.identityConflicts.push({ n: 2, kind: 'photo', id: 'missing', reason: 'ambiguous-reference', candidates: ['missing'] })
+  f.album.identityConflicts.push({
+    n: 2,
+    kind: 'photo',
+    id: 'missing',
+    reason: 'ambiguous-reference',
+    candidates: ['missing'],
+  })
   assert.deepEqual((await run(f, {}, [1])).errors, [])
-  f.album.identityConflicts.push({ kind: 'photo', id: 'legacy', reason: 'ambiguous-adjustment', field: 'imagePlacements', candidates: ['photoA', 'photoB'] })
+  f.album.identityConflicts.push({
+    kind: 'photo',
+    id: 'legacy',
+    reason: 'ambiguous-adjustment',
+    field: 'imagePlacements',
+    candidates: ['photoA', 'photoB'],
+  })
   assert.ok(codes(await run(f, {}, [1])).includes('identity_conflict'))
 })
 
 test('unknown, duplicate and nonfinite spread selections cannot bypass preflight', async (t) => {
   const f = await fixture(t)
-  for (const selected of [[99], [1, 1], [Infinity], []]) assert.ok(codes(await run(f, {}, selected)).includes('spread_selection_invalid'))
+  for (const selected of [[99], [1, 1], [Infinity], []])
+    assert.ok(codes(await run(f, {}, selected)).includes('spread_selection_invalid'))
 })
 
 test('mismatched orientation counts cannot silently omit photos or leave placeholder frames', async (t) => {
@@ -111,7 +158,11 @@ test('mismatched orientation counts cannot silently omit photos or leave placeho
 })
 
 test('hidden frame layers, hidden parent groups and zero alpha frames are rejected', async (t) => {
-  for (const frames of [[frame(undefined, { hidden: true })], [{ name: 'Hidden group', hidden: true, children: [frame()] }], [frame(undefined, { imageData: pixels(400, 300, 0) })]]) {
+  for (const frames of [
+    [frame(undefined, { hidden: true })],
+    [{ name: 'Hidden group', hidden: true, children: [frame()] }],
+    [frame(undefined, { imageData: pixels(400, 300, 0) })],
+  ]) {
     const f = await fixture(t, { frames })
     const report = await run(f)
     assert.ok(codes(report).includes('frame_hidden') || codes(report).includes('frame_empty'))
@@ -162,7 +213,13 @@ test('bounding-box fit after arbitrary rotation must cover all four frame corner
 
 test('nonfinite settings, rotations, placements, adjustments and overrides fail closed', async (t) => {
   const f = await fixture(t)
-  for (const settings of [{ ppi: NaN }, { ppi: 0 }, { heightInches: Infinity }, { minEffectivePpi: -1 }, { size: 'unknown' }]) {
+  for (const settings of [
+    { ppi: NaN },
+    { ppi: 0 },
+    { heightInches: Infinity },
+    { minEffectivePpi: -1 },
+    { size: 'unknown' },
+  ]) {
     assert.ok(codes(await run(f, settings)).includes('print_settings_invalid'))
   }
   f.workspace.imageRotations.photoA = Infinity
@@ -207,19 +264,48 @@ test('plain frame overrides affect coverage and PPI, while unverified group tran
 })
 
 test('masked frames measure their real active mask bounds and detect fully masked placeholders', async (t) => {
-  const f = await fixture(t, { frames: [frame(undefined, { mask: { left: 150, top: 100, right: 350, bottom: 250, defaultColor: 0, imageData: pixels(200, 150) } })] })
+  const f = await fixture(t, {
+    frames: [
+      frame(undefined, {
+        mask: { left: 150, top: 100, right: 350, bottom: 250, defaultColor: 0, imageData: pixels(200, 150) },
+      }),
+    ],
+  })
   assert.deepEqual((await run(f)).errors, [])
-  const empty = await fixture(t, { frames: [frame(undefined, { mask: { left: 100, top: 50, right: 500, bottom: 350, defaultColor: 0, imageData: pixels(400, 300, 0) } })] })
+  const empty = await fixture(t, {
+    frames: [
+      frame(undefined, {
+        mask: { left: 100, top: 50, right: 500, bottom: 350, defaultColor: 0, imageData: pixels(400, 300, 0) },
+      }),
+    ],
+  })
   // PSD masks store their first channel as coverage, rather than RGBA alpha.
   const mask = pixels(400, 300)
   mask.data.fill(0)
-  fs.writeFileSync(empty.template, ag.writePsdBuffer({ width: 800, height: 400, imageData: pixels(800, 400), children: [frame(undefined, { mask: { left: 100, top: 50, right: 500, bottom: 350, defaultColor: 0, imageData: mask } })] }))
+  fs.writeFileSync(
+    empty.template,
+    ag.writePsdBuffer({
+      width: 800,
+      height: 400,
+      imageData: pixels(800, 400),
+      children: [
+        frame(undefined, { mask: { left: 100, top: 50, right: 500, bottom: 350, defaultColor: 0, imageData: mask } }),
+      ],
+    }),
+  )
   assert.ok(codes(await run(empty)).includes('frame_empty'))
 })
 
 test('a declared lab size is checked, while bleed, safe-area and gutter compliance remain unverified', async (t) => {
   const f = await fixture(t)
-  f.workspace.printSpec = { widthInches: 2, heightInches: 1, bleedInches: 0.125, safeInches: 0.25, gutterInches: 0.5, profile: 'srgb' }
+  f.workspace.printSpec = {
+    widthInches: 2,
+    heightInches: 1,
+    bleedInches: 0.125,
+    safeInches: 0.25,
+    gutterInches: 0.5,
+    profile: 'srgb',
+  }
   let report = await run(f)
   assert.deepEqual(report.errors, [])
   assert.ok(report.warnings.some((e) => e.code === 'lab_layout_unverified'))

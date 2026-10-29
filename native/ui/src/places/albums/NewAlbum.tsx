@@ -15,7 +15,9 @@ import type { Collection, EventData, FolderInfo } from '../../../../contracts/ty
 type Progress = EventData<'album.creating'>
 
 const open = signal(false)
-export const openNewAlbum = () => { open.value = true }
+export const openNewAlbum = () => {
+  open.value = true
+}
 
 const BAD_NAME = /[/:\\]/
 
@@ -42,12 +44,30 @@ function ProgressView({ p, name }: { p: Progress | null; name: string }) {
         : `Planning ${plural(p.spreads ?? 0, 'spread')}…`
   return (
     <div class="dialog__body" role="status" aria-live="polite">
-      <h2 id="new-album-title" class="dialog__title"><BookPlus size={18} /> Creating {name}</h2>
-      <div class="progress" role="progressbar" aria-label="Album creation" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct ?? undefined}>
-        <span class={`progress__bar ${pct === null ? 'is-indeterminate' : ''}`} style={{ width: pct === null ? '35%' : `${pct}%` }} />
+      <h2 id="new-album-title" class="dialog__title">
+        <BookPlus size={18} /> Creating {name}
+      </h2>
+      <div
+        class="progress"
+        role="progressbar"
+        aria-label="Album creation"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={pct ?? undefined}
+      >
+        <span
+          class={`progress__bar ${pct === null ? 'is-indeterminate' : ''}`}
+          style={{ width: pct === null ? '35%' : `${pct}%` }}
+        />
       </div>
-      <p class="job__line">{line}{p?.stage === 'thumbs' && (p.folders ?? 0) > 1 ? ` (folder ${p.index} of ${p.folders})` : ''}</p>
-      <p class="dialog__lead">Thumbnails go in a <span class="mono">_Thumbnails</span> folder next to the photos, as before; the photos themselves aren’t changed.</p>
+      <p class="job__line">
+        {line}
+        {p?.stage === 'thumbs' && (p.folders ?? 0) > 1 ? ` (folder ${p.index} of ${p.folders})` : ''}
+      </p>
+      <p class="dialog__lead">
+        Thumbnails go in a <span class="mono">_Thumbnails</span> folder next to the photos, as before; the photos
+        themselves aren’t changed.
+      </p>
     </div>
   )
 }
@@ -74,14 +94,23 @@ export function NewAlbumDialog() {
     const d = ref.current
     if (!d) return
     if (open.value && !d.open) {
-      setFolders([]); setName(''); setNameTouched(false); setParent(null); setOutput(null); setError(null); setProgress(null)
-      setSpreads(usual); setSpreadsTouched(false)
+      setFolders([])
+      setName('')
+      setNameTouched(false)
+      setParent(null)
+      setOutput(null)
+      setError(null)
+      setProgress(null)
+      setSpreads(usual)
+      setSpreadsTouched(false)
       d.showModal()
-      void call('library.collections').then(({ collections: list }) => {
-        setCollections(list)
-        // The Library's defaults for new albums (until chosen there: every collection in use).
-        setChosen(new Set(list.filter((c) => c.exists && c.templates && c.isDefault).map((c) => c.path)))
-      }).catch(() => setCollections([]))
+      void call('library.collections')
+        .then(({ collections: list }) => {
+          setCollections(list)
+          // The Library's defaults for new albums (until chosen there: every collection in use).
+          setChosen(new Set(list.filter((c) => c.exists && c.templates && c.isDefault).map((c) => c.path)))
+        })
+        .catch(() => setCollections([]))
     } else if (!open.value && d.open) d.close()
   }, [open.value])
 
@@ -89,9 +118,14 @@ export function NewAlbumDialog() {
 
   const addFolders = async () => {
     const start = folders.at(-1)?.path.replace(/\/[^/]+$/, '') ?? parent
-    const picked = (await pickFolders('Choose photo folders', start, true)).filter((p) => !folders.some((f) => f.path === p))
+    const picked = (await pickFolders('Choose photo folders', start, true)).filter(
+      (p) => !folders.some((f) => f.path === p),
+    )
     if (!picked.length) return
-    const info = await call('folders.inspect', { paths: picked }, 5 * 60_000).catch((e) => { toast('error', (e as Error).message); return [] })
+    const info = await call('folders.inspect', { paths: picked }, 5 * 60_000).catch((e) => {
+      toast('error', (e as Error).message)
+      return []
+    })
     const next = [...folders, ...info]
     setFolders(next)
     if (!folders.length && info[0]) {
@@ -104,7 +138,11 @@ export function NewAlbumDialog() {
   }
 
   const addCollection = async () => {
-    const picked = await pickFolders('Choose a template collection', collections?.[0]?.path.replace(/\/[^/]+$/, '') ?? null, true)
+    const picked = await pickFolders(
+      'Choose a template collection',
+      collections?.[0]?.path.replace(/\/[^/]+$/, '') ?? null,
+      true,
+    )
     if (!picked.length) return
     const info = await call('templates.inspect', { paths: picked }).catch(() => [])
     const known = new Set((collections ?? []).map((c) => c.path))
@@ -114,7 +152,9 @@ export function NewAlbumDialog() {
 
   const photos = folders.reduce((n, f) => n + f.photos, 0)
   // Until the user types a number, offer one that suits the photos.
-  useEffect(() => { if (!spreadsTouched) setSpreads(suggestSpreads(photos, usual)) }, [photos])
+  useEffect(() => {
+    if (!spreadsTouched) setSpreads(suggestSpreads(photos, usual))
+  }, [photos])
   const raws = folders.reduce((n, f) => n + f.raws, 0)
   const missing = folders.reduce((n, f) => n + f.missing, 0)
   const chosenList = (collections ?? []).filter((c) => chosen.has(c.path))
@@ -154,8 +194,19 @@ export function NewAlbumDialog() {
       open.value = false
       await openAlbum(r.album.path)
       void loadRecent()
-      toast('ok', plan ? `${r.album.name} is ready: ${plural(r.album.stats.spreads, 'spread')} planned.` : `${r.album.name} is ready. Drag photos onto the spread to start.`, 7000)
-      if (r.thumbFailed) toast('error', `${plural(r.thumbFailed, 'photo')} couldn’t be read for a thumbnail and won’t show in the album (${r.thumbFailures[0]}).`, 12000)
+      toast(
+        'ok',
+        plan
+          ? `${r.album.name} is ready: ${plural(r.album.stats.spreads, 'spread')} planned.`
+          : `${r.album.name} is ready. Drag photos onto the spread to start.`,
+        7000,
+      )
+      if (r.thumbFailed)
+        toast(
+          'error',
+          `${plural(r.thumbFailed, 'photo')} couldn’t be read for a thumbnail and won’t show in the album (${r.thumbFailures[0]}).`,
+          12000,
+        )
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -164,39 +215,70 @@ export function NewAlbumDialog() {
   }
 
   return (
-    <dialog class="dialog dialog--wide" ref={ref} onCancel={(e) => { if (busy) e.preventDefault() }} onClose={() => (open.value = false)} aria-labelledby="new-album-title">
+    <dialog
+      class="dialog dialog--wide"
+      ref={ref}
+      onCancel={(e) => {
+        if (busy) e.preventDefault()
+      }}
+      onClose={() => (open.value = false)}
+      aria-labelledby="new-album-title"
+    >
       {busy ? (
         <ProgressView p={progress} name={name.trim()} />
       ) : (
         <form class="dialog__body" onSubmit={create}>
           <div class="dialog__titlebar">
-            <h2 id="new-album-title" class="dialog__title"><BookPlus size={18} /> New album</h2>
-            <IconButton label="Close" onClick={() => (open.value = false)}><X size={16} /></IconButton>
+            <h2 id="new-album-title" class="dialog__title">
+              <BookPlus size={18} /> New album
+            </h2>
+            <IconButton label="Close" onClick={() => (open.value = false)}>
+              <X size={16} />
+            </IconButton>
           </div>
 
           <section class="na-section" aria-labelledby="na-photos">
             <div class="na-section__head">
-              <h3 id="na-photos"><Images size={15} /> Photos</h3>
-              <Button size="sm" icon={<FolderPlus size={14} />} onClick={addFolders}>Add folders…</Button>
+              <h3 id="na-photos">
+                <Images size={15} /> Photos
+              </h3>
+              <Button size="sm" icon={<FolderPlus size={14} />} onClick={addFolders}>
+                Add folders…
+              </Button>
             </div>
             {folders.length ? (
               <ul class="na-folders">
                 {folders.map((f) => (
                   <li key={f.path} class={f.exists ? '' : 'is-missing'}>
                     <span class="na-folders__samples" aria-hidden="true">
-                      {f.samples.slice(0, 3).map((s) => <img src={fileUrl(s)} alt="" loading="lazy" />)}
+                      {f.samples.slice(0, 3).map((s) => (
+                        <img src={fileUrl(s)} alt="" loading="lazy" />
+                      ))}
                       {!f.samples.length ? <Images size={18} /> : null}
                     </span>
                     <span class="na-folders__text">
                       <span class="na-folders__name">{f.name}</span>
                       <span class="na-folders__meta">
-                        {f.exists
-                          ? <>{plural(f.photos, 'photo')}{f.raws ? ` · ${f.raws} RAW` : ''} · {f.missing ? `${f.missing} need thumbnails` : 'thumbnails ready'}</>
-                          : 'Not there — drive disconnected?'}
+                        {f.exists ? (
+                          <>
+                            {plural(f.photos, 'photo')}
+                            {f.raws ? ` · ${f.raws} RAW` : ''} ·{' '}
+                            {f.missing ? `${f.missing} need thumbnails` : 'thumbnails ready'}
+                          </>
+                        ) : (
+                          'Not there — drive disconnected?'
+                        )}
                       </span>
-                      <span class="na-folders__path mono" title={f.path}>{shortPath(f.path, 3)}</span>
+                      <span class="na-folders__path mono" title={f.path}>
+                        {shortPath(f.path, 3)}
+                      </span>
                     </span>
-                    <IconButton label={`Remove ${f.name}`} onClick={() => setFolders(folders.filter((x) => x.path !== f.path))}><X size={14} /></IconButton>
+                    <IconButton
+                      label={`Remove ${f.name}`}
+                      onClick={() => setFolders(folders.filter((x) => x.path !== f.path))}
+                    >
+                      <X size={14} />
+                    </IconButton>
                   </li>
                 ))}
               </ul>
@@ -211,8 +293,12 @@ export function NewAlbumDialog() {
 
           <section class="na-section" aria-labelledby="na-templates">
             <div class="na-section__head">
-              <h3 id="na-templates"><LayoutTemplate size={15} /> Template collections</h3>
-              <Button size="sm" icon={<FolderPlus size={14} />} onClick={addCollection}>Add collection…</Button>
+              <h3 id="na-templates">
+                <LayoutTemplate size={15} /> Template collections
+              </h3>
+              <Button size="sm" icon={<FolderPlus size={14} />} onClick={addCollection}>
+                Add collection…
+              </Button>
             </div>
             {collections === null ? (
               <p class="muted">Looking at your earlier albums…</p>
@@ -233,8 +319,14 @@ export function NewAlbumDialog() {
                         }}
                       />
                       <span>
-                        {c.name} <span class="count">{c.exists ? plural(c.templates, 'template') : 'not connected'}</span>
-                        {c.albums.length ? <span class="check__hint">Used by {c.albums.slice(0, 3).join(', ')}{c.albums.length > 3 ? ` and ${c.albums.length - 3} more` : ''}</span> : null}
+                        {c.name}{' '}
+                        <span class="count">{c.exists ? plural(c.templates, 'template') : 'not connected'}</span>
+                        {c.albums.length ? (
+                          <span class="check__hint">
+                            Used by {c.albums.slice(0, 3).join(', ')}
+                            {c.albums.length > 3 ? ` and ${c.albums.length - 3} more` : ''}
+                          </span>
+                        ) : null}
                       </span>
                     </label>
                   </li>
@@ -248,21 +340,56 @@ export function NewAlbumDialog() {
           <section class="na-grid">
             <label class="na-field">
               <span class="na-field__label">Name</span>
-              <input class="field field--wide" type="text" value={name} placeholder="Wedding Album" onInput={(e) => { setName((e.target as HTMLInputElement).value); setNameTouched(true) }} />
+              <input
+                class="field field--wide"
+                type="text"
+                value={name}
+                placeholder="Wedding Album"
+                onInput={(e) => {
+                  setName((e.target as HTMLInputElement).value)
+                  setNameTouched(true)
+                }}
+              />
             </label>
             <div class="na-field">
               <span class="na-field__label">Save in</span>
               <span class="na-path">
-                <span class="mono" title={parent ?? ''}>{parent ? shortPath(parent, 3) : 'Not chosen'}</span>
-                <Button size="sm" variant="ghost" onClick={async () => { const [p] = await pickFolders('Where to save the album', parent, false); if (p) setParent(p) }}>Change…</Button>
+                <span class="mono" title={parent ?? ''}>
+                  {parent ? shortPath(parent, 3) : 'Not chosen'}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const [p] = await pickFolders('Where to save the album', parent, false)
+                    if (p) setParent(p)
+                  }}
+                >
+                  Change…
+                </Button>
               </span>
             </div>
             <div class="na-field">
               <span class="na-field__label">Print sheets</span>
               <span class="na-path">
-                <span class="mono" title={output ?? ''}>{output ? shortPath(output, 3) : `In the album, “exports”`}</span>
-                <Button size="sm" variant="ghost" onClick={async () => { const [p] = await pickFolders('Where print sheets go', output ?? parent, false); if (p) setOutput(p) }}>Change…</Button>
-                {output ? <Button size="sm" variant="ghost" onClick={() => setOutput(null)}>Default</Button> : null}
+                <span class="mono" title={output ?? ''}>
+                  {output ? shortPath(output, 3) : `In the album, “exports”`}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const [p] = await pickFolders('Where print sheets go', output ?? parent, false)
+                    if (p) setOutput(p)
+                  }}
+                >
+                  Change…
+                </Button>
+                {output ? (
+                  <Button size="sm" variant="ghost" onClick={() => setOutput(null)}>
+                    Default
+                  </Button>
+                ) : null}
               </span>
             </div>
           </section>
@@ -272,9 +399,23 @@ export function NewAlbumDialog() {
             <label class={`choice__row ${plan ? 'is-on' : ''}`}>
               <input type="radio" name="plan" checked={plan} onChange={() => setPlan(true)} />
               <span class="choice__text">Plan</span>
-              <input class="field field--num" type="number" min={1} max={999} value={spreads} aria-label="Spreads" onFocus={() => setPlan(true)} onInput={(e) => { setSpreadsTouched(true); setSpreads(Math.floor(Number((e.target as HTMLInputElement).value) || 0)) }} />
+              <input
+                class="field field--num"
+                type="number"
+                min={1}
+                max={999}
+                value={spreads}
+                aria-label="Spreads"
+                onFocus={() => setPlan(true)}
+                onInput={(e) => {
+                  setSpreadsTouched(true)
+                  setSpreads(Math.floor(Number((e.target as HTMLInputElement).value) || 0))
+                }}
+              />
               <span class="choice__text">spreads now, in capture order</span>
-              {photos && spreads ? <span class="choice__hint">≈ {plural(Math.max(1, Math.round(photos / spreads)), 'photo')} each</span> : null}
+              {photos && spreads ? (
+                <span class="choice__hint">≈ {plural(Math.max(1, Math.round(photos / spreads)), 'photo')} each</span>
+              ) : null}
             </label>
             <label class={`choice__row ${!plan ? 'is-on' : ''}`}>
               <input type="radio" name="plan" checked={!plan} onChange={() => setPlan(false)} />
@@ -282,18 +423,30 @@ export function NewAlbumDialog() {
             </label>
           </fieldset>
 
-          {error ? <p class="dialog__error" role="alert"><CircleAlert size={13} class="inline-icon" /> {error}</p> : null}
+          {error ? (
+            <p class="dialog__error" role="alert">
+              <CircleAlert size={13} class="inline-icon" /> {error}
+            </p>
+          ) : null}
 
           <div class="dialog__actions dialog__actions--split">
             <span class={`dialog__summary ${folders.length && problems.length ? 'is-todo' : ''}`} aria-live="polite">
-              {!folders.length
-                ? null
-                : problems.length
-                  ? problems[0]
-                  : <>{plural(photos, 'photo')}{raws ? ` (${raws} RAW)` : ''} · {plural(templates, 'template')}{missing ? ` · ${plural(missing, 'thumbnail')} to make` : ''}</>}
+              {!folders.length ? null : problems.length ? (
+                problems[0]
+              ) : (
+                <>
+                  {plural(photos, 'photo')}
+                  {raws ? ` (${raws} RAW)` : ''} · {plural(templates, 'template')}
+                  {missing ? ` · ${plural(missing, 'thumbnail')} to make` : ''}
+                </>
+              )}
             </span>
-            <Button variant="ghost" onClick={() => (open.value = false)}>Cancel</Button>
-            <Button variant="primary" type="submit" disabled={problems.length > 0}>Create album</Button>
+            <Button variant="ghost" onClick={() => (open.value = false)}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={problems.length > 0}>
+              Create album
+            </Button>
           </div>
         </form>
       )}

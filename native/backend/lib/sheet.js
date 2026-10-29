@@ -26,7 +26,12 @@ function findFrames(layers, pattern) {
   const out = []
   const walk = (list) => {
     for (const l of list || []) {
-      if (String(l.name || '').toLowerCase().includes(pattern)) out.push(l)
+      if (
+        String(l.name || '')
+          .toLowerCase()
+          .includes(pattern)
+      )
+        out.push(l)
       walk(l.children || l.layers)
     }
   }
@@ -140,12 +145,19 @@ async function buildSheet(pc, job) {
       const target = printCanvas(doc.width, doc.height, settings)
       // Resize template geometry before measuring frames and sampling originals. Upsampling
       // the finished composite would keep the old downsampled photo detail.
-      await pc.run('image.imageSize', { width: target.width, height: target.height, resolution: settings.ppi, resample: target.width === doc.width && target.height === doc.height ? 'none' : 'bicubic' })
+      await pc.run('image.imageSize', {
+        width: target.width,
+        height: target.height,
+        resolution: settings.ppi,
+        resample: target.width === doc.width && target.height === doc.height ? 'none' : 'bicubic',
+      })
       doc = await pc.call('doc.inspect', {})
-      if (doc.width !== target.width || doc.height !== target.height) throw new Error('The engine did not produce the requested print canvas.')
+      if (doc.width !== target.width || doc.height !== target.height)
+        throw new Error('The engine did not produce the requested print canvas.')
     }
     const { pairs, frames, unplaced } = pairFrames(doc.layers, job.photos)
-    if (unplaced) warnings.push(`${unplaced} photo(s) had no matching frame (template has ${frames.h} H and ${frames.v} V frames)`)
+    if (unplaced)
+      warnings.push(`${unplaced} photo(s) had no matching frame (template has ${frames.h} H and ${frames.v} V frames)`)
     for (const { frame, photo } of pairs) {
       const area = await frameBox(pc, frame)
       if (!area || area.w <= 0 || area.h <= 0) {
@@ -158,7 +170,11 @@ async function buildSheet(pc, job) {
       const pdoc = await pc.call('doc.inspect', {})
       const k = embedScale(area, { w: pdoc.width, h: pdoc.height }, edit)
       if (k < 0.999) {
-        await pc.run('image.imageSize', { width: Math.max(1, Math.round(pdoc.width * k)), height: Math.max(1, Math.round(pdoc.height * k)), resample: 'bicubic' })
+        await pc.run('image.imageSize', {
+          width: Math.max(1, Math.round(pdoc.width * k)),
+          height: Math.max(1, Math.round(pdoc.height * k)),
+          resample: 'bicubic',
+        })
       }
       await pc.run('layer.smartObjects.convertToSmartObject', {})
       const copied = await pc.run('layer.copyToDocument', { document: tplIdx })
@@ -170,7 +186,10 @@ async function buildSheet(pc, job) {
       await pc.run('layer.createClippingMask', { layer: id })
       const placed = findLayer((await pc.call('doc.inspect', {})).layers, id)
       const b = box(placed && placed.bounds)
-      if (!b) { warnings.push(`${photo.name} has no bounds after placing`); continue }
+      if (!b) {
+        warnings.push(`${photo.name} has no bounds after placing`)
+        continue
+      }
       const { quad } = coverQuad(area, { w: b.w, h: b.h }, edit)
       await pc.run('edit.transform', { layer: id, rect: [b.x, b.y, b.x + b.w, b.y + b.h], quad })
     }

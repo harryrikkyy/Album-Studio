@@ -12,8 +12,14 @@ function mockPipeline() {
   const calls = []
   const pipe = {
     calls,
-    modulate(arg) { calls.push(['modulate', arg]); return pipe },
-    linear(slopes, inter) { calls.push(['linear', slopes, inter]); return pipe },
+    modulate(arg) {
+      calls.push(['modulate', arg])
+      return pipe
+    },
+    linear(slopes, inter) {
+      calls.push(['linear', slopes, inter])
+      return pipe
+    },
   }
   return pipe
 }

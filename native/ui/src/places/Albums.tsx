@@ -35,7 +35,9 @@ function AlbumCard({ a }: { a: RecentAlbum }) {
             <img src={fileUrl(a.cover)} alt="" loading="lazy" decoding="async" />
           ) : (
             // No preview yet (a new album) is not the same as a drive that isn't connected.
-            <span class="album-card__nocover" aria-hidden="true">{a.available ? <ImageIcon size={22} strokeWidth={1.4} /> : <HardDrive size={22} strokeWidth={1.4} />}</span>
+            <span class="album-card__nocover" aria-hidden="true">
+              {a.available ? <ImageIcon size={22} strokeWidth={1.4} /> : <HardDrive size={22} strokeWidth={1.4} />}
+            </span>
           )}
           {loading ? <span class="album-card__progress" aria-hidden="true" /> : null}
         </span>
@@ -49,7 +51,9 @@ function AlbumCard({ a }: { a: RecentAlbum }) {
               ? `${plural(a.spreads, 'spread')} · ${plural(a.photos, 'photo')} · ${relativeTime(a.openedAt)}`
               : 'Drive not connected'}
           </span>
-          <span class="album-card__path" title={a.path}>{shortPath(a.path, 3)}</span>
+          <span class="album-card__path" title={a.path}>
+            {shortPath(a.path, 3)}
+          </span>
         </span>
       </button>
     </li>
@@ -65,13 +69,25 @@ export function Albums() {
     <section class="place place--albums" aria-labelledby="albums-title">
       <header class="place__head">
         <div>
-          <h1 id="albums-title" class="place__title">Albums</h1>
+          <h1 id="albums-title" class="place__title">
+            Albums
+          </h1>
           <p class="place__sub">
-            {list && list.length ? `${plural(list.length, 'album')} opened recently` : 'Your albums appear here once opened'}
+            {list && list.length
+              ? `${plural(list.length, 'album')} opened recently`
+              : 'Your albums appear here once opened'}
           </p>
         </div>
         <div class="place__actions">
-          <Button variant="ghost" icon={<RefreshCw size={15} />} onClick={() => loadRecent()} busy={recentLoading.value} disabled={!inShell}>Refresh</Button>
+          <Button
+            variant="ghost"
+            icon={<RefreshCw size={15} />}
+            onClick={() => loadRecent()}
+            busy={recentLoading.value}
+            disabled={!inShell}
+          >
+            Refresh
+          </Button>
           <Button icon={<FolderOpen size={15} />} onClick={pickAndOpen} disabled={!inShell || !!albumLoading.value}>
             Open album…
           </Button>
@@ -82,30 +98,56 @@ export function Albums() {
       </header>
       <NewAlbumDialog />
 
-      {recentError.value ? <p class="notice notice--error" role="alert">{recentError.value}</p> : null}
+      {recentError.value ? (
+        <p class="notice notice--error" role="alert">
+          {recentError.value}
+        </p>
+      ) : null}
 
       {list === null || (!list.length && recentLoading.value) ? (
         <ul class="album-grid" aria-busy="true" aria-label="Loading albums">
-          {[0, 1, 2].map(() => <li class="album-card album-card--skeleton" aria-hidden="true"><span class="album-card__cover" /><span class="album-card__body"><span class="sk sk--line" /><span class="sk sk--line sk--short" /></span></li>)}
+          {[0, 1, 2].map(() => (
+            <li class="album-card album-card--skeleton" aria-hidden="true">
+              <span class="album-card__cover" />
+              <span class="album-card__body">
+                <span class="sk sk--line" />
+                <span class="sk sk--line sk--short" />
+              </span>
+            </li>
+          ))}
         </ul>
       ) : list.length === 0 && recentError.value ? (
         <div class="empty">
           <h2 class="empty__title">Recent albums couldn’t be loaded</h2>
           <p class="empty__text">Try again, or open an album folder directly. The recent list hasn’t been confirmed.</p>
-          <div class="empty__actions"><Button variant="primary" onClick={() => void loadRecent()}>Try again</Button><Button onClick={pickAndOpen}>Open album…</Button></div>
+          <div class="empty__actions">
+            <Button variant="primary" onClick={() => void loadRecent()}>
+              Try again
+            </Button>
+            <Button onClick={pickAndOpen}>Open album…</Button>
+          </div>
         </div>
       ) : list.length === 0 ? (
         <div class="empty">
           <h2 class="empty__title">No albums yet</h2>
-          <p class="empty__text">Start one from the shoot’s photo folders, or open an album made earlier (a folder with a project.json inside).</p>
+          <p class="empty__text">
+            Start one from the shoot’s photo folders, or open an album made earlier (a folder with a project.json
+            inside).
+          </p>
           <div class="empty__actions">
-            <Button variant="primary" icon={<BookPlus size={15} />} onClick={openNewAlbum} disabled={!inShell}>New album</Button>
-            <Button icon={<FolderOpen size={15} />} onClick={pickAndOpen} disabled={!inShell}>Open album…</Button>
+            <Button variant="primary" icon={<BookPlus size={15} />} onClick={openNewAlbum} disabled={!inShell}>
+              New album
+            </Button>
+            <Button icon={<FolderOpen size={15} />} onClick={pickAndOpen} disabled={!inShell}>
+              Open album…
+            </Button>
           </div>
         </div>
       ) : (
         <ul class="album-grid">
-          {list.map((a) => <AlbumCard a={a} key={a.path} />)}
+          {list.map((a) => (
+            <AlbumCard a={a} key={a.path} />
+          ))}
         </ul>
       )}
     </section>

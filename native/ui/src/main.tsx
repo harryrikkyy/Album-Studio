@@ -24,14 +24,26 @@ import { openNewAlbum } from './places/albums/NewAlbum'
 import { moveSpread, removePhotos, rotatePhotos, shuffleTemplate, turnTargets } from './plan_actions'
 import { editCurrentSpread, loadPlan, plan, startRender } from './render'
 import {
-  album, currentSpread, frameAdjusting, goToSpread, nextSpread, openAlbum, place, poolAnchor, poolSelection, setTheme, templateBrowserOpen, theme,
-  toggleInspector, toast,
+  album,
+  currentSpread,
+  frameAdjusting,
+  goToSpread,
+  nextSpread,
+  openAlbum,
+  place,
+  poolAnchor,
+  poolSelection,
+  setTheme,
+  templateBrowserOpen,
+  theme,
+  toggleInspector,
+  toast,
 } from './state'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
 
-onProtocolError(error => toast('error', `Album Studio received an unsupported message: ${error.message}`, 12000))
+onProtocolError((error) => toast('error', `Album Studio received an unsupported message: ${error.message}`, 12000))
 
 effect(() => {
   document.documentElement.dataset.theme = theme.value
@@ -39,13 +51,20 @@ effect(() => {
 
 function Current() {
   switch (place.value) {
-    case 'albums': return <Albums />
-    case 'plan': return album.value ? <Plan /> : <Albums />
-    case 'review': return album.value ? <Review /> : <Albums />
-    case 'deliver': return album.value ? <Deliver /> : <Albums />
-    case 'tools': return <Tools />
-    case 'library': return <Library />
-    default: return <Pending which={place.value} />
+    case 'albums':
+      return <Albums />
+    case 'plan':
+      return album.value ? <Plan /> : <Albums />
+    case 'review':
+      return album.value ? <Review /> : <Albums />
+    case 'deliver':
+      return album.value ? <Deliver /> : <Albums />
+    case 'tools':
+      return <Tools />
+    case 'library':
+      return <Library />
+    default:
+      return <Pending which={place.value} />
   }
 }
 
@@ -58,12 +77,27 @@ document.addEventListener('keydown', (e) => {
   if (shortcutsSuspended(e, !!document.querySelector('dialog[open]'), account.value?.state === 'allowed')) return
   if (e.metaKey && !e.shiftKey && !e.altKey && /^[1-7]$/.test(e.key)) {
     const p = placeForKey(e.key)
-    if (p) { e.preventDefault(); goToPlace(p) }
+    if (p) {
+      e.preventDefault()
+      goToPlace(p)
+    }
     return
   }
-  if (e.metaKey && e.key === ',') { e.preventDefault(); openSettings(); return }
+  if (e.metaKey && e.key === ',') {
+    e.preventDefault()
+    openSettings()
+    return
+  }
   // ⌘L / ⌘R turn the photos last picked (in the pool or on the spread) left or right, as in Preview.
-  if (e.metaKey && !e.shiftKey && !e.altKey && (e.key === 'l' || e.key === 'r') && place.value === 'plan' && album.value && !isTyping(e)) {
+  if (
+    e.metaKey &&
+    !e.shiftKey &&
+    !e.altKey &&
+    (e.key === 'l' || e.key === 'r') &&
+    place.value === 'plan' &&
+    album.value &&
+    !isTyping(e)
+  ) {
     e.preventDefault()
     void rotatePhotos(turnTargets(), e.key === 'l' ? -90 : 90)
     return
@@ -75,7 +109,11 @@ document.addEventListener('keydown', (e) => {
     return
   }
   if (isTyping(e) || e.metaKey || e.ctrlKey) return
-  if (ownsNavigationKeys(e.target) && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Backspace', 'Delete'].includes(e.key)) return
+  if (
+    ownsNavigationKeys(e.target) &&
+    ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', ' ', 'Backspace', 'Delete'].includes(e.key)
+  )
+    return
   // Moving a photo in its frame has its own keys (Return, Esc).
   if (frameAdjusting.value) return
   if (place.value === 'plan' || place.value === 'review') {
@@ -88,19 +126,36 @@ document.addEventListener('keydown', (e) => {
       }
       return
     }
-    if (e.key === 'ArrowRight') { e.preventDefault(); nextSpread(1) }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); nextSpread(-1) }
-    else if (place.value !== 'plan' || !s) return
-    else if (e.key === 'Enter') { e.preventDefault(); void editCurrentSpread() }
-    else if (e.key === 't' || e.key === 'T') { e.preventDefault(); templateBrowserOpen.value = !templateBrowserOpen.value }
-    else if ((e.key === 's' || e.key === 'S') && s.photoIds.length) { e.preventDefault(); void shuffleTemplate(s.n) }
-    else if ((e.key === 'Backspace' || e.key === 'Delete') && spreadSelection.value && s.photoIds.includes(spreadSelection.value)) {
+    if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      nextSpread(1)
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      nextSpread(-1)
+    } else if (place.value !== 'plan' || !s) return
+    else if (e.key === 'Enter') {
+      e.preventDefault()
+      void editCurrentSpread()
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault()
+      templateBrowserOpen.value = !templateBrowserOpen.value
+    } else if ((e.key === 's' || e.key === 'S') && s.photoIds.length) {
+      e.preventDefault()
+      void shuffleTemplate(s.n)
+    } else if (
+      (e.key === 'Backspace' || e.key === 'Delete') &&
+      spreadSelection.value &&
+      s.photoIds.includes(spreadSelection.value)
+    ) {
       e.preventDefault()
       void removePhotos(s.n, [spreadSelection.value])
     } else if (e.key === 'Escape') {
       if (templateBrowserOpen.value) templateBrowserOpen.value = false
       else if (spreadSelection.value) spreadSelection.value = null
-      else { poolSelection.value = new Set(); poolAnchor.value = null }
+      else {
+        poolSelection.value = new Set()
+        poolAnchor.value = null
+      }
     }
   }
 })
@@ -127,7 +182,9 @@ class Boundary extends Component<{ children: ComponentChildren }, { error: Error
         <h1>Something went wrong drawing this screen</h1>
         <p>Your albums and files are safe. Reload the window to carry on; the details are in Album Studio’s log.</p>
         <pre class="mono">{this.state.error.message}</pre>
-        <button type="button" class="btn btn--primary" onClick={() => location.reload()}>Reload</button>
+        <button type="button" class="btn btn--primary" onClick={() => location.reload()}>
+          Reload
+        </button>
       </div>
     )
   }
@@ -139,7 +196,8 @@ onEvent('menu', (d) => {
   if (account.value?.state !== 'allowed') return // the sign-in screen has no album commands
   if (document.querySelector('dialog[open]')) {
     // The native Edit menu still belongs to a focused field inside the dialog.
-    if ((command === 'undo' || command === 'redo') && isTypingTarget(document.activeElement)) document.execCommand(command)
+    if ((command === 'undo' || command === 'redo') && isTypingTarget(document.activeElement))
+      document.execCommand(command)
     return
   }
   const typing = isTyping({ target: document.activeElement } as unknown as KeyboardEvent)
@@ -148,17 +206,24 @@ onEvent('menu', (d) => {
     if (typing) document.execCommand(command)
     else if (album.value) void (command === 'undo' ? undo() : redo())
   } else if (command === 'about') openAbout()
-  else if (command === 'newAlbum') { place.value = 'albums'; openNewAlbum() }
-  else if (command === 'openAlbum') { place.value = 'albums'; void pickAndOpenAlbum() }
-  else if (command === 'editSpread') void editCurrentSpread()
+  else if (command === 'newAlbum') {
+    place.value = 'albums'
+    openNewAlbum()
+  } else if (command === 'openAlbum') {
+    place.value = 'albums'
+    void pickAndOpenAlbum()
+  } else if (command === 'editSpread') void editCurrentSpread()
   else if ((command === 'rotateLeft' || command === 'rotateRight') && album.value && !typing) {
     place.value = 'plan'
     void rotatePhotos(turnTargets(), command === 'rotateLeft' ? -90 : 90)
-  }
-  else if (command.startsWith('place.')) goToPlace(command.slice(6) as Parameters<typeof goToPlace>[0])
-  else if (command === 'templates' && album.value) { place.value = 'plan'; templateBrowserOpen.value = !templateBrowserOpen.value }
-  else if (command === 'inspector' && album.value) { place.value = 'plan'; toggleInspector() }
-  else if (command === 'theme') setTheme(theme.value === 'studio-dark' ? 'studio-light' : 'studio-dark')
+  } else if (command.startsWith('place.')) goToPlace(command.slice(6) as Parameters<typeof goToPlace>[0])
+  else if (command === 'templates' && album.value) {
+    place.value = 'plan'
+    templateBrowserOpen.value = !templateBrowserOpen.value
+  } else if (command === 'inspector' && album.value) {
+    place.value = 'plan'
+    toggleInspector()
+  } else if (command === 'theme') setTheme(theme.value === 'studio-dark' ? 'studio-light' : 'studio-dark')
 })
 
 async function pickAndOpenAlbum() {
@@ -172,14 +237,31 @@ async function pickAndOpenAlbum() {
 
 /** The app, once the Creative Hubb account lets it open; the sign-in screen until then. */
 function Root() {
-  return <>
-    {account.value?.state !== 'allowed' ? <SignIn /> : <Frame><Current /><AboutDialog /><AlbumSettingsDialog /><AutoFillDialog /><SettingsDialog /></Frame>}
-    <Notifications />
-  </>
+  return (
+    <>
+      {account.value?.state !== 'allowed' ? (
+        <SignIn />
+      ) : (
+        <Frame>
+          <Current />
+          <AboutDialog />
+          <AlbumSettingsDialog />
+          <AutoFillDialog />
+          <SettingsDialog />
+        </Frame>
+      )}
+      <Notifications />
+    </>
+  )
 }
 
 void checkAccount()
-render(<Boundary><Root /></Boundary>, document.getElementById('app')!)
+render(
+  <Boundary>
+    <Root />
+  </Boundary>,
+  document.getElementById('app')!,
+)
 
 // Deep links: ?open=<album folder>&place=plan|review&spread=<n>&theme=studio-light. The shell uses
 // them to open an album straight away (from Finder, or the last session).

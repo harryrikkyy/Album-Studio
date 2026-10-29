@@ -7,13 +7,26 @@
 const fs = require('fs')
 const account = require('./lib/account')
 const { openAlbum } = require('./lib/album')
-const { createAlbum, inspectCollections, inspectFolders, knownCollections, setAlbumFolders, suggestAlbum } = require('./lib/newalbum')
+const {
+  createAlbum,
+  inspectCollections,
+  inspectFolders,
+  knownCollections,
+  setAlbumFolders,
+  suggestAlbum,
+} = require('./lib/newalbum')
 const { redo, undo, updateAlbum, withProjectLease } = require('./lib/project')
 const { refreshProofs, spreadLayout } = require('./lib/proofs')
 const { listRecent, rememberAlbum } = require('./lib/recent')
 const { cancelExport, exportPlan, exportStatus, startExport } = require('./lib/deliver')
 const { cancelRender, renderPlan, renderStatus, startRender } = require('./lib/render')
-const { addCollections, collectionTemplates, libraryCollections, removeCollection, setDefaults } = require('./lib/library')
+const {
+  addCollections,
+  collectionTemplates,
+  libraryCollections,
+  removeCollection,
+  setDefaults,
+} = require('./lib/library')
 const { listSheets, renameSheets } = require('./lib/labnaming')
 const { analyzePhotos, copyPicks } = require('./lib/picks')
 const { clearStorage, storageUsage } = require('./lib/storage')
@@ -42,7 +55,15 @@ const methods = {
   'account.signOut': async () => account.signOut(),
 
   'album.open': withProofs(async (p) => {
-    const album = await withProjectLease(p.path, ({ file, lease }) => require('./lib/output_lock').withProjectOutputs(lease, () => openAlbum({ path: file }), { kind: 'open-project', allowForeignCache: true }), { kind: 'open-project' })
+    const album = await withProjectLease(
+      p.path,
+      ({ file, lease }) =>
+        require('./lib/output_lock').withProjectOutputs(lease, () => openAlbum({ path: file }), {
+          kind: 'open-project',
+          allowForeignCache: true,
+        }),
+      { kind: 'open-project' },
+    )
     await rememberAlbum(album)
     return album
   }),
@@ -67,7 +88,10 @@ const methods = {
     if (!p.album) throw new Error('missing `album`')
     const album = await openAlbum({ path: p.album })
     const data = JSON.parse(await fs.promises.readFile(album.file, 'utf8'))
-    return listTemplates(album.templateCollections.map((c) => c.path), (data.workspace || data).identity)
+    return listTemplates(
+      album.templateCollections.map((c) => c.path),
+      (data.workspace || data).identity,
+    )
   },
 
   'spread.layout': async (p) => spreadLayout(p),

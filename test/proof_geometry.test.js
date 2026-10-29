@@ -32,35 +32,28 @@ test('proofDims: rounds fractional dimensions to whole pixels', () => {
 })
 
 test('partitionFrames: splits h/v by the layer-name convention', () => {
-  const { h, v } = partitionFrames([
-    { name: 'toolkitvframe1' },
-    { name: 'toolkithframe1' },
-    { name: 'toolkithframe2' },
-  ])
-  assert.deepEqual(h.map((f) => f.name), ['toolkithframe1', 'toolkithframe2'])
-  assert.deepEqual(v.map((f) => f.name), ['toolkitvframe1'])
+  const { h, v } = partitionFrames([{ name: 'toolkitvframe1' }, { name: 'toolkithframe1' }, { name: 'toolkithframe2' }])
+  assert.deepEqual(
+    h.map((f) => f.name),
+    ['toolkithframe1', 'toolkithframe2'],
+  )
+  assert.deepEqual(
+    v.map((f) => f.name),
+    ['toolkitvframe1'],
+  )
 })
 
 test('partitionFrames: sorts by name so placement order is deterministic', () => {
-  const { h } = partitionFrames([
-    { name: 'toolkithframe10' },
-    { name: 'toolkithframe2' },
-    { name: 'toolkithframe1' },
-  ])
+  const { h } = partitionFrames([{ name: 'toolkithframe10' }, { name: 'toolkithframe2' }, { name: 'toolkithframe1' }])
   // localeCompare string sort (matches build_page.jsx): "1","10","2"
-  assert.deepEqual(h.map((f) => f.name), [
-    'toolkithframe1',
-    'toolkithframe10',
-    'toolkithframe2',
-  ])
+  assert.deepEqual(
+    h.map((f) => f.name),
+    ['toolkithframe1', 'toolkithframe10', 'toolkithframe2'],
+  )
 })
 
 test('partitionFrames: is case-insensitive and ignores non-toolkit layers', () => {
-  const { h, v } = partitionFrames([
-    { name: 'ToolkitHFrame1' },
-    { name: 'background' },
-    { name: 'TOOLKITVFRAME1' },
-  ])
+  const { h, v } = partitionFrames([{ name: 'ToolkitHFrame1' }, { name: 'background' }, { name: 'TOOLKITVFRAME1' }])
   assert.equal(h.length, 1)
   assert.equal(v.length, 1)
 })
@@ -69,5 +62,8 @@ test('partitionFrames: does not mutate its input array', () => {
   const input = [{ name: 'toolkithframe2' }, { name: 'toolkithframe1' }]
   const snapshot = input.map((f) => f.name)
   partitionFrames(input)
-  assert.deepEqual(input.map((f) => f.name), snapshot)
+  assert.deepEqual(
+    input.map((f) => f.name),
+    snapshot,
+  )
 })

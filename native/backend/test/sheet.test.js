@@ -15,13 +15,35 @@ const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps
 test('frames pair with photos by orientation, in name order', () => {
   const layers = [
     { id: 9, name: 'ToolkitHFrame_002' },
-    { id: 8, name: 'Group', children: [{ id: 7, name: 'ToolkitVFrame_001' }, { id: 6, name: 'ToolkitHFrame_001' }] },
+    {
+      id: 8,
+      name: 'Group',
+      children: [
+        { id: 7, name: 'ToolkitVFrame_001' },
+        { id: 6, name: 'ToolkitHFrame_001' },
+      ],
+    },
     { id: 5, name: 'Background' },
   ]
-  assert.deepEqual(findFrames(layers, 'toolkithframe').map((l) => l.id), [6, 9])
-  const photos = [{ name: 'a', orient: 'h' }, { name: 'b', orient: 'v' }, { name: 'c', orient: 'h' }, { name: 'd', orient: 'h' }]
+  assert.deepEqual(
+    findFrames(layers, 'toolkithframe').map((l) => l.id),
+    [6, 9],
+  )
+  const photos = [
+    { name: 'a', orient: 'h' },
+    { name: 'b', orient: 'v' },
+    { name: 'c', orient: 'h' },
+    { name: 'd', orient: 'h' },
+  ]
   const { pairs, frames, unplaced } = pairFrames(layers, photos)
-  assert.deepEqual(pairs.map((p) => [p.frame.id, p.photo.name]), [[6, 'a'], [9, 'c'], [7, 'b']])
+  assert.deepEqual(
+    pairs.map((p) => [p.frame.id, p.photo.name]),
+    [
+      [6, 'a'],
+      [9, 'c'],
+      [7, 'b'],
+    ],
+  )
   assert.deepEqual(frames, { h: 2, v: 1 })
   assert.equal(unplaced, 1, 'a fourth photo with no frame left is reported, not dropped silently')
 })
@@ -73,9 +95,13 @@ function makeTemplate(dir) {
   const file = path.join(dir, 'tpl_1h1v.psd')
   const steps = [
     ['layer.new.layer', { name: 'ToolkitHFrame_001' }],
-    ['select.rect', { x: 100, y: 100, width: 400, height: 230 }], ['edit.fill', { contents: 'color', color: '#808080' }], ['select.deselect', {}],
+    ['select.rect', { x: 100, y: 100, width: 400, height: 230 }],
+    ['edit.fill', { contents: 'color', color: '#808080' }],
+    ['select.deselect', {}],
     ['layer.new.layer', { name: 'ToolkitVFrame_001' }],
-    ['select.rect', { x: 700, y: 50, width: 200, height: 300 }], ['edit.fill', { contents: 'color', color: '#606060' }], ['select.deselect', {}],
+    ['select.rect', { x: 700, y: 50, width: 200, height: 300 }],
+    ['edit.fill', { contents: 'color', color: '#606060' }],
+    ['select.deselect', {}],
   ]
   const args = ['run', '--new', JSON.stringify({ width: 1200, height: 400, background: 'white' })]
   for (const [cmd, params] of steps) args.push('--cmd', cmd, '--params', JSON.stringify(params))
@@ -89,37 +115,51 @@ function makePhoto(dir, name, w, h, color) {
   return file
 }
 
-test('builds a real sheet: photos clipped to frames, covering them', { skip: !haveEngine && 'PhotoCraft engine not built' }, async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as-sheet-'))
-  const template = makeTemplate(dir)
-  const land = makePhoto(dir, 'land.jpg', 1800, 1200, 'black')
-  const port = makePhoto(dir, 'port.jpg', 1200, 1800, 'black')
-  const pc = new PhotoCraftSession({ writeRoot: dir })
-  try {
-    const outPsd = path.join(dir, 'Page_001.psd')
-    const r = await buildSheet(pc, {
-      template, outPsd, outJpg: path.join(dir, 'Page_001.jpg'),
-      photos: [{ file: land, orient: 'h', name: 'land' }, { file: port, orient: 'v', name: 'port' }],
-    })
-    assert.equal(r.placed, 2)
-    assert.deepEqual(r.warnings, [])
-    const info = JSON.parse(cli('info', outPsd, '--compact'))
-    const flat = []
-    const walk = (ls) => { for (const l of ls || []) { flat.push(l); walk(l.children || l.layers) } }
-    walk(info.layers)
-    const landL = flat.find((l) => l.name === 'land')
-    const portL = flat.find((l) => l.name === 'port')
-    assert.ok(landL && portL, 'both photos are layers in the sheet')
-    assert.equal(landL.clipped, true)
-    assert.equal(portL.clipped, true)
-    // The landscape photo (3:2) covers the 400x230 frame: at least as wide and tall, centred.
-    const [x, y, w, h] = landL.bounds
-    assert.ok(x <= 100 && y <= 100 && x + w >= 500 && y + h >= 330, `bounds ${landL.bounds}`)
-    assert.ok(Math.abs((x + w / 2) - 300) <= 1 && Math.abs((y + h / 2) - 215) <= 1)
-    assert.ok(fs.statSync(path.join(dir, 'Page_001.jpg')).size > 1000, 'a JPEG of the sheet was written')
-    // Nothing left open in the engine.
-    assert.equal((await pc.call('session.list', {})).documents.length, 0)
-  } finally {
-    await pc.close()
-  }
-})
+test(
+  'builds a real sheet: photos clipped to frames, covering them',
+  { skip: !haveEngine && 'PhotoCraft engine not built' },
+  async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'as-sheet-'))
+    const template = makeTemplate(dir)
+    const land = makePhoto(dir, 'land.jpg', 1800, 1200, 'black')
+    const port = makePhoto(dir, 'port.jpg', 1200, 1800, 'black')
+    const pc = new PhotoCraftSession({ writeRoot: dir })
+    try {
+      const outPsd = path.join(dir, 'Page_001.psd')
+      const r = await buildSheet(pc, {
+        template,
+        outPsd,
+        outJpg: path.join(dir, 'Page_001.jpg'),
+        photos: [
+          { file: land, orient: 'h', name: 'land' },
+          { file: port, orient: 'v', name: 'port' },
+        ],
+      })
+      assert.equal(r.placed, 2)
+      assert.deepEqual(r.warnings, [])
+      const info = JSON.parse(cli('info', outPsd, '--compact'))
+      const flat = []
+      const walk = (ls) => {
+        for (const l of ls || []) {
+          flat.push(l)
+          walk(l.children || l.layers)
+        }
+      }
+      walk(info.layers)
+      const landL = flat.find((l) => l.name === 'land')
+      const portL = flat.find((l) => l.name === 'port')
+      assert.ok(landL && portL, 'both photos are layers in the sheet')
+      assert.equal(landL.clipped, true)
+      assert.equal(portL.clipped, true)
+      // The landscape photo (3:2) covers the 400x230 frame: at least as wide and tall, centred.
+      const [x, y, w, h] = landL.bounds
+      assert.ok(x <= 100 && y <= 100 && x + w >= 500 && y + h >= 330, `bounds ${landL.bounds}`)
+      assert.ok(Math.abs(x + w / 2 - 300) <= 1 && Math.abs(y + h / 2 - 215) <= 1)
+      assert.ok(fs.statSync(path.join(dir, 'Page_001.jpg')).size > 1000, 'a JPEG of the sheet was written')
+      // Nothing left open in the engine.
+      assert.equal((await pc.call('session.list', {})).documents.length, 0)
+    } finally {
+      await pc.close()
+    }
+  },
+)

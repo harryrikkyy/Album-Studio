@@ -19,7 +19,11 @@ export function relativeTime(iso: string | null | undefined, now: Date = new Dat
   const d = Math.round(h / 24)
   if (d === 1) return 'yesterday'
   if (d < 7) return `${d} days ago`
-  return t.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: t.getFullYear() === now.getFullYear() ? undefined : 'numeric' })
+  return t.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: t.getFullYear() === now.getFullYear() ? undefined : 'numeric',
+  })
 }
 
 /** The orientation signature of a spread: "6 H · 1 V". */

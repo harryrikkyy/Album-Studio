@@ -33,8 +33,10 @@ function readBody(req, limit = 16384) {
     const chunks = []
     req.on('data', (c) => {
       size += c.length
-      if (size > limit) { reject(new Error('body too large')); req.destroy() }
-      else chunks.push(c)
+      if (size > limit) {
+        reject(new Error('body too large'))
+        req.destroy()
+      } else chunks.push(c)
     })
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
     req.on('error', reject)
@@ -57,16 +59,27 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(code, { 'content-type': 'application/json' })
     res.end(JSON.stringify(obj))
   }
-  if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204)
+    res.end()
+    return
+  }
   if (req.method !== 'POST' || req.url !== '/sign') return json(404, { error: 'not found' })
   // timingSafeEqual over hashes so token comparison doesn't leak length.
   const crypto = require('crypto')
-  const given = crypto.createHash('sha256').update(String(req.headers['x-admin-token'] || '')).digest()
+  const given = crypto
+    .createHash('sha256')
+    .update(String(req.headers['x-admin-token'] || ''))
+    .digest()
   const want = crypto.createHash('sha256').update(adminToken).digest()
   if (!crypto.timingSafeEqual(given, want)) return json(401, { error: 'unauthorized' })
 
   let payload
-  try { payload = JSON.parse(await readBody(req)) } catch (_) { return json(400, { error: 'invalid JSON' }) }
+  try {
+    payload = JSON.parse(await readBody(req))
+  } catch (_) {
+    return json(400, { error: 'invalid JSON' })
+  }
   if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) {
     return json(400, { error: 'payload must be an object' })
   }

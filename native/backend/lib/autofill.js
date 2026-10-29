@@ -21,8 +21,14 @@ async function captureTime(file) {
     const prefix = await readFileHeader(file, 256 * 1024)
     // Only this header is parsed; its digest is a metadata-cache key, never source evidence.
     const key = contentKey(file, crypto.createHash('sha256').update(prefix).digest('hex'))
-    if (exifCache.has(key)) { const hit = exifCache.get(key); exifCache.delete(key); exifCache.set(key, hit); return hit }
-    const parsed = parseExifDateFromBuffer(prefix), ts = Number.isFinite(parsed) ? parsed : null
+    if (exifCache.has(key)) {
+      const hit = exifCache.get(key)
+      exifCache.delete(key)
+      exifCache.set(key, hit)
+      return hit
+    }
+    const parsed = parseExifDateFromBuffer(prefix),
+      ts = Number.isFinite(parsed) ? parsed : null
     exifCache.set(key, ts)
     if (exifCache.size > MAX_EXIF_CACHE) exifCache.delete(exifCache.keys().next().value)
     return ts
@@ -38,11 +44,13 @@ async function captureTime(file) {
  * file-name order after the dated ones, so nothing jumps around unpredictably.
  */
 async function chronological(photos) {
-  const dated = await Promise.all(photos.map(async (p, i) => {
-    const jpegOriginal = p.original && /\.jpe?g$/i.test(p.original) ? p.original : null
-    const t = (await captureTime(jpegOriginal)) ?? (await captureTime(p.thumb))
-    return { p, i, t }
-  }))
+  const dated = await Promise.all(
+    photos.map(async (p, i) => {
+      const jpegOriginal = p.original && /\.jpe?g$/i.test(p.original) ? p.original : null
+      const t = (await captureTime(jpegOriginal)) ?? (await captureTime(p.thumb))
+      return { p, i, t }
+    }),
+  )
   dated.sort((a, b) => {
     if (a.t !== null && b.t !== null && a.t !== b.t) return a.t - b.t
     if (a.t === null && b.t !== null) return 1
@@ -63,12 +71,16 @@ async function planAlbum(photos, templates, opts, rng = Math.random) {
   if (!photos.length) throw new Error('There are no photos to place. Add a photo folder first.')
   if (!templates.length) throw new Error('There are no templates. Add a template collection first.')
   const ordered = opts.chronological === false ? photos.slice() : await chronological(photos)
-  const plan = planAutoFillCounts(ordered.length, {
-    mode: opts.mode === 'range' ? 'range' : 'desired',
-    desiredSheets: opts.desiredSheets,
-    min: opts.min,
-    max: opts.max,
-  }, rng)
+  const plan = planAutoFillCounts(
+    ordered.length,
+    {
+      mode: opts.mode === 'range' ? 'range' : 'desired',
+      desiredSheets: opts.desiredSheets,
+      min: opts.min,
+      max: opts.max,
+    },
+    rng,
+  )
   if (plan.error) throw new Error(plan.error)
   const bySlots = new Map()
   for (const t of templates) {

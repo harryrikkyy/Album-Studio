@@ -64,4 +64,6 @@ while (pending.length) {
   }
 }
 
-process.stdout.write(JSON.stringify({ files: [...files].map((f) => relative(ROOT, f)).sort(), packages: [...closure].sort() }, null, 1))
+process.stdout.write(
+  JSON.stringify({ files: [...files].map((f) => relative(ROOT, f)).sort(), packages: [...closure].sort() }, null, 1),
+)

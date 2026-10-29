@@ -18,7 +18,11 @@ process.env.CH_SESSION_FILE = TMP
 
 const auth = require('../src/firebase_auth')
 
-test.after(() => { try { fs.unlinkSync(TMP) } catch (_) {} })
+test.after(() => {
+  try {
+    fs.unlinkSync(TMP)
+  } catch (_) {}
+})
 
 test('mapSignInResponse extracts tokens and computes expiry (with skew)', () => {
   const now = 1_000_000
@@ -80,7 +84,9 @@ function fakeHttps(t) {
     const req = new EventEmitter()
     const call = { options, callback, req, destroyed: false }
     calls.push(call)
-    req.write = (body) => { call.body = body }
+    req.write = (body) => {
+      call.body = body
+    }
     req.end = () => {}
     req.destroy = (error) => {
       call.destroyed = true
@@ -90,7 +96,9 @@ function fakeHttps(t) {
     call.startResponse = (statusCode = 200) => {
       const res = new EventEmitter()
       res.statusCode = statusCode
-      res.destroy = () => { call.responseDestroyed = true }
+      res.destroy = () => {
+        call.responseDestroyed = true
+      }
       callback(res)
       return res
     }
@@ -139,7 +147,12 @@ test('parallel accessors share one refresh and persist its rotated refresh token
 test('a fresh sign-in supersedes a pending refresh without replacing the new session', async (t) => {
   const calls = fakeHttps(t)
   const pending = auth.getValidIdToken('fake-api-key')
-  auth.setSession({ idToken: 'FRESH_SIGN_IN', refreshToken: 'FRESH_REFRESH', email: 'new@b.com', expiresAt: Date.now() + 3600_000 })
+  auth.setSession({
+    idToken: 'FRESH_SIGN_IN',
+    refreshToken: 'FRESH_REFRESH',
+    email: 'new@b.com',
+    expiresAt: Date.now() + 3600_000,
+  })
   calls[0].respond(refreshed)
   assert.equal(await pending, null)
   assert.equal(await auth.getValidIdToken('fake-api-key'), 'FRESH_SIGN_IN')
@@ -150,7 +163,10 @@ test('refresh has a total network deadline and closes a stalled request', async 
   const calls = fakeHttps(t)
   const timeout = AbortSignal.timeout.bind(AbortSignal)
   let requestedTimeout
-  t.mock.method(AbortSignal, 'timeout', (ms) => { requestedTimeout = ms; return timeout(10) })
+  t.mock.method(AbortSignal, 'timeout', (ms) => {
+    requestedTimeout = ms
+    return timeout(10)
+  })
   const pending = auth.getValidIdToken('fake-api-key')
   const result = await Promise.race([pending, new Promise((resolve) => setTimeout(() => resolve('still waiting'), 60))])
   if (result === 'still waiting') calls[0].respond(refreshed)
@@ -158,7 +174,11 @@ test('refresh has a total network deadline and closes a stalled request', async 
   assert.equal(result, null, 'offline fallback must not wait indefinitely for HTTPS')
   assert.equal(requestedTimeout, 20_000)
   assert.equal(calls[0].destroyed, true)
-  assert.deepEqual(auth.loadSession(), { refreshToken: 'OLD_REFRESH', email: 'a@b.com' }, 'network failure keeps the existing refresh token')
+  assert.deepEqual(
+    auth.loadSession(),
+    { refreshToken: 'OLD_REFRESH', email: 'a@b.com' },
+    'network failure keeps the existing refresh token',
+  )
 })
 
 test('a rejected refresh cannot accept a token-shaped error body', async (t) => {
@@ -203,8 +223,17 @@ test('Google token exchange preserves its JSON request and session response form
   assert.equal(calls[0].options.hostname, 'identitytoolkit.googleapis.com')
   assert.equal(calls[0].options.path, '/v1/accounts:signInWithIdp?key=fake-api-key')
   assert.equal(calls[0].options.headers['Content-Type'], 'application/json')
-  assert.deepEqual(JSON.parse(calls[0].body), { postBody: 'id_token=google-id&providerId=google.com', requestUri: 'http://localhost', returnSecureToken: true })
-  calls[0].respond({ idToken: 'GOOGLE_EXCHANGED_ID', refreshToken: 'GOOGLE_REFRESH', email: 'a@b.com', expiresIn: '3600' })
+  assert.deepEqual(JSON.parse(calls[0].body), {
+    postBody: 'id_token=google-id&providerId=google.com',
+    requestUri: 'http://localhost',
+    returnSecureToken: true,
+  })
+  calls[0].respond({
+    idToken: 'GOOGLE_EXCHANGED_ID',
+    refreshToken: 'GOOGLE_REFRESH',
+    email: 'a@b.com',
+    expiresIn: '3600',
+  })
   const session = await pending
   assert.equal(session.idToken, 'GOOGLE_EXCHANGED_ID')
   assert.equal(session.refreshToken, 'GOOGLE_REFRESH')

@@ -12,7 +12,11 @@ const { verifyLicenseSignature } = require('./license_signing')
 // them, and only a signed record grants offline access.
 const PUBLIC_KEY_FILE = path.join(__dirname, 'license_public_key.pem')
 let PUBLIC_KEY = null
-try { PUBLIC_KEY = fs.readFileSync(PUBLIC_KEY_FILE, 'utf8') } catch (_) { /* not generated yet */ }
+try {
+  PUBLIC_KEY = fs.readFileSync(PUBLIC_KEY_FILE, 'utf8')
+} catch (_) {
+  /* not generated yet */
+}
 // Overridable for tests.
 const LICENSE_FILE = process.env.CH_LICENSE_FILE || path.join(os.homedir(), '.ch_toolkit_license')
 
@@ -70,19 +74,27 @@ function loadLicense() {
       return null
     }
     return data
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 function getDaysRemaining(expiresOn) {
   let expiry
-  try { expiry = new Date(expiresOn).getTime() } catch (_) { return 0 }
+  try {
+    expiry = new Date(expiresOn).getTime()
+  } catch (_) {
+    return 0
+  }
   const ms = expiry - Date.now()
   if (!Number.isFinite(ms) || ms <= 0) return 0 // malformed or expired: no phantom day
   return Math.floor(ms / (1000 * 60 * 60 * 24))
 }
 
 function clearLicense() {
-  try { fs.unlinkSync(LICENSE_FILE) } catch {}
+  try {
+    fs.unlinkSync(LICENSE_FILE)
+  } catch {}
 }
 
 // Single source of truth for offline license validation. Used by both the
@@ -111,6 +123,16 @@ function validateOfflineLicense(currentMachineId, email) {
 }
 
 // Tests verify licenses they sign with their own key pair.
-function _usePublicKey(key) { PUBLIC_KEY = key }
+function _usePublicKey(key) {
+  PUBLIC_KEY = key
+}
 
-module.exports = { licenseFromRecord, saveLicense, loadLicense, getDaysRemaining, clearLicense, validateOfflineLicense, _usePublicKey }
+module.exports = {
+  licenseFromRecord,
+  saveLicense,
+  loadLicense,
+  getDaysRemaining,
+  clearLicense,
+  validateOfflineLicense,
+  _usePublicKey,
+}

@@ -6,9 +6,7 @@ import { fileUrl } from './bridge'
 
 const MIME = 'application/x-album-studio'
 
-export type DragPayload =
-  | { kind: 'photos'; ids: string[]; from?: { n: number } }
-  | { kind: 'spread'; n: number }
+export type DragPayload = { kind: 'photos'; ids: string[]; from?: { n: number } } | { kind: 'spread'; n: number }
 
 export const dragging = signal<DragPayload | null>(null)
 

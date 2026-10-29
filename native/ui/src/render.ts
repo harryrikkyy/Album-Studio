@@ -18,7 +18,7 @@ export interface Job {
   jobId: string
   album: string
   total: number
-  index: number          // sheets handled so far
+  index: number // sheets handled so far
   current: number | null // spread being worked on
   phase: string
   startedAt: number
@@ -34,7 +34,8 @@ export const running = computed(() => !!job.value && !job.value.finished)
 let planRequest = 0
 export async function loadPlan() {
   const a = album.value
-  const request = ++planRequest, settings = { ...exportSettings.value }
+  const request = ++planRequest,
+    settings = { ...exportSettings.value }
   plan.value = null
   planError.value = null
   if (!a) return
@@ -90,21 +91,53 @@ export async function editCurrentSpread() {
   const a = album.value
   const s = currentSpread.value
   if (!a || !s) return
-  if (!s.photoIds.length) { toast('info', `Spread ${s.n} is empty. Add photos to it first.`, 5000); return }
-  if (!s.template) { toast('info', `Spread ${s.n} has no template yet. Choose one under Templates (T).`, 5000); return }
-  if (!s.template.file) { toast('error', `Spread ${s.n}’s template isn’t on disk. Connect its drive, or choose another template.`, 7000); return }
+  if (!s.photoIds.length) {
+    toast('info', `Spread ${s.n} is empty. Add photos to it first.`, 5000)
+    return
+  }
+  if (!s.template) {
+    toast('info', `Spread ${s.n} has no template yet. Choose one under Templates (T).`, 5000)
+    return
+  }
+  if (!s.template.file) {
+    toast('error', `Spread ${s.n}’s template isn’t on disk. Connect its drive, or choose another template.`, 7000)
+    return
+  }
   const st = sheetStateOf(s.n)
-  if (s.sheet && (!st || st.edited || st.state === 'current')) { await openSheet(s.sheet); return }
-  if (st?.state === 'blocked') { toast('error', st.reason ?? `Spread ${s.n} can’t be rendered yet.`, 7000); return }
-  if (running.value) { toast('info', 'A render is running. Edit this spread when it has finished.', 5000); return }
+  if (s.sheet && (!st || st.edited || st.state === 'current')) {
+    await openSheet(s.sheet)
+    return
+  }
+  if (st?.state === 'blocked') {
+    toast('error', st.reason ?? `Spread ${s.n} can’t be rendered yet.`, 7000)
+    return
+  }
+  if (running.value) {
+    toast('info', 'A render is running. Edit this spread when it has finished.', 5000)
+    return
+  }
   editAfterRender = { album: a.path, n: s.n }
-  toast('info', `${s.sheet ? 'Spread changed since its sheet was made: rendering' : 'Rendering'} spread ${s.n} for the editor…`, 6000)
+  toast(
+    'info',
+    `${s.sheet ? 'Spread changed since its sheet was made: rendering' : 'Rendering'} spread ${s.n} for the editor…`,
+    6000,
+  )
   await startRender([s.n])
 }
 
 onEvent('render.started', (d) => {
   const data = d
-  job.value = { jobId: data.jobId, album: data.album, total: data.total, index: 0, current: null, phase: 'Starting', startedAt: Date.now(), results: [], finished: null }
+  job.value = {
+    jobId: data.jobId,
+    album: data.album,
+    total: data.total,
+    index: 0,
+    current: null,
+    phase: 'Starting',
+    startedAt: Date.now(),
+    results: [],
+    finished: null,
+  }
 })
 
 // Back from the editor: a sheet may have been saved there. Look at the album, its sheets and
@@ -122,19 +155,23 @@ onEvent('render.progress', (d) => {
   const settled = p.state === 'done' || p.state === 'failed' || p.state === 'skipped' || p.state === 'cancelled'
   const results = [...j.results]
   if (p.state === 'done' || p.state === 'failed' || p.state === 'skipped' || p.state === 'cancelled') {
-    if (typeof p.n !== 'number') { toast('error', p.error ?? 'The render returned a sheet result without its spread number.', 10000); return }
+    if (typeof p.n !== 'number') {
+      toast('error', p.error ?? 'The render returned a sheet result without its spread number.', 10000)
+      return
+    }
     results.push({ n: p.n, state: p.state, ms: p.ms, error: p.error, warnings: p.warnings })
   }
   job.value = {
     ...j,
-    current: settled ? null : p.n ?? j.current,
+    current: settled ? null : (p.n ?? j.current),
     phase: phase || j.phase,
-    index: settled ? p.index ?? j.index : j.index,
+    index: settled ? (p.index ?? j.index) : j.index,
     results,
   }
   if (settled && plan.value) {
     const state: SheetState | null = p.state === 'done' || p.state === 'skipped' ? 'current' : null
-    if (state) plan.value = { ...plan.value, spreads: plan.value.spreads.map((s) => (s.n === p.n ? { ...s, state } : s)) }
+    if (state)
+      plan.value = { ...plan.value, spreads: plan.value.spreads.map((s) => (s.n === p.n ? { ...s, state } : s)) }
   }
 })
 
@@ -143,13 +180,35 @@ onEvent('render.finished', (d) => {
   const j = job.value
   if (!j || j.jobId !== f.jobId) return
   batch(() => {
-    job.value = { ...j, current: null, results: f.results, finished: { done: f.done, skipped: f.skipped, failed: f.failed, cancelled: f.cancelled, ms: f.ms, error: f.error, finishingError: f.finishingError, warnings: f.warnings } }
+    job.value = {
+      ...j,
+      current: null,
+      results: f.results,
+      finished: {
+        done: f.done,
+        skipped: f.skipped,
+        failed: f.failed,
+        cancelled: f.cancelled,
+        ms: f.ms,
+        error: f.error,
+        finishingError: f.finishingError,
+        warnings: f.warnings,
+      },
+    }
     assetVersion.value++
   })
-  const parts = [f.done ? `${plural(f.done, 'sheet')} rendered` : null, f.skipped ? `${f.skipped} unchanged` : null, f.failed ? `${f.failed} failed` : null].filter(Boolean)
+  const parts = [
+    f.done ? `${plural(f.done, 'sheet')} rendered` : null,
+    f.skipped ? `${f.skipped} unchanged` : null,
+    f.failed ? `${f.failed} failed` : null,
+  ].filter(Boolean)
   const verb = f.cancelled ? 'Render stopped' : 'Render finished'
   const issues = jobIssues(f)
-  toast(f.failed || issues.length ? 'error' : 'ok', `${verb}: ${parts.join(', ') || 'nothing to do'} · ${duration(f.ms)}${issues.length ? ` · ${issues.join(' ')}` : ''}`, issues.length ? 15000 : 9000)
+  toast(
+    f.failed || issues.length ? 'error' : 'ok',
+    `${verb}: ${parts.join(', ') || 'nothing to do'} · ${duration(f.ms)}${issues.length ? ` · ${issues.join(' ')}` : ''}`,
+    issues.length ? 15000 : 9000,
+  )
   // Pick up the new sheets and previews, then open the spread waiting for the editor.
   const wanted = editAfterRender && editAfterRender.album === j.album ? editAfterRender : null
   editAfterRender = null
@@ -168,7 +227,9 @@ onEvent('render.finished', (d) => {
 let planTimer = 0
 function refreshPlanSoon() {
   window.clearTimeout(planTimer)
-  planTimer = window.setTimeout(() => { if (!running.value) void loadPlan() }, 250)
+  planTimer = window.setTimeout(() => {
+    if (!running.value) void loadPlan()
+  }, 250)
 }
 onEvent('proofs.idle', (d) => {
   if (album.value && d.album === album.value.path) refreshPlanSoon()

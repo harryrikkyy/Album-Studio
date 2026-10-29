@@ -120,9 +120,9 @@ export function toggleInspector() {
 }
 
 export function toast(kind: Toast['kind'], text: string, ms = 4500, key?: string) {
-  const existing = key && toasts.value.find(t => t.key === key)
+  const existing = key && toasts.value.find((t) => t.key === key)
   if (existing) {
-    toasts.value = toasts.value.map(t => t.id === existing.id ? { ...t, kind, text } : t)
+    toasts.value = toasts.value.map((t) => (t.id === existing.id ? { ...t, kind, text } : t))
     return
   }
   const t = { id: toastId++, kind, text, ...(key ? { key } : {}) }
@@ -184,7 +184,8 @@ export async function openAlbum(path: string) {
 /** Re-read the open album (after a render) without moving the user anywhere. */
 let quietRequest = 0
 export async function openAlbumQuietly(path: string) {
-  const displayed = album.peek(), context = albumRequest
+  const displayed = album.peek(),
+    context = albumRequest
   if (!displayed || displayed.path !== path) return
   const request = ++quietRequest
   try {
@@ -193,7 +194,8 @@ export async function openAlbumQuietly(path: string) {
     // an older read. Only the newest refresh of this exact displayed snapshot can apply.
     if (context === albumRequest && request === quietRequest && album.peek() === displayed) album.value = a
   } catch (e) {
-    if (context === albumRequest && request === quietRequest && album.peek() === displayed) toast('error', (e as Error).message, 8000)
+    if (context === albumRequest && request === quietRequest && album.peek() === displayed)
+      toast('error', (e as Error).message, 8000)
   }
 }
 

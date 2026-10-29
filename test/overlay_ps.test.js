@@ -3,17 +3,21 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
-const {
-  buildPsTextLayers,
-  hasShapeOverlays,
-  resolvePsFont,
-  hexToRgb,
-} = require('../src/overlay_ps')
+const { buildPsTextLayers, hasShapeOverlays, resolvePsFont, hexToRgb } = require('../src/overlay_ps')
 const { buildOverlaySvg, wrapText } = require('../src/overlay_render')
 
 const textLayer = (over = {}) => ({
-  id: 't1', type: 'text', x: 0.1, y: 0.1, w: 0.5, h: 0.2,
-  text: 'Hello', size: 0.05, color: '#ffffff', font: 'Georgia', ...over,
+  id: 't1',
+  type: 'text',
+  x: 0.1,
+  y: 0.1,
+  w: 0.5,
+  h: 0.2,
+  text: 'Hello',
+  size: 0.05,
+  color: '#ffffff',
+  font: 'Georgia',
+  ...over,
 })
 
 // ─── font resolution ─────────────────────────────────────────────────────────
@@ -70,11 +74,15 @@ test('a non-hex colour falls back to near-black rather than crashing', () => {
 // ─── selection ───────────────────────────────────────────────────────────────
 
 test('buildPsTextLayers takes text layers only — shapes stay rasterized', () => {
-  const layers = buildPsTextLayers([
-    textLayer({ id: 'a' }),
-    { id: 'b', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5, fill: '#000' },
-    { id: 'c', type: 'line', x: 0, y: 0, w: 0.5, h: 0.01, stroke: '#000' },
-  ], 1000, 1000)
+  const layers = buildPsTextLayers(
+    [
+      textLayer({ id: 'a' }),
+      { id: 'b', type: 'rect', x: 0, y: 0, w: 0.5, h: 0.5, fill: '#000' },
+      { id: 'c', type: 'line', x: 0, y: 0, w: 0.5, h: 0.01, stroke: '#000' },
+    ],
+    1000,
+    1000,
+  )
   assert.equal(layers.length, 1)
 })
 
@@ -178,11 +186,15 @@ test('the rotation pivot is the layer BOX centre, not the text centre', () => {
 })
 
 test('layer order is preserved so the PSD stack matches the editor', () => {
-  const layers = buildPsTextLayers([
-    textLayer({ id: 'a', text: 'first' }),
-    textLayer({ id: 'b', text: 'second' }),
-  ], 1000, 1000)
-  assert.deepEqual(layers.map((l) => l.contents), ['first', 'second'])
+  const layers = buildPsTextLayers(
+    [textLayer({ id: 'a', text: 'first' }), textLayer({ id: 'b', text: 'second' })],
+    1000,
+    1000,
+  )
+  assert.deepEqual(
+    layers.map((l) => l.contents),
+    ['first', 'second'],
+  )
 })
 
 test('the layer name is derived from the copy and stays bounded', () => {

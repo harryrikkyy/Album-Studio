@@ -26,10 +26,7 @@ test('layerBox with no edit is the layer itself', () => {
 })
 
 test('layerBox applies offset and scale', () => {
-  assert.deepEqual(
-    layerBox(box(100, 200, 300, 400), { dx: 50, dy: -25, sx: 2, sy: 0.5 }),
-    box(150, 175, 600, 200)
-  )
+  assert.deepEqual(layerBox(box(100, 200, 300, 400), { dx: 50, dy: -25, sx: 2, sy: 0.5 }), box(150, 175, 600, 200))
 })
 
 test('layerBox treats a missing scale as 1, not 0', () => {
@@ -76,7 +73,7 @@ test('resizeBox never goes below the minimum, and does not invert', () => {
 })
 
 test('resizeBox keeps the aspect ratio when asked', () => {
-  const orig = box(0, 0, 100, 50)          // 2:1
+  const orig = box(0, 0, 100, 50) // 2:1
   const r = resizeBox(orig, 'se', 100, 0, { keepAspect: true })
   near(r.w / r.h, 2, 'ratio drifted')
 })
@@ -143,7 +140,7 @@ test('distributeBoxes never moves the outermost two', () => {
 test('distributeBoxes works on the vertical axis too', () => {
   const boxes = [box(0, 0, 5, 10), box(0, 30, 5, 50), box(0, 200, 5, 20)]
   const out = distributeBoxes(boxes, 'v')
-  near((out[1].y - (out[0].y + out[0].h)), (out[2].y - (out[1].y + out[1].h)))
+  near(out[1].y - (out[0].y + out[0].h), out[2].y - (out[1].y + out[1].h))
 })
 
 test('distributeBoxes preserves INPUT order even when given unsorted boxes', () => {

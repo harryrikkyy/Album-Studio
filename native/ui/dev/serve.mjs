@@ -22,9 +22,19 @@ const BACKEND = resolve(UI, '../backend/server.js')
 const PORT = Number(process.env.PORT) || 5179
 
 const TYPES = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.map': 'application/json', '.svg': 'image/svg+xml', '.json': 'application/json',
-  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.gif': 'image/gif', '.tif': 'image/tiff', '.tiff': 'image/tiff',
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.map': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.json': 'application/json',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.tif': 'image/tiff',
+  '.tiff': 'image/tiff',
 }
 const IMAGE = /\.(jpe?g|png|webp|gif|tiff?)$/i
 
@@ -37,7 +47,11 @@ let seq = 1
 
 createInterface({ input: helper.stdout }).on('line', (line) => {
   let msg
-  try { msg = JSON.parse(line) } catch { return }
+  try {
+    msg = JSON.parse(line)
+  } catch {
+    return
+  }
   if (msg.event) {
     const text = `data: ${JSON.stringify({ event: msg.event, data: msg.data })}\n\n`
     for (const s of streams) s.write(text)
@@ -49,12 +63,18 @@ createInterface({ input: helper.stdout }).on('line', (line) => {
   w.res.writeHead(200, { 'content-type': 'application/json' })
   w.res.end(JSON.stringify({ ...msg, id: w.pageId }))
 })
-helper.on('exit', (code) => { console.error(`helper exited (${code}); restart dev/serve.mjs`); process.exit(1) })
+helper.on('exit', (code) => {
+  console.error(`helper exited (${code}); restart dev/serve.mjs`)
+  process.exit(1)
+})
 
 const SHELL_ONLY = {
   'shell.ping': () => ({ pong: true, dev: true }),
   'shell.info': () => ({ dev: true }),
-  'shell.log': (p) => { console.log('[ui]', p.level, p.kind ?? '', p.message ?? ''); return null },
+  'shell.log': (p) => {
+    console.log('[ui]', p.level, p.kind ?? '', p.message ?? '')
+    return null
+  },
   'shell.dragWindow': () => null,
   'shell.zoomWindow': () => null,
 }
@@ -64,10 +84,19 @@ function rpc(req, res) {
   req.on('data', (c) => (body += c))
   req.on('end', () => {
     let msg
-    try { msg = JSON.parse(body) } catch { res.writeHead(400).end(); return }
-    const reply = (r) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ id: msg.id, ...r })) }
+    try {
+      msg = JSON.parse(body)
+    } catch {
+      res.writeHead(400).end()
+      return
+    }
+    const reply = (r) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ id: msg.id, ...r }))
+    }
     if (SHELL_ONLY[msg.method]) return reply({ ok: true, result: SHELL_ONLY[msg.method](msg.params || {}) })
-    if (/^(shell|editor|dialog)\./.test(msg.method)) return reply({ ok: false, error: `${msg.method} needs the Album Studio app (this is the browser preview).` })
+    if (/^(shell|editor|dialog)\./.test(msg.method))
+      return reply({ ok: false, error: `${msg.method} needs the Album Studio app (this is the browser preview).` })
     const id = seq++
     waiting.set(id, { res, pageId: msg.id })
     helper.stdin.write(JSON.stringify({ id, method: msg.method, params: msg.params || {} }) + '\n')
@@ -100,8 +129,15 @@ function page(res) {
 
 function send(res, file, cache) {
   const st = statSync(file, { throwIfNoEntry: false })
-  if (!st || !st.isFile()) { res.writeHead(404).end(); return }
-  res.writeHead(200, { 'content-type': TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream', 'content-length': st.size, 'cache-control': cache })
+  if (!st || !st.isFile()) {
+    res.writeHead(404).end()
+    return
+  }
+  res.writeHead(200, {
+    'content-type': TYPES[extname(file).toLowerCase()] ?? 'application/octet-stream',
+    'content-length': st.size,
+    'cache-control': cache,
+  })
   createReadStream(file).pipe(res)
 }
 
@@ -119,10 +155,16 @@ createServer((req, res) => {
   if (path === '/' || path === '/index.html') return page(res)
   if (path.startsWith('/file/')) {
     const file = normalize(path.slice('/file'.length))
-    if (!IMAGE.test(file) || !existsSync(file)) { res.writeHead(404).end(); return }
+    if (!IMAGE.test(file) || !existsSync(file)) {
+      res.writeHead(404).end()
+      return
+    }
     return send(res, file, 'no-cache')
   }
   const file = normalize(join(UI, path))
-  if (!file.startsWith(UI + '/')) { res.writeHead(403).end(); return }
+  if (!file.startsWith(UI + '/')) {
+    res.writeHead(403).end()
+    return
+  }
   return send(res, file, 'no-store')
 }).listen(PORT, '127.0.0.1', () => console.log(`Album Studio interface: http://127.0.0.1:${PORT}/`))

@@ -4,14 +4,8 @@
     "target": "ES2020",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "node"
-    ],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
@@ -21,13 +15,6 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "src/**/*.js",
-    "test/**/*.js"
-  ],
-  "exclude": [
-    "node_modules",
-    "impeccable",
-    "native"
-  ]
+  "include": ["src/**/*.js", "test/**/*.js"],
+  "exclude": ["node_modules", "impeccable", "native"]
 }

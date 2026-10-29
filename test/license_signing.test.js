@@ -4,8 +4,7 @@ const test = require('node:test')
 const assert = require('node:assert/strict')
 const crypto = require('crypto')
 
-const { signLicense, verifyLicenseSignature, canonicalLicenseBytes, SIGNED_FIELDS } =
-  require('../src/license_signing')
+const { signLicense, verifyLicenseSignature, canonicalLicenseBytes, SIGNED_FIELDS } = require('../src/license_signing')
 
 const keys = () => crypto.generateKeyPairSync('ed25519')
 
@@ -64,8 +63,13 @@ test('malformed signatures are invalid, never throw', () => {
 })
 
 test('canonical bytes are stable regardless of input key order', () => {
-  const shuffled = { name: LICENSE.name, expiresOn: LICENSE.expiresOn, email: LICENSE.email,
-    activatedOn: LICENSE.activatedOn, machineId: LICENSE.machineId }
+  const shuffled = {
+    name: LICENSE.name,
+    expiresOn: LICENSE.expiresOn,
+    email: LICENSE.email,
+    activatedOn: LICENSE.activatedOn,
+    machineId: LICENSE.machineId,
+  }
   assert.deepEqual(canonicalLicenseBytes(shuffled), canonicalLicenseBytes(LICENSE))
   // Missing fields canonicalize to null (matches the server's normalization).
   const noName = { ...LICENSE }

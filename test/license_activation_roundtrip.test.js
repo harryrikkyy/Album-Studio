@@ -39,7 +39,10 @@ test('panel-signed license verifies in the app after the device binds', () => {
   // 3. Machine move is allowed by the signature (machineId unsigned)…
   assert.equal(verifyLicenseSignature({ ...savedLocally, machineId: 'another-device' }, sig, publicKey), true)
   // …but forging a longer expiry is rejected…
-  assert.equal(verifyLicenseSignature({ ...savedLocally, expiresOn: '2099-01-01T00:00:00.000Z' }, sig, publicKey), false)
+  assert.equal(
+    verifyLicenseSignature({ ...savedLocally, expiresOn: '2099-01-01T00:00:00.000Z' }, sig, publicKey),
+    false,
+  )
   // …and so is reusing it under a different account.
   assert.equal(verifyLicenseSignature({ ...savedLocally, email: 'pirate@example.com' }, sig, publicKey), false)
 })

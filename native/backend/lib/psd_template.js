@@ -32,7 +32,9 @@ function getAgPsd() {
   agpsd.initializeCanvas((w, h) => ({
     width: w,
     height: h,
-    getContext: () => ({ createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }) }),
+    getContext: () => ({
+      createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+    }),
   }))
   return agpsd
 }
@@ -47,14 +49,29 @@ function frameOrient(name) {
   return null
 }
 
-const hex = (c) => '#' + [c.r, c.g, c.b].map((v) => Math.max(0, Math.min(255, Math.round(v || 0))).toString(16).padStart(2, '0')).join('')
+const hex = (c) =>
+  '#' +
+  [c.r, c.g, c.b]
+    .map((v) =>
+      Math.max(0, Math.min(255, Math.round(v || 0)))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')
 
 /** A frame's stroke effect: the border templates draw over the photo clipped into the frame. */
 function frameStroke(effects) {
   if (!effects || effects.disabled) return null
-  const s = (Array.isArray(effects.stroke) ? effects.stroke : [effects.stroke]).find((x) => x && x.enabled && x.fillType !== 'gradient' && x.fillType !== 'pattern')
+  const s = (Array.isArray(effects.stroke) ? effects.stroke : [effects.stroke]).find(
+    (x) => x && x.enabled && x.fillType !== 'gradient' && x.fillType !== 'pattern',
+  )
   if (!s || !s.size || !(s.size.value > 0)) return null
-  return { size: s.size.value, position: s.position || 'outside', color: hex(s.color || {}), opacity: typeof s.opacity === 'number' ? s.opacity : 1 }
+  return {
+    size: s.size.value,
+    position: s.position || 'outside',
+    color: hex(s.color || {}),
+    opacity: typeof s.opacity === 'number' ? s.opacity : 1,
+  }
 }
 
 /** Frames in drawing order (PSD storage order is bottom to top), each with its layer node. */
@@ -64,13 +81,25 @@ function collectFrames(nodes, out = [], hiddenParent = false) {
     const orient = frameOrient(n.name)
     if (orient) {
       // A fill layer has no pixels of its own: its area is its mask's.
-      let x = n.left || 0, y = n.top || 0, r = n.right || 0, b = n.bottom || 0
+      let x = n.left || 0,
+        y = n.top || 0,
+        r = n.right || 0,
+        b = n.bottom || 0
       if ((r - x <= 0 || b - y <= 0) && n.mask) {
-        x = n.mask.left || 0; y = n.mask.top || 0; r = n.mask.right || 0; b = n.mask.bottom || 0
+        x = n.mask.left || 0
+        y = n.mask.top || 0
+        r = n.mask.right || 0
+        b = n.mask.bottom || 0
       }
       if (r - x > 0 && b - y > 0) {
         const f = {
-          name: n.name, orient, x, y, w: r - x, h: b - y, z: out.length,
+          name: n.name,
+          orient,
+          x,
+          y,
+          w: r - x,
+          h: b - y,
+          z: out.length,
           // The photo is clipped to the frame, so it takes the frame's opacity and visibility.
           opacity: typeof n.opacity === 'number' ? n.opacity : 1,
           hidden,
@@ -100,7 +129,10 @@ function shapeAlpha(f) {
       for (let x = 0; x < f.w; x++) {
         const sx = f.x + x - lx
         const a = sx >= 0 && sy >= 0 && sx < img.width && sy < img.height ? img.data[(sy * img.width + sx) * 4 + 3] : 0
-        if (a < 255) { out[y * f.w + x] = a; shaped = true }
+        if (a < 255) {
+          out[y * f.w + x] = a
+          shaped = true
+        }
       }
     }
   }
@@ -161,13 +193,24 @@ async function frameMask(f, scale, file) {
   const revealStroke = !!(s && s.position === 'inside' && s.opacity >= 0.99)
   if (!full && !revealStroke && f.opacity >= 0.999) return false
   let a = full
-    ? new Uint8Array(await sharp(Buffer.from(full.buffer), { raw: { width: f.w, height: f.h, channels: 1 } }).resize(fw, fh, { fit: 'fill' }).extractChannel(0).raw().toBuffer())
+    ? new Uint8Array(
+        await sharp(Buffer.from(full.buffer), { raw: { width: f.w, height: f.h, channels: 1 } })
+          .resize(fw, fh, { fit: 'fill' })
+          .extractChannel(0)
+          .raw()
+          .toBuffer(),
+      )
     : new Uint8Array(fw * fh).fill(255)
   if (revealStroke) a = erode(a, fw, fh, Math.round(s.size * scale))
   if (f.opacity < 0.999) for (let i = 0; i < a.length; i++) a[i] = Math.round(a[i] * f.opacity)
   const rgba = Buffer.alloc(fw * fh * 4, 255)
   for (let i = 0; i < a.length; i++) rgba[i * 4 + 3] = a[i]
-  await writeAtomic(file, await sharp(rgba, { raw: { width: fw, height: fh, channels: 4 } }).png().toBuffer())
+  await writeAtomic(
+    file,
+    await sharp(rgba, { raw: { width: fw, height: fh, channels: 4 } })
+      .png()
+      .toBuffer(),
+  )
   return revealStroke ? 'stroke' : true
 }
 
@@ -181,9 +224,16 @@ function decodeEstimate(outline) {
   let bytes = (outline.width || 0) * (outline.height || 0) * 4
   const walk = (nodes) => {
     for (const n of nodes || []) {
-      if (n.children) { walk(n.children); continue }
+      if (n.children) {
+        walk(n.children)
+        continue
+      }
       bytes += Math.max(0, (n.right || 0) - (n.left || 0)) * Math.max(0, (n.bottom || 0) - (n.top || 0)) * 4
-      if (n.mask) bytes += Math.max(0, (n.mask.right || 0) - (n.mask.left || 0)) * Math.max(0, (n.mask.bottom || 0) - (n.mask.top || 0)) * 4
+      if (n.mask)
+        bytes +=
+          Math.max(0, (n.mask.right || 0) - (n.mask.left || 0)) *
+          Math.max(0, (n.mask.bottom || 0) - (n.mask.top || 0)) *
+          4
     }
   }
   walk(outline.children)
@@ -213,28 +263,58 @@ async function templateArt(psdPath, maxEdge = 2400, { sourceDigest } = {}) {
     try {
       const cached = JSON.parse(await fs.promises.readFile(infoFile, 'utf8'))
       const files = [cached.backdrop, ...cached.frames.map((f) => f.mask)].filter(Boolean)
-      const allowed = (p) => p === path.join(dir, `backdrop-${maxEdge}.jpg`) || path.dirname(p) === dir && /^mask-[0-9]+-[0-9]+\.png$/.test(path.basename(p))
-      if (cached.schema === SCHEMA && cached.sourceKey === key && files.every(allowed) && cached.artifactDigests && (await Promise.all(files.map(async (p) => cached.artifactDigests[p] === await fileDigest(p)))).every(Boolean)) {
-        if (!sourceDigest && await contentFileKey(psdPath) !== key) throw new Error('The template changed while its cached backdrop was checked. Retry from a stable source.')
+      const allowed = (p) =>
+        p === path.join(dir, `backdrop-${maxEdge}.jpg`) ||
+        (path.dirname(p) === dir && /^mask-[0-9]+-[0-9]+\.png$/.test(path.basename(p)))
+      if (
+        cached.schema === SCHEMA &&
+        cached.sourceKey === key &&
+        files.every(allowed) &&
+        cached.artifactDigests &&
+        (await Promise.all(files.map(async (p) => cached.artifactDigests[p] === (await fileDigest(p))))).every(Boolean)
+      ) {
+        if (!sourceDigest && (await contentFileKey(psdPath)) !== key)
+          throw new Error('The template changed while its cached backdrop was checked. Retry from a stable source.')
         return cached
       }
-    } catch (_) { /* not cached yet */ }
+    } catch (_) {
+      /* not cached yet */
+    }
     const ag = getAgPsd()
     const buf = await readPsdBuffer(psdPath)
     const decodedDigest = crypto.createHash('sha256').update(buf).digest('hex')
-    if (contentKey(psdPath, decodedDigest) !== key) throw new Error('The template changed before its verified bytes were read. Retry from a stable original.')
+    if (contentKey(psdPath, decodedDigest) !== key)
+      throw new Error('The template changed before its verified bytes were read. Retry from a stable original.')
     const cmyk = buf.length >= 26 && buf.readUInt16BE(24) === 4
     // ag-psd refuses CMYK at its header before metadata parsing. Only the colour-mode
     // header in this private metadata copy is substituted; no colour samples are read here.
     const metadata = cmyk ? Buffer.from(buf) : buf
     if (cmyk) metadata.writeUInt16BE(3, 24)
-    const outline = ag.readPsd(metadata, { skipLayerImageData: true, skipCompositeImageData: true, skipThumbnail: true })
-    const withPixels = !cmyk && outline.bitsPerChannel === 8 && !!outline.children?.length && decodeEstimate(outline) <= DECODE_BUDGET
-    const psd = withPixels ? ag.readPsd(metadata, { skipLayerImageData: false, skipCompositeImageData: true, skipThumbnail: true, useImageData: true }) : outline
+    const outline = ag.readPsd(metadata, {
+      skipLayerImageData: true,
+      skipCompositeImageData: true,
+      skipThumbnail: true,
+    })
+    const withPixels =
+      !cmyk && outline.bitsPerChannel === 8 && !!outline.children?.length && decodeEstimate(outline) <= DECODE_BUDGET
+    const psd = withPixels
+      ? ag.readPsd(metadata, {
+          skipLayerImageData: false,
+          skipCompositeImageData: true,
+          skipThumbnail: true,
+          useImageData: true,
+        })
+      : outline
     const { scale } = proofDims(psd.width, psd.height, maxEdge)
     const frames = collectFrames(psd.children)
-    if (cmyk && frames.length) throw new Error('CMYK template frame masks cannot yet be verified. Convert and save the template as RGB before using it for album proofs.')
-    if (outline.bitsPerChannel !== 8 && frames.length) throw new Error('High-depth template frame masks cannot yet be verified. Convert and save the template as 8-bit RGB before using it for album proofs.')
+    if (cmyk && frames.length)
+      throw new Error(
+        'CMYK template frame masks cannot yet be verified. Convert and save the template as RGB before using it for album proofs.',
+      )
+    if (outline.bitsPerChannel !== 8 && frames.length)
+      throw new Error(
+        'High-depth template frame masks cannot yet be verified. Convert and save the template as 8-bit RGB before using it for album proofs.',
+      )
     for (const f of frames) {
       if (f.hidden) continue
       const file = path.join(dir, `mask-${maxEdge}-${f.z}.png`)
@@ -249,21 +329,34 @@ async function templateArt(psdPath, maxEdge = 2400, { sourceDigest } = {}) {
       try {
         const jpeg = await sharp(source.input, { ...(source.raw ? { raw: source.raw } : {}), failOn: 'warning' })
           .withIccProfile('srgb')
-          .resize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)), { fit: 'fill' })
+          .resize(Math.max(1, Math.round(source.width * scale)), Math.max(1, Math.round(source.height * scale)), {
+            fit: 'fill',
+          })
           .flatten({ background: '#ffffff' })
           .jpeg({ quality: 90, mozjpeg: true })
           .toBuffer()
         art.backdrop = path.join(dir, `backdrop-${maxEdge}.jpg`)
         await writeAtomic(art.backdrop, jpeg)
-      } finally { if (source.cleanup) await source.cleanup() }
+      } finally {
+        if (source.cleanup) await source.cleanup()
+      }
     }
-    if (await contentFileKey(psdPath) !== key) throw new Error('The template changed while its backdrop was made. Retry from a stable source.')
-    art.artifactDigests = Object.fromEntries(await Promise.all([art.backdrop, ...art.frames.map((f) => f.mask)].filter(Boolean).map(async (p) => [p, await fileDigest(p)])))
+    if ((await contentFileKey(psdPath)) !== key)
+      throw new Error('The template changed while its backdrop was made. Retry from a stable source.')
+    art.artifactDigests = Object.fromEntries(
+      await Promise.all(
+        [art.backdrop, ...art.frames.map((f) => f.mask)].filter(Boolean).map(async (p) => [p, await fileDigest(p)]),
+      ),
+    )
     await writeAtomic(infoFile, JSON.stringify(art))
     return art
   })()
   inflight.set(infoFile, job)
-  try { return await job } finally { inflight.delete(infoFile) }
+  try {
+    return await job
+  } finally {
+    inflight.delete(infoFile)
+  }
 }
 
 module.exports = { templateArt, framesByName, collectFrames, erode }

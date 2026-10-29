@@ -9,19 +9,34 @@ import { fileUrl } from '../../bridge'
 import { panBy, placementLayout, turnOf } from '../../plan_logic'
 import type { Photo, Placement } from '../../types'
 
-export interface FrameBox { x: number; y: number; w: number; h: number } // fractions of the spread
+export interface FrameBox {
+  x: number
+  y: number
+  w: number
+  h: number
+} // fractions of the spread
 
 const MAX_ZOOM = 5
 const fitted: Required<Placement> = { scale: 1, ox: 0, oy: 0 }
 
-export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
+export function FrameAdjust({
+  frame,
+  photo,
+  spreadPx,
+  onDone,
+  onCancel,
+}: {
   frame: FrameBox
   photo: Photo
   spreadPx: { w: number; h: number }
   onDone: (pl: Placement | null) => void
   onCancel: () => void
 }) {
-  const [pl, setPl] = useState<Required<Placement>>({ scale: photo.placement?.scale ?? 1, ox: photo.placement?.ox ?? 0, oy: photo.placement?.oy ?? 0 })
+  const [pl, setPl] = useState<Required<Placement>>({
+    scale: photo.placement?.scale ?? 1,
+    ox: photo.placement?.ox ?? 0,
+    oy: photo.placement?.oy ?? 0,
+  })
   const current = useRef(pl)
   current.current = pl
   const drag = useRef<{ x: number; y: number; start: Placement } | null>(null)
@@ -53,29 +68,54 @@ export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
     const el = root.current
     if (!el) return
     let base = 1
-    const start = (e: Event) => { e.preventDefault(); base = current.current.scale }
-    const change = (e: Event) => { e.preventDefault(); zoomTo(base * ((e as unknown as { scale: number }).scale || 1)) }
+    const start = (e: Event) => {
+      e.preventDefault()
+      base = current.current.scale
+    }
+    const change = (e: Event) => {
+      e.preventDefault()
+      zoomTo(base * ((e as unknown as { scale: number }).scale || 1))
+    }
     el.addEventListener('gesturestart', start)
     el.addEventListener('gesturechange', change)
-    return () => { el.removeEventListener('gesturestart', start); el.removeEventListener('gesturechange', change) }
+    return () => {
+      el.removeEventListener('gesturestart', start)
+      el.removeEventListener('gesturechange', change)
+    }
   }, [])
 
   return (
     <div
       ref={root}
       class="adjust"
-      style={{ left: `${frame.x * 100}%`, top: `${frame.y * 100}%`, width: `${frame.w * 100}%`, height: `${frame.h * 100}%` }}
+      style={{
+        left: `${frame.x * 100}%`,
+        top: `${frame.y * 100}%`,
+        width: `${frame.w * 100}%`,
+        height: `${frame.h * 100}%`,
+      }}
       tabIndex={-1}
       role="group"
       aria-label={`Move and zoom ${photo.base} in its frame`}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); done() }
-        else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onCancel() }
+        if (e.key === 'Enter') {
+          e.preventDefault()
+          e.stopPropagation()
+          done()
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          e.stopPropagation()
+          onCancel()
+        }
       }}
       onPointerDown={(e) => {
         if ((e.target as HTMLElement).closest('.adjust__bar')) return
         e.preventDefault()
-        try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) } catch { /* a pointer that can't be captured still drags while over the frame */ }
+        try {
+          ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+        } catch {
+          /* a pointer that can't be captured still drags while over the frame */
+        }
         drag.current = { x: e.clientX, y: e.clientY, start: pl }
       }}
       onPointerMove={(e) => {
@@ -84,13 +124,20 @@ export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
         const at = placementLayout(fw, fh, quarter ? ph : pw, quarter ? pw : ph, d.start)
         setPl(panBy(d.start, e.clientX - d.x, e.clientY - d.y, at.overflowX, at.overflowY))
       }}
-      onPointerUp={() => { drag.current = null }}
-      onPointerCancel={() => { drag.current = null }}
+      onPointerUp={() => {
+        drag.current = null
+      }}
+      onPointerCancel={() => {
+        drag.current = null
+      }}
       onWheel={(e) => {
         e.preventDefault()
         zoomTo(pl.scale * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)))
       }}
-      onDblClick={(e) => { e.stopPropagation(); done() }}
+      onDblClick={(e) => {
+        e.stopPropagation()
+        done()
+      }}
     >
       <img class="adjust__ghost" src={fileUrl(photo.thumb)} alt="" draggable={false} style={img} />
       <div class="adjust__clip">
@@ -106,9 +153,29 @@ export function FrameAdjust({ frame, photo, spreadPx, onDone, onCancel }: {
           aria-label="Zoom"
           onInput={(e) => zoomTo(Number((e.target as HTMLInputElement).value))}
         />
-        <button type="button" class="adjust__btn" title="Fit the frame, centred" aria-label="Fit" onClick={() => setPl(fitted)}><Maximize size={13} /><span class="adjust__word">Fit</span></button>
-        <button type="button" class="adjust__btn" title="Cancel (Esc)" aria-label="Cancel" onClick={onCancel}><X size={14} /></button>
-        <button type="button" class="adjust__btn adjust__btn--done" title="Done (Return)" aria-label="Done" onClick={done}><Check size={14} /><span class="adjust__word">Done</span></button>
+        <button
+          type="button"
+          class="adjust__btn"
+          title="Fit the frame, centred"
+          aria-label="Fit"
+          onClick={() => setPl(fitted)}
+        >
+          <Maximize size={13} />
+          <span class="adjust__word">Fit</span>
+        </button>
+        <button type="button" class="adjust__btn" title="Cancel (Esc)" aria-label="Cancel" onClick={onCancel}>
+          <X size={14} />
+        </button>
+        <button
+          type="button"
+          class="adjust__btn adjust__btn--done"
+          title="Done (Return)"
+          aria-label="Done"
+          onClick={done}
+        >
+          <Check size={14} />
+          <span class="adjust__word">Done</span>
+        </button>
       </div>
     </div>
   )

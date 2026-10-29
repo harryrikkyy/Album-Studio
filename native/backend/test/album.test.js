@@ -57,7 +57,10 @@ test('recent albums: newest first, de-duplicated, availability checked', async (
   await rememberAlbum({ ...a, path: '/gone/away', name: 'Gone' })
   await rememberAlbum(a)
   const list = await listRecent()
-  assert.deepEqual(list.map((e) => e.name), ['Album', 'Gone'])
+  assert.deepEqual(
+    list.map((e) => e.name),
+    ['Album', 'Gone'],
+  )
   assert.equal(list[0].available, true)
   assert.equal(list[1].available, false)
   assert.ok(list[0].cover.endsWith('live_page_001.jpg'))
@@ -66,7 +69,11 @@ test('recent albums: newest first, de-duplicated, availability checked', async (
 test('the protocol answers unknown methods with an error, not a crash', async () => {
   const out = []
   const orig = process.stdout.write.bind(process.stdout)
-  process.stdout.write = (s, callback) => { out.push(String(s)); if (callback) queueMicrotask(callback); return true }
+  process.stdout.write = (s, callback) => {
+    out.push(String(s))
+    if (callback) queueMicrotask(callback)
+    return true
+  }
   try {
     await dispatch(JSON.stringify({ id: 9, method: 'nope' }))
     await dispatch(JSON.stringify({ id: 10, method: 'system.ping', params: { n: 3 } }))
@@ -75,7 +82,13 @@ test('the protocol answers unknown methods with an error, not a crash', async ()
     process.stdout.write = orig
   }
   const replies = out.map((l) => JSON.parse(l))
-  assert.deepEqual(replies[0], { id: 9, ok: false, error: 'unknown method `nope`', code: 'METHOD_UNKNOWN', details: { issues: [{ path: '/method', message: 'Unknown method.', keyword: 'enum' }] } })
+  assert.deepEqual(replies[0], {
+    id: 9,
+    ok: false,
+    error: 'unknown method `nope`',
+    code: 'METHOD_UNKNOWN',
+    details: { issues: [{ path: '/method', message: 'Unknown method.', keyword: 'enum' }] },
+  })
   assert.equal(replies[1].result.pong, 3)
   assert.equal(replies.length, 2, 'a line that is not JSON gets no reply')
 })
@@ -87,12 +100,19 @@ test('a JPEG is measured the way it is seen: EXIF orientations 5–8 swap width 
   const sizes = {}
   for (const o of [1, 3, 6, 8]) {
     const f = path.join(dir, `o${o}.jpg`)
-    await sharp({ create: { width: 300, height: 200, channels: 3, background: '#888' } }).jpeg().withMetadata({ orientation: o }).toFile(f)
+    await sharp({ create: { width: 300, height: 200, channels: 3, background: '#888' } })
+      .jpeg()
+      .withMetadata({ orientation: o })
+      .toFile(f)
     sizes[o] = await jpegSize(f)
   }
   assert.deepEqual(sizes[1], { width: 300, height: 200 })
   assert.deepEqual(sizes[3], { width: 300, height: 200 }, 'upside down is still landscape')
   assert.deepEqual(sizes[6], { width: 200, height: 300 }, 'a portrait the camera stored sideways')
   assert.deepEqual(sizes[8], { width: 200, height: 300 })
-  assert.deepEqual(jpegSizeFromBuffer(require('fs').readFileSync(path.join(dir, 'o6.jpg')), { stored: true }), { width: 300, height: 200 }, 'a PDF embeds the stored grid')
+  assert.deepEqual(
+    jpegSizeFromBuffer(require('fs').readFileSync(path.join(dir, 'o6.jpg')), { stored: true }),
+    { width: 300, height: 200 },
+    'a PDF embeds the stored grid',
+  )
 })
