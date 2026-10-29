@@ -143,7 +143,7 @@ export function SpreadView({ s }: { s: Spread }) {
               >
                 {over === f.z && act ? <span class="frame-hit__label">{act}</span> : null}
                 {sel && sel === f.photoId && !drag && photo && !adjustFrame ? (
-                  <span class="frame-tools" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
+                  <span class="frame-tools" role="presentation" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()} onDblClick={(e) => e.stopPropagation()}>
                     <button type="button" class="frame-tools__btn" title="Move and zoom in the frame (double-click the photo)" aria-label={`Move and zoom ${photo.base} in its frame`} onClick={() => setAdjusting(photo.id)}><Crop size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn left (⌘L)" aria-label={`Turn ${photo.base} left`} onClick={() => void rotatePhotos([photo.id], -90)}><RotateCcw size={13} /></button>
                     <button type="button" class="frame-tools__btn" title="Turn right (⌘R)" aria-label={`Turn ${photo.base} right`} onClick={() => void rotatePhotos([photo.id], 90)}><RotateCw size={13} /></button>

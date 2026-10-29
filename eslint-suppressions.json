@@ -48,5 +48,26 @@
     "preserve-caught-error": {
       "count": 1
     }
+  },
+  "native/ui/src/places/plan/FrameAdjust.tsx": {
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "native/ui/src/places/plan/Inspector.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-noninteractive-element-interactions": {
+      "count": 1
+    }
+  },
+  "native/ui/src/places/plan/SpreadView.tsx": {
+    "jsx-a11y/click-events-have-key-events": {
+      "count": 1
+    },
+    "jsx-a11y/no-static-element-interactions": {
+      "count": 1
+    }
   }
 }

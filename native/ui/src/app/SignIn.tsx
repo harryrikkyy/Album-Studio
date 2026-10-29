@@ -80,6 +80,7 @@ export function SignIn() {
 
   return (
     <div class="signin">
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- the window's drag region, mouse-only like any title bar */}
       <div class="signin__drag" onMouseDown={drag} onDblClick={() => inShell && void call('shell.zoomWindow').catch(() => {})} />
       <main class="signin__panel">
         <h1 class="signin__brand">Album Studio</h1>

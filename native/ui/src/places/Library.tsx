@@ -6,7 +6,7 @@
 import { BookCheck, FolderOpen, FolderPlus, LayoutTemplate, Library as LibraryIcon, Search, X } from 'lucide-preact'
 import { useEffect, useMemo, useState } from 'preact/hooks'
 import { call, fileUrl } from '../bridge'
-import { applyUpdate, forgetTemplateCatalogue, type UpdateResult } from '../edit'
+import { applyUpdate, forgetTemplateCatalogue } from '../edit'
 import { reveal } from '../exporting'
 import { plural, shortPath, signature, templateLabel } from '../format'
 import type { Template } from '../plan_logic'

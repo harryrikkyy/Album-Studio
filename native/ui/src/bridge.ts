@@ -71,8 +71,10 @@ if (typeof window !== 'undefined') {
   }
 }
 
+/* eslint-disable @typescript-eslint/no-empty-object-type -- `{} extends P` asks whether P has no required keys */
 /** Call a shell or helper method. Rejects with a user-readable message. */
 export function call<M extends MethodName>(method: M, ...args: {} extends MethodParams<M> ? [params?: MethodParams<M>, timeoutMs?: number] : [params: MethodParams<M>, timeoutMs?: number]): Promise<MethodResult<M>>
+/* eslint-enable @typescript-eslint/no-empty-object-type */
 export function call(method: MethodName, params: object = {}, timeoutMs = 120_000): Promise<unknown> {
   if (!inShell) return Promise.reject(new Error('Album Studio’s engine isn’t running (this page is open outside the app).'))
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > MAX_TIMEOUT) return Promise.reject(new Error('Choose a request timeout from 1 ms to six hours.'))

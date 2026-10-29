@@ -53,6 +53,7 @@ export function TemplateBrowser() {
   const target = !s.photoIds.length ? `spread ${s.n}` : `a new spread after spread ${s.n}`
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- Escape from any control inside closes the browser
     <section
       class="tpl-browser"
       aria-label="Templates"

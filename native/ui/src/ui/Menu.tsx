@@ -69,6 +69,7 @@ export function Menu({ label, icon, items }: { label: string; icon: ComponentChi
         {icon}
       </button>
       {open ? (
+        // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- the items carry focus; their keys bubble here
         <div class="menu__list" role="menu" aria-label={label} id={id} ref={list} onKeyDown={onKey}>
           {items.map((it) => (
             <>

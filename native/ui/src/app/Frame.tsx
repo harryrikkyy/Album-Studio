@@ -45,6 +45,7 @@ function TopBar() {
     if (inShell) void call('shell.dragWindow').catch(() => {})
   }
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- the window's drag region, mouse-only like any title bar
     <header class="topbar" onMouseDown={onMouseDown} onDblClick={() => inShell && void call('shell.zoomWindow').catch(() => {})}>
       <div class="topbar__title">
         {a ? (
