@@ -29,7 +29,7 @@ const stat = (file) =>
 function preserved(file, detail, code = 'PRIVATE_STAGE_PRESERVED') {
   return Object.assign(
     new Error(`${detail} Private work was preserved at ${file}. Inspect it before retrying; no history was pruned.`),
-    { code, retainedPath: file },
+    /** @satisfies {Partial<RecoverableError>} */ ({ code, retainedPath: file }),
   )
 }
 function relocateEvidence(error, from, to, seen = new Set()) {
@@ -281,7 +281,13 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
       }
       const result = { retainedPath: retained, bytes, reason }
       stage.retirement = result
-      if (reason) throw Object.assign(preserved(retained, reason), { retirement: result })
+      if (reason)
+        throw Object.assign(
+          preserved(retained, reason),
+          /** @satisfies {Partial<RecoverableError & { retirement: { retainedPath: string } }>} */ ({
+            retirement: result,
+          }),
+        )
       return result
     },
   }

@@ -14,10 +14,13 @@ const { publishFiles, recoverFiles, fingerprintFile, matchesFileRevision } = req
  */
 const { isPrivateName } = require('./publication_paths')
 const { createPublicationIO } = require('./publication_io')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const MAX_HEADER = 65536
 const SHA = /^[a-f0-9]{64}$/
-const invalid = (message) => Object.assign(new Error(message), { code: 'PUBLICATION_PROTOCOL' })
-const changed = (message) => Object.assign(new Error(message), { code: 'PUBLICATION_CONFLICT' })
+const invalid = (message) =>
+  Object.assign(new Error(message), /** @satisfies {Partial<RecoverableError>} */ ({ code: 'PUBLICATION_PROTOCOL' }))
+const changed = (message) =>
+  Object.assign(new Error(message), /** @satisfies {Partial<RecoverableError>} */ ({ code: 'PUBLICATION_CONFLICT' }))
 const io = createPublicationIO({ subject: 'native publication', changed, readRecord: fingerprintFile })
 function exactKeys(value, keys) {
   return (
@@ -269,11 +272,15 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
       if (readFailure) readFailure.message += ` Closing the staged file also failed: ${error.message}`
       else readFailure = error
     }
-    if (readFailure) throw Object.assign(readFailure, { recoveryStage: stage })
+    if (readFailure)
+      throw Object.assign(readFailure, /** @satisfies {Partial<RecoverableError>} */ ({ recoveryStage: stage }))
     if (hash.digest('hex') !== payload.digest)
-      throw Object.assign(invalid('The native document bytes did not match their declared SHA-256.'), {
-        recoveryStage: stage,
-      })
+      throw Object.assign(
+        invalid('The native document bytes did not match their declared SHA-256.'),
+        /** @satisfies {Partial<RecoverableError>} */ ({
+          recoveryStage: stage,
+        }),
+      )
     await lease.assertOwned()
     await write(output, { version: 1, state: 'prepared' })
     const decision = await reader.json()
@@ -291,7 +298,13 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
       await io.move(stage, retained)
       result.inputHistory = retained
     } catch (error) {
-      Object.assign(error, { publicationCommitted: true, recoveryStage: stage })
+      Object.assign(
+        error,
+        /** @satisfies {Partial<RecoverableError & { publicationCommitted: boolean }>} */ ({
+          publicationCommitted: true,
+          recoveryStage: stage,
+        }),
+      )
       throw error
     }
   } catch (error) {
@@ -308,7 +321,13 @@ async function run({ input = process.stdin, output = process.stdout } = {}) {
       else {
         failure = error
         if (result && result.committed)
-          Object.assign(failure, { publicationCommitted: true, recoveryStage: result.historyPath })
+          Object.assign(
+            failure,
+            /** @satisfies {Partial<RecoverableError & { publicationCommitted: boolean }>} */ ({
+              publicationCommitted: true,
+              recoveryStage: result.historyPath,
+            }),
+          )
       }
     }
   }

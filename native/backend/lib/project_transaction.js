@@ -443,9 +443,12 @@ async function recoveryLocation(input) {
 async function readProjectSnapshot(file) {
   const current = await record(file)
   if (!current)
-    throw Object.assign(new Error(`The project ${file} is missing; recover its journal before reading it.`), {
-      code: 'ENOENT',
-    })
+    throw Object.assign(
+      new Error(`The project ${file} is missing; recover its journal before reading it.`),
+      /** @satisfies {Partial<RecoverableError>} */ ({
+        code: 'ENOENT',
+      }),
+    )
   return { data: JSON.parse(String(current.bytes)), revision: current.digest }
 }
 

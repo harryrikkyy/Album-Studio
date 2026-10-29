@@ -21,7 +21,7 @@ const owned = (a, b) => matches(a, b) && sameNode(a.node, b.node) && a.mode === 
 const changed = (what) =>
   Object.assign(
     new Error(`The ${what} changed during file publication. Existing files and recovery evidence were preserved.`),
-    { code: 'PUBLICATION_CONFLICT' },
+    /** @satisfies {Partial<RecoverableError>} */ ({ code: 'PUBLICATION_CONFLICT' }),
   )
 // Finder and network volumes drop these into any folder a person browses; they are never records.
 const ignorable = (name) => name === '.DS_Store' || name.startsWith('._')
@@ -78,12 +78,15 @@ function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
   /** @type {RecoverableError & { publicationCommitted?: boolean, publicationRestored?: boolean }} */
   const failure = new Error(`${error.message} File publication evidence is retained at ${retained}.`, { cause: error })
-  Object.assign(failure, {
-    code: error.code || 'PUBLICATION_FAILED',
-    recoveryStage: retained,
-    recoveryJournal: path.join(retained, 'journal.json'),
-    publicationCommitted: committed || !!error.publicationCommitted,
-  })
+  Object.assign(
+    failure,
+    /** @satisfies {Partial<RecoverableError & { publicationCommitted: boolean }>} */ ({
+      code: error.code || 'PUBLICATION_FAILED',
+      recoveryStage: retained,
+      recoveryJournal: path.join(retained, 'journal.json'),
+      publicationCommitted: committed || !!error.publicationCommitted,
+    }),
+  )
   if (error.publicationRestored) failure.publicationRestored = true
   if (error.recoveryRequired) failure.recoveryRequired = true
   if (failure.publicationCommitted && result) Object.assign(failure, result)
@@ -122,7 +125,10 @@ async function checkSnapshot(c) {
   await assertContext(c)
   if (c.capabilities.validateSnapshot) await c.capabilities.validateSnapshot()
   if (c.capabilities.isCancelled && c.capabilities.isCancelled())
-    throw Object.assign(new Error('File publication was cancelled before commit.'), { code: 'PUBLICATION_CANCELLED' })
+    throw Object.assign(
+      new Error('File publication was cancelled before commit.'),
+      /** @satisfies {Partial<RecoverableError>} */ ({ code: 'PUBLICATION_CANCELLED' }),
+    )
 }
 async function journalOf(c, stage, known, contents = true) {
   const stageNode = await directory(stage),
@@ -349,19 +355,22 @@ const interruptedSave = (stage) =>
       'An interrupted native save must be recovered before reading these files. ' +
         `Reopen the album's render/export plan; preserve the evidence at ${stage}.`,
     ),
-    {
+    /** @satisfies {Partial<RecoverableError>} */ ({
       code: 'PUBLICATION_RECOVERY_REQUIRED',
       recoveryRequired: true,
       recoveryStage: stage,
       recoveryJournal: path.join(stage, 'journal.json'),
-    },
+    }),
   )
 const saveStillRunning = (stage) =>
-  Object.assign(new Error('A save to these files is still running. Try again when it finishes.'), {
-    code: 'PUBLICATION_IN_PROGRESS',
-    retryable: true,
-    recoveryStage: stage,
-  })
+  Object.assign(
+    new Error('A save to these files is still running. Try again when it finishes.'),
+    /** @satisfies {Partial<RecoverableError>} */ ({
+      code: 'PUBLICATION_IN_PROGRESS',
+      retryable: true,
+      recoveryStage: stage,
+    }),
+  )
 /**
  * Read-only callers must not interpret a temporarily missing native target as a new file. A save
  * that another process is still running is waited for, up to `waitMs`; a stage nobody holds is an

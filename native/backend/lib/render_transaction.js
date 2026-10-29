@@ -375,12 +375,12 @@ async function assertRendersSettled(output) {
       new Error(
         `An earlier render must finish recovery before this sheet can be saved. Reopen the album's render/export plan; preserve the evidence at ${stage}.`,
       ),
-      {
+      /** @satisfies {Partial<RecoverableError>} */ ({
         code: 'RENDER_RECOVERY_REQUIRED',
         recoveryRequired: true,
         recoveryStage: stage,
         recoveryJournal: path.join(stage, 'journal.json'),
-      },
+      }),
     )
   }
   if (!sameNode(identity, await directory(metadata))) throw changed('render recovery directory identity')

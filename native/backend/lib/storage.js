@@ -12,6 +12,7 @@ const path = require('path')
 const { openAlbum } = require('./album')
 const { cacheRoot } = require('./cache')
 const { validateOutputPaths } = require('./output_paths')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 const APP = [
   { id: 'templates', label: 'Template backdrops and frame shapes' },
@@ -69,7 +70,7 @@ async function preserveNonemptyCache(file) {
       new Error(
         `The cache ${file} contains existing files or uncertain ownership. All cache files, active private work and retained histories were preserved. Safe reclamation requires verified ownership and coordination with every cache writer; preserve this path before retrying.`,
       ),
-      { code: 'CACHE_CLEAR_PRESERVED', retainedPath: file },
+      /** @satisfies {Partial<RecoverableError>} */ ({ code: 'CACHE_CLEAR_PRESERVED', retainedPath: file }),
     )
   }
 }

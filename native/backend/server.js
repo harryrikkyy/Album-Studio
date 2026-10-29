@@ -14,6 +14,7 @@ const util = require('util')
 const { jsonLines, MAX_LINE_BYTES } = require('./lib/json_lines')
 const { createProtocolWriter } = require('./lib/protocol_writer')
 const { validateRequest, validateResult, validateEvent, serializeError } = require('../contracts/runtime')
+/** @typedef {import('../contracts/runtime').RecoverableError} RecoverableError */
 
 // stdout is the protocol: anything a module prints (some shared modules log with
 // console.log) goes to stderr, the shell's log, instead of breaking a reply line.
@@ -90,15 +91,25 @@ if (require.main === module && process.argv[2] === '--native-publication') {
         const { method, params = {} } = request
         const fn = Object.prototype.hasOwnProperty.call(registry, method) ? registry[method] : null
         if (typeof fn !== 'function')
-          throw Object.assign(new Error(`unknown method \`${method}\``), { code: 'METHOD_UNKNOWN' })
+          throw Object.assign(
+            new Error(`unknown method \`${method}\``),
+            /** @satisfies {Partial<RecoverableError>} */ ({ code: 'METHOD_UNKNOWN' }),
+          )
         if (active.has(id))
-          throw Object.assign(new Error('This request id is already running.'), { code: 'REQUEST_DUPLICATE' })
+          throw Object.assign(
+            new Error('This request id is already running.'),
+            /** @satisfies {Partial<RecoverableError>} */ ({ code: 'REQUEST_DUPLICATE' }),
+          )
         if (active.size >= maximum)
           throw Object.assign(
             new Error('Album Studio is handling too many requests. Wait for a current operation to finish.'),
-            { code: 'REQUEST_BUSY', retryable: true },
+            /** @satisfies {Partial<RecoverableError>} */ ({ code: 'REQUEST_BUSY', retryable: true }),
           )
-        if (!allowed(method)) throw Object.assign(new Error('Sign in to Album Studio first.'), { code: 'signedOut' })
+        if (!allowed(method))
+          throw Object.assign(
+            new Error('Sign in to Album Studio first.'),
+            /** @satisfies {Partial<RecoverableError>} */ ({ code: 'signedOut' }),
+          )
         active.add(id)
         held = true
         invoked = true

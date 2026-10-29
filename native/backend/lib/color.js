@@ -8,6 +8,7 @@ const crypto = require('crypto')
 const zlib = require('zlib')
 const { cacheRoot } = require('./cache')
 const { createPrivateStage, finishPrivateStage } = require('./private_stage')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 const MAX_PROFILE = 16 * 1024 * 1024
 const verifiedProfiles = new Map()
@@ -43,9 +44,12 @@ function compositeError(detail) {
 async function readPsdBuffer(file) {
   const same = (a, b) => ['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
   const changed = () =>
-    Object.assign(compositeError('the source changed during reading; retry from a stable original'), {
-      code: 'SOURCE_CHANGED',
-    })
+    Object.assign(
+      compositeError('the source changed during reading; retry from a stable original'),
+      /** @satisfies {Partial<RecoverableError>} */ ({
+        code: 'SOURCE_CHANGED',
+      }),
+    )
   const before = await fs.promises.lstat(file, { bigint: true })
   if (!before.isFile())
     throw compositeError('the source is not a regular file; resolve its symlink or restore the original')

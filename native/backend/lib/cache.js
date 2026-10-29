@@ -50,7 +50,7 @@ async function fileEvidence(file, { prefixBytes = 0, expectedDigest } = {}) {
     const changed = () =>
       Object.assign(
         new Error(`The source ${file} changed while its content was read. Retry from a stable source file.`),
-        { code: 'SOURCE_CHANGED' },
+        /** @satisfies {Partial<RecoverableError>} */ ({ code: 'SOURCE_CHANGED' }),
       )
     const before = await fs.promises.lstat(file, { bigint: true })
     if (!before.isFile())
@@ -118,7 +118,7 @@ async function readFileHeader(file, maximum) {
     const changed = () =>
       Object.assign(
         new Error(`The source ${file} changed while its header was read. Retry from a stable source file.`),
-        { code: 'SOURCE_CHANGED' },
+        /** @satisfies {Partial<RecoverableError>} */ ({ code: 'SOURCE_CHANGED' }),
       )
     const before = await fs.promises.lstat(file, { bigint: true })
     if (!before.isFile())
@@ -167,7 +167,7 @@ async function readVerifiedBuffer(file, expectedDigest, maximum = 512 * 1024 * 1
       new Error(
         `The source ${file} changed before its verified bytes could be consumed. Retry from the current revision.`,
       ),
-      { code: 'SOURCE_CHANGED' },
+      /** @satisfies {Partial<RecoverableError>} */ ({ code: 'SOURCE_CHANGED' }),
     )
   const before = await fs.promises.lstat(file, { bigint: true })
   if (!before.isFile() || before.size > BigInt(maximum))

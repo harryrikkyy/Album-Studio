@@ -705,9 +705,12 @@ function ownedFiles(cache) {
 
 function cancelled(isCancelled) {
   if (isCancelled && isCancelled())
-    throw Object.assign(new Error('Delivery was cancelled; the previous complete delivery was restored.'), {
-      code: 'DELIVERY_CANCELLED',
-    })
+    throw Object.assign(
+      new Error('Delivery was cancelled; the previous complete delivery was restored.'),
+      /** @satisfies {Partial<RecoverableError>} */ ({
+        code: 'DELIVERY_CANCELLED',
+      }),
+    )
 }
 
 /** makeCache(records) builds the next cache from staged stamps, before exposing any file. */

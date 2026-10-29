@@ -1,6 +1,7 @@
 // Bounded JSON-line output. Admission is explicit: retry the same unsent reply after
 // capacity returns, never re-run a completed operation to manufacture another reply.
 'use strict'
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const DEFAULTS = Object.freeze({
   maxMessageBytes: 64 * 1024 * 1024,
   maxQueuedBytes: 64 * 1024 * 1024,
@@ -120,9 +121,12 @@ function createProtocolWriter(stream, options = {}) {
     const timer = setTimeout(
       () =>
         failAll(
-          Object.assign(new Error(`The protocol write did not complete within ${limits.writeTimeoutMs} ms.`), {
-            code: 'PROTOCOL_WRITE_TIMEOUT',
-          }),
+          Object.assign(
+            new Error(`The protocol write did not complete within ${limits.writeTimeoutMs} ms.`),
+            /** @satisfies {Partial<RecoverableError>} */ ({
+              code: 'PROTOCOL_WRITE_TIMEOUT',
+            }),
+          ),
         ),
       limits.writeTimeoutMs,
     )
