@@ -49,11 +49,6 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Canonical contracts, dependency boundaries and packaged closure
-        run: |
-          mkdir -p ci-evidence
-          npm run check:architecture > ci-evidence/architecture.json
-
       - name: Typecheck
         run: npm run typecheck
 
@@ -66,6 +61,12 @@ jobs:
         run: npm audit --prefix native/ui --audit-level=high
 
       - uses: ./.github/actions/setup-album-engine
+
+      # The contract check reads the engine's shell source, which the setup above reconstructs.
+      - name: Canonical contracts, dependency boundaries and packaged closure
+        run: |
+          mkdir -p ci-evidence
+          npm run check:architecture > ci-evidence/architecture.json
 
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
