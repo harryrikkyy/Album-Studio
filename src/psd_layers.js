@@ -134,77 +134,88 @@ async function convertNodes(
   /** @type {any[]} */ out,
 ) {
   for (let i = 0; i < nodes.length; i++) {
-    const n = nodes[i]
     const id = idPrefix ? `${idPrefix}/${i}` : String(i)
-    const isGroup = Array.isArray(n.children)
-    /** @type {any} */
-    const node = {
-      id,
-      name: n.name || (isGroup ? 'Group' : 'Layer'),
-      kind: isGroup ? 'group' : n.text ? 'text' : 'raster',
-      // ag-psd reports `hidden`; the UI thinks in terms of visibility.
-      visible: !n.hidden,
-      opacity: typeof n.opacity === 'number' ? n.opacity : 1,
-      blendMode: n.blendMode || 'normal',
-      // A clipped layer is masked by the nearest non-clipped layer BELOW it.
-      clipped: !!n.clipping,
-      x: n.left || 0,
-      y: n.top || 0,
-      w: (n.right || 0) - (n.left || 0),
-      h: (n.bottom || 0) - (n.top || 0),
-      isFrame: isFrameName(n.name),
-      png: null,
-    }
-    // Text layers carry enough to (a) show the copy for editing and (b) draw
-    // a stand-in when the user changes it. `transform` is PSD's 6-value affine
-    // [a,b,c,d,tx,ty]; the scale in it multiplies the point size, and tx/ty is
-    // the text's anchor on the canvas.
-    if (n.text) {
-      node.text = n.text.text || ''
-      const st = n.text.style || {}
-      const ps = n.text.paragraphStyle || {}
-      const tr = Array.isArray(n.text.transform) ? n.text.transform : [1, 0, 0, 1, node.x, node.y]
-      const scale = Math.abs(tr[0]) || 1
-      const c = st.fillColor || { r: 0, g: 0, b: 0 }
-      node.textStyle = {
-        font: (st.font && st.font.name) || null,
-        // Point size times the layer's own transform scale — a template that
-        // was scaled after the type was set reports the ORIGINAL size, so
-        // ignoring the transform renders it visibly too small.
-        sizePx: (st.fontSize || 12) * scale,
-        color:
-          '#' +
-          [c.r, c.g, c.b]
-            .map((v) =>
-              Math.max(0, Math.min(255, Math.round(v)))
-                .toString(16)
-                .padStart(2, '0'),
-            )
-            .join(''),
-        // Photoshop tracking is 1/1000 em.
-        tracking: (st.tracking || 0) / 1000,
-        align: ps.justification === 'center' ? 'center' : ps.justification === 'right' ? 'right' : 'left',
-        anchorX: tr[4],
-        anchorY: tr[5],
-      }
-    }
-
-    if (isGroup) {
-      node.children = []
-      await convertNodes(n.children, dir, id, node.children)
-    } else {
-      const png = path.join(dir, `${id.replace(/\//g, '_')}.png`)
-      try {
-        node.png = await writeLayerPng(n, png)
-      } catch (e) {
-        // One unreadable layer must not lose the whole tree — the panel still
-        // lists it, it just has no thumbnail/pixels to draw.
-        node.png = null
-        node.error = e instanceof Error ? e.message : String(e)
-      }
-    }
-    out.push(node)
+    out.push(await convertNode(nodes[i], id, dir))
   }
+}
+
+/**
+ * The style a stand-in needs to draw a text layer. `transform` is PSD's
+ * 6-value affine [a,b,c,d,tx,ty]; the scale in it multiplies the point size,
+ * and tx/ty is the text's anchor on the canvas.
+ */
+function textLayerStyle(/** @type {any} */ text, /** @type {number} */ x, /** @type {number} */ y) {
+  const st = text.style || {}
+  const ps = text.paragraphStyle || {}
+  const tr = Array.isArray(text.transform) ? text.transform : [1, 0, 0, 1, x, y]
+  const scale = Math.abs(tr[0]) || 1
+  const c = st.fillColor || { r: 0, g: 0, b: 0 }
+  return {
+    font: (st.font && st.font.name) || null,
+    // Point size times the layer's own transform scale — a template that
+    // was scaled after the type was set reports the ORIGINAL size, so
+    // ignoring the transform renders it visibly too small.
+    sizePx: (st.fontSize || 12) * scale,
+    color:
+      '#' +
+      [c.r, c.g, c.b]
+        .map((v) =>
+          Math.max(0, Math.min(255, Math.round(v)))
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join(''),
+    // Photoshop tracking is 1/1000 em.
+    tracking: (st.tracking || 0) / 1000,
+    align: ps.justification === 'center' ? 'center' : ps.justification === 'right' ? 'right' : 'left',
+    anchorX: tr[4],
+    anchorY: tr[5],
+  }
+}
+
+/** One ag-psd node as a tree node, with a group's children converted and a layer's PNG written. */
+async function convertNode(/** @type {any} */ n, /** @type {string} */ id, /** @type {string} */ dir) {
+  const isGroup = Array.isArray(n.children)
+  /** @type {any} */
+  const node = {
+    id,
+    name: n.name || (isGroup ? 'Group' : 'Layer'),
+    kind: isGroup ? 'group' : n.text ? 'text' : 'raster',
+    // ag-psd reports `hidden`; the UI thinks in terms of visibility.
+    visible: !n.hidden,
+    opacity: typeof n.opacity === 'number' ? n.opacity : 1,
+    blendMode: n.blendMode || 'normal',
+    // A clipped layer is masked by the nearest non-clipped layer BELOW it.
+    clipped: !!n.clipping,
+    x: n.left || 0,
+    y: n.top || 0,
+    w: (n.right || 0) - (n.left || 0),
+    h: (n.bottom || 0) - (n.top || 0),
+    isFrame: isFrameName(n.name),
+    png: null,
+  }
+  // Text layers carry enough to (a) show the copy for editing and (b) draw
+  // a stand-in when the user changes it.
+  if (n.text) {
+    node.text = n.text.text || ''
+    node.textStyle = textLayerStyle(n.text, node.x, node.y)
+  }
+
+  if (isGroup) {
+    node.children = []
+    await convertNodes(n.children, dir, id, node.children)
+  } else {
+    const png = path.join(dir, `${id.replace(/\//g, '_')}.png`)
+    try {
+      node.png = await writeLayerPng(n, png)
+    } catch (e) {
+      // One unreadable layer must not lose the whole tree — the panel still
+      // lists it, it just has no thumbnail/pixels to draw.
+      node.png = null
+      node.error = e instanceof Error ? e.message : String(e)
+    }
+  }
+  return node
 }
 
 /**
@@ -386,6 +397,86 @@ function resolveClipping(/** @type {any[]} */ drawOrder) {
   })
 }
 
+/** Visibility and opacity, only where the edit differs from what the PSD already says. */
+function visibilityOps(/** @type {any} */ op, /** @type {any} */ node, /** @type {any} */ edit) {
+  if (edit.hidden !== undefined && edit.hidden === !node.visible) {
+    // Matches the PSD already — nothing to do.
+  } else if (edit.hidden !== undefined) {
+    op.hidden = edit.hidden
+  }
+  if (edit.opacity !== undefined && edit.opacity !== node.opacity) {
+    op.opacity = edit.opacity
+  }
+}
+
+/**
+ * Move/scale, in canvas pixels. Photoshop resizes about the layer's centre, so
+ * the translate is pre-compensated for the drift that introduces — see the JSX
+ * for the arithmetic.
+ */
+function transformOps(/** @type {any} */ op, /** @type {any} */ node, /** @type {any} */ edit) {
+  if (edit.dx) op.dx = edit.dx
+  if (edit.dy) op.dy = edit.dy
+  if (edit.sx != null && edit.sx !== 1) op.sx = edit.sx
+  if (edit.sy != null && edit.sy !== 1) op.sy = edit.sy
+  if (op.sx || op.sy) {
+    op.w = node.w
+    op.h = node.h
+  }
+}
+
+/**
+ * Retyped copy goes in as LIVE type: Photoshop re-renders it in the template's
+ * own font, so the delivered PSD is exact — the editor's stand-in was only ever
+ * a preview.
+ */
+function retypeOps(/** @type {any} */ op, /** @type {any} */ node, /** @type {any} */ edit) {
+  if (edit.text !== undefined && node.kind === 'text' && edit.text !== node.text) {
+    op.text = edit.text
+    // Re-assert the face. Replacing a text layer's contents can drop it
+    // back to the document default — observed on a real template, where
+    // a script face came back as a plain sans. The PostScript name is
+    // what Photoshop wants, and it is exactly what ag-psd reports.
+    if (node.textStyle && node.textStyle.font) op.font = node.textStyle.font
+  }
+}
+
+/**
+ * Style overrides set in the editor's Template-layer panel. These travel
+ * independently of the copy: recolouring a caption without retyping it is a
+ * real edit and has to reach the delivered PSD.
+ */
+function textStyleOps(/** @type {any} */ op, /** @type {any} */ node, /** @type {any} */ edit) {
+  if (node.kind !== 'text' || !edit.textStyle) return
+  const st = edit.textStyle
+  if (st.font) op.font = st.font
+  if (st.sizePx > 0) op.sizePx = st.sizePx
+  if (st.color) op.color = st.color
+  if (st.align) op.align = st.align
+  if (st.tracking != null) op.tracking = st.tracking
+  if (st.lineHeight > 0) op.lineHeight = st.lineHeight
+  if (st.weight) op.weight = st.weight
+  if (st.italic != null) op.italic = !!st.italic
+}
+
+// An op is emitted only when it changes one of these; a path, name or face alone changes nothing.
+const EMITTED_OP_KEYS = [
+  'hidden',
+  'opacity',
+  'dx',
+  'dy',
+  'sx',
+  'sy',
+  'text',
+  'sizePx',
+  'color',
+  'align',
+  'tracking',
+  'lineHeight',
+  'weight',
+  'italic',
+]
+
 /**
  * Translate layer overrides into instructions the build JSX can apply.
  *
@@ -419,52 +510,11 @@ function toPhotoshopLayerOps(layers, layerEdits) {
       if (edit) {
         /** @type {any} */
         const op = { path: here, name: node.name }
-        if (edit.hidden !== undefined && edit.hidden === !node.visible) {
-          // Matches the PSD already — nothing to do.
-        } else if (edit.hidden !== undefined) {
-          op.hidden = edit.hidden
-        }
-        if (edit.opacity !== undefined && edit.opacity !== node.opacity) {
-          op.opacity = edit.opacity
-        }
-        // Move/scale, in canvas pixels. Photoshop resizes about the layer's
-        // centre, so the translate is pre-compensated for the drift that
-        // introduces — see the JSX for the arithmetic.
-        if (edit.dx) op.dx = edit.dx
-        if (edit.dy) op.dy = edit.dy
-        if (edit.sx != null && edit.sx !== 1) op.sx = edit.sx
-        if (edit.sy != null && edit.sy !== 1) op.sy = edit.sy
-        if (op.sx || op.sy) {
-          op.w = node.w
-          op.h = node.h
-        }
-        // Retyped copy goes in as LIVE type: Photoshop re-renders it in the
-        // template's own font, so the delivered PSD is exact — the editor's
-        // stand-in was only ever a preview.
-        if (edit.text !== undefined && node.kind === 'text' && edit.text !== node.text) {
-          op.text = edit.text
-          // Re-assert the face. Replacing a text layer's contents can drop it
-          // back to the document default — observed on a real template, where
-          // a script face came back as a plain sans. The PostScript name is
-          // what Photoshop wants, and it is exactly what ag-psd reports.
-          if (node.textStyle && node.textStyle.font) op.font = node.textStyle.font
-        }
-        // Style overrides set in the editor's Template-layer panel. These
-        // travel independently of the copy: recolouring a caption without
-        // retyping it is a real edit and has to reach the delivered PSD.
-        if (node.kind === 'text' && edit.textStyle) {
-          const st = edit.textStyle
-          if (st.font) op.font = st.font
-          if (st.sizePx > 0) op.sizePx = st.sizePx
-          if (st.color) op.color = st.color
-          if (st.align) op.align = st.align
-          if (st.tracking != null) op.tracking = st.tracking
-          if (st.lineHeight > 0) op.lineHeight = st.lineHeight
-          if (st.weight) op.weight = st.weight
-          if (st.italic != null) op.italic = !!st.italic
-        }
-        const TEXT_KEYS = ['sizePx', 'color', 'align', 'tracking', 'lineHeight', 'weight', 'italic']
-        if (['hidden', 'opacity', 'dx', 'dy', 'sx', 'sy', 'text', ...TEXT_KEYS].some((k) => k in op)) ops.push(op)
+        visibilityOps(op, node, edit)
+        transformOps(op, node, edit)
+        retypeOps(op, node, edit)
+        textStyleOps(op, node, edit)
+        if (EMITTED_OP_KEYS.some((k) => k in op)) ops.push(op)
       }
       if (node.children) walk(node.children, here)
     }

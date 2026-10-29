@@ -25,9 +25,8 @@ function rgba(w, h, [r, g, b, a = 255]) {
   return { width: w, height: h, data: d }
 }
 
-let FIXTURE = null
-function fixturePath() {
-  if (FIXTURE) return FIXTURE
+/** Writes a PSD with ag-psd into a fresh temporary folder and returns its path. */
+function writeTemplate(psd) {
   const agpsd = require('ag-psd')
   agpsd.initializeCanvas((w, h) => ({
     width: w,
@@ -36,6 +35,14 @@ function fixturePath() {
       createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
     }),
   }))
+  const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'psdfix-')), 'template.psd')
+  fs.writeFileSync(p, Buffer.from(agpsd.writePsdBuffer(psd)))
+  return p
+}
+
+let FIXTURE = null
+function fixturePath() {
+  if (FIXTURE) return FIXTURE
   const psd = {
     width: 800,
     height: 600,
@@ -62,10 +69,20 @@ function fixturePath() {
       { name: 'Hidden flourish', left: 600, top: 400, hidden: true, imageData: rgba(120, 120, [0, 0, 255]) },
     ],
   }
-  const p = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'psdfix-')), 'template.psd')
-  fs.writeFileSync(p, Buffer.from(agpsd.writePsdBuffer(psd)))
-  FIXTURE = p
-  return p
+  FIXTURE = writeTemplate(psd)
+  return FIXTURE
+}
+
+/** Reads a one-off template, removing it and its layer cache after the test. */
+async function readOnce(t, psd) {
+  const file = writeTemplate(psd)
+  const read = () => readPsdLayerTree(file, { force: true })
+  const first = await read()
+  t.after(() => {
+    fs.rmSync(path.dirname(file), { recursive: true, force: true })
+    if (first.cacheDir) fs.rmSync(first.cacheDir, { recursive: true, force: true })
+  })
+  return { first, read }
 }
 
 let TREE = null
@@ -174,6 +191,68 @@ test('duplicate layer names do not collide (ids are index paths)', async () => {
   const frame = flat.find((n) => n.name === 'toolkithframe1')
   assert.notEqual(group.id, frame.id)
   assert.ok(frame.id.startsWith(group.id + '/'), 'child id nests under its group')
+})
+
+test('text layers carry their copy and the style a stand-in draws with', async (t) => {
+  const { first } = await readOnce(t, {
+    width: 400,
+    height: 300,
+    children: [
+      {
+        name: 'Title',
+        left: 40,
+        top: 60,
+        text: {
+          text: 'Hello',
+          transform: [2, 0, 0, 2, 50, 90],
+          style: { font: { name: 'ArialMT' }, fontSize: 18, fillColor: { r: 300, g: 20.4, b: -5 }, tracking: 50 },
+          paragraphStyle: { justification: 'center' },
+        },
+      },
+      { name: 'Credit', left: 10, top: 10, text: { text: 'By', paragraphStyle: { justification: 'right' } } },
+      { name: 'Plain', left: 10, top: 10, text: { text: 'Hi' } },
+    ],
+  })
+  assert.equal(first.ok, true, first.error)
+  const [title, credit, plain] = first.layers
+  assert.deepEqual([title.kind, title.text, credit.text, plain.text], ['text', 'Hello', 'By', 'Hi'])
+  // The point size times the layer's own scale; each colour channel clamped and rounded;
+  // tracking in em; the anchor is the transform's translation.
+  assert.deepEqual(title.textStyle, {
+    font: 'ArialMT',
+    sizePx: 36,
+    color: '#ff1400',
+    tracking: 0.05,
+    align: 'center',
+    anchorX: 50,
+    anchorY: 90,
+  })
+  assert.equal(credit.textStyle.align, 'right')
+  // Without a size, colour or tracking in the PSD: 12 px, black, none.
+  const { font, ...plainStyle } = plain.textStyle
+  assert.equal(typeof font, 'string')
+  assert.deepEqual(plainStyle, { sizePx: 12, color: '#000000', tracking: 0, align: 'left', anchorX: 0, anchorY: 0 })
+})
+
+test('a layer whose PNG cannot be written keeps its place and reports why', async (t) => {
+  const { first, read } = await readOnce(t, {
+    width: 100,
+    height: 80,
+    children: [
+      { name: 'Paper', left: 0, top: 0, imageData: rgba(100, 80, [250, 250, 250]) },
+      { name: 'Stamp', left: 10, top: 10, imageData: rgba(20, 20, [200, 0, 0]) },
+    ],
+  })
+  // A folder where the stamp's PNG goes makes writing it fail on the next read.
+  fs.rmSync(first.layers[1].png)
+  fs.mkdirSync(first.layers[1].png)
+  const again = await read()
+  assert.equal(again.ok, true, again.error)
+  const [paper, stamp] = again.layers
+  assert.ok(paper.png && fs.existsSync(paper.png))
+  assert.deepEqual([stamp.name, stamp.kind, stamp.png], ['Stamp', 'raster', null])
+  assert.equal(typeof stamp.error, 'string')
+  assert.ok(stamp.error.length > 0)
 })
 
 test('the second read is served from cache', async () => {

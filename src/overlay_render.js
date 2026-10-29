@@ -424,6 +424,44 @@
   }
 
   /**
+   * Whether an edit changes how a template TEXT layer looks. A style-only
+   * change (recolour, resize, re-face) still needs a stand-in, so this is
+   * not gated on the text having been retyped — only on there being
+   * SOMETHING to draw differently.
+   *
+   * @param {any} node a flattened PSD layer node
+   * @param {any} edit its layer edit (.text and/or .textStyle)
+   * @returns {boolean}
+   */
+  function psdTextEdited(node, edit) {
+    const hasStyle = !!(edit.textStyle && Object.keys(edit.textStyle).length)
+    const retyped = edit.text !== undefined && edit.text !== node.text
+    return node.kind === 'text' && (retyped || hasStyle)
+  }
+
+  /**
+   * Where a stand-in caption sits: its size, the PSD's anchor moved by the
+   * edit, and a generous box placed so THIS alignment's anchor lands on the
+   * PSD's.
+   *
+   * @param {any} node a flattened PSD layer node
+   * @param {any} edit its layer edit (.dx/.dy move the anchor)
+   * @param {any} st the resolved text style (see psdTextStyle)
+   * @param {number} W canvas width
+   */
+  function psdTextBox(node, edit, st, W) {
+    // ag-psd doesn't always report a size; the layer's own height is a
+    // close enough fallback for a single line to stay legible.
+    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, node.h * 0.8)
+    const anchorX = (st.anchorX == null ? node.x : st.anchorX) + (edit.dx || 0)
+    const anchorY = (st.anchorY == null ? node.y + node.h : st.anchorY) + (edit.dy || 0)
+    const align = st.align || 'left'
+    const boxW = Math.max(node.w * 2, W * 0.5)
+    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
+    return { sizePx, anchorY, align, boxW, x }
+  }
+
+  /**
    * Build the stand-in overlay for an edited template TEXT layer.
    *
    * Lives here, in the module BOTH sides load, because the geometry is
@@ -438,24 +476,9 @@
    * @returns {any|null} an overlay layer, or null if nothing to draw
    */
   function psdTextOverlay(node, edit, W, H) {
-    if (!node || !edit) return null
-    // A style-only change (recolour, resize, re-face) still needs a
-    // stand-in, so this is no longer gated on the text having been
-    // retyped — only on there being SOMETHING to draw differently.
-    const hasStyle = !!(edit.textStyle && Object.keys(edit.textStyle).length)
-    const retyped = edit.text !== undefined && edit.text !== node.text
-    if (node.kind !== 'text') return null
-    if (!retyped && !hasStyle) return null
+    if (!node || !edit || !psdTextEdited(node, edit)) return null
     const st = psdTextStyle(node, edit)
-    // ag-psd doesn't always report a size; the layer's own height is a
-    // close enough fallback for a single line to stay legible.
-    const sizePx = st.sizePx && st.sizePx > 4 ? st.sizePx : Math.max(12, node.h * 0.8)
-    const anchorX = (st.anchorX == null ? node.x : st.anchorX) + (edit.dx || 0)
-    const anchorY = (st.anchorY == null ? node.y + node.h : st.anchorY) + (edit.dy || 0)
-    const align = st.align || 'left'
-    // A generous box, placed so THIS alignment's anchor lands on the PSD's.
-    const boxW = Math.max(node.w * 2, W * 0.5)
-    const x = align === 'center' ? anchorX - boxW / 2 : align === 'right' ? anchorX - boxW : anchorX
+    const { sizePx, anchorY, align, boxW, x } = psdTextBox(node, edit, st, W)
     return {
       id: 'psdtext_' + node.id,
       type: 'text',

@@ -150,14 +150,10 @@
     "max-len": 3
   },
   "src/overlay_render.js": {
-    "max-len": 1,
-    "complexity": 1
+    "max-len": 1
   },
   "src/proof_renderer.js": {
     "complexity": 3
-  },
-  "src/psd_layers.js": {
-    "complexity": 2
   },
   "test/architecture_boundaries.test.js": {
     "max-len": 4
