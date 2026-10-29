@@ -50,9 +50,11 @@ modules (`runtime.js`, `overlay_render.js`, `psd_layers.js`, `proof_renderer.js`
 helpers, with no behaviour change; 63 of the 73 remain for batches 4b-2 to 4b-5 and phase 5. Before
 each change, new tests pinned what it could move: exact limit issues and step counts, every schema
 rejection, PSD text layers and unwritable PNGs, and the proof renderer's sharp calls and output
-bytes. Each was mutation-checked. `proof_renderer.js` coverage rose from 35% to 94% of lines, and
-`psd_layers.js` from 90% to 96%. Each refactored function was then compared with the original on
-268,731 seeded random inputs, with 0 differences, and each comparison caught deliberate mutants.
+bytes. Each was mutation-checked. In the shared suite, `proof_renderer.js` coverage rose from 35%
+to 94% of lines, and `psd_layers.js` from 90% to 99%. Each refactored function was then compared
+with the original: 268,731 comparisons in all, mostly seeded random inputs plus the authored
+examples and test fixtures, with the validators' 40,409 inputs run under the real limits and five
+scaled ones. There were 0 differences, and each comparison caught deliberate mutants.
 Splitting the renderer exposed a real bug, now fixed with a test: on a page with edited template
 layers, a photo that couldn't be read moved every later photo into the previous frame's place in
 the layer stack, under or over the wrong template art. Readability stays at 7 until more of the
@@ -85,8 +87,13 @@ the layer stack, under or over the wrong template art. Readability stays at 7 un
   nothing passes; and three explicit `any` types for 4d to narrow (`makeCache`'s result,
   `onConflict`'s conflict, the overlay list).
 - Phase 4 (from 4b-1): the proof renderer's pinning tests hash the JPEG bytes sharp writes on
-  macOS with Apple silicon (CI's platform), so a sharp upgrade or another runner needs new pins,
-  taken before any renderer change.
+  macOS with Apple silicon (CI's platform), so another runner, or a sharp update such as
+  Dependabot's weekly ones, needs new pins taken before any renderer change. Nothing yet pins
+  which stack slot each photo takes on an edited-template page holding both h and v photos; pin
+  one before batch 4b-3. On an edited-template page, two frames with the same name share one
+  slot, so one of their photos is lost; flattened pages draw both (this predates 4b-1).
+  `contrastStage` applies clarity, and `matchesArray`/`matchesObject` return false or nothing
+  where `matchesCombinator` returns a boolean; clearer names would help.
 - CI: the native workspace's Rust tests fail on GitHub ("Workspace tests" in run 40826660009).
   The engine checkout is outside this programme; the failure is not yet diagnosed.
 - Phase 5: five accessibility findings in three controls lack keyboard operation: the
