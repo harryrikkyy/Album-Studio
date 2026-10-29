@@ -87,7 +87,7 @@ Two environment settings help with testing:
 |---|---|
 | `npm run format:check` | Prettier formatting of the JavaScript, TypeScript, JSON and YAML; `npm run format` fixes it |
 | `npm run lint` | ESLint 10 over all JavaScript and the interface's TypeScript (typescript-eslint, jsx-a11y); any warning fails. `eslint-suppressions.json` records findings left for later phases and may only shrink (after a fix, `npm run lint:eslint -- --prune-suppressions`). Then the readability ratchet (`native/scripts/check-readability.mjs`: no file may gain lines over 160 characters or functions above complexity 20) |
-| `npm run typecheck` | `tsc` over the shared modules and backend files that opt in with `// @ts-check`, and the interface |
+| `npm run typecheck` | `tsc` over the shared modules and backend files that opt in with `// @ts-check` (strict), every backend runtime file with null checks (`native/backend/tsconfig.checked.json`), and the interface |
 | `npm run check:architecture` | Dependency boundaries, module reachability, canonical contracts and the packaged closure |
 | `node native/scripts/engine.mjs test-node` | All three application suites against the pinned CLI/helper (`npm run test:strict`), with coverage limits on the shared and backend suites; rejects skips |
 | `npm --prefix native/ui run build` | Production interface assets |

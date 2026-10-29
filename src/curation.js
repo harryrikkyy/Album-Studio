@@ -226,10 +226,10 @@ async function analyzeFolder(folderPath, onProgress) {
  * Curate a feature set into a recommended subset.
  *
  * @param {Array} features          - output of analyzeFolder()
- * @param {object} options
- * @param {number} options.minSharpness   - drop photos below this Laplacian variance (default 80)
- * @param {number} options.minExposure    - drop photos below this exposure score (default 0.25)
- * @param {number} options.dupThreshold   - Hamming threshold for "near-duplicate" (default 8)
+ * @param {object} [options]
+ * @param {number} [options.minSharpness]   - drop photos below this Laplacian variance (default 80)
+ * @param {number} [options.minExposure]    - drop photos below this exposure score (default 0.25)
+ * @param {number} [options.dupThreshold]   - Hamming threshold for "near-duplicate" (default 8)
  * @param {number} [options.targetH]      - cap horizontal keepers
  * @param {number} [options.targetV]      - cap vertical keepers
  * @param {boolean} [options.preferSharpFromCluster=true] - keep only the sharpest from each cluster

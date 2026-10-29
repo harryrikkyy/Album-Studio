@@ -108,7 +108,7 @@ function httpsPost(hostname, urlPath, body, contentType, signal) {
           res.on('end', () => {
             try {
               const parsed = JSON.parse(d)
-              if (!(res.statusCode >= 200 && res.statusCode < 300)) {
+              if (!(res.statusCode !== undefined && res.statusCode >= 200 && res.statusCode < 300)) {
                 finish(new Error(parsed?.error?.message || `Firebase request failed (${res.statusCode}).`))
               } else finish(null, parsed)
             } catch (_) {
@@ -224,7 +224,11 @@ async function getValidIdToken(apiKey) {
   if (!refreshToken) return null
   const email = (_mem && _mem.email) || persisted.email || ''
 
-  const pending = { generation: _generation, controller: new AbortController(), promise: null }
+  const pending = {
+    generation: _generation,
+    controller: new AbortController(),
+    promise: /** @type {Promise<string | null> | null} */ (null),
+  }
   pending.promise = (async () => {
     try {
       const session = await refreshSession(refreshToken, apiKey, email, pending.controller.signal)

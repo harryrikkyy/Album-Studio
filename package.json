@@ -19,7 +19,7 @@
     "lint:eslint": "eslint --max-warnings 0 eslint.config.mjs src test server scripts bench native",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p native/backend && npm --prefix native/ui run typecheck"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p native/backend && tsc --noEmit -p native/backend/tsconfig.checked.json && npm --prefix native/ui run typecheck"
   },
   "dependencies": {
     "ag-psd": "^31.0.2",
