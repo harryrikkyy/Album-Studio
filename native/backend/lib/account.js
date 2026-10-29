@@ -379,8 +379,9 @@ async function complete(code, redirectUri, verifier, expectedGeneration) {
 /**
  * Sign in with Google in the browser; answers when it's done (the account's status) or failed.
  * Asked again while waiting, it shows the browser page again and waits for the same sign-in.
+ * @param {object} [_p]
+ * @param {{ emit?: (event: string, data: object) => void }} [options]
  */
-/** @param {object} [_p] @param {{ emit?: (event: string, data: object) => void }} [options] */
 async function signIn(_p = {}, { emit } = {}) {
   if (flow) {
     const existing = flow

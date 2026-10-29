@@ -713,8 +713,8 @@ function cancelled(isCancelled) {
     )
 }
 
-/** makeCache(records) builds the next cache from staged stamps, before exposing any file. */
 /**
+ * makeCache(records) builds the next cache from staged stamps, before exposing any file.
  * @param {{
  *   paths?: Record<string, string>,
  *   makeCache?: (records: Array<{ target: string, stamp: string, digest: string }>) => any,

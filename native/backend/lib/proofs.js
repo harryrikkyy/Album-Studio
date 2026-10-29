@@ -114,8 +114,6 @@ async function freshManifest(albumDir) {
 /**
  * A rendered sheet's own image became spread n's proof: it is current until the spread changes,
  * or until the sheet is saved again from the editor (then the proof is redrawn from it).
- */
-/**
  * @param {{ proof?: string, expectedHash?: string, projectText?: string,
  *   lease?: { assertOwned: () => unknown, outputNamespace?: { assertFor: (folder: string) => unknown } } }} [options]
  */

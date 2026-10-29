@@ -126,8 +126,10 @@ async function scanCollection(dir, dimensions) {
   return list
 }
 
-/** All templates of these collection folders. */
-/** @param {{ onConflict?: (conflict: any) => unknown, dimensions?: boolean }} [options] */
+/**
+ * All templates of these collection folders.
+ * @param {{ onConflict?: (conflict: any) => unknown, dimensions?: boolean }} [options]
+ */
 async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }, options = {}) {
   const { onConflict, dimensions = true } = options
   const out = []

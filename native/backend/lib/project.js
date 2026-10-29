@@ -488,10 +488,11 @@ const OPS = {
 
 // ── public ──────────────────────────────────────────────────────────────────
 
-/** Hold one canonical project lease for the complete operation, including migration/readback.
+/**
+ * Hold one canonical project lease for the complete operation, including migration/readback.
  * A job passes its existing capability; nested migration must not queue behind its caller.
+ * @param {{ lease?: Awaited<ReturnType<typeof acquireProjectLease>>, kind?: string }} [options]
  */
-/** @param {{ lease?: Awaited<ReturnType<typeof acquireProjectLease>>, kind?: string }} [options] */
 async function withProjectLease(albumPath, work, options = {}) {
   const { lease: provided, kind = 'edit' } = options
   const location = await canonicalProject(albumPath)
