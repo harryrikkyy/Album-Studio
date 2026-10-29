@@ -256,20 +256,43 @@ test('unsupported schema policies fail at load, and scaled traversal budgets sto
     vm.runInContext(source, ctx)
     return ctx
   }
-  for (const shape of [
-    true,
-    { type: 'string', format: 'unchecked' },
-    { $ref: '#/$defs/Path', maxLength: 3 },
-    { anyOf: [{ type: 'null' }], type: 'number' },
-    { type: 'array', uniqueItems: true, items: { type: 'object', additionalProperties: false } },
-  ])
-    assert.throws(
-      () =>
-        context((s) => {
-          s.$defs.Empty = shape
-        }),
-      { code: 'CONTRACT_SCHEMA_INVALID' },
-    )
+  const invalid = (message) => ({ message, code: 'CONTRACT_SCHEMA_INVALID' })
+  const unsupported = invalid('Unsupported canonical schema keyword format.'),
+    notUnique = invalid('Canonical unique arrays require primitive items.')
+  for (const [shape, expected] of [
+    [true, invalid('Unchecked true schemas are not supported.')],
+    [{ type: 'string', format: 'unchecked' }, unsupported],
+    [{ $ref: '#/$defs/Path', maxLength: 3 }, invalid('Reference schemas cannot silently ignore sibling constraints.')],
+    [{ $ref: '#/$defs/Missing' }, invalid('The canonical schema has an unresolved reference.')],
+    [{ $ref: 'https://example.com/schema' }, invalid('The canonical schema has an unsupported reference.')],
+    [
+      { anyOf: [{ type: 'null' }], type: 'number' },
+      invalid('Union schemas cannot silently ignore sibling constraints.'),
+    ],
+    [{ type: 'array', uniqueItems: true, items: { type: 'object', additionalProperties: false } }, notUnique],
+    [{ type: 'array', uniqueItems: true }, notUnique],
+    [{ type: 'array', uniqueItems: true, items: { enum: ['a', { b: 1 }] } }, notUnique],
+    [{ type: 'string', pattern: '(' }, { name: 'SyntaxError' }],
+    // Rejections are found wherever a schema can nest.
+    [{ type: 'object', properties: { a: { format: 'x' } } }, unsupported],
+    [{ type: 'array', items: { format: 'x' } }, unsupported],
+    [{ type: 'object', propertyNames: { format: 'x' } }, unsupported],
+    [{ type: 'object', additionalProperties: { format: 'x' } }, unsupported],
+    [{ oneOf: [{ type: 'null' }, { format: 'x' }] }, unsupported],
+    [{ $defs: { Inner: { format: 'x' } } }, unsupported],
+    // Annotations may sit beside a reference or a union, and unique arrays may hold primitive choices.
+    [false, null],
+    [{ $ref: '#/$defs/Path', $comment: 'c', description: 'd', title: 't' }, null],
+    [{ anyOf: [{ type: 'null' }], description: 'd' }, null],
+    [{ type: 'array', uniqueItems: true, items: { enum: ['a', 1, true, null] } }, null],
+  ]) {
+    const load = () =>
+      context((s) => {
+        s.$defs.Empty = shape
+      })
+    if (expected) assert.throws(load, expected)
+    else assert.doesNotThrow(load)
+  }
   // Scale only the public policy constants in an isolated copy of the same implementation;
   // exercising millions of nodes is unnecessary to verify shared traversal termination.
   // Errors from the copy belong to another realm, so compare their plain JSON form.

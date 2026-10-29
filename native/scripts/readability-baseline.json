@@ -149,9 +149,6 @@
   "native/backend/test/render_transaction.test.js": {
     "max-len": 3
   },
-  "native/contracts/runtime.js": {
-    "complexity": 2
-  },
   "src/overlay_render.js": {
     "max-len": 1,
     "complexity": 1

@@ -334,55 +334,46 @@ const messageOf = (error) => {
   const message = typeof error === 'string' ? error : field(error, 'message')
   return typeof message === 'string' && message ? message.slice(0, 16384) : 'The operation could not be completed.'
 }
-function serializeError(error) {
-  const code = field(error, 'code'),
-    result = {
-      error: messageOf(error),
-      code: typeof code === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(code) ? code : 'OPERATION_FAILED',
-    }
-  const booleans = [
-    'renderCommitted',
-    'renderRestored',
-    'projectCommitted',
-    'deliveryCommitted',
-    'recoveryRequired',
-    'cancelled',
-    'retryable',
-  ]
-  const paths = [
-    'recoveryStage',
-    'recoveryJournal',
-    'recoveryLock',
-    'snapshotPath',
-    'retainedPath',
-    'lockPath',
-    'recoveryPath',
-  ]
-  const safePath = (value) =>
-    typeof value === 'string' && value.startsWith('/') && !value.includes('\0') && value.length <= 4096
-  let source = error
-  const seen = new Set()
-  for (
-    let depth = 0;
-    source && typeof source === 'object' && depth < 4 && !seen.has(source);
-    depth++, source = field(source, 'cause')
-  ) {
-    seen.add(source)
-    for (const key of booleans)
-      if (!own(result, key) && typeof field(source, key) === 'boolean') result[key] = field(source, key)
-    for (const key of paths) if (!own(result, key) && safePath(field(source, key))) result[key] = field(source, key)
-    const retainedPaths = field(source, 'retainedPaths')
-    if (!result.retainedPaths && Array.isArray(retainedPaths))
-      result.retainedPaths = arrayFields(retainedPaths, 64).filter(safePath)
-    const sourceCode = field(source, 'sourceCode')
-    if (!result.sourceCode && typeof sourceCode === 'string' && sourceCode.length > 0 && sourceCode.length <= 128)
-      result.sourceCode = sourceCode
-    const closeErrors = field(source, 'closeErrors')
-    if (!result.closeErrors && Array.isArray(closeErrors))
-      result.closeErrors = arrayFields(closeErrors, 64).map(messageOf)
-    for (const key of ['cleanupError', 'releaseError'])
-      if (!result[key] && field(source, key)) result[key] = messageOf(field(source, key))
-  }
+const recoveryFlags = [
+  'renderCommitted',
+  'renderRestored',
+  'projectCommitted',
+  'deliveryCommitted',
+  'recoveryRequired',
+  'cancelled',
+  'retryable',
+]
+const recoveryPaths = [
+  'recoveryStage',
+  'recoveryJournal',
+  'recoveryLock',
+  'snapshotPath',
+  'retainedPath',
+  'lockPath',
+  'recoveryPath',
+]
+const safePath = (value) =>
+  typeof value === 'string' && value.startsWith('/') && !value.includes('\0') && value.length <= 4096
+// Copies one error's recovery details; a value already taken from a nearer error in the chain wins.
+function copyRecoveryFields(result, source) {
+  for (const key of recoveryFlags)
+    if (!own(result, key) && typeof field(source, key) === 'boolean') result[key] = field(source, key)
+  for (const key of recoveryPaths)
+    if (!own(result, key) && safePath(field(source, key))) result[key] = field(source, key)
+  const retainedPaths = field(source, 'retainedPaths')
+  if (!result.retainedPaths && Array.isArray(retainedPaths))
+    result.retainedPaths = arrayFields(retainedPaths, 64).filter(safePath)
+  const sourceCode = field(source, 'sourceCode')
+  if (!result.sourceCode && typeof sourceCode === 'string' && sourceCode.length > 0 && sourceCode.length <= 128)
+    result.sourceCode = sourceCode
+  const closeErrors = field(source, 'closeErrors')
+  if (!result.closeErrors && Array.isArray(closeErrors))
+    result.closeErrors = arrayFields(closeErrors, 64).map(messageOf)
+  for (const key of ['cleanupError', 'releaseError'])
+    if (!result[key] && field(source, key)) result[key] = messageOf(field(source, key))
+}
+// Copies the outermost error's contract issues and field name.
+function copyDetails(result, error) {
   const issues = field(error, 'issues')
   if (Array.isArray(issues))
     result.details = {
@@ -393,63 +384,78 @@ function serializeError(error) {
       })),
     }
   if (typeof field(error, 'field') === 'string') result.field = field(error, 'field').slice(0, 4096)
+}
+function serializeError(error) {
+  const code = field(error, 'code'),
+    result = {
+      error: messageOf(error),
+      code: typeof code === 'string' && /^[A-Za-z][A-Za-z0-9_-]{0,127}$/.test(code) ? code : 'OPERATION_FAILED',
+    }
+  let source = error
+  const seen = new Set()
+  for (
+    let depth = 0;
+    source && typeof source === 'object' && depth < 4 && !seen.has(source);
+    depth++, source = field(source, 'cause')
+  ) {
+    seen.add(source)
+    copyRecoveryFields(result, source)
+  }
+  copyDetails(result, error)
   return validateDefinition('ErrorData', result)
 }
 
-function auditSchema(schema) {
-  if (schema === true)
-    throw new ContractError('Unchecked true schemas are not supported.', [], 'CONTRACT_SCHEMA_INVALID')
-  if (schema === false) return
-  const supported = new Set([
-    '$schema',
-    '$id',
-    '$comment',
-    '$defs',
-    'title',
-    'description',
-    '$ref',
-    'type',
-    'const',
-    'enum',
-    'anyOf',
-    'oneOf',
-    'properties',
-    'required',
-    'additionalProperties',
-    'maxProperties',
-    'propertyNames',
-    'items',
-    'minItems',
-    'maxItems',
-    'uniqueItems',
-    'minimum',
-    'maximum',
-    'minLength',
-    'maxLength',
-    'pattern',
-  ])
+const schemaKeywords = new Set([
+  '$schema',
+  '$id',
+  '$comment',
+  '$defs',
+  'title',
+  'description',
+  '$ref',
+  'type',
+  'const',
+  'enum',
+  'anyOf',
+  'oneOf',
+  'properties',
+  'required',
+  'additionalProperties',
+  'maxProperties',
+  'propertyNames',
+  'items',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'minimum',
+  'maximum',
+  'minLength',
+  'maxLength',
+  'pattern',
+])
+function auditKeywords(schema) {
   for (const key of Object.keys(schema))
-    if (!supported.has(key))
+    if (!schemaKeywords.has(key))
       throw new ContractError(`Unsupported canonical schema keyword ${key}.`, [], 'CONTRACT_SCHEMA_INVALID')
-  if (schema.$ref) {
-    resolve(schema.$ref)
-    if (Object.keys(schema).some((key) => !['$ref', '$comment', 'description', 'title'].includes(key)))
-      throw new ContractError(
-        'Reference schemas cannot silently ignore sibling constraints.',
-        [],
-        'CONTRACT_SCHEMA_INVALID',
-      )
-  }
-  if (schema.anyOf || schema.oneOf) {
-    if (Object.keys(schema).some((key) => !['anyOf', 'oneOf', '$comment', 'description', 'title'].includes(key)))
-      throw new ContractError(
-        'Union schemas cannot silently ignore sibling constraints.',
-        [],
-        'CONTRACT_SCHEMA_INVALID',
-      )
-    for (const child of schema.anyOf || schema.oneOf) auditSchema(child)
-  }
-  if (schema.pattern) new RegExp(schema.pattern, 'u')
+}
+function auditReference(schema) {
+  if (!schema.$ref) return
+  resolve(schema.$ref)
+  if (Object.keys(schema).some((key) => !['$ref', '$comment', 'description', 'title'].includes(key)))
+    throw new ContractError(
+      'Reference schemas cannot silently ignore sibling constraints.',
+      [],
+      'CONTRACT_SCHEMA_INVALID',
+    )
+}
+function auditUnion(schema) {
+  if (!schema.anyOf && !schema.oneOf) return
+  if (Object.keys(schema).some((key) => !['anyOf', 'oneOf', '$comment', 'description', 'title'].includes(key)))
+    throw new ContractError('Union schemas cannot silently ignore sibling constraints.', [], 'CONTRACT_SCHEMA_INVALID')
+  for (const child of schema.anyOf || schema.oneOf) auditSchema(child)
+}
+// Uniqueness is checked with a Set (see matchesArray), so unique arrays must hold primitive items.
+function auditUniqueItems(schema) {
   if (
     schema.uniqueItems &&
     (!schema.items ||
@@ -457,6 +463,16 @@ function auditSchema(schema) {
         !schema.items.enum?.every((value) => value === null || ['string', 'number', 'boolean'].includes(typeof value))))
   )
     throw new ContractError('Canonical unique arrays require primitive items.', [], 'CONTRACT_SCHEMA_INVALID')
+}
+function auditSchema(schema) {
+  if (schema === true)
+    throw new ContractError('Unchecked true schemas are not supported.', [], 'CONTRACT_SCHEMA_INVALID')
+  if (schema === false) return
+  auditKeywords(schema)
+  auditReference(schema)
+  auditUnion(schema)
+  if (schema.pattern) new RegExp(schema.pattern, 'u')
+  auditUniqueItems(schema)
   for (const child of Object.values(schema.$defs || {})) auditSchema(child)
   for (const child of Object.values(schema.properties || {})) auditSchema(child)
   for (const key of ['items', 'propertyNames']) if (schema[key]) auditSchema(schema[key])
