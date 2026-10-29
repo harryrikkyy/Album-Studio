@@ -121,23 +121,40 @@ function partitionFrames(frames) {
 // Ordering is deliberate: greyscale → tone/colour → local contrast → detail.
 // Sharpening before a big contrast push would amplify halos.
 function applyAdjust(sharp, pipeline, adj, dims) {
-  if (!adj) return pipeline
-  const exposure = adj.exposure || 0
-  const saturation = adj.saturation || 0
-  const contrast = adj.contrast || 0
-  const warmth = adj.warmth || 0
-  const tint = adj.tint || 0
-  const fade = adj.fade || 0
-  const clarity = adj.clarity || 0
-  const sharpenAmt = adj.sharpen || 0
-  const blurAmt = adj.blur || 0
-  const bw = !!adj.bw
-  if (!exposure && !saturation && !contrast && !warmth && !tint && !fade && !clarity && !sharpenAmt && !blurAmt && !bw)
-    return pipeline
+  const sliders = adjustSliders(adj)
+  if (!sliders) return pipeline
+  pipeline = greyscaleStage(pipeline, sliders)
+  pipeline = toneStage(pipeline, sliders)
+  pipeline = contrastStage(pipeline, sliders, dims)
+  return detailStage(pipeline, sliders, dims)
+}
 
-  // Greyscale first so the colour ops below tone the mono result.
-  if (bw) pipeline = pipeline.greyscale()
+// The adjustment's sliders with missing ones at 0, or null when none is set.
+function adjustSliders(adj) {
+  if (!adj) return null
+  const sliders = {
+    exposure: adj.exposure || 0,
+    saturation: adj.saturation || 0,
+    contrast: adj.contrast || 0,
+    warmth: adj.warmth || 0,
+    tint: adj.tint || 0,
+    fade: adj.fade || 0,
+    clarity: adj.clarity || 0,
+    sharpen: adj.sharpen || 0,
+    blur: adj.blur || 0,
+    bw: !!adj.bw,
+  }
+  return Object.values(sliders).some(Boolean) ? sliders : null
+}
 
+// Greyscale first so the colour ops below tone the mono result.
+function greyscaleStage(pipeline, { bw }) {
+  return bw ? pipeline.greyscale() : pipeline
+}
+
+// Brightness and saturation, then contrast, colour balance and fade folded
+// into one linear pass.
+function toneStage(pipeline, { exposure, saturation, contrast, warmth, tint, fade, bw }) {
   if (exposure || (saturation && !bw)) {
     pipeline = pipeline.modulate({
       brightness: Math.pow(2, exposure / 100), // ±1 stop at ±100
@@ -157,27 +174,31 @@ function applyAdjust(sharp, pipeline, adj, dims) {
     const inter = gains.map((g) => g * 128 * (1 - s) + lift)
     pipeline = pipeline.linear(slopes, inter)
   }
+  return pipeline
+}
 
-  // Local contrast. CLAHE's window is a fraction of the output box so the
-  // effect covers the same real-world area at proof and export size.
-  if (clarity > 0 && dims && dims.width && dims.height) {
-    const win = Math.max(3, Math.round(Math.min(dims.width, dims.height) / 8))
-    pipeline = pipeline.clahe({
-      width: win,
-      height: win,
-      maxSlope: Math.max(1, Math.round(1 + (clarity / 100) * 5)),
-    })
-  }
+// Local contrast. CLAHE's window is a fraction of the output box so the
+// effect covers the same real-world area at proof and export size.
+function contrastStage(pipeline, { clarity }, dims) {
+  if (!(clarity > 0 && dims && dims.width && dims.height)) return pipeline
+  const win = Math.max(3, Math.round(Math.min(dims.width, dims.height) / 8))
+  return pipeline.clahe({
+    width: win,
+    height: win,
+    maxSlope: Math.max(1, Math.round(1 + (clarity / 100) * 5)),
+  })
+}
 
-  // Detail ops last. Radii scale with the box so proof and export match.
+// Detail ops last. Radii scale with the box so proof and export match.
+function detailStage(pipeline, { sharpen, blur }, dims) {
   const detailScale = dims && dims.height ? dims.height / 1000 : 1
-  if (sharpenAmt > 0) {
+  if (sharpen > 0) {
     pipeline = pipeline.sharpen({
-      sigma: Math.max(0.3, (0.5 + (sharpenAmt / 100) * 1.5) * Math.max(0.35, detailScale)),
+      sigma: Math.max(0.3, (0.5 + (sharpen / 100) * 1.5) * Math.max(0.35, detailScale)),
     })
   }
-  if (blurAmt > 0) {
-    pipeline = pipeline.blur(Math.max(0.3, (blurAmt / 100) * 12 * Math.max(0.35, detailScale)))
+  if (blur > 0) {
+    pipeline = pipeline.blur(Math.max(0.3, (blur / 100) * 12 * Math.max(0.35, detailScale)))
   }
   return pipeline
 }
@@ -200,6 +221,54 @@ function vignetteSvg(width, height, strength) {
       `</radialGradient></defs>` +
       `<rect width="${width}" height="${height}" fill="url(#v)"/></svg>`,
   )
+}
+
+// How a photo fills its frame. An explicit placement transform (on-canvas
+// zoom/pan) takes precedence over focal/cover. scale=1, ox=0, oy=0 reduces
+// exactly to cover-fit + centered, so this is a strict generalization.
+function photoFit(photo, smartCrop) {
+  const pl = photo.placement
+  if (pl && ((pl.scale && pl.scale !== 1) || pl.ox || pl.oy)) return 'placement'
+  if (smartCrop && photo.focal && photo.focal.confidence > 0.15) return 'focal'
+  return 'cover'
+}
+
+// The zoom/pan crop window in the oriented source (sW × sH): cover the frame
+// box, zoom in by the placement's scale, and pan by ox/oy in [-1, 1].
+function placementCrop(sW, sH, fW, fH, pl) {
+  const coverScale = Math.max(fW / sW, fH / sH)
+  const s = coverScale * Math.max(1, pl.scale || 1)
+  const cropW = Math.min(sW, Math.max(1, Math.round(fW / s)))
+  const cropH = Math.min(sH, Math.max(1, Math.round(fH / s)))
+  const maxLeft = sW - cropW
+  const maxTop = sH - cropH
+  const ox = Math.max(-1, Math.min(1, pl.ox || 0))
+  const oy = Math.max(-1, Math.min(1, pl.oy || 0))
+  const left = Math.max(0, Math.min(maxLeft, Math.round(maxLeft / 2 + (ox * maxLeft) / 2)))
+  const top = Math.max(0, Math.min(maxTop, Math.round(maxTop / 2 + (oy * maxTop) / 2)))
+  return { left, top, width: cropW, height: cropH }
+}
+
+// The frame box's aspect cut from the oriented source (srcW × srcH), centred
+// on the focal point as far as the edges allow.
+function focalCrop(srcW, srcH, fW, fH, focal) {
+  const targetRatio = fW / fH
+  let cropW, cropH
+  if (srcW / srcH > targetRatio) {
+    // Source is wider than target — crop horizontally.
+    cropH = srcH
+    cropW = Math.round(srcH * targetRatio)
+  } else {
+    cropW = srcW
+    cropH = Math.round(srcW / targetRatio)
+  }
+  const fx = Math.round(focal.x * srcW)
+  const fy = Math.round(focal.y * srcH)
+  // Clamp the crop window so the focal point sits as close to the
+  // center of the crop as possible without going off the edge.
+  const left = Math.max(0, Math.min(srcW - cropW, fx - Math.round(cropW / 2)))
+  const top = Math.max(0, Math.min(srcH - cropH, fy - Math.round(cropH / 2)))
+  return { left, top, width: cropW, height: cropH }
 }
 
 // Build the per-photo composite layer: read photo, rotate by exif/explicit
@@ -236,52 +305,18 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
       if (photo.rotation) base = base.rotate(photo.rotation)
 
       let pipe
-      // Explicit placement transform (on-canvas zoom/pan) takes precedence
-      // over focal/cover. scale=1, ox=0, oy=0 reduces exactly to cover-fit +
-      // centered, so this is a strict generalization.
-      const pl = photo.placement
-      const hasPlacement = pl && ((pl.scale && pl.scale !== 1) || pl.ox || pl.oy)
-      if (hasPlacement) {
-        const orientedBuf = await base.toBuffer()
-        const meta = await sharp(orientedBuf).metadata()
-        const sW = meta.width
-        const sH = meta.height
-        const coverScale = Math.max(fW / sW, fH / sH)
-        const s = coverScale * Math.max(1, pl.scale || 1)
-        const cropW = Math.min(sW, Math.max(1, Math.round(fW / s)))
-        const cropH = Math.min(sH, Math.max(1, Math.round(fH / s)))
-        const maxLeft = sW - cropW
-        const maxTop = sH - cropH
-        const ox = Math.max(-1, Math.min(1, pl.ox || 0))
-        const oy = Math.max(-1, Math.min(1, pl.oy || 0))
-        const left = Math.max(0, Math.min(maxLeft, Math.round(maxLeft / 2 + (ox * maxLeft) / 2)))
-        const top = Math.max(0, Math.min(maxTop, Math.round(maxTop / 2 + (oy * maxTop) / 2)))
-        pipe = sharp(orientedBuf).extract({ left, top, width: cropW, height: cropH }).resize(fW, fH, { fit: 'fill' })
-      } else if (smartCrop && photo.focal && photo.focal.confidence > 0.15) {
+      const fit = photoFit(photo, smartCrop)
+      if (fit !== 'cover') {
         // Materialise the oriented image so metadata() reports the TRUE
         // (post-orientation) dimensions — otherwise the crop window is
         // computed against the stored sideways dims and lands wrong.
         const orientedBuf = await base.toBuffer()
         const meta = await sharp(orientedBuf).metadata()
-        const srcW = meta.width
-        const srcH = meta.height
-        const targetRatio = fW / fH
-        let cropW, cropH
-        if (srcW / srcH > targetRatio) {
-          // Source is wider than target — crop horizontally.
-          cropH = srcH
-          cropW = Math.round(srcH * targetRatio)
-        } else {
-          cropW = srcW
-          cropH = Math.round(srcW / targetRatio)
-        }
-        const fx = Math.round(photo.focal.x * srcW)
-        const fy = Math.round(photo.focal.y * srcH)
-        // Clamp the crop window so the focal point sits as close to the
-        // center of the crop as possible without going off the edge.
-        const left = Math.max(0, Math.min(srcW - cropW, fx - Math.round(cropW / 2)))
-        const top = Math.max(0, Math.min(srcH - cropH, fy - Math.round(cropH / 2)))
-        pipe = sharp(orientedBuf).extract({ left, top, width: cropW, height: cropH }).resize(fW, fH, { fit: 'fill' })
+        const crop =
+          fit === 'placement'
+            ? placementCrop(meta.width, meta.height, fW, fH, photo.placement)
+            : focalCrop(meta.width, meta.height, fW, fH, photo.focal)
+        pipe = sharp(orientedBuf).extract(crop).resize(fW, fH, { fit: 'fill' })
       } else {
         pipe = base.resize({
           width: fW,
@@ -347,12 +382,65 @@ async function renderPageProof(job) {
   // Callers supply focal points when available. The removed plugin dispatcher
   // was never part of this application's runtime closure.
 
-  // Cheap hash of the inputs that affect output. Caller can use this to skip
-  // work (matches the render queue's dirty-tracking approach). NOTE: frames
-  // are NOT hashed — they are a deterministic function of the template file
-  // (templateKey already captures path+size+mtime), so including them was
-  // redundant work on every page of a batch.
-  const hash = crypto
+  const hash = proofHash(job, maxEdge, smartCrop)
+
+  try {
+    fs.mkdirSync(path.dirname(job.outputPath), { recursive: true })
+
+    let base = backdrop(sharp, job, dims)
+    const { frames, built, skipped } = await photoLayers(sharp, job, scale, smartCrop)
+    let layers = built.filter(Boolean)
+
+    // If the user turned template layers off (or faded them) in the Page
+    // Editor, the flattened backdrop no longer represents the page — rebuild
+    // it from the layer stack, with the photos interleaved at their frames'
+    // z-positions so template art above a frame stays above the photo.
+    const hasLayerEdits = job.layerEdits && Object.keys(job.layerEdits).length > 0
+    if (hasLayerEdits && job.psdLayers && job.psdLayers.length) {
+      layers = await stackLayers(sharp, job, frames, layers, scale)
+      // The stack draws the whole page, so the flattened backdrop underneath
+      // it would show through anywhere a layer was switched off.
+      base = sharp({
+        create: {
+          width: dims.width,
+          height: dims.height,
+          channels: 4,
+          background: parseHexColor(job.pageBackground) || { r: 255, g: 255, b: 255, alpha: 0 },
+        },
+      })
+    }
+
+    // Overlay layers (text, shapes) sit ON TOP of every photo — appended last
+    // so they win the z-order. One SVG for the whole page: librsvg rasterises
+    // it at output resolution, so text stays crisp at export size instead of
+    // being upscaled from the proof.
+    const overlaySvg = buildOverlaySvg(pageOverlays(job), dims.width, dims.height)
+    if (overlaySvg) {
+      layers.push({ input: Buffer.from(overlaySvg), top: 0, left: 0 })
+    }
+
+    const finalQuality = job._hrMode ? 92 : 82
+    await base.composite(layers).jpeg({ quality: finalQuality, mozjpeg: true }).toFile(job.outputPath)
+
+    return {
+      ok: true,
+      outputPath: job.outputPath,
+      ms: Date.now() - t0,
+      hash,
+      skipped: skipped.length ? skipped : undefined,
+    }
+  } catch (err) {
+    return { ok: false, error: err.message, ms: Date.now() - t0, hash }
+  }
+}
+
+// Cheap hash of the inputs that affect output. Caller can use this to skip
+// work (matches the render queue's dirty-tracking approach). NOTE: frames
+// are NOT hashed — they are a deterministic function of the template file
+// (templateKey already captures path+size+mtime), so including them was
+// redundant work on every page of a batch.
+function proofHash(job, maxEdge, smartCrop) {
+  return crypto
     .createHash('sha1')
     .update(
       JSON.stringify({
@@ -380,136 +468,93 @@ async function renderPageProof(job) {
     )
     .digest('hex')
     .slice(0, 16)
+}
 
-  try {
-    fs.mkdirSync(path.dirname(job.outputPath), { recursive: true })
-
-    // Backdrop: prefer the template's preview JPG if it exists, otherwise a
-    // plain off-white canvas at the doc's aspect.
-    let base
-    if (job.templatePreviewPath && fs.existsSync(job.templatePreviewPath)) {
-      base = sharp(job.templatePreviewPath, { failOn: 'none' }).resize(dims.width, dims.height, { fit: 'fill' })
-    } else {
-      base = sharp({
-        create: {
-          width: dims.width,
-          height: dims.height,
-          channels: 3,
-          background: parseHexColor(job.pageBackground) || { r: 245, g: 244, b: 240 },
-        },
-      })
-    }
-
-    // Sort frames the same way JSX does: h frames first, then v frames.
-    const { h: hFrames, v: vFrames } = partitionFrames(job.frames)
-
-    // Match the JSX assignment: hPhotos to hFrames in order, vPhotos to vFrames
-    // in order. Anything past the frame count gets dropped (same as JSX).
-    const hPhotos = []
-    const vPhotos = []
-    for (const p of job.photos) {
-      if (p.orient === 'h') hPhotos.push(p)
-      else vPhotos.push(p)
-    }
-
-    const layerResults = []
-    const skipped = []
-    for (let i = 0; i < hPhotos.length && i < hFrames.length; i++) {
-      layerResults.push(
-        buildPhotoLayer(sharp, hPhotos[i], hFrames[i], scale, smartCrop).catch((e) => {
-          skipped.push({ frame: hFrames[i].name, error: e.message })
-          return null
-        }),
-      )
-    }
-    for (let i = 0; i < vPhotos.length && i < vFrames.length; i++) {
-      layerResults.push(
-        buildPhotoLayer(sharp, vPhotos[i], vFrames[i], scale, smartCrop).catch((e) => {
-          skipped.push({ frame: vFrames[i].name, error: e.message })
-          return null
-        }),
-      )
-    }
-
-    let layers = (await Promise.all(layerResults)).filter(Boolean)
-
-    // If the user turned template layers off (or faded them) in the Page
-    // Editor, the flattened backdrop no longer represents the page — rebuild
-    // it from the layer stack, with the photos interleaved at their frames'
-    // z-positions so template art above a frame stays above the photo.
-    const hasLayerEdits = job.layerEdits && Object.keys(job.layerEdits).length > 0
-    if (hasLayerEdits && job.psdLayers && job.psdLayers.length) {
-      const { ops, frameOrder } = buildPsdStackOps(job.psdLayers, job.layerEdits, scale)
-
-      // The photo layers were built in h-then-v order; map them back to the
-      // frame they occupy so each can be slotted into the stack.
-      const placed = []
-      let li = 0
-      for (let i = 0; i < hPhotos.length && i < hFrames.length; i++)
-        placed.push({ frame: hFrames[i], layer: layers[li++] })
-      for (let i = 0; i < vPhotos.length && i < vFrames.length; i++)
-        placed.push({ frame: vFrames[i], layer: layers[li++] })
-
-      for (const { frame, layer } of placed) {
-        if (!layer) continue
-        const at = frameOrder.get(frame.name)
-        if (at === undefined)
-          ops.push(layer) // frame not in the parsed stack
-        else ops[at] = layer
-      }
-
-      const realised = []
-      for (const op of ops) {
-        if (!op) continue // an empty photo slot
-        realised.push(op._layer ? await realisePsdOp(sharp, op, scale) : op)
-      }
-      layers = realised
-      // The stack draws the whole page, so the flattened backdrop underneath
-      // it would show through anywhere a layer was switched off.
-      base = sharp({
-        create: {
-          width: dims.width,
-          height: dims.height,
-          channels: 4,
-          background: parseHexColor(job.pageBackground) || { r: 255, g: 255, b: 255, alpha: 0 },
-        },
-      })
-    }
-
-    // Overlay layers (text, shapes) sit ON TOP of every photo — appended last
-    // so they win the z-order. One SVG for the whole page: librsvg rasterises
-    // it at output resolution, so text stays crisp at export size instead of
-    // being upscaled from the proof.
-    // Retyped template text draws through the same overlay pipeline as any
-    // other caption, so there is only ever one text renderer in this file.
-    let pageOverlays = job.overlays || []
-    if (job.layerEdits && job.psdLayers) {
-      try {
-        const { textReplacementOverlays } = require('./psd_layers')
-        const subs = textReplacementOverlays(job.psdLayers, job.layerEdits, job.canvasWidth, job.canvasHeight)
-        if (subs.length) pageOverlays = pageOverlays.concat(subs)
-      } catch (_) {
-        /* stand-ins are best-effort; the page still renders */
-      }
-    }
-    const overlaySvg = buildOverlaySvg(pageOverlays, dims.width, dims.height)
-    if (overlaySvg) {
-      layers.push({ input: Buffer.from(overlaySvg), top: 0, left: 0 })
-    }
-
-    const finalQuality = job._hrMode ? 92 : 82
-    await base.composite(layers).jpeg({ quality: finalQuality, mozjpeg: true }).toFile(job.outputPath)
-
-    return {
-      ok: true,
-      outputPath: job.outputPath,
-      ms: Date.now() - t0,
-      hash,
-      skipped: skipped.length ? skipped : undefined,
-    }
-  } catch (err) {
-    return { ok: false, error: err.message, ms: Date.now() - t0, hash }
+// Backdrop: prefer the template's preview JPG if it exists, otherwise a
+// plain off-white canvas at the doc's aspect.
+function backdrop(sharp, job, dims) {
+  if (job.templatePreviewPath && fs.existsSync(job.templatePreviewPath)) {
+    return sharp(job.templatePreviewPath, { failOn: 'none' }).resize(dims.width, dims.height, { fit: 'fill' })
   }
+  return sharp({
+    create: {
+      width: dims.width,
+      height: dims.height,
+      channels: 3,
+      background: parseHexColor(job.pageBackground) || { r: 245, g: 244, b: 240 },
+    },
+  })
+}
+
+// Every photo's layer, built at once: h photos into h frames, then v photos
+// into v frames. `built` holds a layer, or null for a skipped photo, per
+// entry of `frames`.
+async function photoLayers(sharp, job, scale, smartCrop) {
+  // Sort frames the same way JSX does: h frames first, then v frames.
+  const { h: hFrames, v: vFrames } = partitionFrames(job.frames)
+
+  // Match the JSX assignment: hPhotos to hFrames in order, vPhotos to vFrames
+  // in order. Anything past the frame count gets dropped (same as JSX).
+  const hPhotos = []
+  const vPhotos = []
+  for (const p of job.photos) {
+    if (p.orient === 'h') hPhotos.push(p)
+    else vPhotos.push(p)
+  }
+  const pairs = []
+  for (let i = 0; i < hPhotos.length && i < hFrames.length; i++) pairs.push({ photo: hPhotos[i], frame: hFrames[i] })
+  for (let i = 0; i < vPhotos.length && i < vFrames.length; i++) pairs.push({ photo: vPhotos[i], frame: vFrames[i] })
+
+  const skipped = []
+  const built = await Promise.all(
+    pairs.map(({ photo, frame }) =>
+      buildPhotoLayer(sharp, photo, frame, scale, smartCrop).catch((e) => {
+        skipped.push({ frame: frame.name, error: e.message })
+        return null
+      }),
+    ),
+  )
+  return { frames: pairs.map(({ frame }) => frame), built, skipped }
+}
+
+// The page drawn from the template's own layer stack, with each photo layer
+// slotted in at its frame's position.
+async function stackLayers(sharp, job, frames, layers, scale) {
+  const { ops, frameOrder } = buildPsdStackOps(job.psdLayers, job.layerEdits, scale)
+
+  // The photo layers were built in h-then-v order; map them back to the
+  // frame they occupy so each can be slotted into the stack.
+  for (let i = 0; i < frames.length; i++) {
+    const layer = layers[i]
+    if (!layer) continue
+    const at = frameOrder.get(frames[i].name)
+    if (at === undefined)
+      ops.push(layer) // frame not in the parsed stack
+    else ops[at] = layer
+  }
+
+  const realised = []
+  for (const op of ops) {
+    if (!op) continue // an empty photo slot
+    realised.push(op._layer ? await realisePsdOp(sharp, op, scale) : op)
+  }
+  return realised
+}
+
+// The page's overlays. Retyped template text draws through the same overlay
+// pipeline as any other caption, so there is only ever one text renderer in
+// this file.
+function pageOverlays(job) {
+  const overlays = job.overlays || []
+  if (!job.layerEdits || !job.psdLayers) return overlays
+  try {
+    const { textReplacementOverlays } = require('./psd_layers')
+    const subs = textReplacementOverlays(job.psdLayers, job.layerEdits, job.canvasWidth, job.canvasHeight)
+    if (subs.length) return overlays.concat(subs)
+  } catch (_) {
+    /* stand-ins are best-effort; the page still renders */
+  }
+  return overlays
 }
 
 /**

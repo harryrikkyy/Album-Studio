@@ -152,9 +152,6 @@
   "src/overlay_render.js": {
     "max-len": 1
   },
-  "src/proof_renderer.js": {
-    "complexity": 3
-  },
   "test/architecture_boundaries.test.js": {
     "max-len": 4
   },
