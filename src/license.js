@@ -70,7 +70,7 @@ function loadLicense() {
       return null
     }
     return data
-  } catch(e) { return null }
+  } catch { return null }
 }
 
 function getDaysRemaining(expiresOn) {
@@ -82,7 +82,7 @@ function getDaysRemaining(expiresOn) {
 }
 
 function clearLicense() {
-  try { fs.unlinkSync(LICENSE_FILE) } catch(e) {}
+  try { fs.unlinkSync(LICENSE_FILE) } catch {}
 }
 
 // Single source of truth for offline license validation. Used by both the

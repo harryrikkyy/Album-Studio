@@ -14,7 +14,8 @@
     "test": "node --test test/*.test.js && npm --prefix native/backend test && npm --prefix native/ui test",
     "test:shared": "node --test test/*.test.js",
     "test:coverage": "node --experimental-test-coverage --test test/*.test.js",
-    "lint": "eslint \"src/**/*.js\" \"test/**/*.js\" \"native/backend/**/*.js\" \"native/contracts/**/*.js\" && npm run check:readability",
+    "lint": "npm run lint:eslint && npm run check:readability",
+    "lint:eslint": "eslint --max-warnings 0 eslint.config.mjs src test server scripts bench native",
     "typecheck": "tsc --noEmit && tsc --noEmit -p native/backend && npm --prefix native/ui run typecheck"
   },
   "dependencies": {
@@ -23,8 +24,10 @@
     "sharp": "0.35.5"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.1.0",
-    "eslint": "^8.57.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
     "typescript": "^6.0.3"
   }
 }

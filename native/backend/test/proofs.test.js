@@ -165,7 +165,7 @@ test('proofs: drawn once, kept while nothing changes, moved with their spread, r
 
   const first = fs.readFileSync(live(1))
   await updateAlbum({ album: proj, ops: [{ op: 'moveSpread', from: 1, to: 2 }] })
-  ev = await refresh(proj)
+  await refresh(proj)
   assert.deepEqual(fs.readFileSync(live(2)), first, 'the moved spread took its picture along')
   assert.ok(near(await pixel(live(1), 120, 95), [0, 0, 255]))
 
@@ -175,7 +175,7 @@ test('proofs: drawn once, kept while nothing changes, moved with their spread, r
   assert.ok(ev.some((e) => e.event === 'proofs.updated' && e.n === 1 && e.proof === null))
 
   await updateAlbum({ album: proj, ops: [{ op: 'removeSpread', n: 3 }, { op: 'removeSpread', n: 1 }] })
-  ev = await refresh(proj)
+  await refresh(proj)
   assert.deepEqual(fs.readdirSync(path.join(proj, 'proofs', 'pages')).filter((f) => f.endsWith('.jpg')), ['live_page_001.jpg'], 'proofs past the end are removed')
 })
 

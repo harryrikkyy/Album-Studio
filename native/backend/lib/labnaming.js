@@ -58,8 +58,8 @@ async function thumbFor(file) {
   const out = path.join(dir, `${derivedKey(sourceKey, recipe)}.jpg`)
   return consumeSnapshot(file, sourceKey, dir, async (frozen) => {
   const sharp = getSharp()
-  let width = 0
-  let height = 0
+  let width
+  let height
   let input = frozen
   if (ext === '.psd' || ext === '.psb') {
     const head = await readHead(frozen, 4 << 20)

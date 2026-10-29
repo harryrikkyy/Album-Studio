@@ -89,7 +89,8 @@
     "complexity": 2
   },
   "native/backend/lib/project_lock.js": {
-    "max-len": 18
+    "max-len": 18,
+    "complexity": 1
   },
   "native/backend/lib/project_transaction.js": {
     "max-len": 16,
@@ -104,7 +105,7 @@
   },
   "native/backend/lib/psd_template.js": {
     "max-len": 8,
-    "complexity": 2
+    "complexity": 3
   },
   "native/backend/lib/publication_broker.js": {
     "max-len": 13,

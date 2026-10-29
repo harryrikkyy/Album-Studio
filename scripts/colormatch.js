@@ -29,7 +29,7 @@ try {
   // Reuse the project's tuned sharp (concurrency/cache); falls back to bare.
   sharp = require('../src/sharp_config').getSharp()
 } catch (_) {
-  try { sharp = require('sharp') } catch (e) {
+  try { sharp = require('sharp') } catch {
     console.error('Could not load sharp. Install dependencies with npm ci, then run:\n  node scripts/colormatch.js <ref> <cand>')
     process.exit(2)
   }
@@ -117,9 +117,9 @@ async function main() {
 
   const n = W * H
   const thr = args.threshold
-  let sumAbs = [0, 0, 0]
-  let sumSigned = [0, 0, 0]
-  let sumSq = [0, 0, 0]
+  const sumAbs = [0, 0, 0]
+  const sumSigned = [0, 0, 0]
+  const sumSq = [0, 0, 0]
   let maxDelta = 0
   let overThreshold = 0
 

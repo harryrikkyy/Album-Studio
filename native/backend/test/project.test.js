@@ -117,7 +117,7 @@ test('undo and redo walk the history; a new edit clears redo; no-op edits are no
   r = await undo({ album: proj })
   assert.equal(r.changed, false, 'nothing left to undo')
 
-  r = await redo({ album: proj })
+  await redo({ album: proj })
   assert.deepEqual(ids(read(proj), 1), [])
   r = await edit(proj, { op: 'moveSpread', from: 1, to: 1 })
   assert.deepEqual([r.canUndo, r.canRedo], [true, true], 'an edit that changes nothing is not a step')
@@ -311,10 +311,10 @@ test('a photo is zoomed and panned in its frame, clamped, and fits again; undo c
 
 test('a photo’s colour is set, clamped and cleared; undo covers it', async () => {
   const { proj } = makeProject()
-  let r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 30.4, warmth: -250, contrast: 0, bw: true, junk: 9 } })
+  const r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 30.4, warmth: -250, contrast: 0, bw: true, junk: 9 } })
   assert.deepEqual(read(proj).workspace.imageAdjustments, { [B]: { exposure: 30, warmth: -100, bw: true } }, 'kept as the Electron app does')
   assert.deepEqual(r.album.photos[B].adjust, { exposure: 30, warmth: -100, bw: true })
-  r = await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 0 } })
+  await edit(proj, { op: 'adjustPhoto', id: B, adjust: { exposure: 0 } })
   assert.deepEqual(read(proj).workspace.imageAdjustments, {}, 'all zero: the photo as it was')
   await undo({ album: proj })
   assert.deepEqual(read(proj).workspace.imageAdjustments, { [B]: { exposure: 30, warmth: -100, bw: true } })
