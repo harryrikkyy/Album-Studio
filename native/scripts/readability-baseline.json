@@ -150,7 +150,7 @@
     "max-len": 3
   },
   "native/contracts/runtime.js": {
-    "complexity": 4
+    "complexity": 2
   },
   "src/overlay_render.js": {
     "max-len": 1,

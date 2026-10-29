@@ -122,6 +122,12 @@ test('global traversal bounds fail closed before schema work and cap diagnostic 
   )
   assert.throws(() => c.validateParams('system.ping', { n: 'x'.repeat(c.limits.maxStringLength + 1) }), c.ContractError)
   assert.throws(() => c.validateParams('system.ping', { n: Array(250001).fill(0) }), c.ContractError)
+  const entries = (count) => Object.fromEntries(Array.from({ length: count }, (_, i) => ['k' + i, 0]))
+  assert.equal(Object.keys(c.validateParams('system.ping', { n: entries(250000) }).n).length, 250000)
+  assert.throws(() => c.validateParams('system.ping', { n: entries(250001) }), {
+    message: 'Invalid system.ping parameters: The object exceeds the bounded JSON entry limit. (/n).',
+    issues: [{ path: '/n', message: 'The object exceeds the bounded JSON entry limit.', keyword: 'maxProperties' }],
+  })
   assert.throws(() => c.validateParams('system.ping', { n: Array(65).fill('x'.repeat(1048576)) }), c.ContractError)
   const many = Object.fromEntries(Array.from({ length: 100 }, (_, i) => ['bad' + i, true]))
   assert.throws(
@@ -266,16 +272,53 @@ test('unsupported schema policies fail at load, and scaled traversal budgets sto
     )
   // Scale only the public policy constants in an isolated copy of the same implementation;
   // exercising millions of nodes is unnecessary to verify shared traversal termination.
+  // Errors from the copy belong to another realm, so compare their plain JSON form.
+  const failure = (ctx, code) => {
+    try {
+      vm.runInContext(code, ctx)
+    } catch (error) {
+      return JSON.parse(JSON.stringify({ message: error.message, issues: error.issues }))
+    }
+    assert.fail(`${code} was accepted`)
+  }
+  const nodeLimit = (path) => ({ path, message: 'The JSON value exceeds the bounded node limit.', keyword: 'maxNodes' })
   const nodes = context(null, original.replace('MAX_NODES = 2000000', 'MAX_NODES = 50'))
-  assert.throws(
-    () => vm.runInContext("exports.validateParams('system.ping',{n:Array.from({length:12},()=>[1,2,3,4])})", nodes),
-    (error) => error.issues.some((i) => i.keyword === 'maxNodes'),
-  )
+  assert.deepEqual(failure(nodes, "exports.validateParams('system.ping',{n:Array.from({length:12},()=>[1,2,3,4])})"), {
+    message: 'Invalid system.ping parameters: The JSON value exceeds the bounded node limit. (/n/9/2).',
+    issues: ['/n/9/2', '/n/9/3', '/n/10', '/n/11'].map(nodeLimit),
+  })
+  // Fifty nodes fit exactly: the parameters object, the array and its 48 entries.
+  assert.equal(vm.runInContext("exports.validateParams('system.ping',{n:Array(48).fill(0)}).n.length", nodes), 48)
+  assert.deepEqual(failure(nodes, "exports.validateParams('system.ping',{n:Array(49).fill(0)})").issues, [
+    nodeLimit('/n/48'),
+  ])
+  const workLimit = (path) => ({ path, message: 'The schema traversal exceeded its work limit.', keyword: 'maxSteps' })
   const steps = context(null, original.replace('MAX_STEPS = 16000000', 'MAX_STEPS = 50'))
-  assert.throws(
-    () => vm.runInContext("exports.validateParams('system.ping',{n:Array.from({length:20},()=>({key:1}))})", steps),
-    (error) => error.issues.some((i) => i.keyword === 'maxSteps'),
-  )
+  assert.deepEqual(failure(steps, "exports.validateParams('system.ping',{n:Array.from({length:20},()=>({key:1}))})"), {
+    message: 'The contract validation exceeds the bounded work limit.',
+    issues: [workLimit('/n/3')],
+  })
+  // Each schema visited is one step, including every union candidate and $ref hop: the
+  // probe array takes 9 steps and the probe object 5, so one step fewer fails on the last.
+  const probe = (limit) =>
+    context(
+      (s) => {
+        s.$defs.StepProbe = { type: 'array', items: { anyOf: [{ type: 'string' }, { $ref: '#/$defs/StepLeaf' }] } }
+        s.$defs.StepLeaf = { oneOf: [{ type: 'integer' }, { type: 'number' }] }
+        s.$defs.StepObject = {
+          type: 'object',
+          required: ['a'],
+          properties: { a: { type: 'integer' } },
+          propertyNames: { type: 'string' },
+          additionalProperties: { type: 'boolean' },
+        }
+      },
+      original.replace('MAX_STEPS = 16000000', `MAX_STEPS = ${limit}`),
+    )
+  assert.equal(vm.runInContext("exports.validateDefinition('StepProbe',[1.5,'a']).length", probe(9)), 2)
+  assert.deepEqual(failure(probe(8), "exports.validateDefinition('StepProbe',[1.5,'a'])").issues, [workLimit('/1')])
+  assert.equal(vm.runInContext("exports.validateDefinition('StepObject',{a:1,b:true}).b", probe(5)), true)
+  assert.deepEqual(failure(probe(4), "exports.validateDefinition('StepObject',{a:1,b:true})").issues, [workLimit('/b')])
 })
 test('actual disposable backend producers satisfy their canonical response contracts', async (t) => {
   const f = makeProject()

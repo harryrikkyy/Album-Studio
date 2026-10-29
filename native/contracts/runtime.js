@@ -52,14 +52,7 @@ function jsonSafe(value) {
     if (item === null || typeof item === 'boolean') return true
     if (typeof item === 'number')
       return Number.isFinite(item) || issue(issues, path, 'Numbers must be finite JSON values.', 'finite')
-    if (typeof item === 'string') {
-      if (!scalarText(item)) return issue(issues, path, 'Text must contain valid Unicode scalar values.', 'unicode')
-      characters += item.length
-      return (
-        (item.length <= MAX_STRING && characters <= MAX_TOTAL_STRING) ||
-        issue(issues, path, 'The strings exceed the bounded JSON string limit.', 'maxLength')
-      )
-    }
+    if (typeof item === 'string') return walkString(item, path)
     if (typeof item !== 'object')
       return issue(
         issues,
@@ -67,6 +60,18 @@ function jsonSafe(value) {
         'Expected a JSON value; functions, bigint, symbols and undefined array items are unsupported.',
         'json',
       )
+    return walkContainer(item, path, depth)
+  }
+  const walkString = (item, path) => {
+    if (!scalarText(item)) return issue(issues, path, 'Text must contain valid Unicode scalar values.', 'unicode')
+    characters += item.length
+    return (
+      (item.length <= MAX_STRING && characters <= MAX_TOTAL_STRING) ||
+      issue(issues, path, 'The strings exceed the bounded JSON string limit.', 'maxLength')
+    )
+  }
+  // Arrays and objects share their size, cycle and prototype checks, then walk every own entry.
+  const walkContainer = (item, path, depth) => {
     if (Array.isArray(item) && item.length > 250000)
       return issue(issues, path, 'The array exceeds the bounded JSON item limit.', 'maxItems')
     if (active.has(item)) return issue(issues, path, 'Cyclic values cannot cross the JSON boundary.', 'cycle')
@@ -85,6 +90,17 @@ function jsonSafe(value) {
     const descriptors = Object.getOwnPropertyDescriptors(item)
     if (Object.getOwnPropertySymbols(item).length)
       issue(issues, path, 'Symbol keys cannot cross the JSON boundary.', 'json')
+    walkEntries(item, descriptors, path, depth)
+    if (Array.isArray(item))
+      for (let i = 0; i < item.length; i++)
+        if (!own(descriptors, String(i))) {
+          issue(issues, at(path, i), 'Sparse array entries cannot cross the JSON boundary.', 'json')
+          break
+        }
+    active.delete(item)
+    return issues.length === 0
+  }
+  const walkEntries = (item, descriptors, path, depth) => {
     for (const key of Object.keys(descriptors)) {
       if (Array.isArray(item) && key === 'length') continue
       const descriptor = descriptors[key]
@@ -113,14 +129,6 @@ function jsonSafe(value) {
       walk(descriptor.value, at(path, key), depth + 1, !Array.isArray(item))
       if (issues.length >= MAX_ISSUES) break
     }
-    if (Array.isArray(item))
-      for (let i = 0; i < item.length; i++)
-        if (!own(descriptors, String(i))) {
-          issue(issues, at(path, i), 'Sparse array entries cannot cross the JSON boundary.', 'json')
-          break
-        }
-    active.delete(item)
-    return issues.length === 0
   }
   walk(value, '', 0)
   return issues
@@ -157,6 +165,83 @@ const typeMatches = (type, value) =>
           : type === 'number'
             ? typeof value === 'number' && Number.isFinite(value)
             : typeof value === type
+function matchesCombinator(schema, value, path, issues, depth, budget) {
+  let count = 0
+  for (const candidate of schema.anyOf || schema.oneOf) {
+    if (matches(candidate, value, path, [], depth + 1, budget)) count++
+    if (count && schema.anyOf) return true
+  }
+  return (
+    (schema.oneOf && count === 1) ||
+    issue(
+      issues,
+      path,
+      schema.oneOf ? 'Expected exactly one supported shape.' : 'Expected one of the supported shapes.',
+      schema.oneOf ? 'oneOf' : 'anyOf',
+    )
+  )
+}
+// The keyword groups below return false once an issue ends the schema's checks, or nothing to go on.
+function scalarIssue(schema, value, path, issues) {
+  if (schema.type && !typeMatches(schema.type, value)) return issue(issues, path, `Expected ${schema.type}.`, 'type')
+  if (own(schema, 'const') && value !== schema.const)
+    return issue(issues, path, 'The value does not match its fixed contract discriminator.', 'const')
+  if (schema.enum && !schema.enum.some((candidate) => candidate === value))
+    return issue(issues, path, 'The value is outside the supported choices.', 'enum')
+}
+function numberIssue(schema, value, path, issues) {
+  if (typeof value !== 'number') return
+  if (!Number.isFinite(value)) return issue(issues, path, 'Numbers must be finite.', 'finite')
+  if (schema.minimum !== undefined && value < schema.minimum)
+    return issue(issues, path, `The number is below ${schema.minimum}.`, 'minimum')
+  if (schema.maximum !== undefined && value > schema.maximum)
+    return issue(issues, path, `The number is above ${schema.maximum}.`, 'maximum')
+}
+function stringIssue(schema, value, path, issues) {
+  if (typeof value !== 'string') return
+  if (schema.minLength !== undefined && value.length < schema.minLength)
+    return issue(issues, path, 'The string is too short.', 'minLength')
+  if (schema.maxLength !== undefined && value.length > schema.maxLength)
+    return issue(issues, path, 'The string is too long.', 'maxLength')
+  if (schema.pattern) {
+    if (!patterns.has(schema.pattern)) patterns.set(schema.pattern, new RegExp(schema.pattern, 'u'))
+    if (!patterns.get(schema.pattern).test(value))
+      return issue(issues, path, 'The string does not match the supported format.', 'pattern')
+  }
+}
+function matchesArray(schema, value, path, issues, depth, budget) {
+  if (!Array.isArray(value)) return
+  if (schema.minItems !== undefined && value.length < schema.minItems)
+    return issue(issues, path, 'The array has too few items.', 'minItems')
+  if (schema.maxItems !== undefined && value.length > schema.maxItems)
+    return issue(issues, path, 'The array has too many items.', 'maxItems')
+  if (schema.items)
+    for (let i = 0; i < value.length && issues.length < MAX_ISSUES; i++)
+      matches(schema.items, value[i], at(path, i), issues, depth + 1, budget)
+  // Canonical uniqueness policies are primitive-only (spread numbers/cache IDs).
+  // Never stringify arbitrary nested values to establish uniqueness.
+  if (schema.uniqueItems && new Set(value).size !== value.length)
+    issue(issues, path, 'Array entries must be unique.', 'uniqueItems')
+}
+function matchesObject(schema, value, path, issues, depth, budget) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return
+  const keys = Object.keys(value).filter((key) => value[key] !== undefined),
+    properties = schema.properties || {}
+  if (schema.maxProperties !== undefined && keys.length > schema.maxProperties)
+    return issue(issues, path, 'The object has too many entries.', 'maxProperties')
+  for (const key of schema.required || [])
+    if (!own(value, key) || value[key] === undefined)
+      issue(issues, at(path, key), 'A required field is missing.', 'required')
+  for (const key of keys) {
+    if (schema.propertyNames) matches(schema.propertyNames, key, at(path, key), issues, depth + 1, budget)
+    if (own(properties, key)) matches(properties[key], value[key], at(path, key), issues, depth + 1, budget)
+    else if (schema.additionalProperties === false)
+      issue(issues, at(path, key), 'The field is not part of this closed contract.', 'additionalProperties')
+    else if (schema.additionalProperties && typeof schema.additionalProperties === 'object')
+      matches(schema.additionalProperties, value[key], at(path, key), issues, depth + 1, budget)
+    if (issues.length >= MAX_ISSUES) break
+  }
+}
 function matches(schema, value, path, issues, depth = 0, budget = { steps: 0 }) {
   if (++budget.steps > MAX_STEPS)
     throw new ContractError('The contract validation exceeds the bounded work limit.', [
@@ -168,75 +253,14 @@ function matches(schema, value, path, issues, depth = 0, budget = { steps: 0 }) 
   if (!schema || typeof schema !== 'object')
     throw new ContractError('The canonical schema is invalid.', [], 'CONTRACT_SCHEMA_INVALID')
   if (schema.$ref) return matches(resolve(schema.$ref), value, path, issues, depth + 1, budget)
-  if (schema.anyOf || schema.oneOf) {
-    let count = 0
-    for (const candidate of schema.anyOf || schema.oneOf) {
-      if (matches(candidate, value, path, [], depth + 1, budget)) count++
-      if (count && schema.anyOf) return true
-    }
-    return (
-      (schema.oneOf && count === 1) ||
-      issue(
-        issues,
-        path,
-        schema.oneOf ? 'Expected exactly one supported shape.' : 'Expected one of the supported shapes.',
-        schema.oneOf ? 'oneOf' : 'anyOf',
-      )
-    )
-  }
-  if (schema.type && !typeMatches(schema.type, value)) return issue(issues, path, `Expected ${schema.type}.`, 'type')
-  if (own(schema, 'const') && value !== schema.const)
-    return issue(issues, path, 'The value does not match its fixed contract discriminator.', 'const')
-  if (schema.enum && !schema.enum.some((candidate) => candidate === value))
-    return issue(issues, path, 'The value is outside the supported choices.', 'enum')
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) return issue(issues, path, 'Numbers must be finite.', 'finite')
-    if (schema.minimum !== undefined && value < schema.minimum)
-      return issue(issues, path, `The number is below ${schema.minimum}.`, 'minimum')
-    if (schema.maximum !== undefined && value > schema.maximum)
-      return issue(issues, path, `The number is above ${schema.maximum}.`, 'maximum')
-  }
-  if (typeof value === 'string') {
-    if (schema.minLength !== undefined && value.length < schema.minLength)
-      return issue(issues, path, 'The string is too short.', 'minLength')
-    if (schema.maxLength !== undefined && value.length > schema.maxLength)
-      return issue(issues, path, 'The string is too long.', 'maxLength')
-    if (schema.pattern) {
-      if (!patterns.has(schema.pattern)) patterns.set(schema.pattern, new RegExp(schema.pattern, 'u'))
-      if (!patterns.get(schema.pattern).test(value))
-        return issue(issues, path, 'The string does not match the supported format.', 'pattern')
-    }
-  }
-  if (Array.isArray(value)) {
-    if (schema.minItems !== undefined && value.length < schema.minItems)
-      return issue(issues, path, 'The array has too few items.', 'minItems')
-    if (schema.maxItems !== undefined && value.length > schema.maxItems)
-      return issue(issues, path, 'The array has too many items.', 'maxItems')
-    if (schema.items)
-      for (let i = 0; i < value.length && issues.length < MAX_ISSUES; i++)
-        matches(schema.items, value[i], at(path, i), issues, depth + 1, budget)
-    // Canonical uniqueness policies are primitive-only (spread numbers/cache IDs).
-    // Never stringify arbitrary nested values to establish uniqueness.
-    if (schema.uniqueItems && new Set(value).size !== value.length)
-      issue(issues, path, 'Array entries must be unique.', 'uniqueItems')
-  } else if (value && typeof value === 'object') {
-    const keys = Object.keys(value).filter((key) => value[key] !== undefined),
-      properties = schema.properties || {}
-    if (schema.maxProperties !== undefined && keys.length > schema.maxProperties)
-      return issue(issues, path, 'The object has too many entries.', 'maxProperties')
-    for (const key of schema.required || [])
-      if (!own(value, key) || value[key] === undefined)
-        issue(issues, at(path, key), 'A required field is missing.', 'required')
-    for (const key of keys) {
-      if (schema.propertyNames) matches(schema.propertyNames, key, at(path, key), issues, depth + 1, budget)
-      if (own(properties, key)) matches(properties[key], value[key], at(path, key), issues, depth + 1, budget)
-      else if (schema.additionalProperties === false)
-        issue(issues, at(path, key), 'The field is not part of this closed contract.', 'additionalProperties')
-      else if (schema.additionalProperties && typeof schema.additionalProperties === 'object')
-        matches(schema.additionalProperties, value[key], at(path, key), issues, depth + 1, budget)
-      if (issues.length >= MAX_ISSUES) break
-    }
-  }
+  if (schema.anyOf || schema.oneOf) return matchesCombinator(schema, value, path, issues, depth, budget)
+  const ended =
+    scalarIssue(schema, value, path, issues) ??
+    numberIssue(schema, value, path, issues) ??
+    stringIssue(schema, value, path, issues) ??
+    matchesArray(schema, value, path, issues, depth, budget) ??
+    matchesObject(schema, value, path, issues, depth, budget)
+  if (ended === false) return false
   return issues.length === 0
 }
 function validateSchema(schema, value, label = 'value') {
