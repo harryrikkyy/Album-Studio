@@ -4,9 +4,16 @@ import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
 import { fileURLToPath } from 'node:url'
+import * as prettier from 'prettier'
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const hash = bytes => crypto.createHash('sha256').update(bytes).digest('hex')
 const quote = value => JSON.stringify(value)
+// Formatted with this repository's Prettier settings, never the target root's, so --check and
+// `npm run format:check` agree on the committed file.
+const formatted = async text => {
+  const options = await prettier.resolveConfig(path.join(DEFAULT_ROOT, 'native/contracts/types.ts'))
+  return prettier.format(text, { ...options, parser: 'typescript' })
+}
 export function generateContractTypes(root = DEFAULT_ROOT) {
   const folder = path.join(root, 'native/contracts'), schemaBytes = fs.readFileSync(path.join(folder, 'album-studio.schema.json')), manifestBytes = fs.readFileSync(path.join(folder, 'contract-manifest.json'))
   const schema = JSON.parse(schemaBytes), manifest = JSON.parse(manifestBytes)
@@ -58,7 +65,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       else if (process.argv[i] === '--root' && process.argv[i + 1]) root = path.resolve(process.argv[++i])
       else throw Error(`Unknown contract generator option: ${process.argv[i]}`)
     }
-    const file = path.join(root, 'native/contracts/types.ts'), expected = generateContractTypes(root)
+    const file = path.join(root, 'native/contracts/types.ts'), expected = await formatted(generateContractTypes(root))
     if (check) {
       if (!fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== expected) throw Error('Canonical types.ts differs from the schema/manifest. Run node native/scripts/generate-contract-types.mjs and review the generated diff.')
       process.stdout.write('Canonical contract types match the schema and manifest.\n')

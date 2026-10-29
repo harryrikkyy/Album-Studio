@@ -1,0 +1,16 @@
+# Prettier formats the JavaScript, TypeScript, JSON and YAML, and skips .gitignore'd paths too.
+# Prose and frozen evidence:
+docs/
+*.md
+# The stylesheets keep short rules on one line; the two shell pages are plain HTML:
+*.css
+*.html
+# Bytes other tools own: npm's lockfiles, ESLint's suppressions file, the contract files shared
+# byte for byte with the engine (types.ts records their SHA-256), and the engine pin (CI cache
+# keys hash it):
+package-lock.json
+eslint-suppressions.json
+native/contracts/*.json
+native/scripts/engine/pin.json
+# A local workspace that ignores itself with its own .gitignore:
+.superpowers/

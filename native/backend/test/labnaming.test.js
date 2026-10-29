@@ -17,7 +17,8 @@ async function makeOrder() {
   const dir = path.join(tmpdir(), '256')
   fs.mkdirSync(dir)
   for (const [name, w] of [['Page_002.jpg', 900], ['Page_010.jpg', 900], ['Page_001.jpg', 900], ['cover.png', 600]]) {
-    await sharp({ create: { width: w, height: 300, channels: 3, background: '#888' } })[name.endsWith('png') ? 'png' : 'jpeg']().toFile(path.join(dir, name))
+    const image = sharp({ create: { width: w, height: 300, channels: 3, background: '#888' } })
+    await (name.endsWith('png') ? image.png() : image.jpeg()).toFile(path.join(dir, name))
   }
   fs.writeFileSync(path.join(dir, 'notes.txt'), 'x')
   return dir

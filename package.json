@@ -16,6 +16,8 @@
     "test:coverage": "node --experimental-test-coverage --test test/*.test.js",
     "lint": "npm run lint:eslint && npm run check:readability",
     "lint:eslint": "eslint --max-warnings 0 eslint.config.mjs src test server scripts bench native",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit && tsc --noEmit -p native/backend && npm --prefix native/ui run typecheck"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
     "eslint": "^10.13.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "globals": "^17.13.0",
+    "prettier": "3.9.10",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1"
   },
