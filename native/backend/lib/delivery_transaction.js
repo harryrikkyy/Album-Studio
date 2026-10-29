@@ -64,7 +64,10 @@ async function fingerprint(file, flush = false, copyMetadata) {
         throw new Error(`Delivery file ${file} changed during copying; both copies were preserved.`)
       // Mutate the verified open file, never follow a newly substituted public path.
       await handle.chmod(copyMetadata.mode)
-      await handle.utimes(copyMetadata.atimeMs / 1000, copyMetadata.mtimeMs / 1000)
+      // utimes takes float seconds, which resolve to about 240 ns today: a source just past a half
+      // millisecond can come back just under it and round to another stamp. The stamp's own
+      // millisecond keeps the copy's stamp equal to its source's.
+      await handle.utimes(copyMetadata.atimeMs / 1000, Math.round(copyMetadata.mtimeMs) / 1000)
       await handle.sync()
       after = await handle.stat({ bigint: true })
       if (!sameIdentity(after, await fs.promises.lstat(file, { bigint: true })))

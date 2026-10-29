@@ -737,6 +737,20 @@ test('exclusive copies remain available without hard links and preserve timestam
   for (const target of f.targets) assert.equal(fs.statSync(target).mtimeMs, 1700000000000)
 })
 
+test('prepared files timed just past a half millisecond publish with their stamps', async (t) => {
+  const f = await fixture(t)
+  // The first float-seconds times (steps of 2^-22 s) past three half milliseconds. A float round
+  // trip brings each back just under its half millisecond, which rounds to another stamp.
+  const times = [44041, 48235, 60818].map((step) => 1793247034 + step * 2 ** -22)
+  const stamp = (file) => Math.round(Number(fs.statSync(file, { bigint: true }).mtimeNs) / 1e6)
+  for (const [i, file] of f.files.entries()) fs.utimesSync(file.source, times[i], times[i])
+  const prepared = f.files.map((file) => stamp(file.source))
+  await publish(f)
+  assertNext(f)
+  assertClean(f)
+  assert.deepEqual(f.targets.map(stamp), prepared, 'each delivered file keeps its prepared stamp')
+})
+
 test('a synchronous commit-journal flush failure restores the old set before a marker is installed', async (t) => {
   const f = await fixture(t),
     open = fs.promises.open.bind(fs.promises)

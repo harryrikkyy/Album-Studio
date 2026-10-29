@@ -127,7 +127,10 @@ function createPublicationIO({ subject, changed, readRecord }) {
       })
       if (!matches(copied, expected)) throw changed(`${subject} snapshot source`)
       await handle.chmod(mode)
-      await handle.utimes(expected.atimeMs / 1000, expected.mtimeMs / 1000)
+      // utimes takes float seconds, which resolve to about 240 ns today: a source just past a half
+      // millisecond can come back just under it and round to another stamp. The stamp's own
+      // millisecond keeps the copy's stamp equal to its source's.
+      await handle.utimes(expected.atimeMs / 1000, Math.round(expected.mtimeMs) / 1000)
       await handle.sync()
       const copiedNode = node(await handle.stat({ bigint: true }))
       if (!sameNode(copiedNode, await stat(target))) throw changed(`detached ${subject} snapshot`)
