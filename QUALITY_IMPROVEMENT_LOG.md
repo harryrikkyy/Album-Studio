@@ -45,6 +45,19 @@ JSDoc types and explicit null checks, with no behaviour change. None was a genui
 documented types were stale or malformed and are now enforced. Implicit `any` and untyped catch
 variables remain for phase 4d.
 
+Phase 4b-1 split the 10 functions above complexity 20 in the contract runtime and the shared
+modules (`runtime.js`, `overlay_render.js`, `psd_layers.js`, `proof_renderer.js`) into named
+helpers, with no behaviour change; 63 of the 73 remain for batches 4b-2 to 4b-5 and phase 5. Before
+each change, new tests pinned what it could move: exact limit issues and step counts, every schema
+rejection, PSD text layers and unwritable PNGs, and the proof renderer's sharp calls and output
+bytes. Each was mutation-checked. `proof_renderer.js` coverage rose from 35% to 94% of lines, and
+`psd_layers.js` from 90% to 96%. Each refactored function was then compared with the original on
+268,731 seeded random inputs, with 0 differences, and each comparison caught deliberate mutants.
+Splitting the renderer exposed a real bug, now fixed with a test: on a page with edited template
+layers, a photo that couldn't be read moved every later photo into the previous frame's place in
+the layer stack, under or over the wrong template art. Readability stays at 7 until more of the
+63 fall.
+
 ## Phases
 
 | Phase | Status |
@@ -54,7 +67,8 @@ variables remain for phase 4d.
 | 2. Architecture | Done 2026-10-28 |
 | 3. Tooling | Done 2026-10-29 |
 | 4a. Null-checked types | Done 2026-10-29 |
-| 4b–4d, 5–7 | Not started |
+| 4b-1. Contract runtime and shared modules | Done 2026-10-29 |
+| 4b-2 to 4b-5, 4c, 4d, 5–7 | Not started |
 
 ## Open items
 
@@ -70,6 +84,9 @@ variables remain for phase 4d.
   `psd_template.js`, `template_check.js`); `finishPrivateStage`'s `onRetired` option, which
   nothing passes; and three explicit `any` types for 4d to narrow (`makeCache`'s result,
   `onConflict`'s conflict, the overlay list).
+- Phase 4 (from 4b-1): the proof renderer's pinning tests hash the JPEG bytes sharp writes on
+  macOS with Apple silicon (CI's platform), so a sharp upgrade or another runner needs new pins,
+  taken before any renderer change.
 - CI: the native workspace's Rust tests fail on GitHub ("Workspace tests" in run 40826660009).
   The engine checkout is outside this programme; the failure is not yet diagnosed.
 - Phase 5: five accessibility findings in three controls lack keyboard operation: the
