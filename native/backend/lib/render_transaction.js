@@ -26,6 +26,7 @@ const changed = (what) =>
   )
 function stopped(check) {
   if (check && check()) {
+    /** @type {RecoverableError} */
     const error = new Error('Rendering was cancelled before commit.')
     error.code = 'RENDER_CANCELLED'
     throw error
@@ -48,6 +49,8 @@ const {
   removeRetired,
   sameIdentity,
 } = require('./publication_io').createPublicationIO({ subject: 'render', changed, readRecord })
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
+/** @typedef {import('./verified_file').FileRecord} FileRecord */
 const fingerprintRenderFile = (file) => readRecord(file)
 const description = (r) => r && Object.fromEntries(Object.entries(r).filter(([key]) => key !== 'bytes'))
 async function contextOf(p, capabilities) {
@@ -100,6 +103,7 @@ async function assertContext(c) {
 }
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
+  /** @type {RecoverableError} */
   const failure = new Error(
     `${error.message} Render recovery evidence is retained at ${retained}. Preserve that folder and the current sheet/cache before retrying.`,
     { cause: error },
@@ -167,7 +171,7 @@ async function journalOf(c, stage, known, contents = true) {
   if (raw.mode & 0o222) throw changed('immutable render journal permissions')
   let journal
   try {
-    journal = JSON.parse(raw.bytes)
+    journal = JSON.parse(String(raw.bytes))
   } catch (_) {
     throw new Error('The render recovery journal is invalid JSON.')
   }
@@ -229,7 +233,7 @@ async function journalOf(c, stage, known, contents = true) {
     if (marker.mode & 0o222) throw changed('immutable render commit permissions')
     let value
     try {
-      value = JSON.parse(marker.bytes)
+      value = JSON.parse(String(marker.bytes))
     } catch (_) {
       throw new Error('The render commit marker is invalid JSON.')
     }
@@ -396,7 +400,7 @@ function parseCache(record, albumFile) {
   if (!record) return {}
   let value
   try {
-    value = JSON.parse(record.bytes)
+    value = JSON.parse(String(record.bytes))
   } catch (_) {
     throw new Error('The existing render cache is invalid JSON; its bytes were preserved.')
   }
@@ -510,15 +514,16 @@ async function publishRender(p, capabilities) {
       throw new Error('The next render cache exceeds its supported 64 MiB JSON policy.')
     await writeNew(path.join(prepared, 'next-cache.json'), bytes, 0o400)
     const nextCacheRecord = await readRecord(path.join(prepared, 'next-cache.json'), MAX_CACHE_BYTES)
+    if (!nextCacheRecord) throw changed('prepared render cache')
     await remember(known, path.join(prepared, 'next-cache.json'), nextCacheRecord)
     const installCache = await retainCopy(path.join(prepared, 'next-cache.json'), 'install-cache.json', {
       ...nextCacheRecord,
       mode: beforeCache ? beforeCache.mode : 0o600,
     })
-    const entries = [
+    const entries = /** @type {Array<[string, string, FileRecord | null, FileRecord]>} */ ([
       ['sheet', sheet, beforeSheet, installSheet],
       ['cache', cacheFile, beforeCache, installCache],
-    ].map(([kind, target, before, after]) => ({
+    ]).map(([kind, target, before, after]) => ({
       kind,
       target,
       before: description(before),
@@ -577,7 +582,7 @@ async function publishRender(p, capabilities) {
         const captured = await readRecord(path.join(stage, entry.capture), undefined, false, {
           expectedDigest: entry.before.digest,
         })
-        if (!owned(captured, entry.before)) {
+        if (!captured || !owned(captured, entry.before)) {
           await returnCaptured(c, stage, entry, path.join(stage, entry.capture), captured)
           throw changed(`${entry.kind} at atomic capture`)
         }

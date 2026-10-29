@@ -47,6 +47,7 @@ const {
   removeRetired,
   sameIdentity,
 } = require('./publication_io').createPublicationIO({ subject: 'file publication', changed, readRecord })
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const validNode = (n) =>
   !!n && typeof n.dev === 'string' && typeof n.ino === 'string' && /^\d{1,24}$/.test(n.dev) && /^\d{1,24}$/.test(n.ino)
 const validRecord = (r) =>
@@ -75,6 +76,7 @@ const validName = (n) =>
   !isPrivateName(n)
 function failureAt(stage, error, committed = false, result) {
   const retained = error.recoveryStage || stage
+  /** @type {RecoverableError & { publicationCommitted?: boolean, publicationRestored?: boolean }} */
   const failure = new Error(`${error.message} File publication evidence is retained at ${retained}.`, { cause: error })
   Object.assign(failure, {
     code: error.code || 'PUBLICATION_FAILED',
@@ -128,7 +130,7 @@ async function journalOf(c, stage, known, contents = true) {
   if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
   let journal
   try {
-    journal = JSON.parse(raw.bytes)
+    journal = JSON.parse(String(raw.bytes))
   } catch (_) {
     throw changed('publication journal JSON')
   }
@@ -195,7 +197,7 @@ async function journalOf(c, stage, known, contents = true) {
       throw changed('durable publication commit identity')
     let value
     try {
-      value = JSON.parse(marker.bytes)
+      value = JSON.parse(String(marker.bytes))
     } catch (_) {
       throw changed('publication commit JSON')
     }
@@ -499,7 +501,7 @@ async function publishFiles({ folder, entries }, capabilities) {
         const capture = path.join(stage, `captured-${i}`)
         await move(target, capture)
         const actual = await readRecord(capture, undefined, false, { expectedDigest: entry.before.digest })
-        if (!owned(actual, entry.before)) {
+        if (!actual || !owned(actual, entry.before)) {
           await returnCaptured(c, stage, i, capture, target, actual)
           throw changed(`atomic capture of ${entry.name}`)
         }

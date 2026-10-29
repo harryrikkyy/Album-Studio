@@ -7,6 +7,7 @@ const fs = require('fs')
 const path = require('path')
 const { isDeepStrictEqual } = require('util')
 const exclusiveRename = require('./exclusive_rename')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 const STAGE = /^delivery-[A-Za-z0-9-]{6,80}$/
 const HISTORY = 'delivery-history'
@@ -229,12 +230,14 @@ async function locked(context, work) {
       guard = await fs.promises.open(reclaimFile, 'wx', 0o600)
     } catch (error) {
       if (error.code !== 'EEXIST') throw error
+      /** @type {RecoverableError} */
       const failure = new Error(
         `Delivery lock recovery is already in progress, or was interrupted. Preserve and inspect ${reclaimFile} before retrying.`,
       )
       failure.recoveryLock = reclaimFile
       throw failure
     }
+    /** @type {RecoverableError | undefined} */
     let failure
     try {
       await guard.writeFile(JSON.stringify({ pid: process.pid, token }))
@@ -259,6 +262,7 @@ async function locked(context, work) {
       await guard.close()
       const owner = await readOwner(reclaimFile)
       if (!owner || owner.token !== token) {
+        /** @type {RecoverableError} */
         const error = new Error(`Delivery recovery guard ${reclaimFile} changed; it was preserved.`)
         error.recoveryLock = reclaimFile
         throw error
@@ -287,6 +291,7 @@ async function locked(context, work) {
           },
         )
       ) {
+        /** @type {RecoverableError} */
         const error = new Error(
           `Delivery lock recovery is already in progress, or was interrupted. Preserve and inspect ${reclaimFile} before retrying.`,
         )
@@ -318,7 +323,9 @@ async function locked(context, work) {
   } catch (error) {
     if (failure) failure.message += ` Delivery lock cleanup failed: ${error.message}`
     else {
-      failure = new Error(`Delivery finished, but lock cleanup failed: ${error.message}`, { cause: error })
+      failure = /** @type {RecoverableError} */ (
+        new Error(`Delivery finished, but lock cleanup failed: ${error.message}`, { cause: error })
+      )
       if (Array.isArray(result)) failure.deliveryCommitted = true
     }
     failure.recoveryLock = lockFile
@@ -409,6 +416,7 @@ async function checkTemporaryJournal(file, journal) {
 
 function recoveryError(stage, error) {
   const recoveryStage = error.recoveryStage || stage
+  /** @type {RecoverableError} */
   const out = new Error(
     `Delivery needs recovery. Keep ${recoveryStage} and its journal/backups; reconnect the drive or resolve the file conflict before exporting again. ${error.message}`,
     { cause: error },
@@ -654,7 +662,9 @@ async function recoverUnlocked(context, albumFile) {
   return { recovered, orphanStages }
 }
 
-async function recoverDeliveries(paths, { albumFile } = {}) {
+/** @param {{ albumFile?: string }} [options] */
+async function recoverDeliveries(paths, options = {}) {
+  const { albumFile } = options
   const context = await contextOf(paths)
   return locked(context, () => recoverUnlocked(context, albumFile))
 }
@@ -701,12 +711,17 @@ function cancelled(isCancelled) {
 }
 
 /** makeCache(records) builds the next cache from staged stamps, before exposing any file. */
-async function publishDelivery(
-  files,
-  cache,
-  suppliedStage,
-  { paths, makeCache, isCancelled, validateSnapshot, albumFile = cache && cache.albumFile } = {},
-) {
+/**
+ * @param {{
+ *   paths?: Record<string, string>,
+ *   makeCache?: (records: Array<{ target: string, stamp: string, digest: string }>) => any,
+ *   isCancelled?: () => boolean,
+ *   validateSnapshot?: () => unknown,
+ *   albumFile?: string
+ * }} [options]
+ */
+async function publishDelivery(files, cache, suppliedStage, options = {}) {
+  const { paths, makeCache, isCancelled, validateSnapshot, albumFile = cache && cache.albumFile } = options
   if (
     !cache ||
     typeof albumFile !== 'string' ||

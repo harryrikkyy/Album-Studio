@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 const exclusive = require('./exclusive_rename')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const MAX_PROJECT_BYTES = 64 * 1024 * 1024
 const MAX_JOURNAL_BYTES = 65536
 const SAVE = /^save-[a-f0-9-]{36}$/
@@ -105,7 +106,7 @@ async function copyNew(source, target, expected) {
   if (!matches(await record(source), expected)) throw changed()
   await fs.promises.copyFile(source, target, fs.constants.COPYFILE_EXCL | fs.constants.COPYFILE_FICLONE)
   const copied = await record(target)
-  if (!matches(copied, expected) || !matches(await record(source), expected)) throw changed()
+  if (!copied || !matches(copied, expected) || !matches(await record(source), expected)) throw changed()
   const handle = await fs.promises.open(target, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
   try {
     if (!sameNode(nodeOf(await handle.stat({ bigint: true })), copied.node)) throw changed()
@@ -130,6 +131,7 @@ async function move(from, to) {
 }
 function recoveryError(stage, error) {
   const retained = error.recoveryStage || stage
+  /** @type {RecoverableError} */
   const failure = new Error(
     `${error.message} Project recovery evidence is retained at ${retained}. Keep that folder and the current project/backup before retrying.`,
     { cause: error },
@@ -148,7 +150,7 @@ async function journalOf(context, stage) {
   if (!raw) throw new Error('The project recovery journal is missing.')
   let journal
   try {
-    journal = JSON.parse(raw.bytes)
+    journal = JSON.parse(String(raw.bytes))
   } catch (_) {
     throw new Error('The project recovery journal is invalid JSON.')
   }
@@ -199,7 +201,7 @@ async function journalOf(context, stage) {
   if (committed) {
     let value
     try {
-      value = JSON.parse(committed.bytes)
+      value = JSON.parse(String(committed.bytes))
     } catch (_) {
       throw new Error('The project commit marker is invalid.')
     }
@@ -294,6 +296,7 @@ async function recoverStage(context, stage, assertOwned) {
     throw recoveryError(stage, error)
   }
 }
+/** @param {string} file @param {{ assertOwned?: () => unknown }} [options] */
 async function recoverProject(file, { assertOwned } = {}) {
   if (typeof assertOwned !== 'function') throw new Error('Project recovery requires an owned album lease.')
   const context = await contextOf(file),
@@ -307,7 +310,9 @@ async function recoverProject(file, { assertOwned } = {}) {
   return { recovered }
 }
 
-async function saveProject(file, data, expectedRevision, { assertOwned } = {}) {
+/** @param {{ assertOwned?: () => unknown }} [options] */
+async function saveProject(file, data, expectedRevision, options = {}) {
+  const { assertOwned } = options
   if (typeof assertOwned !== 'function' || !/^[a-f0-9]{64}$/.test(expectedRevision || ''))
     throw new Error('A project save requires its exact read revision and an owned album lease.')
   await recoverProject(file, { assertOwned })
@@ -331,6 +336,7 @@ async function saveProject(file, data, expectedRevision, { assertOwned } = {}) {
     await writeNew(path.join(prepared, 'next-project.json'), text, previous.mode)
     if (backup) await writeNew(path.join(prepared, 'old-backup'), backup.bytes, backup.mode)
     const next = await record(path.join(prepared, 'next-project.json'))
+    if (!next) throw changed()
     const installedProject = await copyNew(
       path.join(prepared, 'next-project.json'),
       path.join(prepared, 'install-project.json'),
@@ -440,7 +446,7 @@ async function readProjectSnapshot(file) {
     throw Object.assign(new Error(`The project ${file} is missing; recover its journal before reading it.`), {
       code: 'ENOENT',
     })
-  return { data: JSON.parse(current.bytes), revision: current.digest }
+  return { data: JSON.parse(String(current.bytes)), revision: current.digest }
 }
 
 module.exports = { saveProject, recoverProject, recoveryLocation, readProjectSnapshot, revisionOf, MAX_PROJECT_BYTES }
