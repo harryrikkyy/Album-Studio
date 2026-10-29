@@ -62,7 +62,7 @@ const PORT = 9842 // the redirect address registered for the Google OAuth client
 const SIGN_IN_TIMEOUT_MS = 3 * 60 * 1000
 
 const deps = {
-  fetch: (...a) => fetch(...a),
+  fetch: (input, init) => fetch(input, init),
   now: () => Date.now(),
   // node-machine-id runs `ioreg` (in /usr/sbin) through the shell: make sure the system folders are
   // on the PATH, whatever the app was started with.
@@ -72,6 +72,7 @@ const deps = {
     process.env.PATH = dirs.join(':')
     return require('node-machine-id').machineId()
   },
+  /** @param {string} url @returns {Promise<void>} */
   open: (url) => new Promise((resolve) => execFile('/usr/bin/open', [url], () => resolve())),
   port: PORT,
   signInTimeoutMs: SIGN_IN_TIMEOUT_MS,
@@ -150,6 +151,10 @@ const postForm = (url, params) =>
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams(params).toString(),
   })
+/**
+ * @param {string} userKey @param {object} fields @param {string[]} mask
+ * @param {{ updateTime?: string, headers?: { Authorization?: string } }} [options]
+ */
 const patchDoc = async (userKey, fields, mask, { updateTime, headers } = {}) =>
   responseJson(
     FIRESTORE +
@@ -272,7 +277,10 @@ function checkedStatus(email) {
   return checking
 }
 
-/** Who is signed in and whether the app may open; checked once, then on request. */
+/**
+ * Who is signed in and whether the app may open; checked once, then on request.
+ * @param {{ refresh?: boolean }} [options]
+ */
 async function status({ refresh } = {}) {
   if (bypass()) return { ...allowed('developer', 'Developer', 999, true), bypass: true }
   expireCurrent()
@@ -372,6 +380,7 @@ async function complete(code, redirectUri, verifier, expectedGeneration) {
  * Sign in with Google in the browser; answers when it's done (the account's status) or failed.
  * Asked again while waiting, it shows the browser page again and waits for the same sign-in.
  */
+/** @param {object} [_p] @param {{ emit?: (event: string, data: object) => void }} [options] */
 async function signIn(_p = {}, { emit } = {}) {
   if (flow) {
     const existing = flow
@@ -383,6 +392,7 @@ async function signIn(_p = {}, { emit } = {}) {
       'Sign-in isn’t set up in this copy of Album Studio: its Google and Firebase settings are missing. Ask Creative Hubb for the settings file.',
     )
   }
+  /** @type {{ url: string | null, cancel: () => void, done: ReturnType<typeof run> | null, generation: number }} */
   const me = { url: null, cancel: () => {}, done: null, generation: ++generation }
   checking = null
   flow = me
@@ -399,8 +409,9 @@ async function run(me, emit) {
   // that catches the loopback redirect cannot use the code it sees.
   const verifier = crypto.randomBytes(32).toString('base64url')
   const server = http.createServer()
-  await new Promise((resolve, reject) => {
-    server.once('error', (e) =>
+  /** @type {Promise<void>} */
+  const listening = new Promise((resolve, reject) => {
+    server.once('error', (/** @type {NodeJS.ErrnoException} */ e) =>
       reject(
         e.code === 'EADDRINUSE'
           ? new Error(
@@ -409,17 +420,19 @@ async function run(me, emit) {
           : e,
       ),
     )
-    server.listen(deps.port, '127.0.0.1', resolve)
+    server.listen(deps.port, '127.0.0.1', () => resolve())
   })
+  await listening
   if (generation !== me.generation) {
     server.close()
     throw new Error('Sign-in cancelled.')
   }
-  const redirectUri = `http://127.0.0.1:${server.address().port}`
+  // Listening on 127.0.0.1, so the address is an IP socket address.
+  const redirectUri = `http://127.0.0.1:${/** @type {import('net').AddressInfo} */ (server.address()).port}`
   me.url =
     'https://accounts.google.com/o/oauth2/v2/auth?' +
     new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_id: String(process.env.GOOGLE_CLIENT_ID), // configured() checked the settings
       redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
@@ -429,6 +442,7 @@ async function run(me, emit) {
       code_challenge_method: 'S256',
     })
 
+  /** @type {((error: Error | null, value?: unknown) => void) | undefined} */
   let finishFlow
   const answer = new Promise((resolve, reject) => {
     let finished = false
@@ -453,7 +467,7 @@ async function run(me, emit) {
     me.cancel = () => finish(new Error('Sign-in cancelled.'))
 
     server.on('request', async (req, res) => {
-      const u = new URL(req.url, redirectUri)
+      const u = new URL(String(req.url), redirectUri) // a server request always has its URL
       if (u.pathname !== '/') {
         res.writeHead(404).end()
         return
@@ -509,7 +523,8 @@ async function run(me, emit) {
   try {
     await Promise.race([deps.open(me.url), answer])
   } catch (e) {
-    finishFlow(e)
+    // Set synchronously by the answer's executor, before anything below can reject.
+    ;/** @type {(error: Error) => void} */ (finishFlow)(e)
     throw e
   }
   return answer
