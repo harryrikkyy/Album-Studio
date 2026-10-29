@@ -85,10 +85,11 @@ Two environment settings help with testing:
 
 | Command | Checks |
 |---|---|
-| `npm run lint` | ESLint over `src/`, `test/`, `native/backend/` and `native/contracts/`, then the readability ratchet (`native/scripts/check-readability.mjs`: no file may gain lines over 160 characters or functions above complexity 20) |
+| `npm run format:check` | Prettier formatting of the JavaScript, TypeScript, JSON and YAML; `npm run format` fixes it |
+| `npm run lint` | ESLint 10 over all JavaScript and the interface's TypeScript (typescript-eslint, jsx-a11y); any warning fails. `eslint-suppressions.json` records findings left for later phases and may only shrink (after a fix, `npm run lint:eslint -- --prune-suppressions`). Then the readability ratchet (`native/scripts/check-readability.mjs`: no file may gain lines over 160 characters or functions above complexity 20) |
 | `npm run typecheck` | `tsc` over the shared modules and backend files that opt in with `// @ts-check`, and the interface |
 | `npm run check:architecture` | Dependency boundaries, module reachability, canonical contracts and the packaged closure |
-| `node native/scripts/engine.mjs test-node` | All three application suites against the pinned CLI/helper; rejects skips |
+| `node native/scripts/engine.mjs test-node` | All three application suites against the pinned CLI/helper (`npm run test:strict`), with coverage limits on the shared and backend suites; rejects skips |
 | `npm --prefix native/ui run build` | Production interface assets |
 | `cargo fmt --all -- --check`, `cargo test --workspace --locked --features heif` | Native workspace (in `native/photocraft`) |
 | `cargo clippy --workspace --all-targets --locked --features heif -- -D warnings`, `cargo xtask layers` | Native lint and dependency boundaries |
@@ -103,12 +104,17 @@ and [recovery guidance](quality/RECOVERY_AND_VERIFICATION.md).
 
 Backend test files run with concurrency 2. In-file job/process races still run concurrently;
 this bounds simultaneous engines and decoder allocations on the 16 GiB verification Mac.
-Run coverage and the strict gate sequentially. Coverage uses the same file limit:
+Run coverage and the strict gate sequentially.
+
+Coverage limits sit just below the measured figures and only rise: shared 88% of lines and
+branches, backend 94% of lines and 88% of branches (measured 2026-10-29: 88.7/88.6 and
+95.0/88.8). Check them with:
 
 ```sh
+npm run test:coverage
 ALBUM_STUDIO_PHOTOCRAFT_CLI=/absolute/target/release/photocraft-cli \
 ALBUM_STUDIO_RENAME_CLI=/absolute/target/release/album-studio-rename-exclusive \
-node --experimental-test-coverage --test --test-concurrency=2 test/*.test.js native/backend/test/*.test.js
+npm --prefix native/backend run test:coverage
 ```
 
 For heavy tests, set `TMPDIR` to a fresh disposable directory on a volume with enough free
