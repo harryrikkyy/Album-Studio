@@ -694,7 +694,11 @@ async function untaggedRgbProfile() {
   return defaultRgbProfile
 }
 
-/** Shared verified PSD pixels for production sheets and original template backdrops. */
+/**
+ * Shared verified PSD pixels for production sheets and original template backdrops.
+ * @param {string} psdPath
+ * @param {{ buffer?: Buffer, inMemory?: boolean }} [options]
+ */
 async function psdPixels(psdPath, { buffer, inMemory = false } = {}) {
   const buf = buffer || (await readPsdBuffer(psdPath))
   if (buf.length > MAX_PSD_SOURCE_BYTES)

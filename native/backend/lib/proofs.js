@@ -115,7 +115,12 @@ async function freshManifest(albumDir) {
  * A rendered sheet's own image became spread n's proof: it is current until the spread changes,
  * or until the sheet is saved again from the editor (then the proof is redrawn from it).
  */
-async function recordSheetProof(album, ws, spread, sheetPath, { proof, expectedHash, projectText, lease } = {}) {
+/**
+ * @param {{ proof?: string, expectedHash?: string, projectText?: string,
+ *   lease?: { assertOwned: () => unknown, outputNamespace?: { assertFor: (folder: string) => unknown } } }} [options]
+ */
+async function recordSheetProof(album, ws, spread, sheetPath, options = {}) {
+  const { proof, expectedHash, projectText, lease } = options
   if (!lease)
     return require('./project').withProjectLease(
       album.file,
@@ -268,6 +273,7 @@ async function spreadLayout({ album: albumPath, n }) {
       unplaced: s.photoIds,
     }
   const art = await templateArt(s.template.file, MAX_EDGE)
+  /** @type {Array<{ id: string, orient: 'h' | 'v' }>} */
   const photos = s.photoIds
     .filter((id) => album.photos[id])
     .map((id) => ({ id, orient: album.photos[id].orient === 'v' ? 'v' : 'h' }))
@@ -297,9 +303,11 @@ async function spreadLayout({ album: albumPath, n }) {
 
 /**
  * Draw spread `spread` to `out`.
- * @returns {Promise<{ skipped: string[] }>}
+ * @param {{ buffered?: boolean, inputs?: Awaited<ReturnType<typeof spreadInputs>> }} [options]
+ * @returns {Promise<{ skipped: string[], jpeg?: Buffer }>}
  */
-async function drawProof(spread, album, ws, out, { buffered = false, inputs } = {}) {
+async function drawProof(spread, album, ws, out, options = {}) {
+  const { buffered = false, inputs } = options
   // The legacy layer renderer consumes filesystem paths. Keep its exact snapshot policy;
   // ordinary interactive proofs need no persistent decoder copies or cleanup at all.
   const layerEdits = (ws.pageLayerEdits || {})[spread.n] || null
@@ -469,6 +477,7 @@ async function previewDecoder(work) {
  * fold into one more pass, so a burst of edits costs one refresh, not one each.
  * @param {string} albumPath
  * @param {(event: string, data: object) => void} emit
+ * @param {{ spreads?: number[] }} [options]
  */
 function refreshProofs(albumPath, emit, { spreads } = {}) {
   const key = path.resolve(albumPath)
@@ -646,7 +655,9 @@ async function prepareRefresh(albumPath, projectText, targets) {
   const m = await freshManifest(album.path),
     known = m.data.spreads
   const selected = album.spreads.filter((s) => !targets || targets.has(s.n))
-  const values = new Map(await Promise.all(selected.map(async (s) => [s.n, await spreadInputs(s, album, ws)])))
+  const values = new Map(
+    await Promise.all(selected.map(async (s) => /** @type {const} */ ([s.n, await spreadInputs(s, album, ws)]))),
+  )
   const hashes = new Map([...values].map(([n, inputs]) => [n, proofInputHash(inputs)]))
 
   // Pictures already drawn, by what they show; read before anything is overwritten, so a spread
@@ -659,6 +670,10 @@ async function prepareRefresh(albumPath, projectText, targets) {
     if (e.source !== 'sheet' && !byHash.has(e.hash)) byHash.set(e.hash, Number(n))
   }
 
+  /**
+   * @type {Array<{ s: (typeof selected)[number], remove?: boolean, hash?: string, fromSheet?: string,
+   *   sheetDigest?: string | null, inputs?: ReturnType<typeof values.get>, previous?: string }>}
+   */
   const todo = []
   for (const s of selected) {
     const e = known[s.n]

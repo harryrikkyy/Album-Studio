@@ -7,6 +7,7 @@ const crypto = require('crypto')
 const fs = require('fs')
 const os = require('os')
 const path = require('path')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 const MAX_DIGEST_READS = 4
 let digestReads = 0
@@ -33,6 +34,8 @@ function fileKey(file, st) {
 
 /** Verified source contents, read through a no-follow handle with a bounded buffer.
  * Do not cache this globally by size/time: the original can change while those stay equal.
+ * @param {string} file
+ * @param {{ prefixBytes?: number, expectedDigest?: string }} [options]
  */
 async function fileEvidence(file, { prefixBytes = 0, expectedDigest } = {}) {
   if (
@@ -220,7 +223,9 @@ async function snapshotFile(file, folder, digest) {
       if (error.code === 'ENOENT') return null
       throw error
     })
-  let source, destination, created, retainedPath, failure
+  let source, destination, created, retainedPath
+  /** @type {RecoverableError | undefined} */
+  let failure
   try {
     // The file is read-only from creation. The exclusively opened descriptor remains
     // writable to this copy operation; there is no path-based chmod of a later alias.
@@ -338,10 +343,10 @@ async function snapshotFile(file, folder, digest) {
     if (retainedPath) failure.retainedPath = retainedPath
   } finally {
     const closeErrors = []
-    for (const [name, handle] of [
+    for (const [name, handle] of /** @type {Array<[string, import('fs/promises').FileHandle | undefined]>} */ ([
       ['source', source],
       ['destination', destination],
-    ]) {
+    ])) {
       if (!handle) continue
       try {
         await handle.close()

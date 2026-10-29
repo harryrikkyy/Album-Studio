@@ -245,7 +245,9 @@ const inflight = new Map()
 /**
  * @param {string} psdPath
  * @param {number} [maxEdge]  the proof's longest side
- * @returns {Promise<{ width: number, height: number, scale: number, frames: Frame[], backdrop: string|null }>}
+ * @returns {Promise<TemplateArt>}
+ * @typedef {{ schema: number, sourceKey: string, width: number, height: number, scale: number, frames: Frame[],
+ *   backdrop: string|null, artifactDigests: Record<string, string> }} TemplateArt
  * @typedef {{ name: string, orient: 'h'|'v', x: number, y: number, w: number, h: number, z: number,
  *   opacity: number, hidden: boolean, mask: string|null,
  *   stroke: { size: number, position: string, color: string, opacity: number, revealed?: boolean } | null }} Frame
@@ -322,7 +324,17 @@ async function templateArt(psdPath, maxEdge = 2400, { sourceDigest } = {}) {
       if (made) f.mask = file
       if (made === 'stroke') f.stroke.revealed = true
     }
-    const art = { schema: SCHEMA, sourceKey: key, width: psd.width, height: psd.height, scale, frames, backdrop: null }
+    /** @type {TemplateArt} */
+    const art = {
+      schema: SCHEMA,
+      sourceKey: key,
+      width: psd.width,
+      height: psd.height,
+      scale,
+      frames,
+      backdrop: null,
+      artifactDigests: {}, // set once the backdrop and masks exist
+    }
     const source = await psdPixels(psdPath, { buffer: buf, inMemory: true })
     {
       const sharp = getSharp()

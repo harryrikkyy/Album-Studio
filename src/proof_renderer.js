@@ -332,7 +332,8 @@ async function buildPhotoLayer(sharp, photo, frame, scale, smartCrop) {
  * Render a single page composite proof.
  *
  * @param {object} job - See header comment for shape.
- * @returns {Promise<{ ok: boolean, outputPath?: string, error?: string, ms: number, hash: string }>}
+ * @returns {Promise<{ ok: boolean, outputPath?: string, error?: string, ms: number, hash: string,
+ *   skipped?: Array<{ frame: string, error: string }> }>}
  */
 async function renderPageProof(job) {
   const t0 = Date.now()
