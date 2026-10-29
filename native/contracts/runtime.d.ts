@@ -60,4 +60,12 @@ export function validateEvent<E extends EventName>(event: { event: E; data?: unk
 export function validateEvent(event: unknown): EventEnvelope
 export function validateProject(project: unknown): Definitions['PersistedProject']
 export function validateDefinition<N extends keyof Definitions>(name: N, value: unknown): Definitions[N]
+/** An error carrying the recovery details serializeError copies into its reply (see ErrorData). */
+export type RecoverableError = Error &
+  Partial<Omit<ErrorData, 'error' | 'code' | 'details' | 'cleanupError' | 'releaseError' | 'closeErrors'>> & {
+    code?: string
+    cleanupError?: unknown
+    releaseError?: unknown
+    closeErrors?: unknown[]
+  }
 export function serializeError(error: unknown): ErrorData

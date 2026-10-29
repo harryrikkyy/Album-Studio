@@ -1,0 +1,5 @@
+{
+  "// note": "Every backend runtime file with null checks (phase 4a). Implicit any and untyped catch variables stay allowed until strict checking (phase 4d); files marked // @ts-check also pass tsconfig.json's strict check.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "checkJs": true, "noImplicitAny": false, "useUnknownInCatchVariables": false }
+}
