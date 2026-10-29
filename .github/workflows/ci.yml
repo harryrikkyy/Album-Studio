@@ -40,6 +40,9 @@ jobs:
           npm ci
           npm ci --prefix native/ui
 
+      - name: Formatting
+        run: npm run format:check
+
       - name: Lint
         run: npm run lint
 
