@@ -95,7 +95,8 @@ async function restoreExclusive(saved, target) {
 /**
  * Photos of a folder and how many still need a thumbnail.
  * @returns {Promise<{ path: string, name: string, exists: boolean, photos: number, raws: number,
- *   thumbs: number, missing: string[], samples: string[] }>}
+ *   thumbs: number, missing: string[], samples: string[],
+ *   evidence?: Array<{ source: string, sourceKey: string, thumb: string, digest: string }> }>}
  */
 async function surveyFolder(folder, { includeEvidence = false } = {}) {
   const out = {

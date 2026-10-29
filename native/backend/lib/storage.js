@@ -74,7 +74,10 @@ async function preserveNonemptyCache(file) {
   }
 }
 
-/** Sizes of the app's caches, and of the open album's when given. */
+/**
+ * Sizes of the app's caches, and of the open album's when given.
+ * @param {{ album?: string }} [options]
+ */
 async function storageUsage({ album } = {}) {
   const app = await Promise.all(
     APP.map(async (c) => ({ ...c, scope: 'app', ...(await sizeOf(path.join(cacheRoot(), c.id))) })),

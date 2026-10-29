@@ -13,6 +13,7 @@ const { deriveCached, derivedKey, sourceIdentity, unchangedSource, consumeSnapsh
 const SHEET = /\.(jpe?g|png|psd|psb)$/i
 const THUMB_EDGE = 480
 const getSharp = () => require('../../../src/sharp_config').getSharp()
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 /** The JPEG preview Photoshop stores in a PSD's image resources (id 1036, or 1033), if any. */
 function psdThumbnail(buf) {
@@ -241,6 +242,7 @@ async function moveExclusive(from, to, entry, journal, journalFile) {
 }
 
 function recoveryError(file, error) {
+  /** @type {RecoverableError} */
   const out = new Error(
     `Lab renaming needs recovery. Keep ${file} and reconnect the drive or resolve the reported file conflict, then reopen the folder. ${error.message}`,
     { cause: error },
@@ -410,6 +412,7 @@ async function withFolderLock(folder, rename, work) {
           failure.recoveryLock = lockFile
           failure.message += ` Folder lock cleanup also failed: ${e.message}`
         } else {
+          /** @type {RecoverableError} */
           const error = new Error(
             `The rename finished, but folder lock cleanup failed at ${lockFile}. Reconnect the drive before retrying. ${e.message}`,
             { cause: e },

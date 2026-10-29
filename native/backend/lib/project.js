@@ -491,7 +491,9 @@ const OPS = {
 /** Hold one canonical project lease for the complete operation, including migration/readback.
  * A job passes its existing capability; nested migration must not queue behind its caller.
  */
-async function withProjectLease(albumPath, work, { lease: provided, kind = 'edit' } = {}) {
+/** @param {{ lease?: Awaited<ReturnType<typeof acquireProjectLease>>, kind?: string }} [options] */
+async function withProjectLease(albumPath, work, options = {}) {
+  const { lease: provided, kind = 'edit' } = options
   const location = await canonicalProject(albumPath)
   // A supported current file must be validated before creating lease metadata. A missing
   // public name may still belong to a bounded pending save, which is recovered under lease.
@@ -544,7 +546,7 @@ function historyOf(file, revision) {
 
 /**
  * Apply operations to an album and save it. All operations of one call are one undo step.
- * @param {{ album: string, ops: {op: string}[] }} p
+ * @param {{ album: string, ops: Array<{ op: string, [field: string]: unknown }> }} p
  * @param {{ rng?: () => number }} [opts]
  */
 async function updateAlbum({ album: albumPath, ops }, opts = {}) {
@@ -622,6 +624,7 @@ async function prepare(data, file, folder) {
   return model
 }
 
+/** @param {{ album: string }} p @param {{ lease?: Awaited<ReturnType<typeof acquireProjectLease>> }} [options] */
 async function migrateAlbum({ album: albumPath }, { lease } = {}) {
   if (!albumPath) throw new Error('missing `album`')
   return withProjectLease(

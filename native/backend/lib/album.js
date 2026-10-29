@@ -175,6 +175,7 @@ async function openAlbum({ path: projectPath }, options = {}) {
   for (const p of assets) photos[p.id] = { ...p, orient: null, usedOn: [] }
 
   // Templates referenced by spreads → their PSD and preview.
+  /** @type {Array<{ kind: string, id: string, reason: string, candidates: unknown, field?: string, n?: number }>} */
   const identityConflicts = [...sources.conflicts]
   // The album model needs identities and paths, not every template's canvas size. Still
   // inventory the folders on each read; fitting/autofill request verified dimensions separately.

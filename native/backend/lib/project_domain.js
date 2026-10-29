@@ -2,6 +2,7 @@
 // validate first, then apply only explicit legacy normalizations to the caller's object.
 'use strict'
 const path = require('path')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const LIMITS = Object.freeze({
   SPREADS: 10000,
   PHOTOS_PER_SPREAD: 1000,
@@ -53,6 +54,7 @@ const OP_NAMES = Object.freeze([
   'autoFill',
 ])
 function invalid(field, detail, code = 'PROJECT_INVALID') {
+  /** @type {RecoverableError} */
   const error = new Error(
     `Invalid project ${field}: ${detail}. Preserve the original project and correct this field or restore its backup before retrying.`,
   )
@@ -80,6 +82,7 @@ function integer(value, field, minimum, maximum, legacy = false) {
     )
   return number
 }
+/** @param {number} [maximum] */
 function string(value, field, maximum = LIMITS.STRING_LENGTH) {
   if (typeof value !== 'string' || !value.length || value.length > maximum || value.includes('\0'))
     throw invalid(field, `expected a nonempty string within the ${maximum}-character limit`)

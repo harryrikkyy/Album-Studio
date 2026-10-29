@@ -127,11 +127,9 @@ async function scanCollection(dir, dimensions) {
 }
 
 /** All templates of these collection folders. */
-async function listTemplates(
-  collections,
-  registry = { version: 1, roots: {}, assets: {} },
-  { onConflict, dimensions = true } = {},
-) {
+/** @param {{ onConflict?: (conflict: any) => unknown, dimensions?: boolean }} [options] */
+async function listTemplates(collections, registry = { version: 1, roots: {}, assets: {} }, options = {}) {
+  const { onConflict, dimensions = true } = options
   const out = []
   for (const dir of collections || []) {
     const st = await fs.promises.stat(dir).catch((error) => {

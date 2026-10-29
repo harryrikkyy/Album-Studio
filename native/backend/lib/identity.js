@@ -168,8 +168,12 @@ function resolveReference(entry, candidates, kind, registry, index = referenceIn
   return { asset: null }
 }
 
-/** Materialise stable IDs once, before operations can move or replace page positions. */
-function ensureSpreadIds(data, { seed } = {}) {
+/**
+ * Materialise stable IDs once, before operations can move or replace page positions.
+ * @param {{ seed?: string }} [options]
+ */
+function ensureSpreadIds(data, options = {}) {
+  const { seed } = options
   migrateProject(data)
   const seen = new Set()
   const total = pageCount(data)

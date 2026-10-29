@@ -27,7 +27,7 @@ async function unchangedCopy(photo) {
 
 async function thumbnailEvidence(folder) {
   const survey = await surveyFolder(folder, { includeEvidence: true })
-  if (!survey.exists || survey.missing.length)
+  if (!survey.exists || !survey.evidence || survey.missing.length)
     throw new Error(
       `The photo previews in ${folder} changed or could not be verified. Refresh them and resolve any edited preview before scoring.`,
     )

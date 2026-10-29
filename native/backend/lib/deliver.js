@@ -530,6 +530,7 @@ async function runExport(job, prepared, emit) {
   }
 }
 
+/** @param {{ jobId?: string }} [options] */
 function cancelExport({ jobId } = {}) {
   if (!current || (jobId && current.id !== jobId)) return { cancelled: false }
   current.cancelled = true
