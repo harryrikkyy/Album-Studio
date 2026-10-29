@@ -15,7 +15,7 @@ Re-scored after every phase from measurements; an area that misses its target sa
 | UI code | 7.5 | 8 | 9 |
 | Tooling & CI | 7.5 | 9 | 9.5 |
 | Data integrity & reliability | 8 | 8 | 9 |
-| Readability | 5.5 | 6.5 | 9 |
+| Readability | 5.5 | 7 | 9 |
 | Security & licensing | 7.5 | 7.5 | 9 |
 | Performance | 7.5 | 7.5 | 9 |
 | Docs & repo hygiene | 5 | 9 | 9 |
@@ -39,6 +39,12 @@ rose to 8 with the TypeScript and accessibility linting. Readability rose to 6.5
 gate also exposed a real bug, now fixed with tests: copying a file's timestamps could round its
 millisecond stamp the other way, failing about one render or delivery copy in 20,000.
 
+Readability rose to 7 in phase 4a: all 55 backend runtime files, and the shared modules they
+import, now type-check with strict null checks in CI, up from 2. The 237 errors were fixed with
+JSDoc types and explicit null checks, with no behaviour change. None was a genuine bug, but nine
+documented types were stale or malformed and are now enforced. Implicit `any` and untyped catch
+variables remain for phase 4d.
+
 ## Phases
 
 | Phase | Status |
@@ -47,7 +53,8 @@ millisecond stamp the other way, failing about one render or delivery copy in 20
 | 1. Docs and repo hygiene | Done 2026-10-28 |
 | 2. Architecture | Done 2026-10-28 |
 | 3. Tooling | Done 2026-10-29 |
-| 4–7 | Not started |
+| 4a. Null-checked types | Done 2026-10-29 |
+| 4b–4d, 5–7 | Not started |
 
 ## Open items
 
@@ -59,6 +66,12 @@ millisecond stamp the other way, failing about one render or delivery copy in 20
   decision and test. ESLint 10 counts two more complex functions than ESLint 8 did
   (`psd_template.js`, `project_lock.js`) with no code changed. `native/ui/spike.html` is a
   leftover shell feasibility page.
+- Phase 4 (from 4a): four copies of one ag-psd canvas shim (`parity.js`, `preflight.js`,
+  `psd_template.js`, `template_check.js`); `finishPrivateStage`'s `onRetired` option, which
+  nothing passes; and three explicit `any` types for 4d to narrow (`makeCache`'s result,
+  `onConflict`'s conflict, the overlay list).
+- CI: the native workspace's Rust tests fail on GitHub ("Workspace tests" in run 40826660009).
+  The engine checkout is outside this programme; the failure is not yet diagnosed.
 - Phase 5: five accessibility findings in three controls lack keyboard operation: the
   Inspector's photo rows, the spread's frame hit areas and the frame-adjust overlay
   (`eslint-suppressions.json`). Coverage limits rise from 88/88 (shared) and 94/88 (backend).
