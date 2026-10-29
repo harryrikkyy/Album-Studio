@@ -397,7 +397,7 @@ async function renderPageProof(job) {
     // z-positions so template art above a frame stays above the photo.
     const hasLayerEdits = job.layerEdits && Object.keys(job.layerEdits).length > 0
     if (hasLayerEdits && job.psdLayers && job.psdLayers.length) {
-      layers = await stackLayers(sharp, job, frames, layers, scale)
+      layers = await stackLayers(sharp, job, frames, built, scale)
       // The stack draws the whole page, so the flattened backdrop underneath
       // it would show through anywhere a layer was switched off.
       base = sharp({
@@ -518,14 +518,16 @@ async function photoLayers(sharp, job, scale, smartCrop) {
 }
 
 // The page drawn from the template's own layer stack, with each photo layer
-// slotted in at its frame's position.
-async function stackLayers(sharp, job, frames, layers, scale) {
+// slotted in at its frame's position. `built` holds one entry per frame, null
+// where the photo was skipped, so a skipped photo never shifts the ones after
+// it into the wrong frame's place in the stack.
+async function stackLayers(sharp, job, frames, built, scale) {
   const { ops, frameOrder } = buildPsdStackOps(job.psdLayers, job.layerEdits, scale)
 
   // The photo layers were built in h-then-v order; map them back to the
   // frame they occupy so each can be slotted into the stack.
   for (let i = 0; i < frames.length; i++) {
-    const layer = layers[i]
+    const layer = built[i]
     if (!layer) continue
     const at = frameOrder.get(frames[i].name)
     if (at === undefined)

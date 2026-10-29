@@ -2,8 +2,11 @@
 
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
 
-const { applyAdjust } = require('../src/proof_renderer')
+const { applyAdjust, renderPageProof } = require('../src/proof_renderer')
 
 // A minimal sharp-pipeline stand-in that records the ops applied to it. Each
 // op returns `this` so the fluent chain works, exactly like a real sharp
@@ -74,4 +77,51 @@ test('contrast + warmth fold into a single linear pass', () => {
   const p = mockPipeline()
   applyAdjust(null, p, { contrast: 50, warmth: 20 })
   assert.equal(p.calls.filter((c) => c[0] === 'linear').length, 1)
+})
+
+test("a skipped photo leaves the next photo in its own frame's place in an edited template stack", async (t) => {
+  const sharp = require('../src/sharp_config').getSharp()
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'proof-stack-'))
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
+  const solid = async (name, width, height, background) => {
+    const file = path.join(dir, name)
+    await sharp({ create: { width, height, channels: 3, background } })
+      .png()
+      .toFile(file)
+    return file
+  }
+  const green = await solid('green.png', 120, 120, { r: 0, g: 200, b: 0 })
+  const red = await solid('red.png', 200, 200, { r: 220, g: 0, b: 0 })
+  const white = await solid('white.png', 400, 300, { r: 255, g: 255, b: 255 })
+  const first = { name: 'toolkithframe1', x: 20, y: 20, w: 100, h: 100 }
+  const second = { name: 'toolkithframe2', x: 220, y: 120, w: 100, h: 100 }
+  const job = {
+    templatePath: path.join(dir, 'template.psd'),
+    frames: [first, second],
+    canvasWidth: 400,
+    canvasHeight: 300,
+    maxEdge: 400,
+    // The first photo can't be read. The second belongs in the second frame, above the red art.
+    photos: [
+      { filePath: path.join(dir, 'missing.png'), orient: 'h' },
+      { filePath: green, orient: 'h' },
+    ],
+    psdLayers: [
+      { id: '0', name: 'Paper', kind: 'raster', visible: true, opacity: 1, x: 0, y: 0, w: 400, h: 300, png: white },
+      { id: '1', ...first, kind: 'raster', isFrame: true, visible: true, opacity: 1 },
+      { id: '2', name: 'Red art', kind: 'raster', visible: true, opacity: 1, x: 200, y: 100, w: 200, h: 200, png: red },
+      { id: '3', ...second, kind: 'raster', isFrame: true, visible: true, opacity: 1 },
+    ],
+    layerEdits: { 2: { opacity: 1 } },
+    outputPath: path.join(dir, 'page.jpg'),
+  }
+  const result = await renderPageProof(job)
+  assert.equal(result.ok, true, result.error)
+  assert.deepEqual(
+    result.skipped.map((s) => s.frame),
+    ['toolkithframe1'],
+  )
+  // The middle of the second frame shows the green photo, drawn above the art beneath it.
+  const pixel = await sharp(job.outputPath).extract({ left: 270, top: 170, width: 1, height: 1 }).raw().toBuffer()
+  assert.ok(pixel[1] > 150 && pixel[0] < 80, `expected the green photo, got rgb(${[...pixel]})`)
 })
