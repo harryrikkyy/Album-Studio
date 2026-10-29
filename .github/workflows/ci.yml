@@ -80,7 +80,7 @@ jobs:
           brew install poppler
           pdftoppm -v
 
-      - name: Test all Node suites; reject any skipped real-engine tests
+      - name: Test all Node suites with coverage limits; reject any skipped real-engine tests
         shell: bash
         run: |
           set -o pipefail

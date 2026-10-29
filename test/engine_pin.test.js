@@ -290,3 +290,22 @@ test('a build pin changed during compilation cannot be certified even if its sou
     process.env.PATH = previous
   }
 })
+
+test('the strict gate runs all three suites, with coverage limits on the shared and backend suites', async () => {
+  const { NODE_GATE_SCRIPT } = await scripts()
+  const root = require('../package.json').scripts
+  const backend = require('../native/backend/package.json').scripts
+  const gate = root[NODE_GATE_SCRIPT] || ''
+  for (const step of [
+    'npm run check:architecture',
+    'npm run test:coverage',
+    'npm --prefix native/backend run test:coverage',
+    'npm --prefix native/ui test',
+  ]) {
+    assert.ok(gate.includes(step), `${NODE_GATE_SCRIPT} runs ${step}`)
+  }
+  for (const script of [root['test:coverage'], backend['test:coverage']]) {
+    assert.match(script, /--test-coverage-lines=\d+/)
+    assert.match(script, /--test-coverage-branches=\d+/)
+  }
+})

@@ -10,6 +10,7 @@ import { nativeContracts } from './generate-native-contracts.mjs'
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const DEFAULT_PIN = join(ROOT, 'native/scripts/engine/pin.json')
 export const DEFAULT_ENGINE = join(ROOT, 'native/photocraft')
+export const NODE_GATE_SCRIPT = 'test:strict' // all three suites, with coverage limits
 const sha256 = (file) => createHash('sha256').update(readFileSync(file)).digest('hex')
 const present = (path) => {
   try {
@@ -239,7 +240,7 @@ export function runNodeGate({ engine = DEFAULT_ENGINE, manifest = DEFAULT_PIN, t
   const rename = join(target, 'release/album-studio-rename-exclusive')
   if (!command(rename, ['--version']).includes(sha256(join(ROOT, 'native/scripts/rename-exclusive.c'))))
     throw new Error('Node integration gate requires the current atomic file helper.')
-  const result = spawnSync('npm', ['test'], {
+  const result = spawnSync('npm', ['run', NODE_GATE_SCRIPT], {
     cwd: ROOT,
     encoding: 'utf8',
     timeout: 30 * 60 * 1000,
