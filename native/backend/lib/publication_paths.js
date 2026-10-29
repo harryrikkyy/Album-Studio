@@ -3,6 +3,7 @@
 // Callers provide a resolved physical directory and retain its identity checks.
 'use strict'
 const path = require('path')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 // APFS compares names case-insensitively and folds letters such as the long s (ſ) onto s.
 const folded = (name) => name.normalize('NFC').toUpperCase().toLowerCase()
 /** Whether a file or folder name is one of Album Studio's private names, in any letter case. */
@@ -13,6 +14,7 @@ function assertPublicationParent(folder) {
     if (!isPrivateName(part)) continue
     if (folded(part) === '.album-studio' && index === parts.length - 2 && folded(parts[index + 1]) === 'sheets')
       continue
+    /** @type {RecoverableError} */
     const error = new Error(
       'Recovery evidence and application metadata cannot be changed by an ordinary save. Save your edits in a document folder to preserve the recovery files.',
     )

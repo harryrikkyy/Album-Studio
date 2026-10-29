@@ -2,6 +2,7 @@
 // next newline, so one malformed producer cannot retain an unbounded buffer.
 'use strict'
 const MAX_LINE_BYTES = 8 * 1024 * 1024
+/** @param {(message: string) => void} [onInvalid] told why a line was dropped */
 function jsonLines(onLine, onInvalid = () => {}, maximum = MAX_LINE_BYTES) {
   if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > MAX_LINE_BYTES)
     throw new Error('Choose a positive JSON-line limit within 8 MiB.')

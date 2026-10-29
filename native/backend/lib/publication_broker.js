@@ -8,6 +8,10 @@ const crypto = require('crypto')
 const { TextDecoder } = require('util')
 const { acquirePublicationDirectories } = require('./namespace_lock')
 const { publishFiles, recoverFiles, fingerprintFile, matchesFileRevision } = require('./file_publication')
+/**
+ * A file publication's result, plus the receipt and retained input this broker adds.
+ * @typedef {Awaited<ReturnType<typeof publishFiles>> & { fileReceipt?: object, inputHistory?: string }} BrokerResult
+ */
 const { isPrivateName } = require('./publication_paths')
 const { createPublicationIO } = require('./publication_io')
 const MAX_HEADER = 65536
@@ -66,6 +70,7 @@ function inputReader(input) {
     },
   }
 }
+/** @returns {Promise<void>} */
 function write(output, value) {
   const bytes = JSON.stringify(value) + '\n'
   if (Buffer.byteLength(bytes) > MAX_HEADER)
@@ -203,7 +208,9 @@ async function validateExpectation(target, before, e) {
 
 async function run({ input = process.stdin, output = process.stdout } = {}) {
   const reader = inputReader(input)
-  let lease, result, failure, inputStage
+  let lease, failure, inputStage
+  /** @type {BrokerResult | undefined} */
+  let result
   let deadline = setTimeout(() => input.destroy(invalid('Native publication admission timed out.')), 30000)
   deadline.unref()
   try {

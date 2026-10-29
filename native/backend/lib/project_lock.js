@@ -8,6 +8,7 @@ const os = require('os')
 const path = require('path')
 const { execFile } = require('child_process')
 const exclusiveRename = require('./exclusive_rename')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 
 const MAX_OWNER = 16384
 const sharedKey = Symbol.for('album-studio.project-lease-state')
@@ -24,6 +25,7 @@ const exists = (file) =>
     },
   )
 function conflict(message, lockPath, code = 'PROJECT_BUSY') {
+  /** @type {RecoverableError} */
   const error = new Error(`${message} Existing lock evidence has been preserved${lockPath ? ` at ${lockPath}` : ''}.`)
   error.code = code
   if (lockPath) error.lockPath = lockPath

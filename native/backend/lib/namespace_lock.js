@@ -7,6 +7,7 @@ const crypto = require('crypto')
 const { acquireProjectLease } = require('./project_lock')
 const exclusive = require('./exclusive_rename')
 const { assertPublicationParent } = require('./publication_paths')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const sameNode = (a, b) => a && b && a.dev === b.dev && a.ino === b.ino
 const stat = (file) =>
   fs.promises.lstat(file, { bigint: true }).catch((error) => {
@@ -14,6 +15,7 @@ const stat = (file) =>
     throw error
   })
 function uncertain(file) {
+  /** @type {RecoverableError} */
   const error = new Error(
     `The output namespace ${file} changed or has unexpected ownership evidence. All existing files were preserved; review it before retrying.`,
   )
@@ -58,6 +60,7 @@ async function readMarker(file, bytes) {
       named = await stat(file)
     if (
       !sameNode(opened, after) ||
+      !named ||
       !sameNode(after, named) ||
       !buffer.subarray(0, length).equals(bytes) ||
       after.mode & 0o222n ||
@@ -114,7 +117,9 @@ async function marker(context, scope, { create = true } = {}) {
   }
   return { ...context, scope, file, bytes, markerIdentity: identity }
 }
-async function acquireNamespaceGroup(contexts, { validateExtra } = {}) {
+/** @param {{ validateExtra?: () => unknown }} [options] */
+async function acquireNamespaceGroup(contexts, options = {}) {
+  const { validateExtra } = options
   if (
     !Array.isArray(contexts) ||
     !contexts.length ||
@@ -205,7 +210,11 @@ async function managedScopes(parents) {
   }
   return [...contexts.values()]
 }
-/** File publishers reserve physical parents plus existing enclosing managed scopes. */
+/**
+ * File publishers reserve physical parents plus existing enclosing managed scopes.
+ * @param {string[]} targets
+ * @param {{ enclosing?: { coversNamespace: (folder: string, scope: string) => Promise<boolean> } }} [options]
+ */
 async function acquirePublicationDirectories(targets, { enclosing } = {}) {
   if (enclosing !== undefined && (!enclosing || typeof enclosing.coversNamespace !== 'function'))
     throw new Error('An enclosing namespace capability must prove its held scopes.')
@@ -254,7 +263,8 @@ async function acquirePublicationDirectories(targets, { enclosing } = {}) {
       )
         throw uncertain(parents.join(', '))
       for (const context of covered)
-        if (!(await enclosing.coversNamespace(context.folder, context.scope))) throw uncertain(context.folder)
+        if (!enclosing || !(await enclosing.coversNamespace(context.folder, context.scope)))
+          throw uncertain(context.folder)
     },
   })
   return {

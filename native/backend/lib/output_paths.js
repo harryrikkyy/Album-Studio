@@ -3,6 +3,7 @@
 'use strict'
 const fs = require('fs')
 const path = require('path')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const MAX_ENTRIES = 100000
 const MAX_DEPTH = 64
 const OUTPUT_DIRECTORIES = ['raw', 'adjusted', 'sheets', 'previews', 'render-history', 'delivery-history']
@@ -15,6 +16,7 @@ const stat = (file) =>
     throw error
   })
 function uncertain(file, detail = 'changed, is a symlink, or is not the expected regular file/directory') {
+  /** @type {RecoverableError & { path?: string }} */
   const error = new Error(
     `The managed output/proof path ${file} ${detail}. All existing bytes and recovery histories were preserved. Inspect this path before retrying.`,
   )

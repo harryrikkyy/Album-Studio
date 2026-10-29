@@ -8,7 +8,14 @@ const DEFAULTS = Object.freeze({
   maxWaiters: 128,
   writeTimeoutMs: 120000,
 })
+/**
+ * A write failure, with what the queue knows about the message's delivery.
+ * @typedef {Error & {
+ *   code?: string, admitted?: boolean, submitted?: boolean, deliveryUnknown?: boolean, requiredBytes?: number
+ * }} ProtocolFailure
+ */
 function failure(code, message, item, cause) {
+  /** @type {ProtocolFailure} */
   const error = new Error(message, cause ? { cause } : undefined)
   error.code = code
   if (item) {

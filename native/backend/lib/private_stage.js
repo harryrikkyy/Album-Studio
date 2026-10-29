@@ -10,6 +10,7 @@ const path = require('path')
 const crypto = require('crypto')
 const { fileDigest, snapshotFile } = require('./cache')
 const exclusive = require('./exclusive_rename')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const HISTORY = '.album-studio-stage-history'
 const DEFAULT_LIMITS = Object.freeze({
   maxHistoryBytes: 8 * 1024 ** 3,
@@ -24,6 +25,7 @@ const stat = (file) =>
     if (error.code === 'ENOENT') return null
     throw error
   })
+/** @returns {RecoverableError} */
 function preserved(file, detail, code = 'PRIVATE_STAGE_PRESERVED') {
   return Object.assign(
     new Error(`${detail} Private work was preserved at ${file}. Inspect it before retrying; no history was pruned.`),
@@ -161,6 +163,7 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
       await assertParents()
       return budget(historyParent, limits, bytes + (await usage(folder)).bytes)
     },
+    /** @param {string} file @param {{ digest?: string, readOnly?: boolean }} [options] */
     async register(file, { digest, readOnly = false } = {}) {
       await assertParents()
       if (path.dirname(file) !== folder || records.has(path.basename(file)))
@@ -284,6 +287,10 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
   }
   return stage
 }
+/**
+ * @param {RecoverableError & { retirement?: { retainedPath?: string } } | null} [failure]
+ * @param {{ onRetired?: (retirement: { retainedPath: string }) => unknown }} [options]
+ */
 async function finishPrivateStage(stage, failure = null, options) {
   let retirement
   try {

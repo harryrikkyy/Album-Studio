@@ -5,6 +5,7 @@ const { execFile } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { cliPath } = require('./photocraft')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const HELPER = 'album-studio-rename-exclusive'
 
 // The helper is found on its own, not only beside whichever engine ALBUM_STUDIO_PHOTOCRAFT_CLI
@@ -20,6 +21,7 @@ function helperCandidates() {
   ]
 }
 
+/** @param {string} source @param {string} target @returns {Promise<void>} */
 function renameExclusive(source, target) {
   const candidates = helperCandidates(),
     binary = candidates.find((file) => fs.existsSync(file)) || candidates[0]
@@ -35,6 +37,8 @@ function renameExclusive(source, target) {
         }
         const code = /^([A-Z]+):/m.exec(stderr || '')
         const missing = `The atomic publication helper is missing (looked for ${candidates.join(', ')}). Rebuild the pinned native engine/helpers or set ALBUM_STUDIO_RENAME_CLI before publishing; all existing files were preserved.`
+        // Without a code prefix, execFile reports the helper's exit as a number (or null when killed).
+        /** @type {Omit<RecoverableError, 'code'> & { code?: string | number | null }} */
         const failure = new Error(
           error.code === 'ENOENT' ? missing : `Atomic file capture failed: ${(stderr || error.message).trim()}`,
           { cause: error },

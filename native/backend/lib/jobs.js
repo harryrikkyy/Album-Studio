@@ -13,7 +13,13 @@ async function reserveJob(kind, album) {
     throw new Error(
       `An ${active.kind === 'export' ? 'export' : 'album render'} is already starting or running. Wait for it, or stop it.`,
     )
-  const lease = { id: crypto.randomUUID(), kind, requested: path.resolve(album), album: null, file: null }
+  const lease = {
+    id: crypto.randomUUID(),
+    kind,
+    requested: path.resolve(album),
+    album: /** @type {string | null} */ (null),
+    file: /** @type {string | null} */ (null),
+  }
   active = lease
   try {
     const location = await canonicalProject(album)
