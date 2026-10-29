@@ -459,7 +459,8 @@ function textStyleOps(/** @type {any} */ op, /** @type {any} */ node, /** @type 
   if (st.italic != null) op.italic = !!st.italic
 }
 
-// An op is emitted only when it changes one of these; a path, name or face alone changes nothing.
+// An op is emitted only when it sets one of these. Its path and name only identify the layer,
+// and a face travels with retyped copy or another style change: a face-only override is not sent.
 const EMITTED_OP_KEYS = [
   'hidden',
   'opacity',
