@@ -20,8 +20,14 @@ function getAgPsd() {
   agpsd.initializeCanvas((w, h) => ({
     width: w,
     height: h,
+    // @ts-expect-error ag-psd's types want a full 2D context; it calls only createImageData here.
     getContext: () => ({
-      createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+      createImageData: (a, b) => ({
+        width: a,
+        height: b,
+        data: new Uint8ClampedArray(a * b * 4),
+        colorSpace: /** @type {const} */ ('srgb'),
+      }),
     }),
   }))
   return agpsd
@@ -172,7 +178,7 @@ async function topLayerId(pc) {
 /**
  * Add the page's text and shapes on top of the sheet.
  * @param {PhotoCraftSession} pc
- * @param {any[]} overlays   the page's overlays as the editor stores them
+ * @param {any[] | null | undefined} overlays   the page's overlays as the editor stores them
  * @param {{ width: number, height: number, tplIdx: number }} doc
  * @returns {Promise<string[]>} warnings
  */

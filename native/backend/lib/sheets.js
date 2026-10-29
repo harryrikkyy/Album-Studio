@@ -6,6 +6,7 @@ const path = require('path')
 const { contentVerified } = require('./inputs')
 const { readProjectSnapshot } = require('./project_transaction')
 const { assertFilesSettled } = require('./file_publication')
+/** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
 const verifiedSheetRecord = (record) =>
   !!(contentVerified(record) && !record.unverified && /^[a-f0-9]{64}$/.test(record.sheetDigest || ''))
 
@@ -28,6 +29,7 @@ const inside = (folder, file) => {
   return !!rel && rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)
 }
 
+/** @param {string} output @param {{ albumFile?: string }} [options] */
 async function readRenderCacheSnapshot(output, { albumFile } = {}) {
   await assertFilesSettled(output)
   await assertFilesSettled(path.join(output, '.album-studio', 'sheets'))
@@ -49,6 +51,7 @@ async function readRenderCacheSnapshot(output, { albumFile } = {}) {
     const owner = await fs.promises.realpath(data.albumFile).catch(() => path.resolve(data.albumFile))
     const requested = await fs.promises.realpath(albumFile)
     if (owner !== requested) {
+      /** @type {RecoverableError} */
       const error = new Error(
         `The rendered-sheet folder is associated with another project at ${data.albumFile}. Preserve its files and choose a separate print-sheet folder for this project.`,
       )

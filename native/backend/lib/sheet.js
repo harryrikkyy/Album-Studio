@@ -121,16 +121,18 @@ function findLayer(layers, id) {
 }
 
 /**
- * Build one sheet.
+ * Build one sheet. `layerEdits` are the spread editor's template overrides for this page and
+ * `overlays` its text and shapes; each photo's `file` must already be placeable (RAW developed).
  * @param {PhotoCraftSession} pc
  * @param {{
  *   template: string,
  *   photos: {file: string, orient: 'h'|'v', name: string, edit?: object}[],
- *   layerEdits?: object | null,   the spread editor's template overrides for this page
- *   overlays?: any[] | null,      the spread editor's text and shapes for this page
+ *   layerEdits?: object | null,
+ *   overlays?: any[] | null,
  *   outPsd: string,
  *   outJpg?: string | null,
- * }} job   `file` must already be placeable (RAW developed).
+ *   printSettings?: Parameters<typeof printSettings>[0],
+ * }} job
  */
 async function buildSheet(pc, job) {
   const warnings = []

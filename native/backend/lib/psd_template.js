@@ -32,8 +32,14 @@ function getAgPsd() {
   agpsd.initializeCanvas((w, h) => ({
     width: w,
     height: h,
+    // @ts-expect-error ag-psd's types want a full 2D context; it calls only createImageData here.
     getContext: () => ({
-      createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+      createImageData: (a, b) => ({
+        width: a,
+        height: b,
+        data: new Uint8ClampedArray(a * b * 4),
+        colorSpace: /** @type {const} */ ('srgb'),
+      }),
     }),
   }))
   return agpsd
@@ -245,6 +251,7 @@ const inflight = new Map()
 /**
  * @param {string} psdPath
  * @param {number} [maxEdge]  the proof's longest side
+ * @param {{ sourceDigest?: string }} [options]
  * @returns {Promise<TemplateArt>}
  * @typedef {{ schema: number, sourceKey: string, width: number, height: number, scale: number, frames: Frame[],
  *   backdrop: string|null, artifactDigests: Record<string, string> }} TemplateArt

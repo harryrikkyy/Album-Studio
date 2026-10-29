@@ -59,6 +59,7 @@ function cachePaths(outputFolder) {
  */
 const entryHash = (e) => (typeof e === 'string' ? e : e && e.hash)
 
+/** @returns {Promise<void>} */
 function sipsResize(src, dst, maxSide) {
   return new Promise((resolve, reject) => {
     execFile(
@@ -114,7 +115,7 @@ async function startRender(p, { emit }) {
       startedAt: Date.now(),
       outputFolder,
       results: [],
-      finishingErrors: [],
+      finishingErrors: /** @type {string[]} */ ([]),
     }
     current = job
     emit('render.started', { jobId: job.id, total: job.total, outputFolder, album: album.path })
@@ -244,6 +245,7 @@ async function runJob(job, { album, ws, projectText, spreads, settings, lease, f
         const stagedProof = `${stagedPsd}.proof.jpg`
         const template = await privateStage.snapshot(s.template.file, inputValues[1])
         privateFiles.set(template, inputValues[1])
+        /** @type {Array<{ file: string, digest: string, orient: 'h' | 'v', name: string, edit: object }>} */
         const photos = []
         const warnings = unsupportedEdits(s, ws)
         for (const id of s.photoIds) {
@@ -494,6 +496,7 @@ async function renderPlan({ album: albumPath, ...p }) {
   )
 }
 
+/** @param {{ jobId?: string }} [options] */
 function cancelRender({ jobId } = {}) {
   if (!current || (jobId && current.id !== jobId)) return { cancelled: false }
   current.cancelled = true

@@ -90,7 +90,7 @@ function jpegInfo(buf) {
     }
     if (marker === 0xda) {
       const count = payload[0]
-      if (!frame || !count || count > frame || payload.length !== 4 + count * 2)
+      if (!frame || !frameIds || !count || count > frame || payload.length !== 4 + count * 2)
         throw new Error('Malformed JPEG SOS scan header.')
       const ids = new Set()
       for (let i = 0; i < count; i++) {
@@ -214,7 +214,7 @@ async function writeJpegPdf(file, pages, opts = {}) {
         throw jpegError(error.message)
       }
       const ppi = pages[i].ppi === undefined ? 300 : pages[i].ppi
-      if (!Number.isFinite(ppi) || ppi <= 0)
+      if (typeof ppi !== 'number' || !Number.isFinite(ppi) || ppi <= 0)
         throw new Error('The PDF page resolution must be a finite positive number.')
       const w = +((size.width / ppi) * 72).toFixed(2)
       const h = +((size.height / ppi) * 72).toFixed(2)

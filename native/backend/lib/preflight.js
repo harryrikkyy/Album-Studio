@@ -11,6 +11,7 @@ const { spreadInputs } = require('./inputs')
 const { printCanvas } = require('./print_settings')
 const { readPsdBuffer } = require('./color')
 const sharp = () => require('../../../src/sharp_config').getSharp()
+/** @typedef {{ code: string, message: string, n?: number, id?: string, [detail: string]: unknown }} PreflightIssue */
 let ag
 function decoder() {
   if (!ag) {
@@ -18,8 +19,14 @@ function decoder() {
     ag.initializeCanvas((w, h) => ({
       width: w,
       height: h,
+      // @ts-expect-error ag-psd's types want a full 2D context; it calls only createImageData here.
       getContext: () => ({
-        createImageData: (a, b) => ({ width: a, height: b, data: new Uint8ClampedArray(a * b * 4) }),
+        createImageData: (a, b) => ({
+          width: a,
+          height: b,
+          data: new Uint8ClampedArray(a * b * 4),
+          colorSpace: /** @type {const} */ ('srgb'),
+        }),
       }),
     }))
   }
@@ -36,8 +43,13 @@ const exists = async (file) =>
     () => false,
   ))
 
-/** Full original decode and real PSD geometry. No lab compliance is inferred from defaults. */
+/**
+ * Full original decode and real PSD geometry. No lab compliance is inferred from defaults.
+ * @param {number[] | null} [requestedSpreads]
+ * @param {Map<number, Awaited<ReturnType<typeof spreadInputs>>> | null} [expectedInputs]
+ */
 async function preflightAlbum(album, ws, settings, requestedSpreads = null, expectedInputs = null) {
+  /** @type {{ errors: PreflightIssue[], warnings: PreflightIssue[], info: PreflightIssue[] }} */
   const report = { errors: [], warnings: [], info: [] }
   const add = (kind, code, message, sp = {}, extra = {}) =>
     report[kind].push({ code, n: sp.n, id: sp.id, message, ...extra })

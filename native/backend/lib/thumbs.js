@@ -105,8 +105,8 @@ async function surveyFolder(folder, { includeEvidence = false } = {}) {
     photos: 0,
     raws: 0,
     thumbs: 0,
-    missing: [],
-    samples: [],
+    missing: /** @type {string[]} */ ([]),
+    samples: /** @type {string[]} */ ([]),
   }
   if (includeEvidence) out.evidence = []
   let entries

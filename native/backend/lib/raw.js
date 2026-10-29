@@ -39,6 +39,7 @@ async function sourceIdentity(file) {
     throw new Error(`The source ${file} is not a regular file. Resolve its symlink before continuing.`)
   return identity
 }
+/** @param {string} file @param {string} key @param {import('fs').BigIntStats | null} [identity] */
 async function unchangedSource(file, key, identity = null) {
   if ((await contentFileKey(file)) !== key) throw changed(file)
   if (identity && !sameFile(identity, await sourceIdentity(file))) throw changed(file)
