@@ -352,9 +352,53 @@ async function publish(candidate, target, context) {
   return state
 }
 
-async function acquireProjectLease(input, { kind = 'project' } = {}) {
+function assertLeaseKind(kind) {
   if (typeof kind !== 'string' || !kind || kind.length > 80 || [...kind].some((c) => c.charCodeAt(0) < 32))
     throw new Error('A project lease needs a short operation kind.')
+}
+// The lock's owner has died: under a reclamation guard, retire it and publish this owner instead.
+// Returns the published owner state, if any, and the failure to report: a guard that can't be
+// released joins an earlier failure. The caller needs held even when this failed, to say so.
+async function reclaimStaleOwner(context, local, prepared, lockPath, takeGuard, releaseGuard) {
+  const observed = await readOwner(lockPath, context)
+  if (await ownerAlive(observed.owner, local))
+    throw conflict(`This project is busy in another ${observed.owner.kind} operation. Wait for it to finish.`, lockPath)
+  const guard = await takeGuard('stale-owner-recovery')
+  let failure,
+    held = null
+  try {
+    const current = await readOwner(lockPath, context)
+    if (await ownerAlive(current.owner, local)) throw conflict('This project is busy in another operation.', lockPath)
+    await retire(lockPath, context, current, 'stale')
+    held = await publish(prepared, lockPath, context)
+  } catch (error) {
+    failure = error
+  }
+  try {
+    await releaseGuard(guard)
+  } catch (error) {
+    if (failure) failure.message += ` Guard recovery failed: ${error.message}`
+    else failure = error
+  }
+  return { held, failure }
+}
+// After a failed acquisition: retire this attempt's unused owner if it still exists, and name the
+// lock (and any owner this attempt did acquire) in the error.
+async function retireUnusedOwner(error, prepared, context, held, lockPath) {
+  if (await exists(prepared.folder).catch(() => false)) {
+    try {
+      await retire(prepared.folder, context, prepared.state, 'unused')
+    } catch (retirement) {
+      error.message += ` Unused owner evidence remains at ${prepared.folder}: ${retirement.message}`
+    }
+  }
+  if (!error.lockPath) error.lockPath = lockPath
+  if (held) error.message += ` The acquired owner remains preserved at ${lockPath}; no project work was started.`
+  return error
+}
+
+async function acquireProjectLease(input, { kind = 'project' } = {}) {
+  assertLeaseKind(kind)
   const canonical = await canonicalProject(input),
     local = await hostIdentity()
   const context = { ...canonical, base: `.album-studio-project-${digest(path.basename(canonical.file)).slice(0, 24)}` }
@@ -397,30 +441,9 @@ async function acquireProjectLease(input, { kind = 'project' } = {}) {
       held = await publish(prepared, lockPath, context)
     } catch (error) {
       if (!['EEXIST', 'ENOTEMPTY'].includes(error.code)) throw error
-      const observed = await readOwner(lockPath, context)
-      if (await ownerAlive(observed.owner, local))
-        throw conflict(
-          `This project is busy in another ${observed.owner.kind} operation. Wait for it to finish.`,
-          lockPath,
-        )
-      const guard = await takeGuard('stale-owner-recovery')
-      let failure
-      try {
-        const current = await readOwner(lockPath, context)
-        if (await ownerAlive(current.owner, local))
-          throw conflict('This project is busy in another operation.', lockPath)
-        await retire(lockPath, context, current, 'stale')
-        held = await publish(prepared, lockPath, context)
-      } catch (error) {
-        failure = error
-      }
-      try {
-        await releaseGuard(guard)
-      } catch (error) {
-        if (failure) failure.message += ` Guard recovery failed: ${error.message}`
-        else failure = error
-      }
-      if (failure) throw failure
+      const reclaimed = await reclaimStaleOwner(context, local, prepared, lockPath, takeGuard, releaseGuard)
+      held = reclaimed.held
+      if (reclaimed.failure) throw reclaimed.failure
     }
     await assertFolder()
     if (await exists(guardPath)) {
@@ -432,16 +455,7 @@ async function acquireProjectLease(input, { kind = 'project' } = {}) {
     }
     await sameOwner(lockPath, context, held)
   } catch (error) {
-    if (await exists(prepared.folder).catch(() => false)) {
-      try {
-        await retire(prepared.folder, context, prepared.state, 'unused')
-      } catch (retirement) {
-        error.message += ` Unused owner evidence remains at ${prepared.folder}: ${retirement.message}`
-      }
-    }
-    if (!error.lockPath) error.lockPath = lockPath
-    if (held) error.message += ` The acquired owner remains preserved at ${lockPath}; no project work was started.`
-    throw error
+    throw await retireUnusedOwner(error, prepared, context, held, lockPath)
   }
   const lease = {
     ...canonical,

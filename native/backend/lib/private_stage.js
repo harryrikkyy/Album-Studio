@@ -26,6 +26,17 @@ const stat = (file) =>
     throw error
   })
 /** @returns {RecoverableError} */
+// What cleanup reports about stage files, before and after the stage moves into history.
+const STAGE_FILES = Object.freeze({
+  unknown: null,
+  edited: 'A private stage file was edited, replaced or aliased.',
+  unreadable: 'A private stage file became unreadable or changed.',
+})
+const CAPTURED_FILES = Object.freeze({
+  unknown: 'The private stage contains an unknown file.',
+  edited: 'A captured private file was edited or replaced.',
+  unreadable: 'A captured private file became unreadable or changed.',
+})
 function preserved(file, detail, code = 'PRIVATE_STAGE_PRESERVED') {
   return Object.assign(
     new Error(`${detail} Private work was preserved at ${file}. Inspect it before retrying; no history was pruned.`),
@@ -130,6 +141,68 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
     )
       throw preserved(folder, 'A private work parent or stage changed identity.')
   }
+  // Checks each listed file against its creation record. Returns the reason for the last check
+  // that failed, or `reason` unchanged; an unlisted name is a reason only where `unknown` says so.
+  const auditFiles = async (dir, entries, reason, { unknown, edited, unreadable }) => {
+    for (const name of entries) {
+      const record = records.get(name)
+      if (!record) {
+        if (unknown) reason = unknown
+        continue
+      }
+      const file = path.join(dir, name)
+      try {
+        if (
+          !sameRevision(record.identity, await stat(file)) ||
+          (await fileDigest(file)) !== record.digest ||
+          !sameRevision(record.identity, await stat(file))
+        )
+          reason = edited
+      } catch (_) {
+        reason = unreadable
+      }
+    }
+    return reason
+  }
+  // An empty stage is removed outright. Returns the result, or null when a file appeared first.
+  const removeEmptyStage = async () => {
+    try {
+      await fs.promises.rmdir(folder)
+      finished = true
+      return { retainedPath: null, bytes: 0, reason: null }
+    } catch (error) {
+      if (!['ENOTEMPTY', 'EEXIST'].includes(error.code))
+        throw preserved(folder, `Empty private stage removal failed: ${error.message}`)
+      return null
+    }
+  }
+  // Moves the stage into history with a no-replace rename. A helper that timed out after moving
+  // the exact stage counts as moved; any other failure keeps both names.
+  const moveIntoHistory = async () => {
+    const history = path.join(historyParent, HISTORY)
+    await fs.promises.mkdir(history, { mode: 0o700 }).catch((error) => {
+      if (error.code !== 'EEXIST') throw error
+    })
+    const historyNode = await directory(history)
+    await assertParents()
+    const retained = path.join(history, crypto.randomUUID())
+    try {
+      await exclusive.renameExclusive(folder, retained)
+    } catch (error) {
+      const original = await stat(folder),
+        captured = await stat(retained)
+      if (original || !sameNode(captured, identity)) {
+        /** @type {RecoverableError} */
+        const failure = preserved(
+          sameNode(captured, identity) ? retained : folder,
+          `Atomic private stage retention failed: ${error.message}; inspect both ${folder} and ${retained}.`,
+        )
+        failure.retainedPaths = [folder, retained]
+        throw failure
+      }
+    }
+    return { history, historyNode, retained }
+  }
   const stage = {
     path: folder,
     async assertFiles() {
@@ -199,53 +272,13 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
         entries.length === records.size && entries.every((name) => records.has(name))
           ? null
           : 'The private stage contains unknown or missing files.'
-      for (const name of entries) {
-        const record = records.get(name)
-        if (!record) continue
-        const file = path.join(folder, name)
-        try {
-          if (
-            !sameRevision(record.identity, await stat(file)) ||
-            (await fileDigest(file)) !== record.digest ||
-            !sameRevision(record.identity, await stat(file))
-          )
-            reason = 'A private stage file was edited, replaced or aliased.'
-        } catch (_) {
-          reason = 'A private stage file became unreadable or changed.'
-        }
-      }
+      reason = await auditFiles(folder, entries, reason, STAGE_FILES)
       if (!entries.length && !records.size) {
-        try {
-          await fs.promises.rmdir(folder)
-          finished = true
-          return { retainedPath: null, bytes: 0, reason: null }
-        } catch (error) {
-          if (!['ENOTEMPTY', 'EEXIST'].includes(error.code))
-            throw preserved(folder, `Empty private stage removal failed: ${error.message}`)
-          reason = 'An unknown file appeared at the private stage removal boundary.'
-        }
+        const removed = await removeEmptyStage()
+        if (removed) return removed
+        reason = 'An unknown file appeared at the private stage removal boundary.'
       }
-      const history = path.join(historyParent, HISTORY)
-      await fs.promises.mkdir(history, { mode: 0o700 }).catch((error) => {
-        if (error.code !== 'EEXIST') throw error
-      })
-      const historyNode = await directory(history)
-      await assertParents()
-      const retained = path.join(history, crypto.randomUUID())
-      try {
-        await exclusive.renameExclusive(folder, retained)
-      } catch (error) {
-        const original = await stat(folder),
-          captured = await stat(retained)
-        if (original || !sameNode(captured, identity)) {
-          const failure = preserved(
-            sameNode(captured, identity) ? retained : folder,
-            `Atomic private stage retention failed: ${error.message}; inspect both ${folder} and ${retained}.`,
-          )
-          failure.retainedPaths = [folder, retained]
-          throw failure
-        }
-      }
+      const { history, historyNode, retained } = await moveIntoHistory()
       finished = true
       if (!sameNode(await directory(history), historyNode))
         throw preserved(retained, 'The private history parent changed during retention.')
@@ -255,24 +288,7 @@ async function createPrivateStage(parent, prefix = '.source-', options = {}) {
       const capturedNames = await names(retained)
       if (JSON.stringify(capturedNames) !== JSON.stringify(entries))
         reason = 'Private stage contents changed at the retention boundary.'
-      for (const name of capturedNames) {
-        const record = records.get(name)
-        if (!record) {
-          reason = 'The private stage contains an unknown file.'
-          continue
-        }
-        const file = path.join(retained, name)
-        try {
-          if (
-            !sameRevision(record.identity, await stat(file)) ||
-            (await fileDigest(file)) !== record.digest ||
-            !sameRevision(record.identity, await stat(file))
-          )
-            reason = 'A captured private file was edited or replaced.'
-        } catch (_) {
-          reason = 'A captured private file became unreadable or changed.'
-        }
-      }
+      reason = await auditFiles(retained, capturedNames, reason, CAPTURED_FILES)
       let bytes = null
       try {
         bytes = (await usage(retained)).bytes

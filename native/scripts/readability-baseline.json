@@ -43,17 +43,11 @@
   "native/backend/lib/print_settings.js": {
     "max-len": 1
   },
-  "native/backend/lib/private_stage.js": {
-    "complexity": 1
-  },
   "native/backend/lib/project.js": {
     "max-len": 1
   },
   "native/backend/lib/project_domain.js": {
     "complexity": 2
-  },
-  "native/backend/lib/project_lock.js": {
-    "complexity": 1
   },
   "native/backend/lib/project_transaction.js": {
     "complexity": 2
