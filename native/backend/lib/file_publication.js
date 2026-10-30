@@ -130,61 +130,59 @@ async function checkSnapshot(c) {
       /** @satisfies {Partial<RecoverableError>} */ ({ code: 'PUBLICATION_CANCELLED' }),
     )
 }
-async function journalOf(c, stage, known, contents = true) {
-  const stageNode = await directory(stage),
-    raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
-  if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
-  let journal
-  try {
-    journal = JSON.parse(String(raw.bytes))
-  } catch (_) {
-    throw changed('publication journal JSON')
-  }
-  if (
-    !journal ||
-    journal.version !== 1 ||
-    journal.folder !== c.physical ||
-    journal.name !== path.basename(stage) ||
-    !STAGE.test(journal.name) ||
-    !sameNode(journal.parentNode, c.parentNode) ||
-    !sameNode(journal.metadataNode, c.metadataNode) ||
-    !sameNode(journal.stageNode, stageNode) ||
-    !validNode(journal.commitNode) ||
-    !Array.isArray(journal.entries) ||
-    !journal.entries.length ||
-    journal.entries.length > 256
+// A journal this publication wrote for this folder and stage: version 1, its own name and nodes,
+// a commit node, and 1-256 entries.
+function validPublicationJournal(journal, c, stage, stageNode) {
+  return (
+    !!journal &&
+    journal.version === 1 &&
+    journal.folder === c.physical &&
+    journal.name === path.basename(stage) &&
+    STAGE.test(journal.name) &&
+    sameNode(journal.parentNode, c.parentNode) &&
+    sameNode(journal.metadataNode, c.metadataNode) &&
+    sameNode(journal.stageNode, stageNode) &&
+    validNode(journal.commitNode) &&
+    Array.isArray(journal.entries) &&
+    journal.entries.length > 0 &&
+    journal.entries.length <= 256
   )
-    throw changed('publication journal identity')
-  const names = new Set(),
-    allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
-  for (const [i, entry] of journal.entries.entries()) {
-    if (
-      !entry ||
-      !validName(entry.name) ||
-      names.has(entry.name) ||
-      (entry.before !== null && !validRecord(entry.before)) ||
-      !validRecord(entry.after)
-    )
-      throw changed('publication entry identity')
-    names.add(entry.name)
-    for (const prefix of ['old', 'next', 'install', 'captured', 'discard']) {
-      const name = `${prefix}-${i}`
-      allowed.add(name)
-      if (!contents) continue
-      const actual = await retainedRecord(known, path.join(stage, name)),
-        expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
-      if (
-        (!expected && actual) ||
-        (expected && ['old', 'next'].includes(prefix) && !actual) ||
-        (actual &&
-          !(prefix === 'old' || prefix === 'next'
-            ? matches(actual, expected) && !(actual.mode & 0o222)
-            : owned(actual, expected)))
-      )
-        throw changed(`retained publication ${name}`)
-    }
+}
+const RETAINED_PREFIXES = ['old', 'next', 'install', 'captured', 'discard']
+// Whether a retained copy contradicts its entry: present where the entry records none, missing
+// where an old or next copy is required, or not the recorded revision (old and next read-only).
+function retainedMismatch(prefix, actual, expected) {
+  const kept = prefix === 'old' || prefix === 'next'
+  return (
+    (!expected && actual) ||
+    (expected && kept && !actual) ||
+    (actual && !(kept ? matches(actual, expected) && !(actual.mode & 0o222) : owned(actual, expected)))
+  )
+}
+// One journal entry: a valid name not seen before and valid before/after records. Its retained
+// copies' names become allowed; with contents, each must also hold what the entry records.
+async function checkPublicationEntry(known, stage, entry, i, names, allowed, contents) {
+  if (
+    !entry ||
+    !validName(entry.name) ||
+    names.has(entry.name) ||
+    (entry.before !== null && !validRecord(entry.before)) ||
+    !validRecord(entry.after)
+  )
+    throw changed('publication entry identity')
+  names.add(entry.name)
+  for (const prefix of RETAINED_PREFIXES) {
+    const name = `${prefix}-${i}`
+    allowed.add(name)
+    if (!contents) continue
+    const actual = await retainedRecord(known, path.join(stage, name)),
+      expected = prefix === 'old' || prefix === 'captured' ? entry.before : entry.after
+    if (retainedMismatch(prefix, actual, expected)) throw changed(`retained publication ${name}`)
   }
-  const present = await boundedNames(stage)
+}
+// Every name in the stage is allowed by the journal (or a restore copy) and an independent regular
+// file, and an uncommitted marker is no larger than a journal.
+async function checkStageFiles(stage, present, allowed) {
   for (const name of present) {
     if (!allowed.has(name) && !/^restore-\d{1,3}-[a-f0-9-]{36}$/.test(name)) throw unexpectedEntry(stage, name)
     const info = await stat(path.join(stage, name))
@@ -197,20 +195,45 @@ async function journalOf(c, stage, known, contents = true) {
     )
       throw changed('publication recovery file identity')
   }
+}
+// Whether the stage holds a durable commit marker for exactly this journal revision.
+async function publicationCommitted(stage, journal, digest) {
   const marker = await readRecord(path.join(stage, 'commit.json'), MAX_JOURNAL, true)
-  if (marker) {
-    if (!sameNode(marker.node, journal.commitNode) || marker.mode & 0o222)
-      throw changed('durable publication commit identity')
-    let value
-    try {
-      value = JSON.parse(String(marker.bytes))
-    } catch (_) {
-      throw changed('publication commit JSON')
-    }
-    if (!value || value.version !== 1 || value.journal !== raw.digest)
-      throw changed('exact publication commit revision')
+  if (!marker) return false
+  if (!sameNode(marker.node, journal.commitNode) || marker.mode & 0o222)
+    throw changed('durable publication commit identity')
+  let value
+  try {
+    value = JSON.parse(String(marker.bytes))
+  } catch (_) {
+    throw changed('publication commit JSON')
   }
-  return { journal, digest: raw.digest, committed: !!marker, names: present }
+  if (!value || value.version !== 1 || value.journal !== digest) throw changed('exact publication commit revision')
+  return true
+}
+async function journalOf(c, stage, known, contents = true) {
+  const stageNode = await directory(stage),
+    raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL, true)
+  if (!raw || raw.mode & 0o222) throw changed('immutable publication journal')
+  let journal
+  try {
+    journal = JSON.parse(String(raw.bytes))
+  } catch (_) {
+    throw changed('publication journal JSON')
+  }
+  if (!validPublicationJournal(journal, c, stage, stageNode)) throw changed('publication journal identity')
+  const names = new Set(),
+    allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
+  for (const [i, entry] of journal.entries.entries())
+    await checkPublicationEntry(known, stage, entry, i, names, allowed, contents)
+  const present = await boundedNames(stage)
+  await checkStageFiles(stage, present, allowed)
+  return {
+    journal,
+    digest: raw.digest,
+    committed: await publicationCommitted(stage, journal, raw.digest),
+    names: present,
+  }
 }
 async function inspect(c, journal, pending) {
   await assertContext(c)
@@ -414,11 +437,61 @@ async function hasInterruptedSave(folder) {
 /** Sources are private regular files, streamed into independent snapshots. The caller
  * supplies exact prior records (or null), never a fresh-at-save overwrite permission. */
 async function publishFiles({ folder, entries }, capabilities) {
-  if (
-    !Array.isArray(entries) ||
-    !entries.length ||
-    entries.length > 256 ||
-    entries.some(
+  if (!validPublicationEntries(entries))
+    throw new Error('Publication requires 1–256 distinct file names, exact prior records and staged source digests.')
+  const c = await context(folder, capabilities)
+  await recoverInContext(c)
+  await checkSnapshot(c)
+  const { before, sources } = await readPublicationRevisions(c, entries)
+  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')),
+    name = `files-${crypto.randomUUID()}`,
+    stage = path.join(c.metadata, name)
+  const known = new Map()
+  let exposed = false,
+    committed = false,
+    result
+  try {
+    const { records, journal, revision, commitNode } = await preparePublication(
+      c,
+      entries,
+      before,
+      sources,
+      prepared,
+      name,
+      known,
+    )
+    const exactJournal = async () => {
+      const state = await journalOf(c, stage, known)
+      if (state.digest !== revision) throw changed('durable publication journal revision')
+      return state
+    }
+    await checkSnapshot(c)
+    await move(prepared, stage)
+    exposed = true
+    await exactJournal()
+    result = { committed: true, records: records.map((e) => ({ name: e.name, ...e.after })) }
+    await installPublication(c, stage, records, known, exactJournal)
+    await commitPublication(c, stage, journal, revision, commitNode, exactJournal)
+    committed = true
+    const historyPath = await retire(c, stage, known)
+    await pruneHistory(
+      c,
+      historyPath,
+      records.map((record) => record.name),
+    )
+    return { ...result, historyPath }
+  } catch (error) {
+    throw await failedPublication(c, error, prepared, stage, exposed, committed, result)
+  }
+}
+// 1–256 distinct, valid names, each with an absolute staged source, its digest and an exact prior
+// record (or null).
+function validPublicationEntries(entries) {
+  return (
+    Array.isArray(entries) &&
+    entries.length > 0 &&
+    entries.length <= 256 &&
+    !entries.some(
       (e) =>
         !e ||
         !validName(e.name) ||
@@ -426,13 +499,13 @@ async function publishFiles({ folder, entries }, capabilities) {
         !path.isAbsolute(e.source) ||
         !SHA.test(e.sourceDigest || '') ||
         (e.before !== null && !validRecord(e.before)),
-    ) ||
-    new Set(entries.map((e) => e.name)).size !== entries.length
+    ) &&
+    new Set(entries.map((e) => e.name)).size === entries.length
   )
-    throw new Error('Publication requires 1–256 distinct file names, exact prior records and staged source digests.')
-  const c = await context(folder, capabilities)
-  await recoverInContext(c)
-  await checkSnapshot(c)
+}
+// Each entry's current public revision and staged source, read under the folder's capabilities;
+// both must be exactly what the caller expects.
+async function readPublicationRevisions(c, entries) {
   const before = [],
     sources = []
   for (const entry of entries) {
@@ -446,125 +519,114 @@ async function publishFiles({ folder, entries }, capabilities) {
     before.push(current)
     sources.push(source)
   }
-  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.prepare-')),
-    name = `files-${crypto.randomUUID()}`,
-    stage = path.join(c.metadata, name)
-  const known = new Map()
+  return { before, sources }
+}
+// Copies each staged source (next, install) and current file (old) into the private preparation
+// folder, then writes the immutable journal that names them.
+async function preparePublication(c, entries, before, sources, prepared, name, known) {
   const retainCopy = async (from, file, expected, mode) => {
     const target = path.join(prepared, file),
       record = await copyDetached(from, target, expected, mode)
     await remember(known, target, record)
     return record
   }
-  let exposed = false,
-    committed = false,
-    result
-  try {
-    const records = []
-    for (const [i, entry] of entries.entries()) {
-      const next = await retainCopy(entry.source, `next-${i}`, sources[i], 0o400)
-      const after = await retainCopy(path.join(prepared, `next-${i}`), `install-${i}`, {
-        ...next,
-        mode: before[i] ? before[i].mode : 0o600,
-      })
-      if (before[i]) await retainCopy(path.join(c.physical, entry.name), `old-${i}`, before[i], 0o400)
-      records.push({ name: entry.name, before: before[i], after })
-    }
-    const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
-    const journal = {
-      version: 1,
-      name,
-      folder: c.physical,
-      parentNode: c.parentNode,
-      metadataNode: c.metadataNode,
-      stageNode: await directory(prepared),
-      entries: records,
-      commitNode,
-    }
-    const bytes = Buffer.from(JSON.stringify(journal)),
-      revision = crypto.createHash('sha256').update(bytes).digest('hex')
-    if (bytes.length > MAX_JOURNAL) throw new Error('The publication journal exceeds its 1 MiB limit.')
-    await writeNew(path.join(prepared, 'journal.json'), bytes, 0o400)
-    await syncDirectory(prepared)
-    const exactJournal = async () => {
-      const state = await journalOf(c, stage, known)
-      if (state.digest !== revision) throw changed('durable publication journal revision')
-      return state
-    }
-    await checkSnapshot(c)
-    await move(prepared, stage)
-    exposed = true
-    await exactJournal()
-    result = { committed: true, records: records.map((e) => ({ name: e.name, ...e.after })) }
-    for (const [i, entry] of records.entries()) {
-      await checkSnapshot(c)
-      await assertContext(c, entry.name)
-      await exactJournal()
-      // Identity checks around the moves: the captured original is re-read once captured, and the
-      // published batch is re-read just before the commit marker.
-      const target = path.join(c.physical, entry.name),
-        current = await stat(target)
-      if (entry.before ? !sameIdentity(current, entry.before) : current)
-        throw changed(`public revision of ${entry.name}`)
-      if (entry.before) {
-        const capture = path.join(stage, `captured-${i}`)
-        await move(target, capture)
-        const actual = await readRecord(capture, undefined, false, { expectedDigest: entry.before.digest })
-        if (!actual || !owned(actual, entry.before)) {
-          await returnCaptured(c, stage, i, capture, target, actual)
-          throw changed(`atomic capture of ${entry.name}`)
-        }
-        await remember(known, capture, actual)
-      }
-      await checkSnapshot(c)
-      await move(path.join(stage, `install-${i}`), target)
-      if (!sameIdentity(await stat(target), entry.after)) throw changed(`installed revision of ${entry.name}`)
-    }
-    await exactJournal()
-    if ((await inspect(c, journal, true)).some(({ next }) => !next)) throw changed('published batch ownership')
-    await checkSnapshot(c)
-    const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: revision })),
-      markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
-    await writeCommitPart(stage, markerBytes, commitNode)
-    await checkSnapshot(c)
-    await exactJournal()
-    const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL)
-    if (
-      !marker ||
-      marker.digest !== markerDigest ||
-      marker.size !== String(markerBytes.length) ||
-      !sameNode(marker.node, commitNode) ||
-      marker.mode & 0o222
-    )
-      throw changed('exact publication commit preparation')
-    await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
-    await exactJournal()
-    committed = true
-    const historyPath = await retire(c, stage, known)
-    await pruneHistory(
-      c,
-      historyPath,
-      records.map((record) => record.name),
-    )
-    return { ...result, historyPath }
-  } catch (error) {
-    if (!exposed && !(await stat(prepared)) && (await stat(stage))) exposed = true
-    if (exposed && (await stat(stage))) {
-      try {
-        const state = await journalOf(c, stage)
-        committed = state.committed
-        const recovery = await recoverStage(c, stage)
-        error.recoveryStage = recovery.historyPath
-        if (!state.committed) error.publicationRestored = true
-      } catch (recovery) {
-        error.message += ` ${recovery.message}`
-        error.recoveryStage = recovery.recoveryStage || stage
-        error.recoveryRequired = true
-        if (recovery.publicationCommitted) committed = true
-      }
-    }
-    throw failureAt(exposed ? stage : prepared, error, committed, result)
+  const records = []
+  for (const [i, entry] of entries.entries()) {
+    const next = await retainCopy(entry.source, `next-${i}`, sources[i], 0o400)
+    const after = await retainCopy(path.join(prepared, `next-${i}`), `install-${i}`, {
+      ...next,
+      mode: before[i] ? before[i].mode : 0o600,
+    })
+    if (before[i]) await retainCopy(path.join(c.physical, entry.name), `old-${i}`, before[i], 0o400)
+    records.push({ name: entry.name, before: before[i], after })
   }
+  const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
+  const journal = {
+    version: 1,
+    name,
+    folder: c.physical,
+    parentNode: c.parentNode,
+    metadataNode: c.metadataNode,
+    stageNode: await directory(prepared),
+    entries: records,
+    commitNode,
+  }
+  const bytes = Buffer.from(JSON.stringify(journal)),
+    revision = crypto.createHash('sha256').update(bytes).digest('hex')
+  if (bytes.length > MAX_JOURNAL) throw new Error('The publication journal exceeds its 1 MiB limit.')
+  await writeNew(path.join(prepared, 'journal.json'), bytes, 0o400)
+  await syncDirectory(prepared)
+  return { records, journal, revision, commitNode }
+}
+// Captures each current public file into the stage and installs its prepared copy, re-checking the
+// folder, the journal and each file's identity around every move.
+async function installPublication(c, stage, records, known, exactJournal) {
+  for (const [i, entry] of records.entries()) {
+    await checkSnapshot(c)
+    await assertContext(c, entry.name)
+    await exactJournal()
+    // Identity checks around the moves: the captured original is re-read once captured, and the
+    // published batch is re-read just before the commit marker.
+    const target = path.join(c.physical, entry.name),
+      current = await stat(target)
+    if (entry.before ? !sameIdentity(current, entry.before) : current) throw changed(`public revision of ${entry.name}`)
+    if (entry.before) {
+      const capture = path.join(stage, `captured-${i}`)
+      await move(target, capture)
+      const actual = await readRecord(capture, undefined, false, { expectedDigest: entry.before.digest })
+      if (!actual || !owned(actual, entry.before)) {
+        await returnCaptured(c, stage, i, capture, target, actual)
+        throw changed(`atomic capture of ${entry.name}`)
+      }
+      await remember(known, capture, actual)
+    }
+    await checkSnapshot(c)
+    await move(path.join(stage, `install-${i}`), target)
+    if (!sameIdentity(await stat(target), entry.after)) throw changed(`installed revision of ${entry.name}`)
+  }
+}
+// Confirms the published batch is this publication's, then writes, verifies and moves the commit
+// marker that makes it final.
+async function commitPublication(c, stage, journal, revision, commitNode, exactJournal) {
+  await exactJournal()
+  if ((await inspect(c, journal, true)).some(({ next }) => !next)) throw changed('published batch ownership')
+  await checkSnapshot(c)
+  const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: revision })),
+    markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
+  await writeCommitPart(stage, markerBytes, commitNode)
+  await checkSnapshot(c)
+  await exactJournal()
+  const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL)
+  if (
+    !marker ||
+    marker.digest !== markerDigest ||
+    marker.size !== String(markerBytes.length) ||
+    !sameNode(marker.node, commitNode) ||
+    marker.mode & 0o222
+  )
+    throw changed('exact publication commit preparation')
+  await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
+  await exactJournal()
+}
+// After a failed publication: decide whether the stage was exposed, recover it, and report where
+// the evidence stays and whether the batch had committed.
+async function failedPublication(c, error, prepared, stage, exposed, committed, result) {
+  if (!exposed && !(await stat(prepared)) && (await stat(stage))) exposed = true
+  if (exposed && (await stat(stage))) {
+    try {
+      const state = await journalOf(c, stage)
+      committed = state.committed
+      const recovery = await recoverStage(c, stage)
+      error.recoveryStage = recovery.historyPath
+      if (!state.committed) error.publicationRestored = true
+    } catch (recovery) {
+      error.message += ` ${recovery.message}`
+      error.recoveryStage = recovery.recoveryStage || stage
+      error.recoveryRequired = true
+      if (recovery.publicationCommitted) committed = true
+    }
+  }
+  return failureAt(exposed ? stage : prepared, error, committed, result)
 }
 module.exports = {
   publishFiles,

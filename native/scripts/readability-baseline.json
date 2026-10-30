@@ -21,9 +21,6 @@
   "native/backend/lib/exclusive_rename.js": {
     "max-len": 1
   },
-  "native/backend/lib/file_publication.js": {
-    "complexity": 2
-  },
   "native/backend/lib/newalbum.js": {
     "complexity": 1
   },
