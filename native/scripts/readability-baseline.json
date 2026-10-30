@@ -67,9 +67,6 @@
   "native/backend/lib/psd_template.js": {
     "complexity": 3
   },
-  "native/backend/lib/publication_broker.js": {
-    "complexity": 3
-  },
   "native/backend/lib/render.js": {
     "complexity": 1
   },
