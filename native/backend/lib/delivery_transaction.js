@@ -8,6 +8,7 @@ const path = require('path')
 const { isDeepStrictEqual } = require('util')
 const exclusiveRename = require('./exclusive_rename')
 /** @typedef {import('../../contracts/runtime').RecoverableError} RecoverableError */
+/** @typedef {NonNullable<Awaited<ReturnType<typeof fingerprint>>>} Fingerprint */
 
 const STAGE = /^delivery-[A-Za-z0-9-]{6,80}$/
 const HISTORY = 'delivery-history'
@@ -713,6 +714,153 @@ function cancelled(isCancelled) {
     )
 }
 
+// Every file to publish, checked and fingerprinted: a private source, an allowed and new target,
+// and a current target this album owns.
+async function collectDeliveryEntries(context, stage, files, owned) {
+  const entries = [],
+    sources = new Set(),
+    targets = new Set()
+  for (const [i, item] of files.entries()) {
+    const source = context.translate(item.source),
+      target = context.translate(item.target)
+    if (
+      path.dirname(source) !== stage ||
+      !allowedTarget(context, target) ||
+      /^(?:journal\.json(?:\.new)?|cache\.next\.json|backup-.*|discard-.*)$/.test(path.basename(source)) ||
+      targets.has(target.toLowerCase()) ||
+      sources.has(source.toLowerCase())
+    )
+      throw new Error('Duplicate or invalid delivery source/target path.')
+    targets.add(target.toLowerCase())
+    sources.add(source.toLowerCase())
+    await checkTargetDirectory(context, target, true)
+    const after = await fingerprint(source, true),
+      before = await fingerprint(target, true),
+      expected = owned.get(item.target) || owned.get(target)
+    if (!after) throw new Error(`Prepared delivery file ${source} is missing.`)
+    if (
+      before &&
+      (!expected || expected.stamp !== before.stamp || (expected.digest && expected.digest !== before.digest))
+    )
+      throw new Error(`Delivery file ${target} is unowned or has been edited. Preserve it elsewhere before exporting.`)
+    entries.push({
+      source: path.basename(source),
+      target,
+      before,
+      after,
+      backup: `backup-${i}`,
+      discard: `discard-${i}`,
+    })
+  }
+  return entries
+}
+// The export cache on disk must be the caller's, unchanged. Returns its fingerprint.
+async function checkCurrentCache(context, cache, entries) {
+  const beforeCache = await fingerprint(context.paths.cache, true)
+  if (!beforeCache && entries.some((entry) => entry.before))
+    throw new Error(
+      'The export ownership cache is missing; existing delivery files cannot be claimed from caller data alone.',
+    )
+  if (beforeCache) {
+    let disk
+    try {
+      disk = JSON.parse(await fs.promises.readFile(context.paths.cache, 'utf8'))
+    } catch (_) {
+      throw new Error('The existing export cache is unowned or invalid; preserve it before exporting.')
+    }
+    if (!isDeepStrictEqual(disk, cache) || !matches(await fingerprint(context.paths.cache), beforeCache))
+      throw new Error('The export ownership cache changed or belongs to another album; export again after recovery.')
+  }
+  return beforeCache
+}
+// The caller's next cache, with each published file's staged stamp and digest filled in.
+async function buildNextCache(cache, makeCache, records, albumFile, context) {
+  let next = await makeCache(records)
+  if (Buffer.isBuffer(next) || typeof next === 'string') next = JSON.parse(next.toString())
+  else next = JSON.parse(JSON.stringify(next))
+  if (!next || next.version !== 2 || next.albumFile !== albumFile)
+    throw new Error('The next export cache must retain the current album identity and version.')
+  next.ownedFiles = { ...(next.ownedFiles || {}) }
+  next.ownedDigests = { ...(cache.ownedDigests || {}), ...(next.ownedDigests || {}) }
+  for (const record of records) {
+    next.ownedFiles[record.target] = record.stamp
+    next.ownedDigests[record.target] = record.digest
+  }
+  for (const spread of Object.values(next.spreads || {}))
+    for (const key of ['high', 'low'])
+      if (spread[key]) {
+        const record = records.find((item) => context.translate(item.target) === context.translate(spread[key].path))
+        if (record) {
+          spread[key].stamp = record.stamp
+          spread[key].digest = record.digest
+        }
+      }
+  if (next.pdf) {
+    const record = records.find((item) => context.translate(item.target) === context.translate(next.pdf.path))
+    if (record) {
+      next.pdf.stamp = record.stamp
+      next.pdf.digest = record.digest
+    }
+  }
+  return next
+}
+// Writes the next cache into a stage that holds only the files to publish. Returns its path.
+async function writeNextCache(stage, next, files) {
+  const allowed = new Set(files.map((item) => path.basename(item.source)))
+  if ((await fs.promises.readdir(stage)).some((name) => !allowed.has(name)))
+    throw recoveryError(
+      stage,
+      new Error(`Unexpected files in the delivery stage ${stage}; preserve them before publishing.`),
+    )
+  const cacheSource = path.join(stage, 'cache.next.json'),
+    handle = await fs.promises.open(cacheSource, 'wx', 0o600)
+  try {
+    await handle.writeFile(JSON.stringify(next, null, 1))
+    await handle.sync()
+  } finally {
+    await handle.close()
+  }
+  return cacheSource
+}
+// Cache building is allowed to be asynchronous. Recheck every old target before the
+// journal and first exposure, then check each one again at its own capture boundary.
+async function recheckTargets(entries) {
+  for (const entry of entries) {
+    const actual = await fingerprint(entry.target)
+    if (entry.before ? !matches(actual, entry.before) : actual)
+      throw new Error(`Delivery file ${entry.target} changed while its ownership cache was prepared.`)
+  }
+}
+// Captures each current target into the stage and installs its staged file, then records the commit.
+async function installDelivery(context, stage, entries, journal, isCancelled, validateSnapshot) {
+  for (const entry of entries) {
+    cancelled(isCancelled)
+    await checkTargetDirectory(context, entry.target)
+    const actual = await fingerprint(entry.target)
+    if (entry.before ? !matches(actual, entry.before) : actual)
+      throw new Error(`Delivery file ${entry.target} changed during export.`)
+    if (entry.before) {
+      await exclusiveRename.renameExclusive(entry.target, path.join(stage, entry.backup))
+      await syncDirectory(path.dirname(entry.target))
+      await syncDirectory(stage)
+      const captured = await fingerprint(path.join(stage, entry.backup), true)
+      if (!matches(captured, entry.before)) {
+        await returnCapturedEdit(path.join(stage, entry.backup), entry.target, captured)
+        throw new Error(
+          `Delivery file ${entry.target} changed during publication; its captured file at ${path.join(stage, entry.backup)} was preserved.`,
+        )
+      }
+    }
+    cancelled(isCancelled)
+    await installExclusive(path.join(stage, entry.source), entry.target, entry.after)
+  }
+  cancelled(isCancelled)
+  await inspectEntries(context, stage, { ...journal, phase: 'committed' })
+  cancelled(isCancelled)
+  journal.phase = 'committed'
+  await saveJournal(stage, journal, false, isCancelled, validateSnapshot)
+}
+
 /**
  * makeCache(records) builds the next cache from staged stamps, before exposing any file.
  * @param {{
@@ -744,122 +892,27 @@ async function publishDelivery(files, cache, suppliedStage, options = {}) {
   return locked(context, async () => {
     await recoverUnlocked(context, albumFile)
     cancelled(isCancelled)
-    const owned = ownedFiles(cache),
-      entries = [],
-      sources = new Set(),
-      targets = new Set()
-    for (const [i, item] of files.entries()) {
-      const source = context.translate(item.source),
-        target = context.translate(item.target)
-      if (
-        path.dirname(source) !== stage ||
-        !allowedTarget(context, target) ||
-        /^(?:journal\.json(?:\.new)?|cache\.next\.json|backup-.*|discard-.*)$/.test(path.basename(source)) ||
-        targets.has(target.toLowerCase()) ||
-        sources.has(source.toLowerCase())
-      )
-        throw new Error('Duplicate or invalid delivery source/target path.')
-      targets.add(target.toLowerCase())
-      sources.add(source.toLowerCase())
-      await checkTargetDirectory(context, target, true)
-      const after = await fingerprint(source, true),
-        before = await fingerprint(target, true),
-        expected = owned.get(item.target) || owned.get(target)
-      if (!after) throw new Error(`Prepared delivery file ${source} is missing.`)
-      if (
-        before &&
-        (!expected || expected.stamp !== before.stamp || (expected.digest && expected.digest !== before.digest))
-      )
-        throw new Error(
-          `Delivery file ${target} is unowned or has been edited. Preserve it elsewhere before exporting.`,
-        )
-      entries.push({
-        source: path.basename(source),
-        target,
-        before,
-        after,
-        backup: `backup-${i}`,
-        discard: `discard-${i}`,
-      })
-    }
-    const beforeCache = await fingerprint(context.paths.cache, true)
-    if (!beforeCache && entries.some((entry) => entry.before))
-      throw new Error(
-        'The export ownership cache is missing; existing delivery files cannot be claimed from caller data alone.',
-      )
-    if (beforeCache) {
-      let disk
-      try {
-        disk = JSON.parse(await fs.promises.readFile(context.paths.cache, 'utf8'))
-      } catch (_) {
-        throw new Error('The existing export cache is unowned or invalid; preserve it before exporting.')
-      }
-      if (!isDeepStrictEqual(disk, cache) || !matches(await fingerprint(context.paths.cache), beforeCache))
-        throw new Error('The export ownership cache changed or belongs to another album; export again after recovery.')
-    }
+    const entries = await collectDeliveryEntries(context, stage, files, ownedFiles(cache)),
+      beforeCache = await checkCurrentCache(context, cache, entries)
     const records = entries.map((entry, index) => ({
       target: files[index].target,
       stamp: entry.after.stamp,
       digest: entry.after.digest,
     }))
-    let next = await makeCache(records)
-    if (Buffer.isBuffer(next) || typeof next === 'string') next = JSON.parse(next.toString())
-    else next = JSON.parse(JSON.stringify(next))
-    if (!next || next.version !== 2 || next.albumFile !== albumFile)
-      throw new Error('The next export cache must retain the current album identity and version.')
-    next.ownedFiles = { ...(next.ownedFiles || {}) }
-    next.ownedDigests = { ...(cache.ownedDigests || {}), ...(next.ownedDigests || {}) }
-    for (const record of records) {
-      next.ownedFiles[record.target] = record.stamp
-      next.ownedDigests[record.target] = record.digest
-    }
-    for (const spread of Object.values(next.spreads || {}))
-      for (const key of ['high', 'low'])
-        if (spread[key]) {
-          const record = records.find((item) => context.translate(item.target) === context.translate(spread[key].path))
-          if (record) {
-            spread[key].stamp = record.stamp
-            spread[key].digest = record.digest
-          }
-        }
-    if (next.pdf) {
-      const record = records.find((item) => context.translate(item.target) === context.translate(next.pdf.path))
-      if (record) {
-        next.pdf.stamp = record.stamp
-        next.pdf.digest = record.digest
-      }
-    }
+    const next = await buildNextCache(cache, makeCache, records, albumFile, context)
     cancelled(isCancelled)
-    const allowed = new Set(files.map((item) => path.basename(item.source)))
-    if ((await fs.promises.readdir(stage)).some((name) => !allowed.has(name)))
-      throw recoveryError(
-        stage,
-        new Error(`Unexpected files in the delivery stage ${stage}; preserve them before publishing.`),
-      )
-    const cacheSource = path.join(stage, 'cache.next.json'),
-      handle = await fs.promises.open(cacheSource, 'wx', 0o600)
-    try {
-      await handle.writeFile(JSON.stringify(next, null, 1))
-      await handle.sync()
-    } finally {
-      await handle.close()
-    }
-    const i = entries.length
+    const cacheSource = await writeNextCache(stage, next, files),
+      i = entries.length
     entries.push({
       source: 'cache.next.json',
       target: context.paths.cache,
       before: beforeCache,
-      after: await fingerprint(cacheSource, true),
+      // validateJournal rejects a missing fingerprint before anything reads it.
+      after: /** @type {Fingerprint} */ (await fingerprint(cacheSource, true)),
       backup: `backup-${i}`,
       discard: `discard-${i}`,
     })
-    // Cache building is allowed to be asynchronous. Recheck every old target before the
-    // journal and first exposure, then check each one again at its own capture boundary.
-    for (const entry of entries) {
-      const actual = await fingerprint(entry.target)
-      if (entry.before ? !matches(actual, entry.before) : actual)
-        throw new Error(`Delivery file ${entry.target} changed while its ownership cache was prepared.`)
-    }
+    await recheckTargets(entries)
     const journal = {
       version: 1,
       root: context.root,
@@ -877,32 +930,7 @@ async function publishDelivery(files, cache, suppliedStage, options = {}) {
       throw recoveryError(stage, error)
     }
     try {
-      for (const entry of entries) {
-        cancelled(isCancelled)
-        await checkTargetDirectory(context, entry.target)
-        const actual = await fingerprint(entry.target)
-        if (entry.before ? !matches(actual, entry.before) : actual)
-          throw new Error(`Delivery file ${entry.target} changed during export.`)
-        if (entry.before) {
-          await exclusiveRename.renameExclusive(entry.target, path.join(stage, entry.backup))
-          await syncDirectory(path.dirname(entry.target))
-          await syncDirectory(stage)
-          const captured = await fingerprint(path.join(stage, entry.backup), true)
-          if (!matches(captured, entry.before)) {
-            await returnCapturedEdit(path.join(stage, entry.backup), entry.target, captured)
-            throw new Error(
-              `Delivery file ${entry.target} changed during publication; its captured file at ${path.join(stage, entry.backup)} was preserved.`,
-            )
-          }
-        }
-        cancelled(isCancelled)
-        await installExclusive(path.join(stage, entry.source), entry.target, entry.after)
-      }
-      cancelled(isCancelled)
-      await inspectEntries(context, stage, { ...journal, phase: 'committed' })
-      cancelled(isCancelled)
-      journal.phase = 'committed'
-      await saveJournal(stage, journal, false, isCancelled, validateSnapshot)
+      await installDelivery(context, stage, entries, journal, isCancelled, validateSnapshot)
     } catch (error) {
       try {
         if ((await recoverStage(context, stage, albumFile)).state === 'committed') error.deliveryCommitted = true

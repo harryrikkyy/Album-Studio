@@ -15,8 +15,7 @@
     "complexity": 1
   },
   "native/backend/lib/delivery_transaction.js": {
-    "max-len": 1,
-    "complexity": 1
+    "max-len": 1
   },
   "native/backend/lib/exclusive_rename.js": {
     "max-len": 1
