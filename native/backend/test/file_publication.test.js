@@ -481,3 +481,26 @@ test('a publication folder with more than 10000 entries stops with a plain messa
   await assert.rejects(assertFilesSettled(root), plain)
   assert.equal(fs.readdirSync(metadata).length, 10001)
 })
+
+test('a stage whose journal is not JSON is kept, and recovery names it', async (t) => {
+  const f = fixture(t)
+  await killAt(f, await input(f), 'journal')
+  const [stage] = stages(f),
+    journal = path.join(stage, 'journal.json')
+  fs.rmSync(journal)
+  fs.writeFileSync(journal, '{not json', { mode: 0o400 })
+  await assert.rejects(recoverFiles(f.folder, caps), (error) => {
+    assert.equal(
+      error.message,
+      'The publication journal JSON changed during file publication. Existing files and recovery evidence were' +
+        ` preserved. File publication evidence is retained at ${stage}.`,
+    )
+    assert.deepEqual(
+      [error.code, error.recoveryStage, error.recoveryJournal, error.publicationCommitted],
+      ['PUBLICATION_CONFLICT', stage, journal, false],
+    )
+    return true
+  })
+  assert.equal(fs.readFileSync(journal, 'utf8'), '{not json')
+  assert.deepEqual(fs.readFileSync(f.file), f.old)
+})
