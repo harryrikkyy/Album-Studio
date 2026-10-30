@@ -164,6 +164,81 @@ function validPublication(p) {
       (!!p.sheetBefore && SHA.test(p.sheetBefore.digest || '') && /^\d+:\d+$/.test(p.sheetBefore.stamp || '')))
   )
 }
+// The fixed names and size limit of a journal entry: the sheet first, then the cache.
+function renderEntryNames(i) {
+  const kind = i ? 'cache' : 'sheet',
+    extension = i ? '.json' : '.psd'
+  return {
+    kind,
+    limit: i ? MAX_CACHE_BYTES : MAX_SHEET_BYTES,
+    old: `old-${kind}${extension}`,
+    next: `next-${kind}${extension}`,
+    install: `install-${kind}${extension}`,
+  }
+}
+function validRenderEntry(entry, i, targets, names) {
+  return (
+    !!entry &&
+    entry.kind === names.kind &&
+    entry.target === targets[i] &&
+    entry.old === names.old &&
+    entry.next === names.next &&
+    entry.install === names.install &&
+    entry.capture === `captured-${names.kind}` &&
+    entry.discard === `discard-${names.kind}` &&
+    (entry.before === null || validRecord(entry.before, names.limit)) &&
+    validRecord(entry.after, names.limit)
+  )
+}
+// Each retained copy of an entry: absent where the entry records none, present where an old or next
+// copy is required, and the recorded revision (old and next read-only, the rest the same file).
+async function checkRenderRetained(known, stage, entry, names) {
+  const { old, next, install, limit } = names
+  for (const [name, expected, identity] of [
+    [old, entry.before, false],
+    [next, entry.after, false],
+    [install, entry.after, true],
+    [entry.capture, entry.before, true],
+    [entry.discard, entry.after, true],
+  ]) {
+    const actual = await retainedRecord(known, path.join(stage, name), limit)
+    if (
+      (!expected && actual) ||
+      (expected && [old, next].includes(name) && !actual) ||
+      (actual && !(identity ? owned(actual, expected) : matches(actual, expected)))
+    )
+      throw changed(`retained render ${name}`)
+    if (actual && [old, next].includes(name) && actual.mode & 0o222)
+      throw changed(`immutable render ${name} permissions`)
+  }
+}
+// Every name in the stage is allowed by the journal (or a restore copy) and an independent regular
+// file, and an uncommitted marker is no larger than a journal.
+async function checkRenderStage(stage, present, allowed) {
+  for (const name of present) {
+    if (!allowed.has(name) && !/^restore-(sheet|cache)-[a-f0-9-]{36}$/.test(name))
+      throw new Error(`Unexpected render recovery entry ${path.join(stage, name)} was preserved.`)
+    const info = await stat(path.join(stage, name))
+    if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n) throw changed('render recovery entry')
+    if (name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL_BYTES)) throw changed('render commit preparation')
+  }
+}
+// Whether the stage holds a durable commit marker for exactly this journal revision.
+async function renderCommit(stage, journal, raw) {
+  const marker = await readRecord(path.join(stage, 'commit.json'), MAX_JOURNAL_BYTES, true)
+  if (!marker) return false
+  if (journal.commitNode && !sameNode(marker.node, journal.commitNode)) throw changed('durable render commit identity')
+  if (marker.mode & 0o222) throw changed('immutable render commit permissions')
+  let value
+  try {
+    value = JSON.parse(String(marker.bytes))
+  } catch (_) {
+    throw new Error('The render commit marker is invalid JSON.')
+  }
+  if (!value || value.version !== 1 || value.journal !== raw.digest)
+    throw new Error('The render commit marker does not match the exact journal revision.')
+  return true
+}
 async function journalOf(c, stage, known, contents = true) {
   const stageNode = await directory(stage),
     raw = await readRecord(path.join(stage, 'journal.json'), MAX_JOURNAL_BYTES, true)
@@ -180,67 +255,15 @@ async function journalOf(c, stage, known, contents = true) {
   const targets = [path.join(c.sheets, `${journal.spreadId}.psd`), path.join(c.metadata, 'render-cache.json')]
   const allowed = new Set(['journal.json', 'commit.part.json', 'commit.json'])
   for (const [i, entry] of journal.entries.entries()) {
-    const kind = i ? 'cache' : 'sheet',
-      limit = i ? MAX_CACHE_BYTES : MAX_SHEET_BYTES
-    const old = `old-${kind}${i ? '.json' : '.psd'}`,
-      next = `next-${kind}${i ? '.json' : '.psd'}`,
-      install = `install-${kind}${i ? '.json' : '.psd'}`
-    if (
-      !entry ||
-      entry.kind !== kind ||
-      entry.target !== targets[i] ||
-      entry.old !== old ||
-      entry.next !== next ||
-      entry.install !== install ||
-      entry.capture !== `captured-${kind}` ||
-      entry.discard !== `discard-${kind}` ||
-      (entry.before !== null && !validRecord(entry.before, limit)) ||
-      !validRecord(entry.after, limit)
-    )
+    const names = renderEntryNames(i)
+    if (!validRenderEntry(entry, i, targets, names))
       throw new Error('Invalid render snapshot paths or revisions; no public files were changed.')
-    for (const name of [old, next, install, entry.capture, entry.discard]) allowed.add(name)
-    if (!contents) continue
-    for (const [name, expected, identity] of [
-      [old, entry.before, false],
-      [next, entry.after, false],
-      [install, entry.after, true],
-      [entry.capture, entry.before, true],
-      [entry.discard, entry.after, true],
-    ]) {
-      const actual = await retainedRecord(known, path.join(stage, name), limit)
-      if (
-        (!expected && actual) ||
-        (expected && [old, next].includes(name) && !actual) ||
-        (actual && !(identity ? owned(actual, expected) : matches(actual, expected)))
-      )
-        throw changed(`retained render ${name}`)
-      if (actual && [old, next].includes(name) && actual.mode & 0o222)
-        throw changed(`immutable render ${name} permissions`)
-    }
+    for (const name of [names.old, names.next, names.install, entry.capture, entry.discard]) allowed.add(name)
+    if (contents) await checkRenderRetained(known, stage, entry, names)
   }
   const present = await fs.promises.readdir(stage)
-  for (const name of present) {
-    if (!allowed.has(name) && !/^restore-(sheet|cache)-[a-f0-9-]{36}$/.test(name))
-      throw new Error(`Unexpected render recovery entry ${path.join(stage, name)} was preserved.`)
-    const info = await stat(path.join(stage, name))
-    if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n) throw changed('render recovery entry')
-    if (name === 'commit.part.json' && info.size > BigInt(MAX_JOURNAL_BYTES)) throw changed('render commit preparation')
-  }
-  const marker = await readRecord(path.join(stage, 'commit.json'), MAX_JOURNAL_BYTES, true)
-  if (marker) {
-    if (journal.commitNode && !sameNode(marker.node, journal.commitNode))
-      throw changed('durable render commit identity')
-    if (marker.mode & 0o222) throw changed('immutable render commit permissions')
-    let value
-    try {
-      value = JSON.parse(String(marker.bytes))
-    } catch (_) {
-      throw new Error('The render commit marker is invalid JSON.')
-    }
-    if (!value || value.version !== 1 || value.journal !== raw.digest)
-      throw new Error('The render commit marker does not match the exact journal revision.')
-  }
-  return { journal, digest: raw.digest, committed: !!marker, names: present }
+  await checkRenderStage(stage, present, allowed)
+  return { journal, digest: raw.digest, committed: await renderCommit(stage, journal, raw), names: present }
 }
 async function optionalPublic(file, maximum, expectedDigest) {
   const info = await stat(file)
@@ -416,26 +439,17 @@ function parseCache(record, albumFile) {
   return value
 }
 
-/**
- * cacheBefore is the exact SHA-256 of bytes read before construction, or null if absent.
- * sheetBefore is the verified prior digest/stamp (fingerprintRenderFile is convenient), or null.
- * cacheNext carries the complete next cache and recipe record; this function fills the final
- * detached install's path/stamp/digest before writing the immutable journal. Logical output
- * paths stay logical in the cache; physical paths are journal capability checks only.
- */
-async function publishRender(p, capabilities) {
-  if (!validPublication(p))
-    throw new Error('Render publication requires stable spread identity and exact prior/source/project revisions.')
-  if (
+// The optional snapshot and cancellation validators, where given, are functions.
+function validRenderCapabilities(capabilities) {
+  return !(
     (capabilities &&
       capabilities.validateSnapshot !== undefined &&
       typeof capabilities.validateSnapshot !== 'function') ||
     (capabilities && capabilities.isCancelled !== undefined && typeof capabilities.isCancelled !== 'function')
   )
-    throw new Error('Render snapshot/cancellation validators must be functions.')
-  const c = await contextOf(p, capabilities)
-  await recoverInContext(c)
-  await checkSnapshot(c, p)
+}
+// The exact public sheet and cache this publication replaces, and its verified staged source.
+async function readRenderRevisions(c, p) {
   const sheet = path.join(c.sheets, `${p.spreadId}.psd`),
     cacheFile = path.join(c.metadata, 'render-cache.json')
   const beforeSheet = await readRecord(sheet, MAX_SHEET_BYTES, false, {
@@ -453,6 +467,11 @@ async function publishRender(p, capabilities) {
   const oldCache = parseCache(beforeCache, c.albumFile),
     source = await readRecord(p.source, MAX_SHEET_BYTES, false, { expectedDigest: p.sourceDigest })
   if (!source || source.digest !== p.sourceDigest) throw changed('staged source revision')
+  return { sheet, cacheFile, beforeSheet, beforeCache, oldCache, source }
+}
+// The next cache names this project and spread, leaves every other spread as it was and keeps the
+// sheet at its reserved path. Returns the spread's proposed record.
+function checkNextCache(p, c, oldCache, logicalSheet) {
   if (
     !p.cacheNext ||
     p.cacheNext.version !== 2 ||
@@ -468,91 +487,190 @@ async function publishRender(p, capabilities) {
     if (!isDeepStrictEqual(unchanged(oldCache), unchanged(p.cacheNext)))
       throw new Error('The next render cache changes another spread; preserve its exact ownership record.')
   }
-  const logicalSheet = path.join(c.logicalOutput, '.album-studio', 'sheets', `${p.spreadId}.psd`)
   const proposed = p.cacheNext.spreads[p.spreadId]
   if (
     (proposed.path !== undefined && path.resolve(proposed.path) !== path.resolve(logicalSheet)) ||
     (proposed.outputFolder !== undefined && path.resolve(proposed.outputFolder) !== path.resolve(c.logicalOutput))
   )
     throw new Error('The next sheet record is outside the reserved logical output path.')
-  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.render-prepare-')),
-    name = `render-${crypto.randomUUID()}`,
-    stage = path.join(c.metadata, name)
-  const known = new Map()
+  return proposed
+}
+// Retains detached copies of the source, the current sheet and cache and the next cache in the
+// private folder, then writes the immutable journal that names them.
+async function prepareRender(c, p, prepared, name, known, sources) {
+  const { sheet, cacheFile, beforeSheet, beforeCache, source, logicalSheet, proposed } = sources
   const retainCopy = async (from, file, expected, mode) => {
     const target = path.join(prepared, file),
       record = await copyDetached(from, target, expected, mode)
     await remember(known, target, record)
     return record
   }
+  const snapshot = await retainCopy(p.source, 'next-sheet.psd', source, 0o400)
+  const installSheet = await retainCopy(path.join(prepared, 'next-sheet.psd'), 'install-sheet.psd', {
+    ...snapshot,
+    mode: source.mode,
+  })
+  if (beforeSheet) await retainCopy(sheet, 'old-sheet.psd', beforeSheet, 0o400)
+  if (beforeCache) await retainCopy(cacheFile, 'old-cache.json', beforeCache, 0o400)
+  const nextCache = {
+    ...p.cacheNext,
+    spreads: {
+      ...p.cacheNext.spreads,
+      [p.spreadId]: {
+        ...proposed,
+        path: logicalSheet,
+        outputFolder: c.logicalOutput,
+        sheet: installSheet.stamp,
+        sheetDigest: installSheet.digest,
+      },
+    },
+  }
+  const bytes = Buffer.from(JSON.stringify(nextCache, null, 1))
+  if (bytes.length > MAX_CACHE_BYTES) throw new Error('The next render cache exceeds its supported 64 MiB JSON policy.')
+  await writeNew(path.join(prepared, 'next-cache.json'), bytes, 0o400)
+  const nextCacheRecord = await readRecord(path.join(prepared, 'next-cache.json'), MAX_CACHE_BYTES)
+  if (!nextCacheRecord) throw changed('prepared render cache')
+  await remember(known, path.join(prepared, 'next-cache.json'), nextCacheRecord)
+  const installCache = await retainCopy(path.join(prepared, 'next-cache.json'), 'install-cache.json', {
+    ...nextCacheRecord,
+    mode: beforeCache ? beforeCache.mode : 0o600,
+  })
+  const entries = /** @type {Array<[string, string, FileRecord | null, FileRecord]>} */ ([
+    ['sheet', sheet, beforeSheet, installSheet],
+    ['cache', cacheFile, beforeCache, installCache],
+  ]).map(([kind, target, before, after]) => ({
+    kind,
+    target,
+    before: description(before),
+    after: description(after),
+    old: `old-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
+    next: `next-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
+    install: `install-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
+    capture: `captured-${kind}`,
+    discard: `discard-${kind}`,
+  }))
+  // Reserve the marker's independent inode before sealing the journal. Its contents
+  // are filled only after both public files pass verification; an identical-byte
+  // substituted marker can never acquire this transaction's restart authority.
+  const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
+  const journal = {
+    version: 1,
+    albumFile: c.albumFile,
+    output: c.output,
+    name,
+    stageNode: await directory(prepared),
+    spreadId: p.spreadId,
+    projectRevision: p.expectedProjectRevision,
+    entries,
+    commitNode,
+  }
+  const journalBytes = Buffer.from(JSON.stringify(journal)),
+    journalRevision = crypto.createHash('sha256').update(journalBytes).digest('hex')
+  await writeNew(path.join(prepared, 'journal.json'), journalBytes, 0o400)
+  await syncDirectory(prepared)
+  return { entries, journal, journalRevision, commitNode, installSheet, installCache, nextCache }
+}
+// Captures each current public file into the stage and installs its prepared copy, re-checking the
+// snapshot, the journal and each file's identity around every move.
+async function installRender(c, p, stage, entries, known, exactJournal) {
+  for (const entry of entries) {
+    await checkSnapshot(c, p)
+    await exactJournal()
+    // Identity checks around the moves: the captured original is re-read once captured, and the
+    // published pair is re-read just before the commit marker.
+    const current = await stat(entry.target)
+    if (entry.before ? !sameIdentity(current, entry.before) : current)
+      throw changed(`existing ${entry.kind} at publication`)
+    if (entry.before) {
+      await move(entry.target, path.join(stage, entry.capture))
+      const captured = await readRecord(path.join(stage, entry.capture), undefined, false, {
+        expectedDigest: entry.before.digest,
+      })
+      if (!captured || !owned(captured, entry.before)) {
+        await returnCaptured(c, stage, entry, path.join(stage, entry.capture), captured)
+        throw changed(`${entry.kind} at atomic capture`)
+      }
+      await remember(known, path.join(stage, entry.capture), captured)
+    }
+    await checkSnapshot(c, p)
+    await move(path.join(stage, entry.install), entry.target)
+    if (!sameIdentity(await stat(entry.target), entry.after)) throw changed(`installed ${entry.kind}`)
+  }
+}
+// Confirms the published pair is this publication's, then writes, verifies and moves the commit
+// marker that makes it final.
+async function commitRender(c, p, stage, journal, journalRevision, commitNode, exactJournal) {
+  await exactJournal()
+  const publicEntries = await inspect(c, journal, true)
+  if (publicEntries.some(({ next }) => !next)) throw changed('published sheet/cache ownership')
+  await checkSnapshot(c, p)
+  const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: journalRevision })),
+    markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
+  await writeCommitPart(stage, markerBytes, commitNode)
+  // Honour stop/source changes even if they occur during the commit record's write/fsync.
+  await checkSnapshot(c, p)
+  await exactJournal()
+  const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL_BYTES)
+  if (
+    !marker ||
+    marker.digest !== markerDigest ||
+    marker.size !== String(markerBytes.length) ||
+    !sameNode(marker.node, commitNode) ||
+    marker.mode & 0o222
+  )
+    throw changed('exact render commit preparation bytes or identity')
+  await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
+  await exactJournal()
+}
+// After a failed publication: decide whether the stage was exposed, recover it, and report where
+// the evidence stays and whether the pair had committed.
+async function failedRender(c, error, prepared, stage, exposed, committed, result) {
+  if (!exposed && !(await stat(prepared)) && (await stat(stage))) exposed = true
+  if (exposed && (await stat(stage))) {
+    try {
+      const state = await journalOf(c, stage)
+      committed = state.committed
+      const recovery = await recoverStage(c, stage)
+      error.recoveryStage = recovery.historyPath
+      if (!state.committed) error.renderRestored = true
+    } catch (recovery) {
+      error.message += ` ${recovery.message}`
+      error.recoveryStage = recovery.recoveryStage || stage
+      error.recoveryRequired = true
+      if (recovery.renderCommitted) committed = true
+    }
+  }
+  return failureAt(exposed ? stage : prepared, error, committed, result)
+}
+
+/**
+ * cacheBefore is the exact SHA-256 of bytes read before construction, or null if absent.
+ * sheetBefore is the verified prior digest/stamp (fingerprintRenderFile is convenient), or null.
+ * cacheNext carries the complete next cache and recipe record; this function fills the final
+ * detached install's path/stamp/digest before writing the immutable journal. Logical output
+ * paths stay logical in the cache; physical paths are journal capability checks only.
+ */
+async function publishRender(p, capabilities) {
+  if (!validPublication(p))
+    throw new Error('Render publication requires stable spread identity and exact prior/source/project revisions.')
+  if (!validRenderCapabilities(capabilities))
+    throw new Error('Render snapshot/cancellation validators must be functions.')
+  const c = await contextOf(p, capabilities)
+  await recoverInContext(c)
+  await checkSnapshot(c, p)
+  const sources = await readRenderRevisions(c, p)
+  const logicalSheet = path.join(c.logicalOutput, '.album-studio', 'sheets', `${p.spreadId}.psd`)
+  const proposed = checkNextCache(p, c, sources.oldCache, logicalSheet)
+  const prepared = await fs.promises.mkdtemp(path.join(c.metadata, '.render-prepare-')),
+    name = `render-${crypto.randomUUID()}`,
+    stage = path.join(c.metadata, name)
+  const known = new Map()
   let exposed = false,
     committed = false,
     result
   try {
-    const snapshot = await retainCopy(p.source, 'next-sheet.psd', source, 0o400)
-    const installSheet = await retainCopy(path.join(prepared, 'next-sheet.psd'), 'install-sheet.psd', {
-      ...snapshot,
-      mode: source.mode,
-    })
-    if (beforeSheet) await retainCopy(sheet, 'old-sheet.psd', beforeSheet, 0o400)
-    if (beforeCache) await retainCopy(cacheFile, 'old-cache.json', beforeCache, 0o400)
-    const nextCache = {
-      ...p.cacheNext,
-      spreads: {
-        ...p.cacheNext.spreads,
-        [p.spreadId]: {
-          ...proposed,
-          path: logicalSheet,
-          outputFolder: c.logicalOutput,
-          sheet: installSheet.stamp,
-          sheetDigest: installSheet.digest,
-        },
-      },
-    }
-    const bytes = Buffer.from(JSON.stringify(nextCache, null, 1))
-    if (bytes.length > MAX_CACHE_BYTES)
-      throw new Error('The next render cache exceeds its supported 64 MiB JSON policy.')
-    await writeNew(path.join(prepared, 'next-cache.json'), bytes, 0o400)
-    const nextCacheRecord = await readRecord(path.join(prepared, 'next-cache.json'), MAX_CACHE_BYTES)
-    if (!nextCacheRecord) throw changed('prepared render cache')
-    await remember(known, path.join(prepared, 'next-cache.json'), nextCacheRecord)
-    const installCache = await retainCopy(path.join(prepared, 'next-cache.json'), 'install-cache.json', {
-      ...nextCacheRecord,
-      mode: beforeCache ? beforeCache.mode : 0o600,
-    })
-    const entries = /** @type {Array<[string, string, FileRecord | null, FileRecord]>} */ ([
-      ['sheet', sheet, beforeSheet, installSheet],
-      ['cache', cacheFile, beforeCache, installCache],
-    ]).map(([kind, target, before, after]) => ({
-      kind,
-      target,
-      before: description(before),
-      after: description(after),
-      old: `old-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
-      next: `next-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
-      install: `install-${kind}${kind === 'sheet' ? '.psd' : '.json'}`,
-      capture: `captured-${kind}`,
-      discard: `discard-${kind}`,
-    }))
-    // Reserve the marker's independent inode before sealing the journal. Its contents
-    // are filled only after both public files pass verification; an identical-byte
-    // substituted marker can never acquire this transaction's restart authority.
-    const commitNode = await writeNew(path.join(prepared, 'commit.part.json'), '', 0o600)
-    const journal = {
-      version: 1,
-      albumFile: c.albumFile,
-      output: c.output,
-      name,
-      stageNode: await directory(prepared),
-      spreadId: p.spreadId,
-      projectRevision: p.expectedProjectRevision,
-      entries,
-      commitNode,
-    }
-    const journalBytes = Buffer.from(JSON.stringify(journal)),
-      journalRevision = crypto.createHash('sha256').update(journalBytes).digest('hex')
-    await writeNew(path.join(prepared, 'journal.json'), journalBytes, 0o400)
-    await syncDirectory(prepared)
+    const { entries, journal, journalRevision, commitNode, installSheet, installCache, nextCache } =
+      await prepareRender(c, p, prepared, name, known, { ...sources, logicalSheet, proposed })
     const exactJournal = async () => {
       const state = await journalOf(c, stage, known)
       if (state.digest !== journalRevision) throw changed('durable render journal revision')
@@ -569,71 +687,14 @@ async function publishRender(p, capabilities) {
       cache: nextCache,
       cacheData: nextCache,
     }
-    for (const entry of entries) {
-      await checkSnapshot(c, p)
-      await exactJournal()
-      // Identity checks around the moves: the captured original is re-read once captured, and the
-      // published pair is re-read just before the commit marker.
-      const current = await stat(entry.target)
-      if (entry.before ? !sameIdentity(current, entry.before) : current)
-        throw changed(`existing ${entry.kind} at publication`)
-      if (entry.before) {
-        await move(entry.target, path.join(stage, entry.capture))
-        const captured = await readRecord(path.join(stage, entry.capture), undefined, false, {
-          expectedDigest: entry.before.digest,
-        })
-        if (!captured || !owned(captured, entry.before)) {
-          await returnCaptured(c, stage, entry, path.join(stage, entry.capture), captured)
-          throw changed(`${entry.kind} at atomic capture`)
-        }
-        await remember(known, path.join(stage, entry.capture), captured)
-      }
-      await checkSnapshot(c, p)
-      await move(path.join(stage, entry.install), entry.target)
-      if (!sameIdentity(await stat(entry.target), entry.after)) throw changed(`installed ${entry.kind}`)
-    }
-    await exactJournal()
-    const publicEntries = await inspect(c, journal, true)
-    if (publicEntries.some(({ next }) => !next)) throw changed('published sheet/cache ownership')
-    await checkSnapshot(c, p)
-    const markerBytes = Buffer.from(JSON.stringify({ version: 1, journal: journalRevision })),
-      markerDigest = crypto.createHash('sha256').update(markerBytes).digest('hex')
-    await writeCommitPart(stage, markerBytes, commitNode)
-    // Honour stop/source changes even if they occur during the commit record's write/fsync.
-    await checkSnapshot(c, p)
-    await exactJournal()
-    const marker = await readRecord(path.join(stage, 'commit.part.json'), MAX_JOURNAL_BYTES)
-    if (
-      !marker ||
-      marker.digest !== markerDigest ||
-      marker.size !== String(markerBytes.length) ||
-      !sameNode(marker.node, commitNode) ||
-      marker.mode & 0o222
-    )
-      throw changed('exact render commit preparation bytes or identity')
-    await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'), commitNode)
-    await exactJournal()
+    await installRender(c, p, stage, entries, known, exactJournal)
+    await commitRender(c, p, stage, journal, journalRevision, commitNode, exactJournal)
     committed = true
     const historyPath = await retire(c, stage, known)
     await pruneHistory(c, historyPath, p.spreadId)
     return { ...result, historyPath }
   } catch (error) {
-    if (!exposed && !(await stat(prepared)) && (await stat(stage))) exposed = true
-    if (exposed && (await stat(stage))) {
-      try {
-        const state = await journalOf(c, stage)
-        committed = state.committed
-        const recovery = await recoverStage(c, stage)
-        error.recoveryStage = recovery.historyPath
-        if (!state.committed) error.renderRestored = true
-      } catch (recovery) {
-        error.message += ` ${recovery.message}`
-        error.recoveryStage = recovery.recoveryStage || stage
-        error.recoveryRequired = true
-        if (recovery.renderCommitted) committed = true
-      }
-    }
-    throw failureAt(exposed ? stage : prepared, error, committed, result)
+    throw await failedRender(c, error, prepared, stage, exposed, committed, result)
   }
 }
 

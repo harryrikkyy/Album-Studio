@@ -55,9 +55,6 @@
   "native/backend/lib/render.js": {
     "complexity": 1
   },
-  "native/backend/lib/render_transaction.js": {
-    "complexity": 2
-  },
   "native/backend/lib/sheets.js": {
     "max-len": 1
   },
