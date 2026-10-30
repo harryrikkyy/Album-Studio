@@ -831,6 +831,49 @@ test('an edit racing rollback remains at its name and in a retained recovery cop
   assert.ok(fs.existsSync(path.join(f.stage, 'journal.json')))
 })
 
+test('an unexpected stage file before publishing asks for recovery and changes no target', async (t) => {
+  const f = await fixture(t),
+    unknown = path.join(f.stage, 'customer-notes.txt')
+  fs.writeFileSync(unknown, 'keep this file')
+  await assert.rejects(publish(f), (error) => {
+    assert.equal(
+      error.message,
+      `Delivery needs recovery. Keep ${f.stage} and its journal/backups; reconnect the drive or resolve the file ` +
+        `conflict before exporting again. Unexpected files in the delivery stage ${f.stage}; preserve them before ` +
+        'publishing.',
+    )
+    assert.deepEqual([error.recoveryStage, error.recoveryJournal], [f.stage, path.join(f.stage, 'journal.json')])
+    return true
+  })
+  assertPrevious(f)
+  assert.equal(fs.readFileSync(unknown, 'utf8'), 'keep this file')
+  assert.equal(fs.existsSync(path.join(f.stage, 'cache.next.json')), false)
+})
+
+test('a failed first journal save asks for recovery at its stage and changes no target', async (t) => {
+  const f = await fixture(t),
+    open = fs.promises.open.bind(fs.promises)
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    if (file === path.join(f.stage, 'journal.json.new'))
+      throw Object.assign(new Error('journal disk full'), { code: 'ENOSPC' })
+    return open(file, ...args)
+  })
+  await assert.rejects(publish(f), (error) => {
+    assert.equal(
+      error.message,
+      `Delivery needs recovery. Keep ${f.stage} and its journal/backups; reconnect the drive or resolve the file ` +
+        'conflict before exporting again. journal disk full',
+    )
+    assert.deepEqual(
+      [error.code, error.recoveryStage, error.recoveryJournal],
+      ['ENOSPC', f.stage, path.join(f.stage, 'journal.json')],
+    )
+    return true
+  })
+  assertPrevious(f)
+  assert.ok(fs.existsSync(path.join(f.stage, 'cache.next.json')))
+})
+
 test('a symlink or unknown file at the temporary journal name cannot be overwritten or deleted', async (t) => {
   for (const kind of ['symlink', 'regular'])
     await t.test(kind, async (tt) => {
