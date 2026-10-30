@@ -27,9 +27,6 @@
   "native/backend/lib/file_publication.js": {
     "complexity": 2
   },
-  "native/backend/lib/labnaming.js": {
-    "complexity": 2
-  },
   "native/backend/lib/newalbum.js": {
     "complexity": 1
   },

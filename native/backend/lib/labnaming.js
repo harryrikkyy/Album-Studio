@@ -251,40 +251,46 @@ function recoveryError(file, error) {
   return out
 }
 
+const plainName = (value) =>
+  typeof value === 'string' && value !== '.' && value !== '..' && path.basename(value) === value && !BAD.test(value)
+const decimalIdentity = (identity) =>
+  !!identity &&
+  ['dev', 'ino', 'size', 'mtimeNs'].every((k) => typeof identity[k] === 'string' && /^-?\d+$/.test(identity[k]))
+// A journal this module wrote: its own file name, version 1, this folder and a known phase.
+function validRenameJournal(folder, journal, match) {
+  return (
+    !!match &&
+    !!journal &&
+    typeof journal === 'object' &&
+    journal.version === 1 &&
+    journal.folder === folder &&
+    ['staging', 'committing'].includes(journal.phase) &&
+    Array.isArray(journal.entries)
+  )
+}
+// One staged sheet: plain names, the exact temporary name, a decimal identity, and digest
+// evidence wherever the file system reports no inode.
+function validRenameEntry(entry, i, match) {
+  return (
+    !!entry &&
+    plainName(entry.from) &&
+    plainName(entry.to) &&
+    !entry.from.startsWith('.as-') &&
+    !entry.to.startsWith('.') &&
+    entry.tmp === `.as-rename-${match[1]}-${i}${path.extname(entry.from)}` &&
+    decimalIdentity(entry.identity) &&
+    !(entry.digest && !/^[a-f0-9]{64}$/.test(entry.digest)) &&
+    !(entry.identity.ino === '0' && !entry.digest)
+  )
+}
 function validateJournal(folder, file, journal) {
   const match = path.basename(file).match(JOURNAL)
-  const name = (value) =>
-    typeof value === 'string' && value !== '.' && value !== '..' && path.basename(value) === value && !BAD.test(value)
-  if (
-    !match ||
-    !journal ||
-    typeof journal !== 'object' ||
-    journal.version !== 1 ||
-    journal.folder !== folder ||
-    !['staging', 'committing'].includes(journal.phase) ||
-    !Array.isArray(journal.entries)
-  )
+  if (!validRenameJournal(folder, journal, match))
     throw new Error('Invalid rename recovery journal; inspect it before continuing.')
   const sources = new Set()
   const targets = new Set()
   for (const [i, entry] of journal.entries.entries()) {
-    const validIdentity =
-      entry &&
-      entry.identity &&
-      ['dev', 'ino', 'size', 'mtimeNs'].every(
-        (k) => typeof entry.identity[k] === 'string' && /^-?\d+$/.test(entry.identity[k]),
-      )
-    if (
-      !entry ||
-      !name(entry.from) ||
-      !name(entry.to) ||
-      entry.from.startsWith('.as-') ||
-      entry.to.startsWith('.') ||
-      entry.tmp !== `.as-rename-${match[1]}-${i}${path.extname(entry.from)}` ||
-      !validIdentity ||
-      (entry.digest && !/^[a-f0-9]{64}$/.test(entry.digest)) ||
-      (entry.identity.ino === '0' && !entry.digest)
-    )
+    if (!validRenameEntry(entry, i, match))
       throw new Error('Invalid sheet entry in rename recovery journal; no files were moved.')
     if (sources.has(entry.from.toLowerCase()) || targets.has(entry.to.toLowerCase()))
       throw new Error('Duplicate sheet entries in rename recovery journal; no files were moved.')
@@ -444,6 +450,19 @@ async function renameSheets({ folder, ops }) {
 }
 
 async function renameSheetsUnlocked(folder, canonical, ops) {
+  const plan = await planRenames(folder, canonical, ops)
+  await refuseOverwrites(plan)
+  if (!plan.length) return { renamed: 0, undo: [] }
+  const { journal, journalFile } = renameJournal(canonical, plan)
+  await applyRenames(canonical, journal, journalFile)
+  return {
+    renamed: plan.length,
+    undo: plan.map((p) => ({ fromPath: p.to, toBaseName: path.basename(p.from).replace(/\.[^.]+$/, '') })),
+  }
+}
+
+// Every op's checks, in order, and the identity of each sheet that changes name.
+async function planRenames(folder, canonical, ops) {
   const plan = []
   const targets = new Set()
   const sources = new Set()
@@ -477,7 +496,11 @@ async function renameSheetsUnlocked(folder, canonical, ops) {
       })
     }
   }
-  // A target that is an existing file not being renamed would be overwritten: refuse.
+  return plan
+}
+
+// A target that is an existing file not being renamed would be overwritten: refuse.
+async function refuseOverwrites(plan) {
   const moving = new Set(plan.map((p) => p.from.toLowerCase()))
   for (const p of plan) {
     if (
@@ -490,7 +513,9 @@ async function renameSheetsUnlocked(folder, canonical, ops) {
       throw new Error(`${path.basename(p.to)} already exists in the folder and isn’t one of the sheets being renamed.`)
     }
   }
-  if (!plan.length) return { renamed: 0, undo: [] }
+}
+
+function renameJournal(canonical, plan) {
   const stamp = crypto.randomBytes(8).toString('hex')
   const journalFile = path.join(canonical, `.as-rename-${stamp}.json`)
   const journal = {
@@ -505,6 +530,12 @@ async function renameSheetsUnlocked(folder, canonical, ops) {
       ...(p.digest ? { digest: p.digest } : {}),
     })),
   }
+  return { journal, journalFile }
+}
+
+// Saves the journal, moves every sheet to its temporary name and then to its new one, and
+// restores the original names from the journal if any step fails.
+async function applyRenames(canonical, journal, journalFile) {
   try {
     await saveJournal(journalFile, journal, true)
   } catch (e) {
@@ -535,10 +566,6 @@ async function renameSheetsUnlocked(folder, canonical, ops) {
       throw recoveryError(journalFile, new Error(`${e.message} ${recovery.message}`, { cause: e }))
     }
     throw new Error(`Lab rename failed; the original names were restored. ${e.message}`, { cause: e })
-  }
-  return {
-    renamed: plan.length,
-    undo: plan.map((p) => ({ fromPath: p.to, toBaseName: path.basename(p.from).replace(/\.[^.]+$/, '') })),
   }
 }
 
