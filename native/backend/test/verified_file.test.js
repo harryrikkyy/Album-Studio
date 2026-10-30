@@ -54,6 +54,67 @@ test('a failed descriptor close preserves the primary revision failure and repor
     fs.promises.open = original
   }
 })
+// Reads the file with its close failing, and with every read throwing `thrown` if one is given.
+async function closeFails(file, thrown) {
+  const original = fs.promises.open
+  fs.promises.open = async function (name, ...args) {
+    const handle = await original.call(this, name, ...args)
+    if (name === file) {
+      const close = handle.close.bind(handle)
+      if (thrown !== undefined)
+        handle.read = async () => {
+          throw thrown
+        }
+      handle.close = async () => {
+        await close()
+        throw Object.assign(new Error('injected close failure'), { code: 'EIO' })
+      }
+    }
+    return handle
+  }
+  try {
+    return await read(file).then(
+      (value) => ({ value }),
+      (error) => ({ error }),
+    )
+  } finally {
+    fs.promises.open = original
+  }
+}
+test('a read failure that cannot list close errors is replaced, keeping its message, code and cause', async (t) => {
+  const file = fixture(t),
+    frozen = Object.freeze(Object.assign(new Error('frozen failure'), { code: 'EFROZEN' }))
+  const accessor = Object.defineProperty(
+    Object.assign(new Error('accessor failure'), { code: 'EACCESS' }),
+    'closeErrors',
+    {
+      get: () => [],
+    },
+  )
+  for (const [thrown, message, code] of [
+    [frozen, 'frozen failure', 'EFROZEN'],
+    [accessor, 'accessor failure', 'EACCESS'],
+    ['plain failure', 'plain failure', undefined],
+    [7, 'The publication read failed.', undefined],
+  ]) {
+    const { error } = await closeFails(file, thrown)
+    assert.notEqual(error, thrown)
+    assert.equal(error.cause, thrown)
+    assert.deepEqual([error.message, error.code, error.closeErrors], [message, code, ['injected close failure']])
+  }
+})
+test("a close failure joins a read failure's close errors, up to 64", async (t) => {
+  const earlier = Array.from({ length: 70 }, (_, i) => `earlier ${i}`),
+    thrown = Object.assign(new Error('listed failure'), { closeErrors: earlier })
+  const { error } = await closeFails(fixture(t), thrown)
+  assert.equal(error, thrown)
+  assert.deepEqual(error.closeErrors, [...earlier.slice(0, 63), 'injected close failure'])
+})
+test('a close failure after a complete read is the failure itself', async (t) => {
+  const { value, error } = await closeFails(fixture(t))
+  assert.equal(value, undefined)
+  assert.deepEqual([error.message, error.code], ['injected close failure', 'EIO'])
+})
 async function bytesRead(t, file, run) {
   const open = fs.promises.open,
     owners = new WeakMap(),
