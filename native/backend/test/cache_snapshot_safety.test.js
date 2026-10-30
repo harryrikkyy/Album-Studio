@@ -308,3 +308,44 @@ for (const which of ['source', 'destination', 'both'])
       assert.match(error.message, /EBADF destination/)
     }
   })
+
+test('a retained snapshot that cannot be examined is reported with the original failure', async (t) => {
+  const f = fixture(t),
+    open = fs.promises.open.bind(fs.promises),
+    lstat = fs.promises.lstat.bind(fs.promises)
+  // A partial write fails the snapshot, as above; then the retained copy can't be examined.
+  t.mock.method(fs.promises, 'open', async (file, ...args) => {
+    const handle = await open(file, ...args)
+    if (file === f.target && typeof args[0] === 'number' && args[0] & fs.constants.O_CREAT) {
+      const write = handle.write.bind(handle)
+      handle.write = async (buffer, offset, length, position) => {
+        await write(buffer, offset, 1, position)
+        throw Object.assign(new Error('ENOSPC partial snapshot'), { code: 'ENOSPC' })
+      }
+    }
+    return handle
+  })
+  t.mock.method(fs.promises, 'lstat', async (file, ...args) => {
+    if (String(file).includes(`${path.sep}.album-studio-snapshot-`))
+      throw Object.assign(new Error(`EACCES: permission denied, lstat '${file}'`), { code: 'EACCES' })
+    return lstat(file, ...args)
+  })
+  const error = await snapshotFile(f.file, f.stage, f.digest).then(
+    () => null,
+    (e) => e,
+  )
+  const [history] = fs.readdirSync(f.root).filter((name) => name.startsWith('.album-studio-snapshot-')),
+    retained = path.join(f.root, history, path.basename(f.target))
+  assert.equal(
+    error.message,
+    `ENOSPC partial snapshot Snapshot retention also needs review: EACCES: permission denied, lstat '${retained}'` +
+      ` Snapshot evidence was preserved at ${f.target}; keep it before retrying.`,
+  )
+  assert.deepEqual(
+    [error.code, error.sourceCode, error.snapshotPath, error.retainedPath],
+    ['SNAPSHOT_PRESERVED', 'ENOSPC', f.target, undefined],
+  )
+  // The copy did move; only examining it failed.
+  assert.equal(fs.readFileSync(retained, 'utf8'), 'o')
+  assert.equal(fs.readFileSync(f.file, 'utf8'), 'original verified source')
+})
