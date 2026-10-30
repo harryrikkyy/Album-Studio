@@ -133,7 +133,7 @@ unverified. The entries below retain the earlier engine reconstruction/build his
 
 ## Architecture engine update, 16 October 2026
 
-The current pin is `41a0f464405a1e4e20629de928727815679f5906`, reconstructed locally from the
+This update pinned `41a0f464405a1e4e20629de928727815679f5906`, reconstructed locally from the
 unchanged upstream prerequisite and `architecture-20261016-wire-id.bundle`. `bundleRef` selects
 `refs/heads/codex/architecture-native` for discovery; the exact commit/checksums remain binding.
 `contractsVersion: 1` additionally verifies the embedded native contracts against the canonical
@@ -148,3 +148,34 @@ and the actual default30-crate layer graph pass. This is not hosted CI, whole-wo
 packaged-app installation or native GUI acceptance. Current executed Node is22.22.3; the
 configured22.23.3 packaging/CI runtime has not been verified here. Earlier evidence above is
 historical and does not substitute for the latest iteration8 verification manifest.
+
+## macOS workspace test update, 30 October 2026
+
+The current pin is `5301ba386f6f601554ad5e9dbc57f54b4370cf2b`, reconstructed from the unchanged
+upstream prerequisite and `macos-tests-20261030.bundle`. `bundleRef` selects
+`refs/heads/codex/macos-workspace-tests`. The lockfile, compiler, features and contracts version are
+unchanged. `native/scripts/engine/PROVENANCE.md` records the two commits and their checksums.
+
+Hosted CI's native job failed at Workspace tests on every run of the quality branch, always at log
+line 10352. Two engine tests were at fault, and neither fix reaches shipped code:
+
+- `mask_thumbs_ui::tests::a_new_mask_is_targeted_so_the_next_footer_trash_keeps_its_layer` hard-coded
+  `Alt`, which is `⌥` on macOS. Upstream's CI doesn't run `cargo test` on macOS, so it passed there.
+  This test stopped the hosted job. The hosted log was not read: the match rests on its exact line
+  count, which a cold local run reproduces.
+- `scorecard::tests::staleness_check_and_determinism` found `docs/scorecard.md` stale after the fork
+  added `apps/album-studio`. Hosted CI never reached this one, because it stops at the first failure.
+
+These gates ran on this Mac from a fresh reconstruction, using public upstream and the new bundle:
+
+- Native job: contract drift, rustfmt, workspace tests (5,648 passed, 0 failed, 47 ignored), the
+  ignored adversarial registry suite, Clippy with `-D warnings`, and layering across 30 crates.
+- Integration job: the architecture check, the release build
+  (`photocraft-cli 0.6.0 (5301ba386, 2026-10-30)`) and the interface build. Node tests: 242 shared,
+  912 of 913 helper and 62 interface, none skipped. The one failure is the PDF colour test, because
+  Poppler isn't installed on this Mac. Hosted CI installs it before that step.
+
+This is not hosted CI. These checks used a real Apple GPU, a newer macOS and Node 22.22.3 rather than
+22.23.3. The corpus gate was not rerun locally: its four crates, the lockfile and `xtask` are
+byte-identical to the previous pin, which passed that job on hosted CI. It runs again when this pin
+is pushed. Packaging, native GUI and clean-customer-Mac checks remain separate requirements.

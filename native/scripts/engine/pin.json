@@ -3,15 +3,15 @@
   "name": "PhotoCraft Album Studio fork",
   "upstreamRepository": "https://github.com/storytold/photocraft.git",
   "baseCommit": "0c72d95425dece90ef9a1cceb49e3315c96e22d5",
-  "commit": "41a0f464405a1e4e20629de928727815679f5906",
-  "bundle": "architecture-20261016-wire-id.bundle",
-  "bundleSha256": "f2234f91cc5f407f8f440179abe0eb571af18e1cfcf332592c16ab1d789d8b54",
+  "commit": "5301ba386f6f601554ad5e9dbc57f54b4370cf2b",
+  "bundle": "macos-tests-20261030.bundle",
+  "bundleSha256": "9510c25f9ffd54852c783b265c8d12092cf78af95246025267d1d4772124a3c4",
   "cargoLockSha256": "1f0ee0881214592d3a2ad51c5974a4a31a3f72e4590ecba4cd8862492d24c8d6",
   "rustToolchain": "1.99.0",
-  "sourceDate": "2026-10-16",
+  "sourceDate": "2026-10-30",
   "features": [
     "heif"
   ],
-  "bundleRef": "refs/heads/codex/architecture-native",
+  "bundleRef": "refs/heads/codex/macos-workspace-tests",
   "contractsVersion": 1
 }

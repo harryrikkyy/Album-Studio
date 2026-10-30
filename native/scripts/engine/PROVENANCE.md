@@ -39,7 +39,7 @@ drift pass.
 
 ## Architecture continuation, 16 October 2026
 
-The current pin advances the original fork with two reviewed local commits: native
+This continuation advanced the original fork with two reviewed local commits: native
 composition-root registration, bounded generation-scoped pipe/ingress lifecycle, canonical
 embedded JSON validation/generated method ownership, and integral wire-ID compatibility.
 The final source commit is `41a0f464405a1e4e20629de928727815679f5906`; the original bdb1f8f source objects and
@@ -53,3 +53,23 @@ A local independent reconstruction, provenance-checked release rebuild and stric
 application gate passed; native119-test and layering/Clippy evidence is recorded in iteration8.
 Focused changed-source scanning is separate evidence, not a whole-engine security audit.
 The packaged application, full workspace/corpus, hosted CI and native GUI remain unverified.
+
+## macOS workspace tests, 30 October 2026
+
+The current pin adds two reviewed local commits to the architecture source, so that the workspace
+tests pass on macOS. Neither changes code that ships:
+
+- `c9ec3bb` backports the test change from upstream `414b7b9e4b` (#2168). The test hard-coded `Alt`,
+  but the label shows `⌥` on macOS, so it failed on every Mac.
+- `5301ba3` regenerates `docs/scorecard.md`. Adding `apps/album-studio` took the count of crate roots
+  from 28 to 29, which left that file stale and failed the `xtask` staleness test.
+
+The final source commit is `5301ba386f6f601554ad5e9dbc57f54b4370cf2b`. The authoritative bundle is
+`macos-tests-20261030.bundle` with SHA-256
+`9510c25f9ffd54852c783b265c8d12092cf78af95246025267d1d4772124a3c4` and advertised ref
+`refs/heads/codex/macos-workspace-tests`. It holds all fifteen fork commits, so setup needs only this
+bundle; the earlier bundles are retained. The prerequisite
+`0c72d95425dece90ef9a1cceb49e3315c96e22d5` and the lockfile SHA-256 are unchanged.
+
+Both commits were read in full: seven changed lines, with no credentials, customer data or fonts.
+Verification is recorded in `docs/quality/ENGINE_PIN_AND_CI.md`.
