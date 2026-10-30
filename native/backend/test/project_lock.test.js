@@ -407,3 +407,106 @@ test('serialization queues short operations, releases failed tails and keeps sep
   assert.deepEqual(order, ['first', 'second'])
   assert.equal(await serializeProject(f.file, async () => 4), 4)
 })
+
+test('a held lease that finds a reclamation guard reports its lock lost', async (t) => {
+  const { acquireProjectLease } = require(modulePath)
+  const f = fixture(t),
+    lease = await acquireProjectLease(f.file),
+    guardPath = `${lease.lockPath}.reclaim`
+  fs.mkdirSync(guardPath)
+  await assert.rejects(lease.assertOwned(), (error) => {
+    assert.deepEqual(
+      [error.code, error.lockPath, error.message],
+      [
+        'PROJECT_LOCK_LOST',
+        guardPath,
+        `Project ownership is being recovered or released; wait before publishing. Existing lock evidence has been preserved at ${guardPath}.`,
+      ],
+    )
+    return true
+  })
+  fs.rmdirSync(guardPath)
+  await lease.release()
+})
+
+test('a guard that cannot be retired fails the release, alone or after the lock itself failed', async (t) => {
+  const { acquireProjectLease } = require(modulePath)
+  const exclusive = require('../lib/exclusive_rename'),
+    move = exclusive.renameExclusive
+  for (const lockToo of [false, true]) {
+    const f = fixture(t),
+      lease = await acquireProjectLease(f.file),
+      guardPath = `${lease.lockPath}.reclaim`,
+      failing = new Set([guardPath, ...(lockToo ? [lease.lockPath] : [])])
+    // Fail the moves that retire the guard (and the lock), not the move that publishes the guard.
+    t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+      if (failing.delete(from))
+        throw Object.assign(new Error(`injected move failure for ${path.basename(from)}`), { code: 'EIO' })
+      return move(from, to)
+    })
+    const error = await lease.release().then(
+      () => null,
+      (e) => e,
+    )
+    const guardFailure = `injected move failure for ${path.basename(guardPath)} Both lock locations were preserved for inspection: ${guardPath}; `
+    if (lockToo) {
+      assert.ok(error.message.startsWith(`injected move failure for ${path.basename(lease.lockPath)} `), error.message)
+      assert.ok(error.message.includes(` Guard release failed: ${guardFailure}`), error.message)
+      assert.equal(error.lockPath, lease.lockPath)
+      assert.equal(fs.existsSync(lease.lockPath), true)
+    } else {
+      assert.ok(error.message.startsWith(guardFailure), error.message)
+      assert.equal(error.lockPath, guardPath)
+      assert.equal(fs.existsSync(lease.lockPath), false)
+      await lease.release() // already released: nothing more to do
+    }
+    assert.equal(fs.existsSync(guardPath), true)
+    exclusive.renameExclusive.mock.restore()
+  }
+})
+
+test('concurrent releases share one release, and a failed release can be retried', async (t) => {
+  const { acquireProjectLease } = require(modulePath)
+  const f = fixture(t),
+    lease = await acquireProjectLease(f.file),
+    history = path.join(f.folder, '.album-studio-project-lock-history'),
+    releases = () => fs.readdirSync(history).filter((name) => name.includes('-released-')).length
+  await Promise.all([lease.release(), lease.release()])
+  assert.equal(fs.existsSync(lease.lockPath), false)
+  assert.equal(releases(), 1)
+  await lease.release()
+  assert.equal(releases(), 1)
+
+  const g = fixture(t),
+    second = await acquireProjectLease(g.file),
+    exclusive = require('../lib/exclusive_rename'),
+    move = exclusive.renameExclusive
+  let failures = 1
+  t.mock.method(exclusive, 'renameExclusive', async (from, to) => {
+    if (from === second.lockPath && failures-- > 0)
+      throw Object.assign(new Error('injected lock move failure'), { code: 'EIO' })
+    return move(from, to)
+  })
+  await assert.rejects(second.release(), /^Error: injected lock move failure|injected lock move failure/)
+  assert.equal(fs.existsSync(second.lockPath), true)
+  await second.release()
+  assert.equal(fs.existsSync(second.lockPath), false)
+})
+
+test('a refused acquisition retires its unused owner and names the lock', async (t) => {
+  const { acquireProjectLease } = require(modulePath)
+  const f = fixture(t),
+    held = await acquireProjectLease(f.file)
+  const error = await acquireProjectLease(f.file).then(
+    () => null,
+    (e) => e,
+  )
+  assert.deepEqual([error.code, error.lockPath], ['PROJECT_BUSY', held.lockPath])
+  assert.deepEqual(
+    fs.readdirSync(f.folder).filter((name) => name.includes('.candidate-')),
+    [],
+  )
+  const history = fs.readdirSync(path.join(f.folder, '.album-studio-project-lock-history'))
+  assert.equal(history.filter((name) => name.includes('-unused-')).length, 1)
+  await held.release()
+})
