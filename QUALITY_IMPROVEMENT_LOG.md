@@ -60,6 +60,24 @@ layers, a photo that couldn't be read moved every later photo into the previous 
 the layer stack, under or over the wrong template art. Readability stays at 7 until more of the
 63 fall.
 
+Phase 4b-2 split the 16 functions above complexity 20 in the verified reads, publication and
+locking code (`labnaming.js`, `publication_broker.js`, `verified_file.js`, `cache.js`,
+`private_stage.js`, `project_lock.js`, `project_transaction.js`, `file_publication.js`,
+`render_transaction.js`, `delivery_transaction.js`) into named helpers, with no behaviour change;
+47 of the 63 remain for batches 4b-3 to 4b-5 and phase 5. These files protect customer data, so
+each save or publication ran on the old and new code with every file-system call failing in turn,
+failing from that call on, or with another writer's edit arriving just before it, comparing the
+calls, the result or error, what recovery did and the files left: 27,638 runs over 34 scenarios,
+with up to 2,002 calls per operation, plus 20,000 random or changed inputs to the journal and
+request checks, with 0 differences. Deliberate mutants were caught in every task; one that marked
+a publication committed too early survived the planned sweeps until a scenario edited the stage
+journal mid-run, and delivery was cancelled at every position because its checks make no
+file-system calls. 18 new tests pinned the failure paths, each mutation-checked; backend tests
+rose from 898 to 916, and `publication_broker.js` coverage from 92% to 99% of lines. Three of those
+tests close a gap the split exposed: no test had ever reached the `verified_file.js` branch that
+replaces a read error unable to take a close error, though the earlier coverage figure counted it.
+Readability stays at 7 until more of the 47 fall.
+
 ## Phases
 
 | Phase | Status |
@@ -70,7 +88,8 @@ the layer stack, under or over the wrong template art. Readability stays at 7 un
 | 3. Tooling | Done 2026-10-29 |
 | 4a. Null-checked types | Done 2026-10-29 |
 | 4b-1. Contract runtime and shared modules | Done 2026-10-29 |
-| 4b-2 to 4b-5, 4c, 4d, 5–7 | Not started |
+| 4b-2. Verified reads, publication and locking | Done 2026-10-30 |
+| 4b-3 to 4b-5, 4c, 4d, 5–7 | Not started |
 
 ## Open items
 
@@ -94,8 +113,17 @@ the layer stack, under or over the wrong template art. Readability stays at 7 un
   slot, so one of their photos is lost; flattened pages draw both (this predates 4b-1).
   `contrastStage` applies clarity, and `matchesArray`/`matchesObject` return false or nothing
   where `matchesCombinator` returns a boolean; clearer names would help.
+- Phase 4 (from 4b-2): four modules repeat one transaction skeleton of prepare, journal, capture,
+  install, commit and recover (`project_transaction.js`, `file_publication.js`,
+  `render_transaction.js`, `delivery_transaction.js`); merging them is a design change, not a
+  split. When `cache.js` can't examine a moved snapshot, its retention report still names the
+  original path (pinned as today's behaviour). `delivery_transaction.js` coverage moves by up to
+  0.8 points of lines between full runs, because one lock branch runs only when the six processes
+  in its competing-restart test collide; a deterministic test would settle it.
 - CI: the native workspace's Rust tests fail on GitHub ("Workspace tests" in run 40826660009).
-  The engine checkout is outside this programme; the failure is not yet diagnosed.
+  The engine pin moved to `5301ba3` to fix two engine test bugs. They were matched to that failure
+  by its log length, not by reading the hosted log, and local gates pass, so the next hosted run
+  has to confirm it: [docs/quality/ENGINE_PIN_AND_CI.md](docs/quality/ENGINE_PIN_AND_CI.md).
 - Phase 5: five accessibility findings in three controls lack keyboard operation: the
   Inspector's photo rows, the spread's frame hit areas and the frame-adjust overlay
   (`eslint-suppressions.json`). Coverage limits rise from 88/88 (shared) and 94/88 (backend).
