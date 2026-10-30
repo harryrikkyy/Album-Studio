@@ -6,9 +6,6 @@
   "native/backend/lib/album.js": {
     "complexity": 1
   },
-  "native/backend/lib/cache.js": {
-    "complexity": 1
-  },
   "native/backend/lib/color.js": {
     "complexity": 5,
     "max-len": 1
@@ -81,9 +78,6 @@
   },
   "native/backend/lib/storage.js": {
     "max-len": 2
-  },
-  "native/backend/lib/verified_file.js": {
-    "complexity": 1
   },
   "native/backend/server.js": {
     "complexity": 1,

@@ -9,11 +9,6 @@
       "count": 1
     }
   },
-  "native/backend/lib/cache.js": {
-    "preserve-caught-error": {
-      "count": 1
-    }
-  },
   "native/backend/lib/delivery_transaction.js": {
     "preserve-caught-error": {
       "count": 5

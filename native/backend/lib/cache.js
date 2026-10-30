@@ -211,18 +211,20 @@ function contentKey(file, digest) {
     .digest('hex')
 }
 
+const sameSnapshotNode = (a, b) => a && b && a.dev === b.dev && a.ino === b.ino
+const sameSnapshotRead = (a, b) =>
+  sameSnapshotNode(a, b) && ['size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
+const statOrMissing = (file) =>
+  fs.promises.lstat(file, { bigint: true }).catch((error) => {
+    if (error.code === 'ENOENT') return null
+    throw error
+  })
+
 /** Copy verified bytes into a private job directory before a decoder consumes them. */
 async function snapshotFile(file, folder, digest) {
   if (!/^[a-f0-9]{64}$/.test(digest || '')) throw new Error('A source snapshot requires verified content evidence.')
   await fs.promises.mkdir(folder, { recursive: true, mode: 0o700 })
   const target = path.join(await fs.promises.realpath(folder), `${crypto.randomUUID()}${path.extname(file)}`)
-  const sameNode = (a, b) => a && b && a.dev === b.dev && a.ino === b.ino
-  const sameRead = (a, b) => sameNode(a, b) && ['size', 'mtimeNs', 'ctimeNs'].every((key) => a[key] === b[key])
-  const statOrMissing = (file) =>
-    fs.promises.lstat(file, { bigint: true }).catch((error) => {
-      if (error.code === 'ENOENT') return null
-      throw error
-    })
   let source, destination, created, retainedPath
   /** @type {RecoverableError | undefined} */
   let failure
@@ -240,133 +242,24 @@ async function snapshotFile(file, folder, digest) {
       throw new Error('The snapshot source must be a regular file within the supported file-offset bounds.')
     source = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0))
     const opened = await source.stat({ bigint: true })
-    if (!sameRead(before, opened)) throw new Error('The source changed before its snapshot was opened.')
-    const buffer = Buffer.alloc(1024 * 1024),
-      copied = crypto.createHash('sha256')
-    let position = 0
-    while (position < Number(opened.size)) {
-      const { bytesRead } = await source.read(
-        buffer,
-        0,
-        Math.min(buffer.length, Number(opened.size) - position),
-        position,
-      )
-      if (!bytesRead) throw new Error('The source changed during its snapshot copy.')
-      copied.update(buffer.subarray(0, bytesRead))
-      let offset = 0
-      while (offset < bytesRead) {
-        const { bytesWritten } = await destination.write(buffer, offset, bytesRead - offset, position + offset)
-        if (!bytesWritten) throw new Error('The source snapshot could not be written completely.')
-        offset += bytesWritten
-      }
-      position += bytesRead
-    }
-    const extra = await source.read(buffer, 0, 1, position),
-      after = await source.stat({ bigint: true })
-    if (
-      extra.bytesRead ||
-      !sameRead(opened, after) ||
-      !sameRead(after, await fs.promises.lstat(file, { bigint: true })) ||
-      copied.digest('hex') !== digest
-    )
-      throw new Error(`The image ${file} changed before its verified snapshot could be made.`)
-    await destination.chmod(0o400)
-    await destination.sync()
-    const protectedFile = await destination.stat({ bigint: true }),
-      named = await fs.promises.lstat(target, { bigint: true })
-    if (
-      !sameNode(created, protectedFile) ||
-      !sameNode(protectedFile, named) ||
-      !named.isFile() ||
-      named.nlink !== 1n ||
-      named.mode & 0o222n ||
-      protectedFile.mode & 0o222n
-    )
-      throw new Error('The private snapshot name, ownership or read-only permissions changed.')
-    if ((await fileDigest(target)) !== digest || !sameNode(created, await fs.promises.lstat(target, { bigint: true })))
-      throw new Error('The private snapshot changed before decoder consumption.')
+    if (!sameSnapshotRead(before, opened)) throw new Error('The source changed before its snapshot was opened.')
+    await copyIntoSnapshot(source, destination, opened, file, digest)
+    await protectSnapshot(destination, created, target, digest)
   } catch (error) {
-    // Never unlink a failed exclusive destination or a substituted name. An unchanged
-    // generated copy can leave the caller's stage only by a no-replace history move.
-    if (created) {
-      try {
-        const current = await fs.promises.lstat(target, { bigint: true })
-        if (current.isFile() && current.nlink === 1n && sameNode(current, created)) {
-          const history = await fs.promises.mkdtemp(
-            path.join(path.dirname(path.dirname(target)), '.album-studio-snapshot-'),
-          )
-          const retained = path.join(history, path.basename(target))
-          let moveError
-          try {
-            await require('./exclusive_rename').renameExclusive(target, retained)
-          } catch (move) {
-            moveError = move
-          }
-          const captured = await statOrMissing(retained),
-            remaining = await statOrMissing(target)
-          if (captured) retainedPath = retained
-          // A timed-out helper can already have performed the syscall. Accept only the
-          // exact created inode at the destination and an absent original public name.
-          if (
-            moveError &&
-            (remaining || !captured || !captured.isFile() || captured.nlink !== 1n || !sameNode(captured, created))
-          ) {
-            moveError.message += ` Check both ${target} and ${retained}; neither name was removed.`
-            throw moveError
-          }
-          if (!captured)
-            throw new Error(`The snapshot retention destination ${retained} is missing; preserve both recovery paths.`)
-          if (!sameNode(captured, created)) {
-            // An external file captured at the last boundary goes back exclusively.
-            // Reconcile the return too, so its reported evidence path still exists.
-            await require('./exclusive_rename')
-              .renameExclusive(retained, target)
-              .catch(() => {})
-            const returned = await statOrMissing(target),
-              stillRetained = await statOrMissing(retained)
-            if (!stillRetained && sameNode(returned, captured)) retainedPath = target
-            else if (!stillRetained)
-              error.message += ` Check both ${target} and ${retained} after the external path change.`
-          }
-        }
-      } catch (preserve) {
-        error.message += ` Snapshot retention also needs review: ${preserve.message}`
-      }
-    }
-    failure = new Error(
-      `${error.message} Snapshot evidence was preserved at ${retainedPath || target}; keep it before retrying.`,
-      { cause: error },
-    )
-    failure.code = 'SNAPSHOT_PRESERVED'
-    failure.sourceCode = error.code
-    failure.snapshotPath = retainedPath || target
-    if (retainedPath) failure.retainedPath = retainedPath
+    if (created) retainedPath = await retainFailedSnapshot(target, created, error)
+    failure = preservedSnapshot(error.message, error, target, retainedPath)
   } finally {
-    const closeErrors = []
-    for (const [name, handle] of /** @type {Array<[string, import('fs/promises').FileHandle | undefined]>} */ ([
-      ['source', source],
-      ['destination', destination],
-    ])) {
-      if (!handle) continue
-      try {
-        await handle.close()
-      } catch (error) {
-        closeErrors.push({ name, error })
-      }
-    }
+    const closeErrors = await closeSnapshotHandles(source, destination)
     if (closeErrors.length) {
       const detail = closeErrors.map(({ name, error }) => `${name}: ${error.message}`).join('; ')
       if (failure) failure.message += ` Snapshot descriptor close also failed: ${detail}`
-      else {
-        failure = new Error(
-          `Snapshot descriptor close failed: ${detail} Snapshot evidence was preserved at ${retainedPath || target}; keep it before retrying.`,
-          { cause: closeErrors[0].error },
+      else
+        failure = preservedSnapshot(
+          `Snapshot descriptor close failed: ${detail}`,
+          closeErrors[0].error,
+          target,
+          retainedPath,
         )
-        failure.code = 'SNAPSHOT_PRESERVED'
-        failure.sourceCode = closeErrors[0].error.code
-        failure.snapshotPath = retainedPath || target
-        if (retainedPath) failure.retainedPath = retainedPath
-      }
       failure.closeErrors = closeErrors.map(({ name, error }) => ({
         descriptor: name,
         code: error.code,
@@ -376,6 +269,145 @@ async function snapshotFile(file, folder, digest) {
   }
   if (failure) throw failure
   return target
+}
+
+// Streams the opened source into the exclusive destination, hashing as it goes, then checks that
+// the source neither grew nor changed and that the bytes match the verified digest.
+async function copyIntoSnapshot(source, destination, opened, file, digest) {
+  const buffer = Buffer.alloc(1024 * 1024),
+    copied = crypto.createHash('sha256')
+  let position = 0
+  while (position < Number(opened.size)) {
+    const { bytesRead } = await source.read(
+      buffer,
+      0,
+      Math.min(buffer.length, Number(opened.size) - position),
+      position,
+    )
+    if (!bytesRead) throw new Error('The source changed during its snapshot copy.')
+    copied.update(buffer.subarray(0, bytesRead))
+    let offset = 0
+    while (offset < bytesRead) {
+      const { bytesWritten } = await destination.write(buffer, offset, bytesRead - offset, position + offset)
+      if (!bytesWritten) throw new Error('The source snapshot could not be written completely.')
+      offset += bytesWritten
+    }
+    position += bytesRead
+  }
+  const extra = await source.read(buffer, 0, 1, position),
+    after = await source.stat({ bigint: true })
+  if (
+    extra.bytesRead ||
+    !sameSnapshotRead(opened, after) ||
+    !sameSnapshotRead(after, await fs.promises.lstat(file, { bigint: true })) ||
+    copied.digest('hex') !== digest
+  )
+    throw new Error(`The image ${file} changed before its verified snapshot could be made.`)
+}
+
+// Makes the copy read-only and durable, then checks that its name, ownership and permissions
+// held and that it still holds exactly the verified bytes.
+async function protectSnapshot(destination, created, target, digest) {
+  await destination.chmod(0o400)
+  await destination.sync()
+  const protectedFile = await destination.stat({ bigint: true }),
+    named = await fs.promises.lstat(target, { bigint: true })
+  if (
+    !sameSnapshotNode(created, protectedFile) ||
+    !sameSnapshotNode(protectedFile, named) ||
+    !named.isFile() ||
+    named.nlink !== 1n ||
+    named.mode & 0o222n ||
+    protectedFile.mode & 0o222n
+  )
+    throw new Error('The private snapshot name, ownership or read-only permissions changed.')
+  if (
+    (await fileDigest(target)) !== digest ||
+    !sameSnapshotNode(created, await fs.promises.lstat(target, { bigint: true }))
+  )
+    throw new Error('The private snapshot changed before decoder consumption.')
+}
+
+// Never unlink a failed exclusive destination or a substituted name. An unchanged generated
+// copy can leave the caller's stage only by a no-replace history move. Returns where the copy
+// was retained, if anywhere; a problem retaining it is added to the error's message.
+async function retainFailedSnapshot(target, created, error) {
+  let retainedPath
+  try {
+    const current = await fs.promises.lstat(target, { bigint: true })
+    if (current.isFile() && current.nlink === 1n && sameSnapshotNode(current, created)) {
+      const history = await fs.promises.mkdtemp(
+        path.join(path.dirname(path.dirname(target)), '.album-studio-snapshot-'),
+      )
+      const retained = path.join(history, path.basename(target))
+      let moveError
+      try {
+        await require('./exclusive_rename').renameExclusive(target, retained)
+      } catch (move) {
+        moveError = move
+      }
+      const captured = await statOrMissing(retained),
+        remaining = await statOrMissing(target)
+      if (captured) retainedPath = retained
+      // A timed-out helper can already have performed the syscall. Accept only the
+      // exact created inode at the destination and an absent original public name.
+      if (
+        moveError &&
+        (remaining || !captured || !captured.isFile() || captured.nlink !== 1n || !sameSnapshotNode(captured, created))
+      ) {
+        moveError.message += ` Check both ${target} and ${retained}; neither name was removed.`
+        throw moveError
+      }
+      if (!captured)
+        throw new Error(`The snapshot retention destination ${retained} is missing; preserve both recovery paths.`)
+      if (!sameSnapshotNode(captured, created)) {
+        // An external file captured at the last boundary goes back exclusively.
+        // Reconcile the return too, so its reported evidence path still exists.
+        await require('./exclusive_rename')
+          .renameExclusive(retained, target)
+          .catch(() => {})
+        const returned = await statOrMissing(target),
+          stillRetained = await statOrMissing(retained)
+        if (!stillRetained && sameSnapshotNode(returned, captured)) retainedPath = target
+        else if (!stillRetained)
+          error.message += ` Check both ${target} and ${retained} after the external path change.`
+      }
+    }
+  } catch (preserve) {
+    error.message += ` Snapshot retention also needs review: ${preserve.message}`
+  }
+  return retainedPath
+}
+
+// The error a failed snapshot reports: its message, where the evidence is kept, and the cause.
+function preservedSnapshot(message, cause, target, retainedPath) {
+  /** @type {RecoverableError} */
+  const failure = new Error(
+    `${message} Snapshot evidence was preserved at ${retainedPath || target}; keep it before retrying.`,
+    { cause },
+  )
+  failure.code = 'SNAPSHOT_PRESERVED'
+  failure.sourceCode = cause.code
+  failure.snapshotPath = retainedPath || target
+  if (retainedPath) failure.retainedPath = retainedPath
+  return failure
+}
+
+// Closes each opened descriptor, collecting every close failure.
+async function closeSnapshotHandles(source, destination) {
+  const closeErrors = []
+  for (const [name, handle] of /** @type {Array<[string, import('fs/promises').FileHandle | undefined]>} */ ([
+    ['source', source],
+    ['destination', destination],
+  ])) {
+    if (!handle) continue
+    try {
+      await handle.close()
+    } catch (error) {
+      closeErrors.push({ name, error })
+    }
+  }
+  return closeErrors
 }
 
 async function fileStamp(p) {
