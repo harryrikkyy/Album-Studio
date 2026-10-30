@@ -144,6 +144,73 @@ function recoveryError(stage, error) {
 const validDescription = (r) =>
   r && /^[a-f0-9]{64}$/.test(r.digest) && Number.isSafeInteger(r.size) && r.size >= 0 && r.size <= MAX_PROJECT_BYTES
 const validNode = (n) => n && /^\d+$/.test(n.dev) && /^\d+$/.test(n.ino)
+const PROJECT_STAGE_NAMES = new Set([
+  'journal.json',
+  'old-project.json',
+  'next-project.json',
+  'old-backup',
+  'install-project.json',
+  'install-backup',
+  'captured-project',
+  'captured-backup',
+  'discard-project',
+  'discard-backup',
+  'commit.json',
+  'commit.part.json',
+])
+// A journal this transaction wrote for this project: version 1, its own stage name, valid
+// snapshot descriptions and installed file nodes.
+function validProjectJournal(journal, context, stage) {
+  return (
+    !!journal &&
+    journal.version === 1 &&
+    journal.file === context.file &&
+    journal.folder === context.folder &&
+    journal.name === path.basename(stage) &&
+    SAVE.test(journal.name) &&
+    validDescription(journal.old) &&
+    validDescription(journal.next) &&
+    (journal.backup === null || validDescription(journal.backup)) &&
+    validNode(journal.installProject) &&
+    validNode(journal.installBackup)
+  )
+}
+// Every stage entry is a known snapshot, journal or marker name (or a restore copy) and an
+// independent regular file.
+async function checkProjectStage(stage) {
+  for (const name of await fs.promises.readdir(stage)) {
+    if (!PROJECT_STAGE_NAMES.has(name) && !/^restore-(project|backup)-[a-f0-9-]{36}$/.test(name))
+      throw new Error(`Unexpected project recovery entry ${path.join(stage, name)}; it was preserved.`)
+    const info = await stat(path.join(stage, name))
+    if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n)
+      throw new Error(`Non-regular project recovery entry ${path.join(stage, name)}; it was preserved.`)
+  }
+}
+// The retained old, next and backup snapshots still match the journal.
+async function checkProjectSnapshots(stage, journal) {
+  for (const [name, expected] of [
+    ['old-project.json', journal.old],
+    ['next-project.json', journal.next],
+    ...(journal.backup ? [['old-backup', journal.backup]] : []),
+  ]) {
+    if (!matches(await record(path.join(stage, name)), expected))
+      throw new Error(`The retained project snapshot ${path.join(stage, name)} changed; it was preserved.`)
+  }
+}
+// Whether the stage holds a commit marker for exactly this journal revision.
+async function projectCommitted(stage, digest) {
+  const committed = await record(path.join(stage, 'commit.json'), MAX_JOURNAL_BYTES)
+  if (!committed) return false
+  let value
+  try {
+    value = JSON.parse(String(committed.bytes))
+  } catch (_) {
+    throw new Error('The project commit marker is invalid.')
+  }
+  if (value.version !== 1 || value.journal !== digest)
+    throw new Error('The project commit marker does not match its journal.')
+  return true
+}
 async function journalOf(context, stage) {
   await realDirectory(stage)
   const raw = await record(path.join(stage, 'journal.json'), MAX_JOURNAL_BYTES)
@@ -154,61 +221,11 @@ async function journalOf(context, stage) {
   } catch (_) {
     throw new Error('The project recovery journal is invalid JSON.')
   }
-  if (
-    !journal ||
-    journal.version !== 1 ||
-    journal.file !== context.file ||
-    journal.folder !== context.folder ||
-    journal.name !== path.basename(stage) ||
-    !SAVE.test(journal.name) ||
-    !validDescription(journal.old) ||
-    !validDescription(journal.next) ||
-    (journal.backup !== null && !validDescription(journal.backup)) ||
-    !validNode(journal.installProject) ||
-    !validNode(journal.installBackup)
-  )
+  if (!validProjectJournal(journal, context, stage))
     throw new Error('Invalid project recovery identity or snapshot bounds; no public files were changed.')
-  const allowed = new Set([
-    'journal.json',
-    'old-project.json',
-    'next-project.json',
-    'old-backup',
-    'install-project.json',
-    'install-backup',
-    'captured-project',
-    'captured-backup',
-    'discard-project',
-    'discard-backup',
-    'commit.json',
-    'commit.part.json',
-  ])
-  for (const name of await fs.promises.readdir(stage)) {
-    if (!allowed.has(name) && !/^restore-(project|backup)-[a-f0-9-]{36}$/.test(name))
-      throw new Error(`Unexpected project recovery entry ${path.join(stage, name)}; it was preserved.`)
-    const info = await stat(path.join(stage, name))
-    if (!info || !info.isFile() || info.isSymbolicLink() || info.nlink !== 1n)
-      throw new Error(`Non-regular project recovery entry ${path.join(stage, name)}; it was preserved.`)
-  }
-  for (const [name, expected] of [
-    ['old-project.json', journal.old],
-    ['next-project.json', journal.next],
-    ...(journal.backup ? [['old-backup', journal.backup]] : []),
-  ]) {
-    if (!matches(await record(path.join(stage, name)), expected))
-      throw new Error(`The retained project snapshot ${path.join(stage, name)} changed; it was preserved.`)
-  }
-  const committed = await record(path.join(stage, 'commit.json'), MAX_JOURNAL_BYTES)
-  if (committed) {
-    let value
-    try {
-      value = JSON.parse(String(committed.bytes))
-    } catch (_) {
-      throw new Error('The project commit marker is invalid.')
-    }
-    if (value.version !== 1 || value.journal !== raw.digest)
-      throw new Error('The project commit marker does not match its journal.')
-  }
-  return { journal, digest: raw.digest, committed: !!committed }
+  await checkProjectStage(stage)
+  await checkProjectSnapshots(stage, journal)
+  return { journal, digest: raw.digest, committed: await projectCommitted(stage, raw.digest) }
 }
 async function retire(context, stage) {
   await journalOf(context, stage)
@@ -332,55 +349,19 @@ async function saveProject(file, data, expectedRevision, options = {}) {
     committed = false,
     committedRevision = null
   try {
-    await writeNew(path.join(prepared, 'old-project.json'), previous.bytes, previous.mode)
-    await writeNew(path.join(prepared, 'next-project.json'), text, previous.mode)
-    if (backup) await writeNew(path.join(prepared, 'old-backup'), backup.bytes, backup.mode)
-    const next = await record(path.join(prepared, 'next-project.json'))
-    if (!next) throw changed()
-    const installedProject = await copyNew(
-      path.join(prepared, 'next-project.json'),
-      path.join(prepared, 'install-project.json'),
-      next,
-    )
-    const installedBackup = await copyNew(
-      path.join(prepared, 'old-project.json'),
-      path.join(prepared, 'install-backup'),
-      previous,
-    )
-    const journal = {
-      version: 1,
-      file: context.file,
-      folder: context.folder,
+    const { next, installedProject, installedBackup } = await prepareProjectSave(
+      context,
+      prepared,
       name,
-      old: description(previous),
-      next: description(next),
-      backup: backup ? description(backup) : null,
-      installProject: installedProject.node,
-      installBackup: installedBackup.node,
-    }
-    await writeNew(path.join(prepared, 'journal.json'), JSON.stringify(journal))
-    await syncDirectory(prepared)
+      previous,
+      backup,
+      text,
+    )
     await move(prepared, stage)
     published = true
     const state = await journalOf(context, stage)
     await assertOwned()
-    const existingBackup = await record(`${context.file}.bak`)
-    if (backup ? !matches(existingBackup, backup) : existingBackup) throw changed()
-    if (backup) {
-      await move(`${context.file}.bak`, path.join(stage, 'captured-backup'))
-      if (!matches(await record(path.join(stage, 'captured-backup')), backup)) throw changed()
-    }
-    await move(path.join(stage, 'install-backup'), `${context.file}.bak`)
-    await assertOwned()
-    await move(context.file, path.join(stage, 'captured-project'))
-    if (!matches(await record(path.join(stage, 'captured-project')), previous)) throw changed()
-    await assertOwned()
-    await move(path.join(stage, 'install-project.json'), context.file)
-    if (
-      !publicOwned(await record(context.file), next, installedProject.node) ||
-      !publicOwned(await record(`${context.file}.bak`), previous, installedBackup.node)
-    )
-      throw changed()
+    await installProjectSave(context, stage, previous, backup, next, installedProject, installedBackup, assertOwned)
     await assertOwned()
     await writeNew(path.join(stage, 'commit.part.json'), JSON.stringify({ version: 1, journal: state.digest }))
     await move(path.join(stage, 'commit.part.json'), path.join(stage, 'commit.json'))
@@ -389,27 +370,104 @@ async function saveProject(file, data, expectedRevision, options = {}) {
     const historyPath = await retire(context, stage)
     return { revision: next.digest, committed: true, historyPath }
   } catch (error) {
-    if (!published && !(await stat(prepared)) && (await stat(stage))) published = true
-    if (published && (await stat(stage))) {
-      try {
-        const current = await journalOf(context, stage)
-        if (current.committed) {
-          committed = true
-          committedRevision = current.journal.next.digest
-        }
-        await recoverStage(context, stage, assertOwned)
-      } catch (recovery) {
-        error.message += ` ${recovery.message}`
-        error.recoveryStage = recovery.recoveryStage || stage
-      }
-    } else if (await stat(prepared)) error.message += ` Unpublished recovery snapshots remain at ${prepared}.`
-    if (committed) {
-      error.projectCommitted = true
-      error.revision = committedRevision
-      error.message = `The project was saved, but recovery evidence needs review. ${error.message}`
-    }
-    throw error
+    throw await failedProjectSave(error, context, prepared, stage, published, committed, committedRevision, assertOwned)
   }
+}
+// Writes the old, next and backup snapshots and the copies to install, then the journal that
+// names them, in the private preparation folder.
+async function prepareProjectSave(context, prepared, name, previous, backup, text) {
+  await writeNew(path.join(prepared, 'old-project.json'), previous.bytes, previous.mode)
+  await writeNew(path.join(prepared, 'next-project.json'), text, previous.mode)
+  if (backup) await writeNew(path.join(prepared, 'old-backup'), backup.bytes, backup.mode)
+  const next = await record(path.join(prepared, 'next-project.json'))
+  if (!next) throw changed()
+  const installedProject = await copyNew(
+    path.join(prepared, 'next-project.json'),
+    path.join(prepared, 'install-project.json'),
+    next,
+  )
+  const installedBackup = await copyNew(
+    path.join(prepared, 'old-project.json'),
+    path.join(prepared, 'install-backup'),
+    previous,
+  )
+  const journal = {
+    version: 1,
+    file: context.file,
+    folder: context.folder,
+    name,
+    old: description(previous),
+    next: description(next),
+    backup: backup ? description(backup) : null,
+    installProject: installedProject.node,
+    installBackup: installedBackup.node,
+  }
+  await writeNew(path.join(prepared, 'journal.json'), JSON.stringify(journal))
+  await syncDirectory(prepared)
+  return { next, installedProject, installedBackup }
+}
+// Captures the public backup and project into the stage and installs the prepared copies,
+// checking each capture and the result, with the lease checked between the moves.
+async function installProjectSave(
+  context,
+  stage,
+  previous,
+  backup,
+  next,
+  installedProject,
+  installedBackup,
+  assertOwned,
+) {
+  const existingBackup = await record(`${context.file}.bak`)
+  if (backup ? !matches(existingBackup, backup) : existingBackup) throw changed()
+  if (backup) {
+    await move(`${context.file}.bak`, path.join(stage, 'captured-backup'))
+    if (!matches(await record(path.join(stage, 'captured-backup')), backup)) throw changed()
+  }
+  await move(path.join(stage, 'install-backup'), `${context.file}.bak`)
+  await assertOwned()
+  await move(context.file, path.join(stage, 'captured-project'))
+  if (!matches(await record(path.join(stage, 'captured-project')), previous)) throw changed()
+  await assertOwned()
+  await move(path.join(stage, 'install-project.json'), context.file)
+  if (
+    !publicOwned(await record(context.file), next, installedProject.node) ||
+    !publicOwned(await record(`${context.file}.bak`), previous, installedBackup.node)
+  )
+    throw changed()
+}
+// After a failed save: recover a published stage (reporting where its evidence stays if that
+// fails too), point at unpublished snapshots, and say so when the save had already committed.
+async function failedProjectSave(
+  error,
+  context,
+  prepared,
+  stage,
+  published,
+  committed,
+  committedRevision,
+  assertOwned,
+) {
+  if (!published && !(await stat(prepared)) && (await stat(stage))) published = true
+  if (published && (await stat(stage))) {
+    try {
+      const current = await journalOf(context, stage)
+      if (current.committed) {
+        committed = true
+        committedRevision = current.journal.next.digest
+      }
+      await recoverStage(context, stage, assertOwned)
+    } catch (recovery) {
+      error.message += ` ${recovery.message}`
+      error.recoveryStage = recovery.recoveryStage || stage
+    }
+  } else if (await stat(prepared)) error.message += ` Unpublished recovery snapshots remain at ${prepared}.`
+  if (committed) {
+    error.projectCommitted = true
+    error.revision = committedRevision
+    error.message = `The project was saved, but recovery evidence needs review. ${error.message}`
+  }
+  return error
 }
 
 /** Permit a missing project name only when a complete, bounded pending journal retains it. */

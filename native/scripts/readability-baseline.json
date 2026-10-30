@@ -49,9 +49,6 @@
   "native/backend/lib/project_domain.js": {
     "complexity": 2
   },
-  "native/backend/lib/project_transaction.js": {
-    "complexity": 2
-  },
   "native/backend/lib/proofs.js": {
     "complexity": 2
   },
