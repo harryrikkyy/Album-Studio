@@ -264,3 +264,23 @@ test('a completed save whose history retirement fails is reported as committed w
   assert.equal(JSON.parse(fs.readFileSync(f.file)).marker, 'new project')
   assert.deepEqual(fs.readFileSync(`${f.file}.bak`), f.old)
 })
+
+test('a save stage whose journal is not JSON is kept, and the save names it', async (t) => {
+  const { saveProject } = require(modulePath),
+    f = fixture(t)
+  const metadata = path.join(f.folder, `.album-studio-project-state-${revision('project.json').slice(0, 24)}`),
+    stage = path.join(metadata, 'save-00000000-0000-4000-8000-000000000001')
+  fs.mkdirSync(stage, { recursive: true })
+  fs.writeFileSync(path.join(stage, 'journal.json'), '{not json', { mode: 0o400 })
+  await assert.rejects(saveProject(f.file, f.data, revision(f.old), context), (error) => {
+    assert.equal(
+      error.message,
+      `The project recovery journal is invalid JSON. Project recovery evidence is retained at ${stage}.` +
+        ` Keep that folder and the current project/backup before retrying.`,
+    )
+    assert.deepEqual([error.code, error.recoveryStage], [undefined, stage])
+    return true
+  })
+  assert.deepEqual(fs.readFileSync(f.file), f.old)
+  assert.equal(fs.readFileSync(path.join(stage, 'journal.json'), 'utf8'), '{not json')
+})
